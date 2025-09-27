@@ -10,6 +10,7 @@ import { resizeCanvas } from "./resizeCanvas.mjs";
 import { runCompress } from "./compression.mjs";
 import { selectMaterial } from "./selectMaterial.mjs";
 import { selectSeed } from "./selectSeed.mjs";
+import { showStorageDialog } from "./storageDialog.mjs";
 import { toggleBreakMode } from "./toggleBreakMode.mjs";
 import { toggleView } from "./toggleView.mjs";
 
@@ -331,6 +332,19 @@ export function setupDocumentEventListeners(gThis) {
       alert("Failed to load game state. Check console for details.");
     }
   });
+
+  // Add event listener for storage dialog button
+  const useStorageBtn = doc.getElementById("useStorageBtn");
+  if (useStorageBtn) {
+    useStorageBtn.addEventListener("click", async function () {
+      try {
+        await showStorageDialog(gThis);
+      } catch (error) {
+        console.error("Failed to open storage dialog:", error);
+        alert("Failed to open storage dialog. Check console for details.");
+      }
+    });
+  }
 
   const corners = doc.querySelectorAll(".ui-grid__corner");
 

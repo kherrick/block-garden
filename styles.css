@@ -133,6 +133,18 @@ body {
   z-index: 2;
 }
 
+#settings .ui-grid__corner--container {
+  align-items: start;
+  display: flex;
+  flex-direction: column;
+}
+
+#settings #resolution,
+#settings select,
+#settings button {
+  width: 100%;
+}
+
 /* Inventory Panel */
 #inventory {
   backdrop-filter: blur(0.3125rem);

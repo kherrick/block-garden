@@ -1,3 +1,4 @@
+import localForage from "../deps/localforage.mjs";
 import { configSignals, initState } from "./state.mjs";
 import { gameLoop } from "./gameLoop.mjs";
 import { generateNewWorld } from "./generateWorld.mjs";
@@ -37,6 +38,10 @@ export async function initGame(doc, cnvs) {
 
   resizeCanvas(doc, configSignals);
   generateNewWorld(doc);
+
+  localForage
+    .setItem("sprite-garden-version", version)
+    .then((v) => console.log(`Sprite Garden version: ${v}`));
 
   gameLoop(globalThis);
 }

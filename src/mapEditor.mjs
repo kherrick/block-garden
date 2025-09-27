@@ -341,9 +341,9 @@ async function saveMapAsState() {
 
     URL.revokeObjectURL(url);
 
-    console.log("Map saved as game state");
+    console.log("Map saved as game state file");
     alert(
-      'Map saved successfully! You can load this file using the "Load Game" button.',
+      'Map saved successfully! You can load this file using the "Load Game File" button.',
     );
   } catch (error) {
     console.error("Failed to save map as state:", error);

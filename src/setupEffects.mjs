@@ -33,10 +33,10 @@ export function setupEffects(doc) {
     const gameTimeEl = doc.getElementById("gameTime");
     if (gameTimeEl) gameTimeEl.textContent = Math.floor(gameTime);
 
-    // Fixed mapping: "normal" -> "Normal", "xray" -> "X-Ray"
     const viewModeTextEl = doc.getElementById("viewModeText");
     if (viewModeTextEl) {
-      viewModeTextEl.textContent = viewMode === "normal" ? "Normal" : "X-Ray";
+      viewModeTextEl.textContent =
+        viewMode === "normal" ? "View Normal" : "View X-Ray";
     }
   });
 
@@ -57,7 +57,7 @@ export function setupEffects(doc) {
     const breakModeTextEl = doc.getElementById("breakModeText");
     if (breakModeTextEl) {
       breakModeTextEl.textContent =
-        breakMode === "regular" ? "Regular" : "Extra";
+        breakMode === "regular" ? "Dig Regular" : "Dig Extra";
     }
   });
 

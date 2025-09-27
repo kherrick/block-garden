@@ -122,6 +122,27 @@ export function setupDocumentEventListeners(gThis) {
     e.preventDefault();
   });
 
+  // Handle block placement mobile controls
+  document.querySelectorAll(".touch-btn.place-block").forEach((pb) => {
+    pb.addEventListener("touchstart", () =>
+      handlePlaceBlock(
+        getCurrentGameState(stateSignals, configSignals),
+        gThis.spriteGarden,
+        doc,
+        pb.dataset.key,
+      ),
+    );
+
+    pb.addEventListener("click", () =>
+      handlePlaceBlock(
+        getCurrentGameState(stateSignals, configSignals),
+        gThis.spriteGarden,
+        doc,
+        pb.dataset.key,
+      ),
+    );
+  });
+
   doc.addEventListener("keyup", (e) => {
     gThis.spriteGarden.keys[e.key.toLowerCase()] = false;
 
@@ -185,6 +206,13 @@ export function setupDocumentEventListeners(gThis) {
 
     configSignals.fogMode.set("clear");
   });
+
+  function handleWorldStateButton() {
+    doc.querySelector('[class="seed-controls"]').toggleAttribute("hidden");
+  }
+
+  const worldStateBtn = doc.getElementById("worldState");
+  worldStateBtn.addEventListener("click", handleWorldStateButton);
 
   function handleGenerateButton() {
     const seedInput = doc.getElementById("worldSeedInput");

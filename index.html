@@ -42,14 +42,15 @@
                   <option value="800">800x800</option>
                 </select>
               </div>
-              <button id="toggleView">
-                🔍 <span id="viewModeText">Normal</span>
-              </button>
               <button id="toggleFog">
                 ☁ <span id="fogModeText">Fog</span>
               </button>
+              <button id="toggleView">
+                🔍 <span id="viewModeText">View Normal</span>
+              </button>
+              <button id="worldState">🌍 World State</button>
               <button id="toggleBreakMode">
-                ⛏️ <span id="breakModeText">Regular</span>
+                ⛏️ <span id="breakModeText">Dig Regular</span>
               </button>
               <div id="mapEditor" hidden>
                 <div class="ui-grid__corner--sub-heading">🗺️ Map Editor</div>
@@ -269,16 +270,18 @@
               <div class="control-instruction">r: Break Block</div>
               <div class="control-instruction">a/d or ←/→: Move</div>
               <div class="control-instruction">u/i/o/j/l/m/,/.: Set Block</div>
+              <div class="control-instruction">ctrl+s: World State</div>
               <div class="control-instruction">Mouse: Inspect Tiles</div>
-              <div class="control-instruction">Ctrl+S: World State</div>
+              <div class="control-instruction">Touch here for mobile</div>
             </div>
           </div>
         </div>
 
         <div class="ui-grid__corner ui-grid__corner--bottom-right">
           <div id="inventory">
-            <div class="ui-grid__corner--heading" id="seeds">🎒 Seeds</div>
+            <div class="ui-grid__corner--heading" id="seeds">🎒 Inventory</div>
             <div class="ui-grid__corner--container" hidden>
+              <div class="ui-grid__corner--sub-heading">🫘 Seeds</div>
               <div>Selected: <span id="selectedSeed">None</span></div>
               <div>
                 <button class="seed-btn" data-wheat>
@@ -378,22 +381,38 @@
 
       <!-- Mobile Touch Controls -->
       <div id="touchControls" hidden>
-        <div class="dpad">
-          <div class="touch-btn up-left" data-key="upleft">↖</div>
-          <div class="touch-btn up" data-key="w">↑</div>
-          <div class="touch-btn up-right" data-key="upright">↗</div>
+        <div class="dpad-container">
+          <div class="dpad">
+            <div class="touch-btn up-left" data-key="upleft">↖</div>
+            <div class="touch-btn up" data-key="w">↑</div>
+            <div class="touch-btn up-right" data-key="upright">↗</div>
 
-          <div class="touch-btn left" data-key="a">←</div>
-          <div class="touch-btn right" data-key="d">→</div>
+            <div class="touch-btn left" data-key="a">←</div>
+            <div class="touch-btn right" data-key="d">→</div>
 
-          <div class="touch-btn down-left" data-key="downleft">↙</div>
-          <div class="touch-btn down" data-key="s">↓</div>
-          <div class="touch-btn down-right" data-key="downright">↘</div>
+            <div class="touch-btn down-left" data-key="downleft">↙</div>
+            <div class="touch-btn down" data-key="s">↓</div>
+            <div class="touch-btn down-right" data-key="downright">↘</div>
+          </div>
+          <div class="dpad">
+            <div class="touch-btn place-block up-left" data-key="u">↖</div>
+            <div class="touch-btn place-block up" data-key="i">↑</div>
+            <div class="touch-btn place-block up-right" data-key="o">↗</div>
+
+            <div class="touch-btn place-block left" data-key="j">←</div>
+            <div class="touch-btn place-block right" data-key="l">→</div>
+
+            <div class="touch-btn place-block down-left" data-key="m">↙</div>
+            <div class="touch-btn place-block down" data-key=",">↓</div>
+            <div class="touch-btn place-block down-right" data-key=".">↘</div>
+          </div>
         </div>
-        <div class="action-buttons">
-          <div class="touch-btn" data-key=" ">🦘</div>
-          <div class="touch-btn" data-key="r">⛏️</div>
-          <div class="touch-btn" data-key="f">🌱</div>
+        <div>
+          <div class="action-buttons">
+            <div class="touch-btn" data-key=" ">🦘</div>
+            <div class="touch-btn" data-key="r">⛏️</div>
+            <div class="touch-btn" data-key="f">🌱</div>
+          </div>
         </div>
       </div>
     </div>

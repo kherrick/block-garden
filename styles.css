@@ -129,6 +129,8 @@ body {
   color: white;
   display: flex;
   flex-direction: column;
+  position: relative;
+  z-index: 2;
 }
 
 /* Inventory Panel */
@@ -182,6 +184,13 @@ body {
 .touch-btn:active {
   background: rgba(255, 255, 255, 0.2);
   transform: scale(0.95);
+}
+
+.dpad-container {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  padding: 0 1rem 1rem 0.5rem;
 }
 
 .dpad {
@@ -310,6 +319,7 @@ select:focus {
 }
 
 #resolution {
+  display: inline;
   margin-bottom: 0.5rem;
 }
 
@@ -340,6 +350,7 @@ select:focus {
   margin: 0.625rem 0;
   padding: 0.625rem;
   position: absolute;
+  z-index: 2;
 }
 
 .seed-controls__actions {
@@ -459,8 +470,6 @@ select:focus {
 
   .touch-btn {
     font-size: 0.75rem;
-    height: 3rem;
-    width: 3rem;
   }
 
   .seed-controls {

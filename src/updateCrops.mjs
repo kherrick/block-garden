@@ -211,9 +211,9 @@ export function updateCrops(currentState, game) {
             block.x < WORLD_WIDTH &&
             block.y >= 0 &&
             block.y < WORLD_HEIGHT &&
-            currentWorld[block.x][block.y] !== TILES.AIR
+            currentWorld.getTile(block.x, block.y) !== TILES.AIR
           ) {
-            currentWorld[block.x][block.y] = TILES.AIR;
+            currentWorld.setTile(block.x, block.y, TILES.AIR);
           }
         });
       }
@@ -238,7 +238,7 @@ export function updateCrops(currentState, game) {
           block.y >= 0 &&
           block.y < WORLD_HEIGHT
         ) {
-          currentWorld[block.x][block.y] = block.tile;
+          currentWorld.setTile(block.x, block.y, block.tile);
         }
       });
 
@@ -268,6 +268,6 @@ export function updateCrops(currentState, game) {
   }
 
   if (worldChanged) {
-    game.state.world.set([...currentWorld]);
+    game.state.world.set(currentWorld);
   }
 }

@@ -4,9 +4,11 @@ import { generateHeightMap } from "./generateHeightMap.mjs";
 import { generateWaterSources, simulateWaterPhysics } from "./waterPhysics.mjs";
 import { getBiome } from "./getBiome.mjs";
 import { getCurrentGameState } from "./getCurrentGameState.mjs";
+import { OptimizedWorld } from "./optimizedWorld.mjs";
 import { resetMapFog } from "./mapFog.mjs";
 import { updateInventoryDisplay } from "./updateInventoryDisplay.mjs";
 import { updateUI } from "./updateUI.mjs";
+import { isSolid } from "./isSolid.mjs";
 
 // Generate world
 export function generateWorld(doc) {
@@ -19,15 +21,8 @@ export function generateWorld(doc) {
 
   console.log(`Generating world with seed: ${worldSeed}`);
 
-  // Initialize world array
-  const world = [];
-  for (let x = 0; x < WORLD_WIDTH; x++) {
-    world[x] = [];
-
-    for (let y = 0; y < WORLD_HEIGHT; y++) {
-      world[x][y] = TILES.AIR;
-    }
-  }
+  // Initialize world
+  const world = new OptimizedWorld(WORLD_WIDTH, WORLD_HEIGHT);
 
   // Generate seeded height map
   const heights = generateHeightMap(WORLD_WIDTH, SURFACE_LEVEL, worldSeed);
@@ -42,32 +37,32 @@ export function generateWorld(doc) {
         const depth = y - surfaceHeight;
 
         if (depth < 3) {
-          world[x][y] = biome.subTile;
+          world.setTile(x, y, biome.subTile);
         } else if (depth < 15) {
           if (Math.random() < 0.1) {
-            world[x][y] = TILES.COAL;
+            world.setTile(x, y, TILES.COAL);
           } else {
-            world[x][y] = TILES.STONE;
+            world.setTile(x, y, TILES.STONE);
           }
         } else if (depth < 30) {
           if (Math.random() < 0.05) {
-            world[x][y] = TILES.IRON;
+            world.setTile(x, y, TILES.IRON);
           } else if (Math.random() < 0.02) {
-            world[x][y] = TILES.GOLD;
+            world.setTile(x, y, TILES.GOLD);
           } else {
-            world[x][y] = TILES.STONE;
+            world.setTile(x, y, TILES.STONE);
           }
         } else if (y > WORLD_HEIGHT - 5) {
-          world[x][y] = TILES.BEDROCK;
+          world.setTile(x, y, TILES.BEDROCK);
         } else {
           if (Math.random() < 0.01) {
-            world[x][y] = TILES.LAVA;
+            world.setTile(x, y, TILES.LAVA);
           } else {
-            world[x][y] = TILES.STONE;
+            world.setTile(x, y, TILES.STONE);
           }
         }
       } else if (y === surfaceHeight) {
-        world[x][y] = biome.surfaceTile;
+        world.setTile(x, y, biome.surfaceTile);
       }
     }
 
@@ -80,7 +75,7 @@ export function generateWorld(doc) {
 
         if (y >= 0) {
           if (i < treeHeight - 1) {
-            world[x][y] = TILES.TREE_TRUNK;
+            world.setTile(x, y, TILES.TREE_TRUNK);
           } else {
             for (let dx = -1; dx <= 1; dx++) {
               for (let dy = -1; dy <= 1; dy++) {
@@ -92,8 +87,8 @@ export function generateWorld(doc) {
                   ny >= 0 &&
                   ny < WORLD_HEIGHT
                 ) {
-                  if (world[nx][ny] === TILES.AIR) {
-                    world[nx][ny] = TILES.TREE_LEAVES;
+                  if (world.getTile(nx, ny) === TILES.AIR) {
+                    world.setTile(nx, ny, TILES.TREE_LEAVES);
                   }
                 }
               }
@@ -108,8 +103,8 @@ export function generateWorld(doc) {
       const crop = biome.crops[Math.floor(Math.random() * biome.crops.length)];
       const y = surfaceHeight - 1;
 
-      if (y >= 0 && world[x][y] === TILES.AIR) {
-        world[x][y] = crop;
+      if (y >= 0 && world.getTile(x, y) === TILES.AIR) {
+        world.setTile(x, y, crop);
 
         // Add to inventory when found
         const cropToSeed = {
@@ -152,7 +147,7 @@ export function generateWorld(doc) {
   simulateWaterPhysics(currentWorld, WORLD_WIDTH, WORLD_HEIGHT, TILES, 30);
 
   // Update the world state with settled water
-  stateSignals.world.set([...currentWorld]);
+  stateSignals.world.set(currentWorld);
 
   console.log("World generation complete!");
 
@@ -203,9 +198,9 @@ export function generateNewWorld(doc, newSeed = null) {
         const tileY = Math.floor(y);
 
         if (
-          world[tileX][tileY] === TILES.AIR &&
-          world[tileX][tileY + 1] &&
-          world[tileX][tileY + 1].solid
+          world.getTile(tileX, tileY) === TILES.AIR &&
+          world.getTile(tileX, tileY + 1) &&
+          isSolid(world.getTile(tileX, tileY + 1))
         ) {
           const updatedPlayer = {
             ...player,

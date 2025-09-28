@@ -1,8 +1,8 @@
-// storageDialog.mjs
 import localForage from "../deps/localforage.mjs";
 
 import { compressToBinaryBlob } from "./compression.mjs";
 import { arrayBufferToBase64, base64toBlob } from "./conversion.mjs";
+import { loadSaveState } from "./loadSaveState.mjs";
 
 const STORAGE_KEY_PREFIX = "sprite-garden-save-";
 
@@ -388,7 +388,7 @@ export class StorageDialog {
 
       // Parse and load save state
       const saveState = JSON.parse(stateJSON);
-      this.gThis.spriteGarden.loadSaveState(this.gThis, saveState);
+      loadSaveState(this.gThis, saveState);
 
       // Update UI elements
       const { worldSeed } = saveState.config;

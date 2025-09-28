@@ -10,8 +10,8 @@ export function createCaveRoom(centerX, centerY, radius) {
     for (let y = centerY - radius; y <= centerY + radius; y++) {
       if (x >= 0 && x < WORLD_WIDTH && y >= 0 && y < WORLD_HEIGHT) {
         const distance = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
-        if (distance <= radius && world[x][y] !== TILES.BEDROCK) {
-          world[x][y] = TILES.AIR;
+        if (distance <= radius && world.getTile(x, y) !== TILES.BEDROCK) {
+          world.setTile(x, y, TILES.AIR);
         }
       }
     }
@@ -39,8 +39,8 @@ export function createCaveTunnel(startX, startY, angle, length, width) {
 
         if (x >= 0 && x < WORLD_WIDTH && y >= 0 && y < WORLD_HEIGHT) {
           const distance = Math.sqrt(dx * dx + dy * dy);
-          if (distance <= width && world[x][y] !== TILES.BEDROCK) {
-            world[x][y] = TILES.AIR;
+          if (distance <= width && world.getTile(x, y) !== TILES.BEDROCK) {
+            world.setTile(x, y, TILES.AIR);
           }
         }
       }

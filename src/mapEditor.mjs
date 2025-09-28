@@ -220,8 +220,8 @@ function paintTiles(centerX, centerY) {
       }
 
       // Paint the tile
-      if (currentWorld[x][y] !== selectedTileType) {
-        currentWorld[x][y] = selectedTileType;
+      if (currentWorld.getTile(x, y) !== selectedTileType) {
+        currentWorld.setTile(x, y, selectedTileType);
 
         hasChanges = true;
       }
@@ -230,26 +230,24 @@ function paintTiles(centerX, centerY) {
 
   if (hasChanges) {
     // Update the world state
-    stateSignals.world.set([...currentWorld]);
+    stateSignals.world.set(currentWorld);
   }
 }
 
 // Clear the entire map
 function clearMap() {
+  const currentWorld = stateSignals.world.get();
   const TILES = configSignals.TILES;
   const WORLD_WIDTH = configSignals.WORLD_WIDTH.get();
   const WORLD_HEIGHT = configSignals.WORLD_HEIGHT.get();
 
-  const world = [];
   for (let x = 0; x < WORLD_WIDTH; x++) {
-    world[x] = [];
-
     for (let y = 0; y < WORLD_HEIGHT; y++) {
-      world[x][y] = TILES.AIR;
+      currentWorld.setTile(x, y, TILES.AIR);
     }
   }
 
-  stateSignals.world.set(world);
+  stateSignals.world.set(currentWorld);
 
   // Clear plant structures and timers
   stateSignals.plantStructures.set({});
@@ -264,9 +262,9 @@ function fillCurrentLayer() {
 
   const camera = stateSignals.camera.get();
   const currentWorld = stateSignals.world.get();
-  const selectedTileType = TILES[mapEditorState.selectedTile];
-  const TILE_SIZE = configSignals.TILE_SIZE.get();
   const TILES = configSignals.TILES;
+  const TILE_SIZE = configSignals.TILE_SIZE.get();
+  const selectedTileType = TILES[mapEditorState.selectedTile];
   const WORLD_HEIGHT = configSignals.WORLD_HEIGHT.get();
   const WORLD_WIDTH = configSignals.WORLD_WIDTH.get();
 
@@ -286,11 +284,11 @@ function fillCurrentLayer() {
 
   for (let x = Math.max(0, startX); x < endX; x++) {
     for (let y = Math.max(0, startY); y < endY; y++) {
-      currentWorld[x][y] = selectedTileType;
+      currentWorld.setTile(x, y, selectedTileType);
     }
   }
 
-  stateSignals.world.set([...currentWorld]);
+  stateSignals.world.set(currentWorld);
 }
 
 // Save the current map as a game state file

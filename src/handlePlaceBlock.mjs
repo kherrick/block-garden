@@ -90,7 +90,7 @@ export function handlePlaceBlock(currentState, game, doc, key) {
   }
 
   // Check if the target position is already occupied by a solid block
-  const currentTile = world[targetX][targetY];
+  const currentTile = world.getTile(targetX, targetY);
   if (currentTile && currentTile !== TILES.AIR && currentTile.solid) {
     console.log(
       `Cannot place block at (${targetX}, ${targetY}) - position occupied`,
@@ -107,8 +107,8 @@ export function handlePlaceBlock(currentState, game, doc, key) {
 
   // Place the block
   const currentWorld = game.state.world.get();
-  currentWorld[targetX][targetY] = tileToPlace;
-  game.state.world.set([...currentWorld]);
+  currentWorld.setTile(targetX, targetY, tileToPlace);
+  game.state.world.set(currentWorld);
 
   // Remove one unit from materials inventory
   game.updateState("materialsInventory", (inv) => ({

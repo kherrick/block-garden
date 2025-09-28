@@ -4,7 +4,7 @@ export function plantSeed(currentState, x, y, seedType, game, doc) {
   const { state, world, TILES } = currentState;
 
   // Check if there's farmable ground below
-  const belowTile = world[x][y + 1];
+  const belowTile = world.getTile(x, y + 1);
   if (!belowTile || !belowTile.farmable) {
     console.log(`Cannot plant at (${x}, ${y}) - no farmable ground below`);
     return; // Can't plant without farmable ground
@@ -20,8 +20,8 @@ export function plantSeed(currentState, x, y, seedType, game, doc) {
   if (seedTileMap[seedType] && state.seedInventory[seedType] > 0) {
     // Update world with initial growing tile
     const currentWorld = game.state.world.get();
-    currentWorld[x][y] = seedTileMap[seedType];
-    game.state.world.set([...currentWorld]);
+    currentWorld.setTile(x, y, seedTileMap[seedType]);
+    game.state.world.set(currentWorld);
 
     // Update seed inventory
     game.updateState("seedInventory", (inv) => ({

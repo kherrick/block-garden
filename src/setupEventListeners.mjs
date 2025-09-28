@@ -15,6 +15,7 @@ import { toggleBreakMode } from "./toggleBreakMode.mjs";
 import { toggleView } from "./toggleView.mjs";
 
 import editHandler from "../deps/konami-code-js.mjs";
+import { loadSaveState } from "./loadSaveState.mjs";
 
 export function setupGlobalEventListeners(gThis) {
   // Setup event listeners
@@ -320,7 +321,7 @@ export function setupDocumentEventListeners(gThis) {
 
       const saveState = JSON.parse(stateJSON);
 
-      gThis.spriteGarden.loadSaveState(gThis, saveState);
+      loadSaveState(gThis, saveState);
 
       const { worldSeed } = saveState.config;
       seedInput.value = worldSeed;

@@ -14,11 +14,7 @@ export function isSolid(x, y) {
     return true;
   }
 
-  const column = world[tileX];
-
-  if (!column) return true;
-
-  const tile = column[tileY];
+  const tile = world.getTile(tileX, tileY);
 
   return tile && tile.solid;
 }

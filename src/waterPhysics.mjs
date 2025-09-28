@@ -1,3 +1,4 @@
+import { isSolid } from "./isSolid.mjs";
 import { waterNoise, initializeNoise } from "./noise.mjs";
 
 // Water physics constants
@@ -64,9 +65,9 @@ function initializeWaterLevels(world, WORLD_WIDTH, WORLD_HEIGHT, TILES) {
 
     for (let y = 0; y < WORLD_HEIGHT; y++) {
       // Initialize water levels based on existing water tiles
-      if (world[x][y] === TILES.WATER) {
+      if (world.getTile(x, y) === TILES.WATER) {
         waterLevels[x][y] = 1.0; // Full water level
-      } else if (!world[x][y].solid) {
+      } else if (!isSolid(x, y)) {
         waterLevels[x][y] = 0; // Air can hold water
       } else {
         waterLevels[x][y] = -1; // Solid blocks can't hold water
@@ -155,12 +156,18 @@ function applyWaterToWorld(
       if (waterLevels[x][y] > 0.3) {
         // Threshold for visible water
         // Only place water in air tiles
-        if (world[x][y] === TILES.AIR || world[x][y] === TILES.WATER) {
-          world[x][y] = TILES.WATER;
+        if (
+          world.getTile(x, y) === TILES.AIR ||
+          world.getTile(x, y) === TILES.WATER
+        ) {
+          world.setTile(x, y, TILES.WATER);
         }
-      } else if (world[x][y] === TILES.WATER && waterLevels[x][y] <= 0.1) {
+      } else if (
+        world.getTile(x, y) === TILES.WATER &&
+        waterLevels[x][y] <= 0.1
+      ) {
         // Remove water that has drained away
-        world[x][y] = TILES.AIR;
+        world.setTile(x, y, TILES.AIR);
       }
     }
   }
@@ -237,8 +244,8 @@ function createLake(
         const distance = Math.sqrt(dx * dx + dy * dy * 2); // Flatten vertically
         if (distance <= radius) {
           // Clear out space for lake
-          if (world[x][y] !== TILES.BEDROCK) {
-            world[x][y] = TILES.WATER;
+          if (world.getTile(x, y) !== TILES.BEDROCK) {
+            world.setTile(x, y, TILES.WATER);
           }
         }
       }
@@ -250,8 +257,8 @@ function createSpring(world, x, surfaceY, WORLD_WIDTH, WORLD_HEIGHT, TILES) {
   // Create a small water source
   const y = surfaceY;
   if (x >= 0 && x < WORLD_WIDTH && y >= 0 && y < WORLD_HEIGHT) {
-    if (world[x][y] === TILES.AIR || !world[x][y].solid) {
-      world[x][y] = TILES.WATER;
+    if (world.getTile(x, y) === TILES.AIR || !isSolid(x, y)) {
+      world.setTile(x, y, TILES.WATER);
     }
   }
 }
@@ -260,15 +267,15 @@ function createRiver(world, x, surfaceY, WORLD_WIDTH, WORLD_HEIGHT, TILES) {
   // Create a shallow river
   const riverY = surfaceY + 1;
   if (x >= 0 && x < WORLD_WIDTH && riverY >= 0 && riverY < WORLD_HEIGHT) {
-    if (world[x][riverY] !== TILES.BEDROCK) {
-      world[x][riverY] = TILES.WATER;
+    if (world.getTile(x, riverY) !== TILES.BEDROCK) {
+      world.setTile(x, riverY, TILES.WATER);
     }
 
     // Add a bit of depth
     const riverY2 = surfaceY + 2;
     if (riverY2 < WORLD_HEIGHT && Math.random() < 0.7) {
-      if (world[x][riverY2] !== TILES.BEDROCK) {
-        world[x][riverY2] = TILES.WATER;
+      if (world.getTile(x, riverY2) !== TILES.BEDROCK) {
+        world.setTile(x, riverY2, TILES.WATER);
       }
     }
   }

@@ -15,7 +15,7 @@ function harvestMaturePlant(currentState, structure, structureKey, game, doc) {
         block.y >= 0 &&
         block.y < WORLD_HEIGHT
       ) {
-        currentWorld[block.x][block.y] = TILES.AIR;
+        currentWorld.setTile(block.x, block.y, TILES.AIR);
       }
     });
   }
@@ -36,7 +36,7 @@ function harvestMaturePlant(currentState, structure, structureKey, game, doc) {
   }
 
   // Update world state
-  game.state.world.set([...currentWorld]);
+  game.state.world.set(currentWorld);
 
   // Remove the plant structure and any associated timers
   const currentStructures = game.state.plantStructures.get();
@@ -107,7 +107,7 @@ export function handleFarmAction(currentState, game, doc) {
       continue;
     }
 
-    const currentTile = world[targetX][targetY];
+    const currentTile = world.getTile(targetX, targetY);
 
     // Check if this position is part of a mature plant structure
     const plantStructures = game.state.plantStructures.get();

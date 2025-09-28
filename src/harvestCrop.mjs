@@ -21,8 +21,8 @@ export function harvestCrop(currentState, x, y, cropTile, game, doc) {
 
     // Remove crop from world
     const currentWorld = game.state.world.get();
-    currentWorld[x][y] = TILES.AIR;
-    game.state.world.set([...currentWorld]);
+    currentWorld.setTile(x, y, TILES.AIR);
+    game.state.world.set(currentWorld);
 
     // Remove from growth timers and plant structures (cleanup)
     const currentTimers = game.state.growthTimers.get();

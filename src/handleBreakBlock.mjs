@@ -66,7 +66,7 @@ export function handleBreakBlock(currentState, game, doc, mode = "regular") {
         )
           continue;
 
-        const tile = world[targetX][targetY];
+        const tile = world.getTile(targetX, targetY);
         if (
           tile &&
           tile !== TILES.AIR &&
@@ -89,7 +89,7 @@ export function handleBreakBlock(currentState, game, doc, mode = "regular") {
         targetY >= 0 &&
         targetY < WORLD_HEIGHT
       ) {
-        const tile = world[targetX][targetY];
+        const tile = world.getTile(targetX, targetY);
         if (
           tile &&
           tile !== TILES.AIR &&
@@ -123,7 +123,7 @@ export function handleBreakBlock(currentState, game, doc, mode = "regular") {
             continue;
           }
 
-          const tile = world[targetX][targetY];
+          const tile = world.getTile(targetX, targetY);
 
           // Can break most blocks except bedrock, air, lava, and water
           // Also exclude mature plant parts (they should be harvested, not broken)
@@ -167,7 +167,7 @@ export function handleBreakBlock(currentState, game, doc, mode = "regular") {
             continue;
           }
 
-          const tile = world[targetX][targetY];
+          const tile = world.getTile(targetX, targetY);
 
           // Can break most blocks except bedrock, air, lava, and water
           // Also exclude mature plant parts (they should be harvested, not broken)
@@ -237,7 +237,7 @@ export function handleBreakBlock(currentState, game, doc, mode = "regular") {
               plantBlock.y >= 0 &&
               plantBlock.y < WORLD_HEIGHT
             ) {
-              currentWorld[plantBlock.x][plantBlock.y] = TILES.AIR;
+              currentWorld.setTile(plantBlock.x, plantBlock.y, TILES.AIR);
             }
           });
         }
@@ -251,7 +251,7 @@ export function handleBreakBlock(currentState, game, doc, mode = "regular") {
         delete updatedTimers[plantKey];
       } else {
         // Regular block breaking
-        currentWorld[block.x][block.y] = TILES.AIR;
+        currentWorld.setTile(block.x, block.y, TILES.AIR);
 
         // Remove from growth timers if it was a crop
         delete updatedTimers[`${block.x},${block.y}`];
@@ -288,7 +288,7 @@ export function handleBreakBlock(currentState, game, doc, mode = "regular") {
     });
 
     // Apply updates back to state, world, timers, and structures
-    game.state.world.set([...currentWorld]);
+    game.state.world.set(currentWorld);
     game.state.growthTimers.set(updatedTimers);
     game.state.plantStructures.set(updatedStructures);
 

@@ -35,11 +35,7 @@ export function render(canvas, isFogEnabled) {
         worldY >= 0 &&
         worldY < WORLD_HEIGHT
       ) {
-        const column = world[worldX];
-
-        if (!column) continue;
-
-        const tile = column[worldY];
+        const tile = world.getTile(worldX, worldY);
 
         // skip empty tiles
         if (!tile || tile === TILES.AIR) continue;

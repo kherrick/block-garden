@@ -10,12 +10,22 @@ export function loadSaveState(gThis, saveState) {
     }
   }
 
-  // Restore state with special handling for worldMap and fogMap
+  // Restore state with special handling for seedInventory, worldMap and fogMap
   for (const key in saveState.state) {
+    // Make sure seedInventory has latest seeds defined
+    if (key === "seedInventory") {
+      const seedInventory = saveState.state[key];
+      if (seedInventory["WALNUT"] === undefined) {
+        seedInventory["WALNUT"] = 0;
+      }
+    }
+
+    // convert explored map data
     if (key === "exploredMap") {
       initializeFog(saveState.state.exploredMap);
     }
 
+    // convert world map data
     if (key === "world") {
       const worldData = saveState.state[key];
 

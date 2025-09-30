@@ -33,6 +33,10 @@ function getMaterialFromTile(tile, TILES) {
   return tileToMaterial[tile.id] || null;
 }
 
+function isTreePart(tile, TILES) {
+  return tile === TILES.TREE_TRUNK || tile === TILES.TREE_LEAVES;
+}
+
 export function handleBreakBlock(currentState, game, doc, mode = "regular") {
   if (mapEditorState.isEnabled) {
     console.log("Breaking disabled in map editor mode");
@@ -202,6 +206,7 @@ export function handleBreakBlock(currentState, game, doc, mode = "regular") {
     const currentStructures = game.state.plantStructures.get();
     const updatedTimers = { ...currentTimers };
     const updatedStructures = { ...currentStructures };
+
     let seedUpdates = {};
     let materialUpdates = {};
 
@@ -247,6 +252,7 @@ export function handleBreakBlock(currentState, game, doc, mode = "regular") {
           seedUpdates[structure.seedType] =
             (seedUpdates[structure.seedType] || 0) + 1;
         }
+
         delete updatedStructures[plantKey];
         delete updatedTimers[plantKey];
       } else {
@@ -256,6 +262,11 @@ export function handleBreakBlock(currentState, game, doc, mode = "regular") {
         // Remove from growth timers if it was a crop
         delete updatedTimers[`${block.x},${block.y}`];
 
+        // Check if this is a tree part and give chance to drop walnut
+        if (isTreePart(block.tile, TILES) && Math.random() < 0.15) {
+          seedUpdates["WALNUT"] = (seedUpdates["WALNUT"] || 0) + 1;
+        }
+
         // Give small chance to drop seeds from broken natural crops
         if (block.tile.crop && Math.random() < 0.3) {
           const cropToSeed = {
@@ -263,10 +274,10 @@ export function handleBreakBlock(currentState, game, doc, mode = "regular") {
             [TILES.CARROT.id]: "CARROT",
             [TILES.MUSHROOM.id]: "MUSHROOM",
             [TILES.CACTUS.id]: "CACTUS",
+            [TILES.WALNUT.id]: "WALNUT",
           };
 
           const seedType = cropToSeed[block.tile.id];
-
           if (seedType) {
             seedUpdates[seedType] = (seedUpdates[seedType] || 0) + 1;
           }

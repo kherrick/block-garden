@@ -1,3 +1,4 @@
+import { createSaveState } from "./createSaveState.mjs";
 import { gameConfig, gameState } from "./state.mjs";
 import { generateNewWorld } from "./generateWorld.mjs";
 
@@ -297,7 +298,7 @@ function fillCurrentLayer() {
 async function saveMapAsState() {
   try {
     // Create a save state with current world and reset fog
-    const saveState = globalThis.spriteGarden.createSaveState(globalThis);
+    const saveState = createSaveState(globalThis);
 
     // Reset explored map for fresh fog
     saveState.state.exploredMap = {};

@@ -5,14 +5,11 @@ import { generateHeightMap } from "./generateHeightMap.mjs";
 import { generateWaterSources, simulateWaterPhysics } from "./waterPhysics.mjs";
 import { getBiome } from "./getBiome.mjs";
 import { getCurrentGameState } from "./getCurrentGameState.mjs";
-import { WorldMap } from "./worldMap.mjs";
+import { getRandomSeed } from "./getRandomSeed.mjs";
+import { initializeFog } from "./fogMap.mjs";
 import { updateInventoryDisplay } from "./updateInventoryDisplay.mjs";
 import { updateUI } from "./updateUI.mjs";
-import { initializeFog } from "./fogMap.mjs";
-
-function getRandomInRange(min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
+import { WorldMap } from "./worldMap.mjs";
 
 // Generate world
 export function generateWorld(doc) {
@@ -50,7 +47,7 @@ export function generateWorld(doc) {
           } else {
             world.setTile(x, y, biome.subTile);
           }
-        } else if (depth < getRandomInRange(20, 50)) {
+        } else if (depth < getRandomSeed(20, 50)) {
           // Sub-surface layer
           if (Math.random() < 0.1) {
             world.setTile(x, y, tiles.COAL);
@@ -59,7 +56,7 @@ export function generateWorld(doc) {
           } else {
             world.setTile(x, y, tiles.STONE);
           }
-        } else if (depth < getRandomInRange(50, 90)) {
+        } else if (depth < getRandomSeed(50, 90)) {
           if (Math.random() < 0.05) {
             world.setTile(x, y, tiles.IRON);
           } else if (Math.random() < 0.02) {
@@ -84,30 +81,74 @@ export function generateWorld(doc) {
     }
 
     // Generate trees
-    if (biome.trees && Math.random() < 0.1) {
-      const treeHeight = 3 + Math.floor(Math.random() * 2);
+    if (biome.trees && Math.random() < 0.025) {
+      const treeHeight = getRandomSeed(3, 5);
+      const baseY = surfaceHeight;
+      const plantX = x;
+      // Base of the tree (where it would be planted)
+      const plantY = baseY - 1;
 
+      // Collect all tree blocks
+      const treeBlocks = [];
+
+      // Build trunk
       for (let i = 0; i < treeHeight; i++) {
-        const y = surfaceHeight - i - 1;
-
+        const y = baseY - i - 1;
         if (y >= 0) {
-          if (i < treeHeight - 1) {
-            world.setTile(x, y, tiles.TREE_TRUNK);
-          } else {
-            for (let dx = -1; dx <= 1; dx++) {
-              for (let dy = -1; dy <= 1; dy++) {
-                const nx = x + dx;
-                const ny = y + dy;
-                if (nx >= 0 && nx < worldWidth && ny >= 0 && ny < worldHeight) {
-                  if (world.getTile(nx, ny) === tiles.AIR) {
-                    world.setTile(nx, ny, tiles.TREE_LEAVES);
-                  }
-                }
+          world.setTile(x, y, tiles.TREE_TRUNK);
+
+          treeBlocks.push({ x, y, tile: tiles.TREE_TRUNK });
+        }
+      }
+
+      // Build leaf canopy at top
+      const topY = baseY - treeHeight;
+      const leafRadius = 3;
+
+      for (let dx = -leafRadius; dx <= leafRadius; dx++) {
+        for (let dy = -leafRadius; dy <= 1; dy++) {
+          const leafX = x + dx;
+          const leafY = topY + dy;
+
+          // Create circular canopy shape
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          if (distance <= leafRadius && dy <= 0) {
+            if (
+              leafX >= 0 &&
+              leafX < worldWidth &&
+              leafY >= 0 &&
+              leafY < worldHeight
+            ) {
+              // Check if it's not a trunk position
+              const isTrunkPosition =
+                leafX === x && leafY >= topY && leafY < baseY;
+              if (
+                !isTrunkPosition &&
+                world.getTile(leafX, leafY) === tiles.AIR
+              ) {
+                world.setTile(leafX, leafY, tiles.TREE_LEAVES);
+                treeBlocks.push({
+                  x: leafX,
+                  y: leafY,
+                  tile: tiles.TREE_LEAVES,
+                });
               }
             }
           }
         }
       }
+
+      // Register the tree structure so it can be harvested properly
+      const plantKey = `${plantX},${plantY}`;
+      const currentStructures = gameState.plantStructures.get() || {};
+      currentStructures[plantKey] = {
+        seedType: "WALNUT",
+        mature: true,
+        blocks: treeBlocks,
+        baseX: plantX,
+        baseY: plantY,
+      };
+      gameState.plantStructures.set(currentStructures);
     }
 
     // Generate natural crops
@@ -124,7 +165,9 @@ export function generateWorld(doc) {
           [tiles.CARROT.id]: "CARROT",
           [tiles.MUSHROOM.id]: "MUSHROOM",
           [tiles.CACTUS.id]: "CACTUS",
+          [tiles.WALNUT.id]: "WALNUT",
         };
+
         const seedType = cropToSeed[crop.id];
         if (seedType) {
           updateState("seedInventory", (inv) => ({
@@ -170,6 +213,75 @@ export function generateWorld(doc) {
   updateUI(doc, getCurrentGameState(gameState, gameConfig));
 }
 
+function registerTreeStructures(world, worldWidth, worldHeight, tiles) {
+  const structures = {};
+
+  // Scan the world for trees and register them
+  for (let x = 0; x < worldWidth; x++) {
+    for (let y = 0; y < worldHeight; y++) {
+      const tile = world.getTile(x, y);
+
+      // Look for tree trunks that have ground below and aren't already part of a structure
+      if (tile === tiles.TREE_TRUNK) {
+        const belowTile = world.getTile(x, y + 1);
+        const aboveTile = world.getTile(x, y - 1);
+
+        // This is the base of a tree if it has solid ground below and trunk/air above
+        if (belowTile && belowTile.solid && belowTile !== tiles.TREE_TRUNK) {
+          const plantKey = `${x},${y}`;
+
+          // Collect all blocks for this tree
+          const treeBlocks = [];
+
+          // Collect trunk blocks going up
+          let checkY = y;
+          while (checkY >= 0 && world.getTile(x, checkY) === tiles.TREE_TRUNK) {
+            treeBlocks.push({ x, y: checkY, tile: tiles.TREE_TRUNK });
+            checkY--;
+          }
+
+          // Collect leaf blocks around the top
+          const topY = checkY + 1; // Last trunk position
+          const leafRadius = 3; // Search radius
+
+          for (let dx = -leafRadius; dx <= leafRadius; dx++) {
+            for (let dy = -leafRadius; dy <= leafRadius; dy++) {
+              const leafX = x + dx;
+              const leafY = topY + dy;
+
+              if (
+                leafX >= 0 &&
+                leafX < worldWidth &&
+                leafY >= 0 &&
+                leafY < worldHeight
+              ) {
+                if (world.getTile(leafX, leafY) === tiles.TREE_LEAVES) {
+                  treeBlocks.push({
+                    x: leafX,
+                    y: leafY,
+                    tile: tiles.TREE_LEAVES,
+                  });
+                }
+              }
+            }
+          }
+
+          // Register this tree structure
+          structures[plantKey] = {
+            seedType: "WALNUT",
+            mature: true,
+            blocks: treeBlocks,
+            baseX: x,
+            baseY: y,
+          };
+        }
+      }
+    }
+  }
+
+  return structures;
+}
+
 // Utility functions
 export function generateNewWorld(doc, newSeed = null) {
   if (newSeed !== null) {
@@ -183,21 +295,31 @@ export function generateNewWorld(doc, newSeed = null) {
   gameState.plantStructures.set({});
   gameState.gameTime.set(0);
 
-  // Give player starting seeds
+  // set seed inventory
   gameState.seedInventory.set({
-    WHEAT: 5,
-    CARROT: 3,
+    WHEAT: 2,
+    CARROT: 1,
     MUSHROOM: 1,
-    CACTUS: 2,
+    CACTUS: 0,
+    WALNUT: 0,
   });
 
-  const worldWidth = gameConfig.WORLD_WIDTH.get();
-  const surfaceLevel = gameConfig.SURFACE_LEVEL.get();
-  const tileSize = gameConfig.TILE_SIZE.get();
-  const tiles = gameConfig.TILES;
-  const worldHeight = gameConfig.WORLD_HEIGHT.get();
   const player = gameState.player.get();
+  const surfaceLevel = gameConfig.SURFACE_LEVEL.get();
+  const tiles = gameConfig.TILES;
+  const tileSize = gameConfig.TILE_SIZE.get();
   const world = gameState.world.get();
+  const worldHeight = gameConfig.WORLD_HEIGHT.get();
+  const worldWidth = gameConfig.WORLD_WIDTH.get();
+
+  const treeStructures = registerTreeStructures(
+    world,
+    worldWidth,
+    worldHeight,
+    tiles,
+  );
+
+  gameState.plantStructures.set(treeStructures);
 
   initializeFog();
 

@@ -8,6 +8,7 @@ export function harvestCrop(currentState, x, y, cropTile, game, doc) {
     [TILES.CARROT.id]: "CARROT",
     [TILES.MUSHROOM.id]: "MUSHROOM",
     [TILES.CACTUS.id]: "CACTUS",
+    [TILES.WALNUT.id]: "WALNUT",
   };
 
   const seedType = harvestMap[cropTile.id];

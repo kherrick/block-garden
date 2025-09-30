@@ -15,6 +15,7 @@ export function plantSeed(currentState, x, y, seedType, game, doc) {
     CARROT: TILES.CARROT_GROWING,
     MUSHROOM: TILES.MUSHROOM_GROWING,
     CACTUS: TILES.CACTUS_GROWING,
+    WALNUT: TILES.TREE_GROWING,
   };
 
   if (seedTileMap[seedType] && state.seedInventory[seedType] > 0) {

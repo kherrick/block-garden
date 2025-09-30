@@ -1,7 +1,8 @@
-const minValue = 1;
-const maxValue = 4294967295;
+export function getRandomInRange(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
 
-function getCryptoRandomInt(min, max) {
+export function getCryptoRandomInt(min, max) {
   const range = max - min + 1;
   const maxUint32 = 0xffffffff;
 
@@ -16,11 +17,9 @@ function getCryptoRandomInt(min, max) {
   return min + (rand32 % range);
 }
 
-export function getRandomSeed() {
+export function getRandomSeed(minValue = 1, maxValue = 4294967295) {
   return typeof globalThis.crypto === "object" &&
     typeof globalThis.crypto.getRandomValues === "function"
     ? getCryptoRandomInt(minValue, maxValue)
-    : (
-        Math.floor(Math.random() * (maxValue - minValue + 1)) + minValue
-      ).toString();
+    : getRandomInRange(minValue, maxValue).toString();
 }

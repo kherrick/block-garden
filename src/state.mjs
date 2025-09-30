@@ -1,8 +1,5 @@
 import { Signal } from "../deps/signal.mjs";
 
-import { createSaveState } from "./createSaveState.mjs";
-import { loadSaveState } from "./loadSaveState.mjs";
-
 import { getBiome } from "./getBiome.mjs";
 import { getRandomSeed } from "./getRandomSeed.mjs";
 
@@ -60,8 +57,8 @@ export const gameConfig = {
     GOLD: getT({ id: 9, color: "#FFD700", solid: true }),
     IRON: getT({ id: 8, color: "#B87333", solid: true }),
     STONE: getT({ id: 3, color: "#696969", solid: true }),
-    TREE_LEAVES: getT({ id: 11, color: "#228B22", solid: true }),
-    TREE_TRUNK: getT({ id: 10, color: "#8B4513", solid: true }),
+    TREE_LEAVES: getT({ id: 11, color: "#228B22", solid: true, crop: true }),
+    TREE_TRUNK: getT({ id: 10, color: "#59392B", solid: true, crop: true }),
     WHEAT: getT({ id: 12, color: "#DAA520", crop: true, growthTime: 240 }),
     CARROT: getT({ id: 13, color: "#FF8C00", crop: true, growthTime: 120 }),
     MUSHROOM: getT({ id: 14, color: "#8B0000", crop: true, growthTime: 60 }),
@@ -69,24 +66,24 @@ export const gameConfig = {
       id: 15,
       color: "#32CD32",
       solid: true,
-      farmable: false,
       crop: true,
       growthTime: 960,
     }),
+    WALNUT: getT({ id: 33, color: "#654321", crop: true, growthTime: 480 }),
     SNOW: getT({ id: 16, color: "#FFFAFA", solid: true, farmable: true }),
     ICE: getT({ id: 17, color: "#B0E0E6", solid: true }),
     LAVA: getT({ id: 18, color: "#FF4500", solid: false }),
     BEDROCK: getT({ id: 19, color: "#1C1C1C", solid: true }),
     WHEAT_GROWING: getT({ id: 20, color: "#9ACD32", crop: true }),
     CARROT_GROWING: getT({ id: 21, color: "#FF7F50", crop: true }),
+    TREE_GROWING: getT({ id: 34, color: "#9ACD32", crop: true }),
     MUSHROOM_GROWING: getT({ id: 22, color: "#CD5C5C", crop: true }),
-    CACTUS_GROWING: {
+    CACTUS_GROWING: getT({
       id: 23,
       color: "#228B22",
       solid: true,
-      farmable: false,
       crop: true,
-    },
+    }),
     // Plant parts for grown crops
     WHEAT_STALK: getT({ id: 24, color: "#8B7355" }),
     WHEAT_GRAIN: getT({ id: 25, color: "#FFD700" }),
@@ -128,10 +125,11 @@ export const gameState = {
   // Tracks which tiles have been explored for map fog
   exploredMap: {},
   seedInventory: new Signal.State({
-    WHEAT: 5,
-    CARROT: 3,
-    MUSHROOM: 1,
-    CACTUS: 2,
+    WHEAT: 0,
+    CARROT: 0,
+    MUSHROOM: 0,
+    CACTUS: 0,
+    WALNUT: 0,
   }),
   // New materials inventory
   materialsInventory: new Signal.State({
@@ -281,8 +279,6 @@ export function initState(gThis, version) {
     setState,
     getState,
     updateState,
-    createSaveState,
-    loadSaveState,
   };
 
   // Initialize biomes after TILES is defined

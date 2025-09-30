@@ -1,3 +1,5 @@
+import { generateTreeStructure } from "./generateTreeStructure.mjs";
+
 function generateWheatStructure(x, y, progress, TILES) {
   const blocks = [];
 
@@ -172,8 +174,10 @@ function generatePlantStructure(x, y, seedType, progress, TILES) {
       return generateMushroomStructure(x, y, progress, TILES);
     case "CACTUS":
       return generateCactusStructure(x, y, progress, TILES);
+    case "WALNUT":
+      return generateTreeStructure(x, y, progress, TILES);
     default:
-      return [{ x, y, tile: TILES.WHEAT_GROWING }]; // Fallback
+      return [{ x, y, tile: TILES.WHEAT_GROWING }];
   }
 }
 

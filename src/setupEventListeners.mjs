@@ -1,6 +1,7 @@
 import editHandler from "../deps/konami-code-js.mjs";
 
 import { copyToClipboard } from "./copyToClipboard.mjs";
+import { createSaveState } from "./createSaveState.mjs";
 import { gameConfig, gameState } from "./state.mjs";
 import { generateNewWorld } from "./generateWorld.mjs";
 import { getCurrentGameState } from "./getCurrentGameState.mjs";
@@ -257,7 +258,7 @@ export function setupDocumentEventListeners(gThis) {
   const saveCompressedBtn = doc.getElementById("saveCompressedState");
   saveCompressedBtn.addEventListener("click", async function () {
     try {
-      const saveState = gThis.spriteGarden.createSaveState(gThis);
+      const saveState = createSaveState(gThis);
       const stateJSON = JSON.stringify(saveState);
 
       await runCompress(gThis, stateJSON);

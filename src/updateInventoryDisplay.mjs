@@ -1,6 +1,6 @@
 // Update inventory display
 export function updateInventoryDisplay(doc, state) {
-  const seedTypes = ["wheat", "carrot", "mushroom", "cactus"];
+  const seedTypes = ["wheat", "carrot", "mushroom", "cactus", "walnut"];
   const materialTypes = [
     "dirt",
     "stone",
@@ -63,6 +63,7 @@ export function updateInventoryDisplay(doc, state) {
       CARROT: 1,
       MUSHROOM: 2,
       CACTUS: 3,
+      WALNUT: 4,
     };
     const buttonIndex = seedTypeMap[selectedSeed];
     if (buttonIndex !== undefined && seedButtons) {

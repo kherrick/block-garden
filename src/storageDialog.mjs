@@ -1,7 +1,8 @@
 import localForage from "../deps/localforage.mjs";
 
-import { compressToBinaryBlob } from "./compression.mjs";
 import { arrayBufferToBase64, base64toBlob } from "./conversion.mjs";
+import { compressToBinaryBlob } from "./compression.mjs";
+import { createSaveState } from "./createSaveState.mjs";
 import { loadSaveState } from "./loadSaveState.mjs";
 
 const STORAGE_KEY_PREFIX = "sprite-garden-save-";
@@ -324,7 +325,7 @@ export class StorageDialog {
 
     try {
       // Create save state
-      const saveState = this.gThis.spriteGarden.createSaveState(this.gThis);
+      const saveState = createSaveState(this.gThis);
       const stateJSON = JSON.stringify(saveState);
 
       // Compress to binary blob

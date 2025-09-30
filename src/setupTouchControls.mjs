@@ -1,4 +1,4 @@
-import { configSignals, stateSignals } from "./state.mjs";
+import { gameConfig, gameState } from "./state.mjs";
 import { getCurrentGameState } from "./getCurrentGameState.mjs";
 import { handleBreakBlock } from "./handleBreakBlock.mjs";
 import { handleFarmAction } from "./handleFarmAction.mjs";
@@ -21,16 +21,16 @@ export function setupTouchControls(gThis) {
       // Handle special actions
       if (key === "f") {
         handleFarmAction(
-          getCurrentGameState(stateSignals, configSignals),
+          getCurrentGameState(gameState, gameConfig),
           gThis.spriteGarden,
           gThis.document,
         );
       } else if (key === "r") {
         handleBreakBlock(
-          getCurrentGameState(stateSignals, configSignals),
+          getCurrentGameState(gameState, gameConfig),
           gThis.spriteGarden,
           gThis.document,
-          configSignals.breakMode.get(),
+          gameConfig.breakMode.get(),
         );
       }
     });
@@ -63,16 +63,16 @@ export function setupTouchControls(gThis) {
 
       if (key === "f") {
         handleFarmAction(
-          getCurrentGameState(stateSignals, configSignals),
+          getCurrentGameState(gameState, gameConfig),
           gThis.spriteGarden,
           gThis.document,
         );
       } else if (key === "r") {
         handleBreakBlock(
-          getCurrentGameState(stateSignals, configSignals),
+          getCurrentGameState(gameState, gameConfig),
           gThis.spriteGarden,
           gThis.document,
-          configSignals.breakMode.get(),
+          gameConfig.breakMode.get(),
         );
       }
     });

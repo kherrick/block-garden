@@ -1,4 +1,4 @@
-import { configSignals, stateSignals } from "./state.mjs";
+import { gameConfig, gameState } from "./state.mjs";
 import { generateNewWorld } from "./generateWorld.mjs";
 
 export const mapEditorState = {
@@ -98,11 +98,13 @@ function updateMapEditorUI(doc) {
       mapEditorControls.removeAttribute("hidden");
 
       // Disable fog in editor mode for better visibility
-      configSignals.fogMode.set("clear");
+      gameConfig.fogMode.set("clear");
 
       // Switch to normal view mode for editing
-      stateSignals.viewMode.set("normal");
+      gameState.viewMode.set("normal");
     } else {
+      gameConfig.fogMode.set("fog");
+
       mapEditorText.textContent = "Enable Editor";
       mapEditorControls.setAttribute("hidden", "");
     }
@@ -138,12 +140,12 @@ export function handleMapEditorClick(x, y) {
     return false;
   }
 
-  const TILE_SIZE = configSignals.TILE_SIZE.get();
-  const camera = stateSignals.camera.get();
+  const tileSize = gameConfig.TILE_SIZE.get();
+  const camera = gameState.camera.get();
 
   // Convert screen coordinates to world tile coordinates
-  const worldX = Math.floor((x + camera.x) / TILE_SIZE);
-  const worldY = Math.floor((y + camera.y) / TILE_SIZE);
+  const worldX = Math.floor((x + camera.x) / tileSize);
+  const worldY = Math.floor((y + camera.y) / tileSize);
 
   paintTiles(worldX, worldY);
 
@@ -162,11 +164,11 @@ export function handleMapEditorDrag(x, y, isStart = false) {
     mapEditorState.lastPaintedTile = null;
   }
 
-  const TILE_SIZE = configSignals.TILE_SIZE.get();
-  const camera = stateSignals.camera.get();
+  const tileSize = gameConfig.TILE_SIZE.get();
+  const camera = gameState.camera.get();
 
-  const worldX = Math.floor((x + camera.x) / TILE_SIZE);
-  const worldY = Math.floor((y + camera.y) / TILE_SIZE);
+  const worldX = Math.floor((x + camera.x) / tileSize);
+  const worldY = Math.floor((y + camera.y) / tileSize);
 
   // Only paint if we've moved to a different tile
   const currentTileKey = `${worldX},${worldY}`;
@@ -186,16 +188,16 @@ export function handleMapEditorDragEnd() {
 
 // Paint tiles at the specified location with current brush size
 function paintTiles(centerX, centerY) {
-  const TILES = configSignals.TILES;
-  const WORLD_WIDTH = configSignals.WORLD_WIDTH.get();
-  const WORLD_HEIGHT = configSignals.WORLD_HEIGHT.get();
-  const selectedTileType = TILES[mapEditorState.selectedTile];
+  const tiles = gameConfig.TILES;
+  const worldWidth = gameConfig.WORLD_WIDTH.get();
+  const worldHeight = gameConfig.WORLD_HEIGHT.get();
+  const selectedTileType = tiles[mapEditorState.selectedTile];
 
   if (!selectedTileType) {
     return;
   }
 
-  const currentWorld = stateSignals.world.get();
+  const currentWorld = gameState.world.get();
   const brushRadius = Math.floor(mapEditorState.brushSize / 2);
 
   let hasChanges = false;
@@ -206,7 +208,7 @@ function paintTiles(centerX, centerY) {
       const y = centerY + dy;
 
       // Check bounds
-      if (x < 0 || x >= WORLD_WIDTH || y < 0 || y >= WORLD_HEIGHT) {
+      if (x < 0 || x >= worldWidth || y < 0 || y >= worldHeight) {
         continue;
       }
 
@@ -230,28 +232,28 @@ function paintTiles(centerX, centerY) {
 
   if (hasChanges) {
     // Update the world state
-    stateSignals.world.set(currentWorld);
+    gameState.world.set(currentWorld);
   }
 }
 
 // Clear the entire map
 function clearMap() {
-  const currentWorld = stateSignals.world.get();
-  const TILES = configSignals.TILES;
-  const WORLD_WIDTH = configSignals.WORLD_WIDTH.get();
-  const WORLD_HEIGHT = configSignals.WORLD_HEIGHT.get();
+  const currentWorld = gameState.world.get();
+  const tiles = gameConfig.TILES;
+  const worldWidth = gameConfig.WORLD_WIDTH.get();
+  const worldHeight = gameConfig.WORLD_HEIGHT.get();
 
-  for (let x = 0; x < WORLD_WIDTH; x++) {
-    for (let y = 0; y < WORLD_HEIGHT; y++) {
-      currentWorld.setTile(x, y, TILES.AIR);
+  for (let x = 0; x < worldWidth; x++) {
+    for (let y = 0; y < worldHeight; y++) {
+      currentWorld.setTile(x, y, tiles.AIR);
     }
   }
 
-  stateSignals.world.set(currentWorld);
+  gameState.world.set(currentWorld);
 
   // Clear plant structures and timers
-  stateSignals.plantStructures.set({});
-  stateSignals.growthTimers.set({});
+  gameState.plantStructures.set({});
+  gameState.growthTimers.set({});
 }
 
 // Fill current visible layer with selected tile
@@ -260,26 +262,26 @@ function fillCurrentLayer() {
     return;
   }
 
-  const camera = stateSignals.camera.get();
-  const currentWorld = stateSignals.world.get();
-  const TILES = configSignals.TILES;
-  const TILE_SIZE = configSignals.TILE_SIZE.get();
-  const selectedTileType = TILES[mapEditorState.selectedTile];
-  const WORLD_HEIGHT = configSignals.WORLD_HEIGHT.get();
-  const WORLD_WIDTH = configSignals.WORLD_WIDTH.get();
+  const camera = gameState.camera.get();
+  const currentWorld = gameState.world.get();
+  const tiles = gameConfig.TILES;
+  const tileSize = gameConfig.TILE_SIZE.get();
+  const selectedTileType = tiles[mapEditorState.selectedTile];
+  const worldHeight = gameConfig.WORLD_HEIGHT.get();
+  const worldWidth = gameConfig.WORLD_WIDTH.get();
 
   // Get visible area
   const canvas = document.getElementById("canvas");
-  const startX = Math.floor(camera.x / TILE_SIZE);
-  const startY = Math.floor(camera.y / TILE_SIZE);
+  const startX = Math.floor(camera.x / tileSize);
+  const startY = Math.floor(camera.y / tileSize);
   const endX = Math.min(
-    WORLD_WIDTH,
-    startX + Math.ceil(canvas.width / TILE_SIZE),
+    worldWidth,
+    startX + Math.ceil(canvas.width / tileSize),
   );
 
   const endY = Math.min(
-    WORLD_HEIGHT,
-    startY + Math.ceil(canvas.height / TILE_SIZE),
+    worldHeight,
+    startY + Math.ceil(canvas.height / tileSize),
   );
 
   for (let x = Math.max(0, startX); x < endX; x++) {
@@ -288,7 +290,7 @@ function fillCurrentLayer() {
     }
   }
 
-  stateSignals.world.set(currentWorld);
+  gameState.world.set(currentWorld);
 }
 
 // Save the current map as a game state file
@@ -301,13 +303,13 @@ async function saveMapAsState() {
     saveState.state.exploredMap = {};
 
     // Set player to a safe spawn location
-    const WORLD_WIDTH = configSignals.WORLD_WIDTH.get();
-    const SURFACE_LEVEL = configSignals.SURFACE_LEVEL.get();
-    const TILE_SIZE = configSignals.TILE_SIZE.get();
+    const worldWidth = gameConfig.WORLD_WIDTH.get();
+    const surfaceLevel = gameConfig.SURFACE_LEVEL.get();
+    const tileSize = gameConfig.TILE_SIZE.get();
 
     saveState.state.player = {
-      x: (WORLD_WIDTH / 2) * TILE_SIZE,
-      y: SURFACE_LEVEL * TILE_SIZE - 50,
+      x: (worldWidth / 2) * tileSize,
+      y: surfaceLevel * tileSize - 50,
       width: 6,
       height: 8,
       velocityX: 0,

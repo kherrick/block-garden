@@ -1,12 +1,11 @@
-import { configSignals } from "./state.mjs";
+import { gameConfig } from "./state.mjs";
 
 // Add moss to cave surfaces
-export function addMossToCaves(world, WORLD_WIDTH, WORLD_HEIGHT, TILES) {
-  for (let x = 1; x < WORLD_WIDTH - 1; x++) {
-    for (let y = 1; y < WORLD_HEIGHT - 1; y++) {
-
+export function addMossToCaves(world, worldWidth, worldHeight, tiles) {
+  for (let x = 1; x < worldWidth - 1; x++) {
+    for (let y = 1; y < worldHeight - 1; y++) {
       // Only add moss to air tiles that are adjacent to stone/dirt walls
-      if (world.getTile(x, y) === TILES.AIR) {
+      if (world.getTile(x, y) === tiles.AIR) {
         // Check if there's a solid block adjacent (walls, ceiling, or floor)
         const hasAdjacentSolid = [
           world.getTile(x - 1, y), // left
@@ -18,10 +17,10 @@ export function addMossToCaves(world, WORLD_WIDTH, WORLD_HEIGHT, TILES) {
         // Only place moss 50% and only in underground areas
         if (
           hasAdjacentSolid &&
-          y > configSignals.SURFACE_LEVEL.get() + 5 &&
+          y > gameConfig.SURFACE_LEVEL.get() + 5 &&
           Math.random() < 0.5
         ) {
-          world.setTile(x, y, TILES.MOSS);
+          world.setTile(x, y, tiles.MOSS);
         }
       }
     }

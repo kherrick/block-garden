@@ -1,6 +1,6 @@
-import { configSignals } from "./state.mjs";
+import { gameConfig } from "./state.mjs";
 
-export class OptimizedWorld {
+export class WorldMap {
   constructor(width, height) {
     this.width = width;
     this.height = height;
@@ -11,8 +11,8 @@ export class OptimizedWorld {
   }
 
   initializeTileMapping() {
-    // Get tiles from config signals (they should be available)
-    const tiles = configSignals.TILES;
+    // Get tiles
+    const tiles = gameConfig.TILES;
 
     this.tileIdMap = new Map();
     this.reverseTileMap = new Map();
@@ -27,15 +27,19 @@ export class OptimizedWorld {
 
   getTile(x, y) {
     if (x < 0 || x >= this.width || y < 0 || y >= this.height) {
-      return configSignals.TILES.AIR;
+      return gameConfig.TILES.AIR;
     }
+
     const tileId = this.data[y * this.width + x];
-    return this.reverseTileMap.get(tileId) || configSignals.TILES.AIR;
+
+    return this.reverseTileMap.get(tileId) || gameConfig.TILES.AIR;
   }
 
   setTile(x, y, tile) {
     if (x < 0 || x >= this.width || y < 0 || y >= this.height) return;
+
     const tileId = this.tileIdMap.get(tile);
+
     if (tileId !== undefined) {
       this.data[y * this.width + x] = tileId;
     }
@@ -43,8 +47,8 @@ export class OptimizedWorld {
 
   // Convert from old array format
   static fromArray(oldWorld, width, height) {
-    const optimizedWorld = new OptimizedWorld(width, height);
-    const TILES = configSignals.TILES;
+    const worldMap = new WorldMap(width, height);
+    const tiles = gameConfig.TILES;
 
     for (let x = 0; x < width; x++) {
       if (!oldWorld[x]) continue;
@@ -52,15 +56,15 @@ export class OptimizedWorld {
         const savedTile = oldWorld[x][y];
 
         if (!savedTile) {
-          optimizedWorld.setTile(x, y, TILES.AIR);
+          worldMap.setTile(x, y, tiles.AIR);
 
           continue;
         }
 
-        // Find the matching tile from TILES by comparing properties
-        let matchingTile = TILES.AIR;
+        // Find the matching tile from tiles by comparing properties
+        let matchingTile = tiles.AIR;
 
-        for (const [_, tile] of Object.entries(TILES)) {
+        for (const [_, tile] of Object.entries(tiles)) {
           if (tile.id === savedTile.id) {
             matchingTile = tile;
 
@@ -68,11 +72,11 @@ export class OptimizedWorld {
           }
         }
 
-        optimizedWorld.setTile(x, y, matchingTile);
+        worldMap.setTile(x, y, matchingTile);
       }
     }
 
-    return optimizedWorld;
+    return worldMap;
   }
 
   // Convert to array format for saving
@@ -86,6 +90,7 @@ export class OptimizedWorld {
         arrayWorld[x][y] = this.getTile(x, y);
       }
     }
+
     return arrayWorld;
   }
 }

@@ -1,5 +1,5 @@
-import localForage from "../deps/localforage.mjs";
-import { configSignals, initState } from "./state.mjs";
+import storage from "../deps/localforage.mjs";
+import { gameConfig, initState } from "./state.mjs";
 import { gameLoop } from "./gameLoop.mjs";
 import { generateNewWorld } from "./generateWorld.mjs";
 import { initMapEditor } from "./mapEditor.mjs";
@@ -26,6 +26,7 @@ export async function initGame(doc, cnvs) {
   }
 
   initState(globalThis, version);
+  initMapEditor(doc);
 
   setupGlobalEventListeners(globalThis);
   setupDocumentEventListeners(globalThis);
@@ -34,29 +35,20 @@ export async function initGame(doc, cnvs) {
   setupTouchControls(globalThis);
   setupTileInspection(cnvs);
 
-  initMapEditor(doc);
-
-  resizeCanvas(doc, configSignals);
   generateNewWorld(doc);
+  resizeCanvas(doc, gameConfig);
 
-  localForage
+  storage
     .setItem("sprite-garden-version", version)
     .then((v) => console.log(`Sprite Garden version: ${v}`));
 
-  const FRICTION = configSignals.FRICTION.get();
-  const GRAVITY = configSignals.GRAVITY.get();
-  const MAX_FALL_SPEED = configSignals.MAX_FALL_SPEED.get();
-  const TILE_SIZE = configSignals.TILE_SIZE.get();
-  const WORLD_HEIGHT = configSignals.WORLD_HEIGHT.get();
-  const WORLD_WIDTH = configSignals.WORLD_WIDTH.get();
-
   gameLoop(
     globalThis,
-    FRICTION,
-    GRAVITY,
-    MAX_FALL_SPEED,
-    TILE_SIZE,
-    WORLD_HEIGHT,
-    WORLD_WIDTH,
+    gameConfig.FRICTION.get(),
+    gameConfig.GRAVITY.get(),
+    gameConfig.MAX_FALL_SPEED.get(),
+    gameConfig.TILE_SIZE.get(),
+    gameConfig.WORLD_HEIGHT.get(),
+    gameConfig.WORLD_WIDTH.get(),
   );
 }

@@ -1,11 +1,14 @@
-import { configSignals, stateSignals } from "./state.mjs";
+import editHandler from "../deps/konami-code-js.mjs";
+
 import { copyToClipboard } from "./copyToClipboard.mjs";
+import { gameConfig, gameState } from "./state.mjs";
 import { generateNewWorld } from "./generateWorld.mjs";
 import { getCurrentGameState } from "./getCurrentGameState.mjs";
 import { getRandomSeed } from "./getRandomSeed.mjs";
 import { handleBreakBlock } from "./handleBreakBlock.mjs";
 import { handleFarmAction } from "./handleFarmAction.mjs";
 import { handlePlaceBlock } from "./handlePlaceBlock.mjs";
+import { loadSaveState } from "./loadSaveState.mjs";
 import { resizeCanvas } from "./resizeCanvas.mjs";
 import { runCompress } from "./compression.mjs";
 import { selectMaterial } from "./selectMaterial.mjs";
@@ -14,13 +17,10 @@ import { showStorageDialog } from "./storageDialog.mjs";
 import { toggleBreakMode } from "./toggleBreakMode.mjs";
 import { toggleView } from "./toggleView.mjs";
 
-import editHandler from "../deps/konami-code-js.mjs";
-import { loadSaveState } from "./loadSaveState.mjs";
-
 export function setupGlobalEventListeners(gThis) {
   // Setup event listeners
   gThis.addEventListener("resize", () => {
-    resizeCanvas(gThis.document, configSignals);
+    resizeCanvas(gThis.document, gameConfig);
   });
 
   // Input handling
@@ -50,6 +50,7 @@ export function setupDocumentEventListeners(gThis) {
   // Edit
   new editHandler((handler) => {
     doc.getElementById("mapEditor").removeAttribute("hidden");
+    doc.querySelector('option[value="fullscreen"]').removeAttribute("hidden");
 
     handler.disable();
   });
@@ -97,16 +98,16 @@ export function setupDocumentEventListeners(gThis) {
     // Handle farming actions
     if (e.key.toLowerCase() === "f") {
       handleFarmAction(
-        getCurrentGameState(stateSignals, configSignals),
+        getCurrentGameState(gameState, gameConfig),
         gThis.spriteGarden,
         doc,
       );
     } else if (e.key.toLowerCase() === "r") {
       handleBreakBlock(
-        getCurrentGameState(stateSignals, configSignals),
+        getCurrentGameState(gameState, gameConfig),
         gThis.spriteGarden,
         doc,
-        configSignals.breakMode.get(),
+        gameConfig.breakMode.get(),
       );
     }
 
@@ -114,7 +115,7 @@ export function setupDocumentEventListeners(gThis) {
     const blockKeys = ["u", "i", "o", "j", "k", "l", "m", ",", "."];
     if (blockKeys.includes(e.key.toLowerCase())) {
       handlePlaceBlock(
-        getCurrentGameState(stateSignals, configSignals),
+        getCurrentGameState(gameState, gameConfig),
         gThis.spriteGarden,
         doc,
         e.key.toLowerCase(),
@@ -128,7 +129,7 @@ export function setupDocumentEventListeners(gThis) {
   document.querySelectorAll(".touch-btn.place-block").forEach((pb) => {
     pb.addEventListener("touchstart", () =>
       handlePlaceBlock(
-        getCurrentGameState(stateSignals, configSignals),
+        getCurrentGameState(gameState, gameConfig),
         gThis.spriteGarden,
         doc,
         pb.dataset.key,
@@ -137,7 +138,7 @@ export function setupDocumentEventListeners(gThis) {
 
     pb.addEventListener("click", () =>
       handlePlaceBlock(
-        getCurrentGameState(stateSignals, configSignals),
+        getCurrentGameState(gameState, gameConfig),
         gThis.spriteGarden,
         doc,
         pb.dataset.key,
@@ -201,12 +202,12 @@ export function setupDocumentEventListeners(gThis) {
     const fogModeText = doc.getElementById("fogModeText");
 
     if (fogModeText.textContent === "Clear") {
-      configSignals.fogMode.set("fog");
+      gameConfig.fogMode.set("fog");
 
       return;
     }
 
-    configSignals.fogMode.set("clear");
+    gameConfig.fogMode.set("clear");
   });
 
   function handleWorldStateButton() {
@@ -366,9 +367,9 @@ export function setupElementEventListeners(doc) {
   const resolutionSelectEl = doc.getElementById("resolutionSelect");
   if (resolutionSelectEl) {
     resolutionSelectEl.addEventListener("change", (e) => {
-      configSignals.currentResolution.set(e.currentTarget.value);
+      gameConfig.currentResolution.set(e.currentTarget.value);
 
-      resizeCanvas(doc, configSignals);
+      resizeCanvas(doc, gameConfig);
     });
   }
 
@@ -384,13 +385,13 @@ export function setupElementEventListeners(doc) {
 
   // Seed button event listeners
   doc.querySelectorAll(".seed-btn").forEach((seedBtn) => {
-    seedBtn.addEventListener("click", (e) => selectSeed(doc, stateSignals, e));
+    seedBtn.addEventListener("click", (e) => selectSeed(doc, gameState, e));
   });
 
   // Material button event listeners
   doc.querySelectorAll(".material-btn").forEach((materialBtn) => {
     materialBtn.addEventListener("click", (e) =>
-      selectMaterial(doc, stateSignals, e),
+      selectMaterial(doc, gameState, e),
     );
   });
 

@@ -1,9 +1,10 @@
 import { Signal } from "../deps/signal.mjs";
 
 import { createSaveState } from "./createSaveState.mjs";
+import { loadSaveState } from "./loadSaveState.mjs";
+
 import { getBiome } from "./getBiome.mjs";
 import { getRandomSeed } from "./getRandomSeed.mjs";
-import { loadSaveState } from "./loadSaveState.mjs";
 
 const getT = (v) => ({
   crop: false,
@@ -27,7 +28,7 @@ if (params.has("seed")) {
 }
 
 // Create reactive signals for all configuration and state
-export const configSignals = {
+export const gameConfig = {
   version: new Signal.State(""),
   worldSeed: new Signal.State(INITIAL_WORLD_SEED),
   currentResolution: new Signal.State("400"),
@@ -123,9 +124,9 @@ export const configSignals = {
   },
 };
 
-export const stateSignals = {
+export const gameState = {
   // Tracks which tiles have been explored for map fog
-  exploredMap: new Signal.State({}),
+  exploredMap: {},
   seedInventory: new Signal.State({
     WHEAT: 5,
     CARROT: 3,
@@ -179,20 +180,20 @@ export const stateSignals = {
 // Create computed signals for derived values
 export const computedSignals = {
   totalSeeds: new Signal.Computed(() => {
-    const inventory = stateSignals.seedInventory.get();
+    const inventory = gameState.seedInventory.get();
 
     return Object.values(inventory).reduce((sum, count) => sum + count, 0);
   }),
 
   totalMaterials: new Signal.Computed(() => {
-    const inventory = stateSignals.materialsInventory.get();
+    const inventory = gameState.materialsInventory.get();
 
     return Object.values(inventory).reduce((sum, count) => sum + count, 0);
   }),
 
   playerTilePosition: new Signal.Computed(() => {
-    const player = stateSignals.player.get();
-    const tileSize = configSignals.TILE_SIZE.get();
+    const player = gameState.player.get();
+    const tileSize = gameConfig.TILE_SIZE.get();
 
     return {
       x: Math.floor((player.x + player.width / 2) / tileSize),
@@ -202,11 +203,11 @@ export const computedSignals = {
 
   currentBiome: new Signal.Computed(() => {
     const playerPos = computedSignals.playerTilePosition.get();
-    const biomes = configSignals.BIOMES;
+    const biomes = gameConfig.BIOMES;
 
     // getBiome might expect an x coordinate; keep call the same but guard result
     return (
-      getBiome(playerPos.x, biomes, configSignals.worldSeed.get()) || {
+      getBiome(playerPos.x, biomes, gameConfig.worldSeed.get()) || {
         name: "Unknown",
         trees: false,
         crops: [],
@@ -216,7 +217,7 @@ export const computedSignals = {
 
   currentDepth: new Signal.Computed(() => {
     const playerPos = computedSignals.playerTilePosition.get();
-    const surfaceLevel = configSignals.SURFACE_LEVEL.get();
+    const surfaceLevel = gameConfig.SURFACE_LEVEL.get();
 
     if (playerPos.y > surfaceLevel) {
       const depthLevel = playerPos.y - surfaceLevel;
@@ -233,45 +234,45 @@ export const computedSignals = {
 };
 
 export function updateState(key, updater) {
-  const current = stateSignals[key]?.get();
+  const current = gameState[key]?.get();
 
   if (current !== undefined) {
-    stateSignals[key].set(updater(current));
+    gameState[key].set(updater(current));
   }
 }
 
 export function updateConfig(key, updater) {
-  const current = configSignals[key]?.get();
+  const current = gameConfig[key]?.get();
 
   if (current !== undefined) {
-    configSignals[key].set(updater(current));
+    gameConfig[key].set(updater(current));
   }
 }
 
 export function setConfig(key, value) {
-  return configSignals[key]?.set(value);
+  return gameConfig[key]?.set(value);
 }
 
 export function getConfig(key) {
-  return configSignals[key]?.get();
+  return gameConfig[key]?.get();
 }
 
 export function setState(key, value) {
-  return stateSignals[key]?.set(value);
+  return gameState[key]?.set(value);
 }
 
 export function getState(key) {
-  return stateSignals[key]?.get();
+  return gameState[key]?.get();
 }
 
 export function initState(gThis, version) {
-  configSignals.version.set(version);
+  gameConfig.version.set(version);
 
   // Expose reactive state through globalThis
   gThis.spriteGarden = {
     ...gThis?.spriteGarden,
-    config: configSignals,
-    state: stateSignals,
+    config: gameConfig,
+    state: gameState,
     computed: computedSignals,
     // Helper methods to get/set values
     setConfig,
@@ -280,12 +281,12 @@ export function initState(gThis, version) {
     setState,
     getState,
     updateState,
-    loadSaveState,
     createSaveState,
+    loadSaveState,
   };
 
   // Initialize biomes after TILES is defined
-  const { TILES, BIOMES } = configSignals;
+  const { TILES, BIOMES } = gameConfig;
   BIOMES.FOREST.surfaceTile = TILES.GRASS;
   BIOMES.FOREST.subTile = TILES.DIRT;
   BIOMES.FOREST.crops = [TILES.WHEAT, TILES.CARROT];

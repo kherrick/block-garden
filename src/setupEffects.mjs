@@ -1,28 +1,28 @@
 import { effect } from "../deps/signal.mjs";
 
-import { computedSignals, configSignals, stateSignals } from "./state.mjs";
+import { computedSignals, gameConfig, gameState } from "./state.mjs";
 import { updateInventoryDisplay } from "./updateInventoryDisplay.mjs";
 
 export function setupEffects(doc) {
   // Set up reactive effects for UI updates
   effect(() => {
     // Auto-update inventory display when seed inventory changes
-    const inventory = stateSignals.seedInventory.get();
-    updateInventoryDisplay(doc, stateSignals);
+    const inventory = gameState.seedInventory.get();
+    updateInventoryDisplay(doc, gameState);
   });
 
   effect(() => {
     // Auto-update inventory display when materials inventory changes
-    const materialsInventory = stateSignals.materialsInventory.get();
-    updateInventoryDisplay(doc, stateSignals);
+    const materialsInventory = gameState.materialsInventory.get();
+    updateInventoryDisplay(doc, gameState);
   });
 
   effect(() => {
     // Auto-update UI when computed values change
     const biome = computedSignals.currentBiome.get() || { name: "Unknown" };
     const depth = computedSignals.currentDepth.get();
-    const gameTime = stateSignals.gameTime.get();
-    const viewMode = stateSignals.viewMode.get();
+    const gameTime = gameState.gameTime.get();
+    const viewMode = gameState.viewMode.get();
 
     const currentBiomeEl = doc.getElementById("currentBiome");
     if (currentBiomeEl) currentBiomeEl.textContent = biome.name;
@@ -42,7 +42,7 @@ export function setupEffects(doc) {
 
   effect(() => {
     // Auto-update fogMode mode display
-    const fogMode = configSignals.fogMode.get();
+    const fogMode = gameConfig.fogMode.get();
 
     const fogModeTextEl = doc.getElementById("fogModeText");
     if (fogModeTextEl) {
@@ -52,7 +52,7 @@ export function setupEffects(doc) {
 
   effect(() => {
     // Auto-update break mode display
-    const breakMode = configSignals.breakMode.get();
+    const breakMode = gameConfig.breakMode.get();
 
     const breakModeTextEl = doc.getElementById("breakModeText");
     if (breakModeTextEl) {
@@ -73,7 +73,7 @@ export function setupEffects(doc) {
 
   effect(() => {
     // Auto-update selected seed display
-    const selectedSeed = stateSignals.selectedSeedType.get();
+    const selectedSeed = gameState.selectedSeedType.get();
 
     const selectedSeedEl = doc.getElementById("selectedSeed");
     if (selectedSeedEl) {
@@ -83,7 +83,7 @@ export function setupEffects(doc) {
 
   effect(() => {
     // Auto-update selected material display
-    const selectedMaterial = stateSignals.selectedMaterialType.get();
+    const selectedMaterial = gameState.selectedMaterialType.get();
 
     const selectedMaterialEl = doc.getElementById("selectedMaterial");
     if (selectedMaterialEl) {

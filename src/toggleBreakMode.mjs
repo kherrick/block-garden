@@ -1,7 +1,7 @@
-import { configSignals } from "./state.mjs";
+import { gameConfig } from "./state.mjs";
 
 export function toggleBreakMode() {
-  const currentMode = configSignals.breakMode.get();
+  const currentMode = gameConfig.breakMode.get();
 
-  configSignals.breakMode.set(currentMode === "regular" ? "extra" : "regular");
+  gameConfig.breakMode.set(currentMode === "regular" ? "extra" : "regular");
 }

@@ -1,4 +1,4 @@
-import { configSignals, stateSignals } from "./state.mjs";
+import { gameConfig, gameState } from "./state.mjs";
 import { getCurrentGameState } from "./getCurrentGameState.mjs";
 import { render } from "./render.mjs";
 import { updateCrops } from "./updateCrops.mjs";
@@ -27,17 +27,14 @@ export function gameLoop(
     WORLD_WIDTH,
   );
 
-  updateCrops(
-    getCurrentGameState(stateSignals, configSignals),
-    gThis.spriteGarden,
-  );
+  updateCrops(getCurrentGameState(gameState, gameConfig), gThis.spriteGarden);
 
   render(canvas);
 
-  updateUI(gThis.document, getCurrentGameState(stateSignals, configSignals));
+  updateUI(gThis.document, getCurrentGameState(gameState, gameConfig));
 
   // Increment game time every frame (we store seconds as fractional)
-  stateSignals.gameTime.set(stateSignals.gameTime.get() + 1 / 60);
+  gameState.gameTime.set(gameState.gameTime.get() + 1 / 60);
 
   requestAnimationFrame(() =>
     gameLoop(

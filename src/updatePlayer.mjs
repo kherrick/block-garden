@@ -1,25 +1,25 @@
 import { checkCollision } from "./checkCollision.mjs";
-import { configSignals, stateSignals } from "./state.mjs";
+import { gameState } from "./state.mjs";
 import { isKeyPressed } from "./isKeyPressed.mjs";
 
 // Update player physics
 export function updatePlayer(
   gThis,
-  FRICTION,
-  GRAVITY,
-  MAX_FALL_SPEED,
-  TILE_SIZE,
-  WORLD_HEIGHT,
-  WORLD_WIDTH,
+  friction,
+  gravity,
+  maxFallSpeed,
+  tileSize,
+  worldHeight,
+  worldWidth,
 ) {
-  const player = stateSignals.player.get();
-  const camera = stateSignals.camera.get();
+  const player = gameState.player.get();
+  const camera = gameState.camera.get();
 
   const updatedPlayer = player;
 
-  updatedPlayer.velocityY += GRAVITY;
-  if (updatedPlayer.velocityY > MAX_FALL_SPEED) {
-    updatedPlayer.velocityY = MAX_FALL_SPEED;
+  updatedPlayer.velocityY += gravity;
+  if (updatedPlayer.velocityY > maxFallSpeed) {
+    updatedPlayer.velocityY = maxFallSpeed;
   }
 
   // Handle horizontal movement and track direction
@@ -73,7 +73,7 @@ export function updatePlayer(
       updatedPlayer.velocityX = targetVelocity;
     }
   } else {
-    updatedPlayer.velocityX *= FRICTION;
+    updatedPlayer.velocityX *= friction;
     updatedPlayer.lastDirection = 0;
   }
 
@@ -133,11 +133,11 @@ export function updatePlayer(
   // Keep player in world bounds
   updatedPlayer.x = Math.max(
     0,
-    Math.min(updatedPlayer.x, WORLD_WIDTH * TILE_SIZE - updatedPlayer.width),
+    Math.min(updatedPlayer.x, worldWidth * tileSize - updatedPlayer.width),
   );
   updatedPlayer.y = Math.max(
     0,
-    Math.min(updatedPlayer.y, WORLD_HEIGHT * TILE_SIZE - updatedPlayer.height),
+    Math.min(updatedPlayer.y, worldHeight * tileSize - updatedPlayer.height),
   );
 
   // Update camera to follow player
@@ -155,14 +155,14 @@ export function updatePlayer(
   // Keep camera in bounds
   updatedCamera.x = Math.max(
     0,
-    Math.min(updatedCamera.x, WORLD_WIDTH * TILE_SIZE - canvas.width),
+    Math.min(updatedCamera.x, worldWidth * tileSize - canvas.width),
   );
   updatedCamera.y = Math.max(
     0,
-    Math.min(updatedCamera.y, WORLD_HEIGHT * TILE_SIZE - canvas.height),
+    Math.min(updatedCamera.y, worldHeight * tileSize - canvas.height),
   );
 
-  // Update the signals
-  stateSignals.player.set(updatedPlayer);
-  stateSignals.camera.set(updatedCamera);
+  // Set player and camera state
+  gameState.player.set(updatedPlayer);
+  gameState.camera.set(updatedCamera);
 }

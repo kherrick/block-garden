@@ -1,17 +1,17 @@
-import { configSignals, stateSignals } from "./state.mjs";
+import { gameConfig, gameState } from "./state.mjs";
 
 export function createCaveRoom(centerX, centerY, radius) {
-  const WORLD_WIDTH = configSignals.WORLD_WIDTH.get();
-  const WORLD_HEIGHT = configSignals.WORLD_HEIGHT.get();
-  const TILES = configSignals.TILES;
-  const world = stateSignals.world.get();
+  const worldWidth = gameConfig.WORLD_WIDTH.get();
+  const worldHeight = gameConfig.WORLD_HEIGHT.get();
+  const tiles = gameConfig.TILES;
+  const world = gameState.world.get();
 
   for (let x = centerX - radius; x <= centerX + radius; x++) {
     for (let y = centerY - radius; y <= centerY + radius; y++) {
-      if (x >= 0 && x < WORLD_WIDTH && y >= 0 && y < WORLD_HEIGHT) {
+      if (x >= 0 && x < worldWidth && y >= 0 && y < worldHeight) {
         const distance = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
-        if (distance <= radius && world.getTile(x, y) !== TILES.BEDROCK) {
-          world.setTile(x, y, TILES.AIR);
+        if (distance <= radius && world.getTile(x, y) !== tiles.BEDROCK) {
+          world.setTile(x, y, tiles.AIR);
         }
       }
     }
@@ -19,10 +19,10 @@ export function createCaveRoom(centerX, centerY, radius) {
 }
 
 export function createCaveTunnel(startX, startY, angle, length, width) {
-  const WORLD_WIDTH = configSignals.WORLD_WIDTH.get();
-  const WORLD_HEIGHT = configSignals.WORLD_HEIGHT.get();
-  const TILES = configSignals.TILES;
-  const world = stateSignals.world.get();
+  const worldWidth = gameConfig.WORLD_WIDTH.get();
+  const worldHeight = gameConfig.WORLD_HEIGHT.get();
+  const tiles = gameConfig.TILES;
+  const world = gameState.world.get();
 
   let currentX = startX;
   let currentY = startY;
@@ -37,10 +37,10 @@ export function createCaveTunnel(startX, startY, angle, length, width) {
         const x = Math.floor(currentX + dx);
         const y = Math.floor(currentY + dy);
 
-        if (x >= 0 && x < WORLD_WIDTH && y >= 0 && y < WORLD_HEIGHT) {
+        if (x >= 0 && x < worldWidth && y >= 0 && y < worldHeight) {
           const distance = Math.sqrt(dx * dx + dy * dy);
-          if (distance <= width && world.getTile(x, y) !== TILES.BEDROCK) {
-            world.setTile(x, y, TILES.AIR);
+          if (distance <= width && world.getTile(x, y) !== tiles.BEDROCK) {
+            world.setTile(x, y, tiles.AIR);
           }
         }
       }
@@ -58,20 +58,19 @@ export function createCaveTunnel(startX, startY, angle, length, width) {
 
 // Cave generation functions
 export function generateCaves() {
-  const WORLD_WIDTH = configSignals.WORLD_WIDTH.get();
-  const WORLD_HEIGHT = configSignals.WORLD_HEIGHT.get();
-  const SURFACE_LEVEL = configSignals.SURFACE_LEVEL.get();
-  const TILES = configSignals.TILES;
-  const world = stateSignals.world.get();
+  const worldWidth = gameConfig.WORLD_WIDTH.get();
+  const worldHeight = gameConfig.WORLD_HEIGHT.get();
+  const surfaceLevel = gameConfig.SURFACE_LEVEL.get();
+
   const caveSeeds = [];
 
   for (let i = 0; i < 25; i++) {
     caveSeeds.push({
-      x: Math.floor(Math.random() * WORLD_WIDTH),
+      x: Math.floor(Math.random() * worldWidth),
       y:
-        SURFACE_LEVEL +
+        surfaceLevel +
         5 +
-        Math.floor(Math.random() * (WORLD_HEIGHT - SURFACE_LEVEL - 15)),
+        Math.floor(Math.random() * (worldHeight - surfaceLevel - 15)),
       size: 3 + Math.floor(Math.random() * 8),
       branches: 1 + Math.floor(Math.random() * 3),
     });
@@ -97,11 +96,11 @@ export function generateCaves() {
   });
 
   for (let i = 0; i < 50; i++) {
-    const x = Math.floor(Math.random() * WORLD_WIDTH);
+    const x = Math.floor(Math.random() * worldWidth);
     const y =
-      SURFACE_LEVEL +
+      surfaceLevel +
       3 +
-      Math.floor(Math.random() * (WORLD_HEIGHT - SURFACE_LEVEL - 10));
+      Math.floor(Math.random() * (worldHeight - surfaceLevel - 10));
 
     const size = 1 + Math.floor(Math.random() * 3);
 

@@ -1,8 +1,8 @@
 // Resize canvas based on resolution setting
-export function resizeCanvas(doc, configSignals) {
+export function resizeCanvas(doc, gameConfig) {
   const cnvs = doc?.getElementById("canvas");
   if (cnvs) {
-    const currentResolution = configSignals.currentResolution.get();
+    const currentResolution = gameConfig.currentResolution?.get();
 
     if (currentResolution === "fullscreen") {
       // Fullscreen mode
@@ -17,8 +17,8 @@ export function resizeCanvas(doc, configSignals) {
       cnvs.style.width = "100vw";
       cnvs.style.height = "100vh";
 
-      configSignals.canvasScale.set(1);
-      configSignals.fogScale.set(36);
+      gameConfig.canvasScale.set(1);
+      gameConfig.fogScale.set(36);
 
       return;
     }
@@ -35,12 +35,15 @@ export function resizeCanvas(doc, configSignals) {
 
     doc.body.classList.add(`resolution-${size}`);
 
-    if (currentResolution === 800) {
-      configSignals.fogScale.set(24);
+    if (currentResolution === "800") {
+      gameConfig.fogScale.set(24);
+      gameConfig.canvasScale.set(size / currentResolution);
+
+      return;
     }
 
     // Updated scale calculation
-    configSignals.fogScale.set(12);
-    configSignals.canvasScale.set(size / currentResolution);
+    gameConfig.fogScale.set(12);
+    gameConfig.canvasScale.set(size / currentResolution);
   }
 }

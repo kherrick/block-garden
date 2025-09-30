@@ -1,5 +1,6 @@
+import { initializeFog } from "./fogMap.mjs";
 import { generateNewWorld } from "./generateWorld.mjs";
-import { OptimizedWorld } from "./optimizedWorld.mjs";
+import { WorldMap } from "./worldMap.mjs";
 
 export function loadSaveState(gThis, saveState) {
   // Restore config first
@@ -9,33 +10,34 @@ export function loadSaveState(gThis, saveState) {
     }
   }
 
-  // Restore state with special handling for world
+  // Restore state with special handling for worldMap and fogMap
   for (const key in saveState.state) {
+    if (key === "exploredMap") {
+      initializeFog(saveState.state.exploredMap);
+    }
+
     if (key === "world") {
       const worldData = saveState.state[key];
 
       if (worldData && Array.isArray(worldData) && worldData.length > 0) {
-        // Convert array to OptimizedWorld
-        const WORLD_WIDTH = gThis.spriteGarden.config.WORLD_WIDTH.get();
-        const WORLD_HEIGHT = gThis.spriteGarden.config.WORLD_HEIGHT.get();
-        const TILES = gThis.spriteGarden.config.TILES;
+        const worldWidth = saveState.config.WORLD_WIDTH;
+        const worldHeight = saveState.config.WORLD_HEIGHT;
 
-        console.log(`Converting world: ${WORLD_WIDTH}x${WORLD_HEIGHT}`);
+        console.log(`Converting world: ${worldWidth}x${worldHeight}`);
 
-        // Create OptimizedWorld with proper configuration and convert the world data
-        const optimizedWorld = OptimizedWorld.fromArray(
-          worldData,
-          WORLD_WIDTH,
-          WORLD_HEIGHT,
-        );
+        // Create WorldMap with proper configuration and convert the world data
+        const worldMap = WorldMap.fromArray(worldData, worldWidth, worldHeight);
+
+        // get tiles from config
+        const tiles = gThis.spriteGarden.config.TILES;
 
         // Verify the conversion
         let tileCount = 0;
-        for (let x = 0; x < WORLD_WIDTH; x++) {
-          for (let y = 0; y < WORLD_HEIGHT; y++) {
-            const tile = optimizedWorld.getTile(x, y);
+        for (let x = 0; x < worldWidth; x++) {
+          for (let y = 0; y < worldHeight; y++) {
+            const tile = worldMap.getTile(x, y);
 
-            if (tile && tile !== TILES.AIR) {
+            if (tile && tile !== tiles.AIR) {
               tileCount++;
             }
           }
@@ -43,11 +45,13 @@ export function loadSaveState(gThis, saveState) {
 
         console.log(`Converted world contains ${tileCount} non-air tiles`);
 
-        gThis.spriteGarden.state.world.set(optimizedWorld);
+        gThis.spriteGarden.config.isFogScaled.set(false);
+        gThis.spriteGarden.state.world.set(worldMap);
 
         console.log("World converted successfully");
       } else {
         console.error("Invalid world data in save state:", worldData);
+
         // Generate new world as fallback
         generateNewWorld(gThis.document);
       }

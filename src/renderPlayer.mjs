@@ -1,9 +1,9 @@
-import { stateSignals } from "./state.mjs";
+import { gameState } from "./state.mjs";
 
 // Render player
 export function renderPlayer(ctx) {
-  const player = stateSignals.player.get();
-  const camera = stateSignals.camera.get();
+  const player = gameState.player.get();
+  const camera = gameState.camera.get();
 
   const screenX = player.x - camera.x;
   const screenY = player.y - camera.y;

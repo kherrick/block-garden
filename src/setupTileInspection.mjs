@@ -1,4 +1,4 @@
-import { configSignals, stateSignals } from "./state.mjs";
+import { gameConfig, gameState } from "./state.mjs";
 import {
   handleMapEditorClick,
   handleMapEditorDrag,
@@ -18,7 +18,7 @@ function getPointerPosition(e, el) {
     clientY = e.clientY;
   }
 
-  const scale = configSignals.canvasScale.get();
+  const scale = gameConfig.canvasScale.get();
   const scaleX = (el.width / rect.width) * scale;
   const scaleY = (el.height / rect.height) * scale;
 
@@ -29,33 +29,33 @@ function getPointerPosition(e, el) {
 }
 
 function inspectTile(e, el) {
-  const TILE_SIZE = configSignals.TILE_SIZE.get();
-  const WORLD_WIDTH = configSignals.WORLD_WIDTH.get();
-  const WORLD_HEIGHT = configSignals.WORLD_HEIGHT.get();
-  const TILES = configSignals.TILES;
-  const world = stateSignals.world.get() || [];
-  const camera = stateSignals.camera.get();
+  const camera = gameState.camera.get();
+  const tiles = gameConfig.TILES;
+  const tileSize = gameConfig.TILE_SIZE.get();
+  const world = gameState.world.get();
+  const worldHeight = gameConfig.WORLD_HEIGHT.get();
+  const worldWidth = gameConfig.WORLD_WIDTH.get();
 
   const pos = getPointerPosition(e, el);
-  const worldX = Math.floor((pos.x + camera.x) / TILE_SIZE);
-  const worldY = Math.floor((pos.y + camera.y) / TILE_SIZE);
+  const worldX = Math.floor((pos.x + camera.x) / tileSize);
+  const worldY = Math.floor((pos.y + camera.y) / tileSize);
 
   if (
     worldX >= 0 &&
-    worldX < WORLD_WIDTH &&
+    worldX < worldWidth &&
     worldY >= 0 &&
-    worldY < WORLD_HEIGHT
+    worldY < worldHeight
   ) {
-    // Use the OptimizedWorld getTile method instead of array access
+    // Use the WorldMap getTile method instead of array access
     const tile = world.getTile ? world.getTile(worldX, worldY) : null;
 
-    if (!tile || tile === TILES.AIR) {
+    if (!tile || tile === tiles.AIR) {
       el.title = `Tile: AIR (${worldX}, ${worldY})`;
       return;
     }
 
     const tileName =
-      Object.keys(TILES).find((key) => TILES[key] === tile) || "Custom";
+      Object.keys(tiles).find((key) => tiles[key] === tile) || "Custom";
     el.title = `Tile: ${tileName} (${worldX}, ${worldY})`;
   }
 }

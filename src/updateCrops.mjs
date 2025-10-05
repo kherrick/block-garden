@@ -160,6 +160,329 @@ function generateCactusStructure(x, y, progress, tiles) {
   return blocks;
 }
 
+function generateBerryBushStructure(x, y, progress, tiles) {
+  const blocks = [];
+
+  // Early stage
+  if (progress < 0.1) {
+    blocks.push({ x, y, tile: tiles.BERRY_BUSH_GROWING });
+    return blocks;
+  }
+
+  const maxHeight = 3;
+  const currentHeight = Math.max(1, Math.ceil(maxHeight * progress));
+
+  // Central branches
+  for (let i = 0; i < currentHeight; i++) {
+    blocks.push({ x, y: y - i, tile: tiles.BERRY_BUSH_BRANCH });
+  }
+
+  // Add leaves when growing
+  if (progress > 0.3) {
+    const topY = y - currentHeight;
+    const leafRadius = Math.min(2, Math.ceil((progress - 0.3) * 3));
+
+    for (let dx = -leafRadius; dx <= leafRadius; dx++) {
+      for (let dy = 0; dy <= leafRadius; dy++) {
+        const leafX = x + dx;
+        const leafY = topY + dy;
+        const distance = Math.abs(dx) + Math.abs(dy);
+
+        if (distance <= leafRadius && distance > 0) {
+          blocks.push({ x: leafX, y: leafY, tile: tiles.BERRY_BUSH_LEAVES });
+        }
+      }
+    }
+  }
+
+  // Add berries when mature
+  if (progress > 0.8) {
+    const topY = y - currentHeight;
+    if (Math.random() < 0.6)
+      blocks.push({ x: x - 1, y: topY + 1, tile: tiles.BERRY_BUSH_BERRIES });
+    if (Math.random() < 0.6)
+      blocks.push({ x: x + 1, y: topY + 1, tile: tiles.BERRY_BUSH_BERRIES });
+    if (Math.random() < 0.6)
+      blocks.push({ x: x - 1, y: topY, tile: tiles.BERRY_BUSH_BERRIES });
+    if (Math.random() < 0.6)
+      blocks.push({ x: x + 1, y: topY, tile: tiles.BERRY_BUSH_BERRIES });
+  }
+
+  return blocks;
+}
+
+function generateBambooStructure(x, y, progress, tiles) {
+  const blocks = [];
+
+  // Early stage
+  if (progress < 0.1) {
+    blocks.push({ x, y, tile: tiles.BAMBOO_GROWING });
+    return blocks;
+  }
+
+  const maxHeight = 7;
+  const currentHeight = Math.max(1, Math.ceil(maxHeight * progress));
+
+  // Build bamboo stalk with joints
+  for (let i = 0; i < currentHeight; i++) {
+    // Every 2 blocks is a joint
+    if (i % 2 === 0) {
+      blocks.push({ x, y: y - i, tile: tiles.BAMBOO_JOINT });
+    } else {
+      blocks.push({ x, y: y - i, tile: tiles.BAMBOO_STALK });
+    }
+  }
+
+  // Add leaves at top when more grown
+  if (progress > 0.5) {
+    const topY = y - currentHeight;
+    blocks.push({ x: x - 1, y: topY, tile: tiles.BAMBOO_LEAVES });
+    blocks.push({ x: x + 1, y: topY, tile: tiles.BAMBOO_LEAVES });
+
+    if (progress > 0.7) {
+      blocks.push({ x: x - 1, y: topY + 1, tile: tiles.BAMBOO_LEAVES });
+      blocks.push({ x: x + 1, y: topY + 1, tile: tiles.BAMBOO_LEAVES });
+    }
+  }
+
+  return blocks;
+}
+
+function generateSunflowerStructure(x, y, progress, tiles) {
+  const blocks = [];
+
+  // Early stage
+  if (progress < 0.1) {
+    blocks.push({ x, y, tile: tiles.SUNFLOWER_GROWING });
+    return blocks;
+  }
+
+  const maxHeight = 5;
+  const currentHeight = Math.max(1, Math.ceil(maxHeight * progress));
+
+  // Stem
+  for (let i = 0; i < currentHeight; i++) {
+    blocks.push({ x, y: y - i, tile: tiles.SUNFLOWER_STEM });
+  }
+
+  // Add leaves along stem
+  if (progress > 0.3) {
+    const leafSpacing = 2;
+    for (let i = leafSpacing; i < currentHeight; i += leafSpacing) {
+      if (i % 2 === 0) {
+        blocks.push({ x: x - 1, y: y - i, tile: tiles.SUNFLOWER_LEAVES });
+      } else {
+        blocks.push({ x: x + 1, y: y - i, tile: tiles.SUNFLOWER_LEAVES });
+      }
+    }
+  }
+
+  // Flower head at top when mature
+  if (progress > 0.7) {
+    const topY = y - currentHeight;
+    blocks.push({ x, y: topY, tile: tiles.SUNFLOWER_CENTER });
+
+    if (progress > 0.85) {
+      // Add petals around center
+      blocks.push({ x: x - 1, y: topY, tile: tiles.SUNFLOWER_PETALS });
+      blocks.push({ x: x + 1, y: topY, tile: tiles.SUNFLOWER_PETALS });
+      blocks.push({ x, y: topY - 1, tile: tiles.SUNFLOWER_PETALS });
+      blocks.push({ x, y: topY + 1, tile: tiles.SUNFLOWER_PETALS });
+    }
+  }
+
+  return blocks;
+}
+
+function generateCornStructure(x, y, progress, tiles) {
+  const blocks = [];
+
+  // Early stage
+  if (progress < 0.1) {
+    blocks.push({ x, y, tile: tiles.CORN_GROWING });
+    return blocks;
+  }
+
+  const maxHeight = 4;
+  const currentHeight = Math.max(1, Math.ceil(maxHeight * progress));
+
+  // Stalk
+  for (let i = 0; i < currentHeight; i++) {
+    blocks.push({ x, y: y - i, tile: tiles.CORN_STALK });
+  }
+
+  // Add leaves as it grows
+  if (progress > 0.4) {
+    for (let i = 1; i < currentHeight; i++) {
+      if (i % 2 === 1) {
+        blocks.push({ x: x - 1, y: y - i, tile: tiles.CORN_LEAVES });
+      } else {
+        blocks.push({ x: x + 1, y: y - i, tile: tiles.CORN_LEAVES });
+      }
+    }
+  }
+
+  // Corn ear appears when mature
+  if (progress > 0.7) {
+    const earY = y - Math.floor(currentHeight * 0.6);
+    blocks.push({ x: x + 1, y: earY, tile: tiles.CORN_EAR });
+
+    if (progress > 0.85) {
+      blocks.push({ x: x + 1, y: earY - 1, tile: tiles.CORN_SILK });
+    }
+  }
+
+  return blocks;
+}
+
+function generatePineTreeStructure(x, y, progress, tiles) {
+  const blocks = [];
+
+  // Early stage
+  if (progress < 0.1) {
+    blocks.push({ x, y, tile: tiles.PINE_TREE_GROWING });
+    return blocks;
+  }
+
+  const maxHeight = 8;
+  const currentHeight = Math.max(1, Math.ceil(maxHeight * progress));
+
+  // Trunk grows first
+  for (let i = 0; i < currentHeight; i++) {
+    blocks.push({ x, y: y - i, tile: tiles.PINE_TRUNK });
+  }
+
+  // Needles in conical shape when tree is growing
+  if (progress > 0.25) {
+    const needleStartY = y - Math.floor(currentHeight * 0.3);
+    const needleLayers = Math.ceil(currentHeight * 0.7);
+
+    for (let layer = 0; layer < needleLayers; layer++) {
+      const layerY = needleStartY - layer;
+      const layerWidth = Math.max(1, Math.floor((needleLayers - layer) / 2));
+
+      for (let dx = -layerWidth; dx <= layerWidth; dx++) {
+        if (dx !== 0 || layer !== 0) {
+          blocks.push({ x: x + dx, y: layerY, tile: tiles.PINE_NEEDLES });
+        }
+      }
+    }
+  }
+
+  // Pine cones when mature
+  if (progress > 0.9) {
+    const midY = y - Math.floor(currentHeight * 0.5);
+    if (Math.random() < 0.5)
+      blocks.push({ x: x - 1, y: midY, tile: tiles.PINE_CONE });
+    if (Math.random() < 0.5)
+      blocks.push({ x: x + 1, y: midY, tile: tiles.PINE_CONE });
+  }
+
+  return blocks;
+}
+
+function generateWillowTreeStructure(x, y, progress, tiles) {
+  const blocks = [];
+
+  // Early stage
+  if (progress < 0.1) {
+    blocks.push({ x, y, tile: tiles.WILLOW_TREE_GROWING });
+    return blocks;
+  }
+
+  const maxHeight = 6;
+  const currentHeight = Math.max(1, Math.ceil(maxHeight * progress));
+
+  // Trunk
+  for (let i = 0; i < currentHeight; i++) {
+    blocks.push({ x, y: y - i, tile: tiles.WILLOW_TRUNK });
+  }
+
+  // Drooping branches when growing
+  if (progress > 0.3) {
+    const topY = y - currentHeight;
+    const branchLength = Math.ceil(progress * 4);
+
+    // Left drooping branches
+    for (let i = 0; i < branchLength; i++) {
+      blocks.push({
+        x: x - 1 - Math.floor(i / 2),
+        y: topY + i,
+        tile: tiles.WILLOW_BRANCHES,
+      });
+      if (progress > 0.6 && i > 0) {
+        blocks.push({
+          x: x - 1 - Math.floor(i / 2),
+          y: topY + i,
+          tile: tiles.WILLOW_LEAVES,
+        });
+      }
+    }
+
+    // Right drooping branches
+    for (let i = 0; i < branchLength; i++) {
+      blocks.push({
+        x: x + 1 + Math.floor(i / 2),
+        y: topY + i,
+        tile: tiles.WILLOW_BRANCHES,
+      });
+      if (progress > 0.6 && i > 0) {
+        blocks.push({
+          x: x + 1 + Math.floor(i / 2),
+          y: topY + i,
+          tile: tiles.WILLOW_LEAVES,
+        });
+      }
+    }
+  }
+
+  // Additional leaves when mature
+  if (progress > 0.8) {
+    const topY = y - currentHeight;
+    blocks.push({ x: x - 2, y: topY + 2, tile: tiles.WILLOW_LEAVES });
+    blocks.push({ x: x + 2, y: topY + 2, tile: tiles.WILLOW_LEAVES });
+    blocks.push({ x: x - 3, y: topY + 3, tile: tiles.WILLOW_LEAVES });
+    blocks.push({ x: x + 3, y: topY + 3, tile: tiles.WILLOW_LEAVES });
+  }
+
+  return blocks;
+}
+
+function generateFernStructure(x, y, progress, tiles) {
+  const blocks = [];
+
+  // Early stage
+  if (progress < 0.1) {
+    blocks.push({ x, y, tile: tiles.FERN_GROWING });
+    return blocks;
+  }
+
+  const maxHeight = 3;
+  const currentHeight = Math.max(1, Math.ceil(maxHeight * progress));
+
+  // Central stem
+  for (let i = 0; i < currentHeight; i++) {
+    blocks.push({ x, y: y - i, tile: tiles.FERN_STEM });
+  }
+
+  // Unfurling fronds
+  if (progress > 0.3) {
+    const frondSpread = Math.ceil(progress * 2);
+
+    for (let i = 0; i < currentHeight; i++) {
+      const spreadAtHeight = Math.min(frondSpread, i + 1);
+
+      for (let dx = -spreadAtHeight; dx <= spreadAtHeight; dx++) {
+        if (dx !== 0) {
+          blocks.push({ x: x + dx, y: y - i, tile: tiles.FERN_FROND });
+        }
+      }
+    }
+  }
+
+  return blocks;
+}
+
 function generatePlantStructure(x, y, seedType, progress, tiles) {
   // Ensure progress is between 0 and 1
   progress = Math.max(0, Math.min(1, progress));
@@ -176,6 +499,20 @@ function generatePlantStructure(x, y, seedType, progress, tiles) {
       return generateCactusStructure(x, y, progress, tiles);
     case "WALNUT":
       return generateTreeStructure(x, y, progress, tiles);
+    case "BERRY_BUSH":
+      return generateBerryBushStructure(x, y, progress, tiles);
+    case "BAMBOO":
+      return generateBambooStructure(x, y, progress, tiles);
+    case "SUNFLOWER":
+      return generateSunflowerStructure(x, y, progress, tiles);
+    case "CORN":
+      return generateCornStructure(x, y, progress, tiles);
+    case "PINE_TREE":
+      return generatePineTreeStructure(x, y, progress, tiles);
+    case "WILLOW_TREE":
+      return generateWillowTreeStructure(x, y, progress, tiles);
+    case "FERN":
+      return generateFernStructure(x, y, progress, tiles);
     default:
       return [{ x, y, tile: tiles.WHEAT_GROWING }];
   }

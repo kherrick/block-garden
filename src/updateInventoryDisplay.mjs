@@ -4,7 +4,21 @@ export function updateInventoryDisplay({
   materialsInventory,
   seedInventory,
 }) {
-  const seedTypes = ["wheat", "carrot", "mushroom", "cactus", "walnut"];
+  const seedTypes = [
+    "wheat",
+    "carrot",
+    "mushroom",
+    "cactus",
+    "walnut",
+    "berry_bush",
+    "bamboo",
+    "sunflower",
+    "corn",
+    "pine_tree",
+    "willow_tree",
+    "fern",
+  ];
+
   const materialTypes = [
     "dirt",
     "stone",

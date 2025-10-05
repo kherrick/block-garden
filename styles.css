@@ -74,6 +74,31 @@ body {
   margin-bottom: 0.3125rem;
 }
 
+.ui-grid__corner--sub-section {
+  max-height: 5.25rem;
+  overflow: auto;
+  scrollbar-width: thin; /* Slim scrollbar */
+  scrollbar-color: #888 #f1f1f1; /* Handle and track colors */
+}
+
+.ui-grid__corner--sub-section::-webkit-scrollbar {
+  width: 0.625rem; /* Custom width */
+}
+
+.ui-grid__corner--sub-section::-webkit-scrollbar-track {
+  background: #f1f1f1; /* Track background */
+}
+
+.ui-grid__corner--sub-section::-webkit-scrollbar-thumb {
+  background: #888; /* Handle color */
+  border-radius: 0.625rem; /* Rounded edges */
+  border: 0.125rem solid #f1f1f1; /* Padding around handle */
+}
+
+.ui-grid__corner--sub-section::-webkit-scrollbar-thumb:hover {
+  background: #555; /* Highlight on hover */
+}
+
 /* Element modifiers for sticky corners */
 .ui-grid__corner--top-left {
   align-self: start;
@@ -101,6 +126,7 @@ body {
   grid-column: 2;
   grid-row: 2;
   justify-self: end;
+  max-width: 15.625rem;
 }
 
 #stats,

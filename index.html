@@ -282,27 +282,129 @@
             <div class="ui-grid__corner--heading" id="seeds">🎒 Inventory</div>
             <div class="ui-grid__corner--container" hidden>
               <div class="ui-grid__corner--sub-heading">🫘 Seeds</div>
-              <div>Selected: <span id="selectedSeed">None</span></div>
-              <div>
-                <button class="seed-btn" data-wheat>
-                  🌾 <span id="wheatCount">0</span>
-                </button>
-                <button class="seed-btn" data-carrot>
-                  🥕 <span id="carrotCount">0</span>
-                </button>
-              </div>
-              <div>
-                <button class="seed-btn" data-mushroom>
-                  🍄 <span id="mushroomCount">0</span>
-                </button>
-                <button class="seed-btn" data-cactus>
-                  🌵 <span id="cactusCount">0</span>
-                </button>
-              </div>
-              <div>
-                <button class="seed-btn" data-walnut>
-                  🌰 <span id="walnutCount">0</span>
-                </button>
+              <div class="ui-grid__corner--sub-section">
+                <div>Selected: <span id="selectedSeed">None</span></div>
+                <div>
+                  <button class="seed-btn" data-wheat>
+                    🌾 <span id="wheatCount">0</span>
+                  </button>
+                  <button class="seed-btn" data-carrot>
+                    🥕 <span id="carrotCount">0</span>
+                  </button>
+                  <button class="seed-btn" data-mushroom>
+                    🍄 <span id="mushroomCount">0</span>
+                  </button>
+                  <button class="seed-btn" data-cactus>
+                    🌵 <span id="cactusCount">0</span>
+                  </button>
+                  <button class="seed-btn" data-walnut>
+                    🥜 <span id="walnutCount">0</span>
+                  </button>
+                  <button
+                    class="seed-btn"
+                    data-berry_bush
+                    style="
+                      background: #dc143c;
+                      border: 1px solid #000;
+                      color: #fff;
+                      cursor: pointer;
+                      padding: 4px 8px;
+                      margin: 2px;
+                    "
+                  >
+                    🍓 <span id="berry_bushCount">0</span>
+                  </button>
+
+                  <button
+                    class="seed-btn"
+                    data-bamboo
+                    style="
+                      background: #90ee90;
+                      border: 1px solid #000;
+                      color: #000;
+                      cursor: pointer;
+                      padding: 4px 8px;
+                      margin: 2px;
+                    "
+                  >
+                    🎋 <span id="bambooCount">0</span>
+                  </button>
+
+                  <button
+                    class="seed-btn"
+                    data-sunflower
+                    style="
+                      background: #ffd700;
+                      border: 1px solid #000;
+                      color: #000;
+                      cursor: pointer;
+                      padding: 4px 8px;
+                      margin: 2px;
+                    "
+                  >
+                    🌻 <span id="sunflowerCount">0</span>
+                  </button>
+
+                  <button
+                    class="seed-btn"
+                    data-corn
+                    style="
+                      background: #f0e68c;
+                      border: 1px solid #000;
+                      color: #000;
+                      cursor: pointer;
+                      padding: 4px 8px;
+                      margin: 2px;
+                    "
+                  >
+                    🌽 <span id="cornCount">0</span>
+                  </button>
+
+                  <button
+                    class="seed-btn"
+                    data-pine_tree
+                    style="
+                      background: #2e5930;
+                      border: 1px solid #000;
+                      color: #fff;
+                      cursor: pointer;
+                      padding: 4px 8px;
+                      margin: 2px;
+                    "
+                  >
+                    🌲 <span id="pine_treeCount">0</span>
+                  </button>
+
+                  <button
+                    class="seed-btn"
+                    data-willow_tree
+                    style="
+                      background: #8fbc8f;
+                      border: 1px solid #000;
+                      color: #000;
+                      cursor: pointer;
+                      padding: 4px 8px;
+                      margin: 2px;
+                    "
+                  >
+                    🌿 <span id="willow_treeCount">0</span>
+                  </button>
+
+                  <button
+                    class="seed-btn"
+                    data-fern
+                    style="
+                      background: #3cb371;
+                      border: 1px solid #000;
+                      color: #fff;
+                      cursor: pointer;
+                      padding: 4px 8px;
+                      margin: 2px;
+                    "
+                  >
+                    ☘️ <span id="fernCount">0</span>
+                  </button>
+                </div>
               </div>
 
               <div
@@ -314,38 +416,37 @@
                 "
               >
                 <div class="ui-grid__corner--sub-heading">🧱 Materials</div>
-                <div>Selected: <span id="selectedMaterial">None</span></div>
-                <div>
-                  <button class="material-btn" data-dirt>
-                    🟤 <span id="dirtCount">0</span>
-                  </button>
-                  <button class="material-btn" data-stone>
-                    🪨 <span id="stoneCount">0</span>
-                  </button>
-                </div>
-                <div>
-                  <button class="material-btn" data-wood>
-                    🪵 <span id="woodCount">0</span>
-                  </button>
-                  <button class="material-btn" data-sand>
-                    🏖️ <span id="sandCount">0</span>
-                  </button>
-                </div>
-                <div>
-                  <button class="material-btn" data-clay>
-                    🧱 <span id="clayCount">0</span>
-                  </button>
-                  <button class="material-btn" data-coal>
-                    ⚫ <span id="coalCount">0</span>
-                  </button>
-                </div>
-                <div>
-                  <button class="material-btn" data-iron>
-                    🔩 <span id="ironCount">0</span>
-                  </button>
-                  <button class="material-btn" data-gold>
-                    🟡 <span id="goldCount">0</span>
-                  </button>
+                <div class="ui-grid__corner--sub-section">
+                  <div>Selected: <span id="selectedMaterial">None</span></div>
+                  <div>
+                    <button class="material-btn" data-dirt>
+                      🟤 <span id="dirtCount">0</span>
+                    </button>
+                    <button class="material-btn" data-stone>
+                      🪨 <span id="stoneCount">0</span>
+                    </button>
+
+                    <button class="material-btn" data-wood>
+                      🪵 <span id="woodCount">0</span>
+                    </button>
+                    <button class="material-btn" data-sand>
+                      🏖️ <span id="sandCount">0</span>
+                    </button>
+
+                    <button class="material-btn" data-clay>
+                      🧱 <span id="clayCount">0</span>
+                    </button>
+                    <button class="material-btn" data-coal>
+                      ⚫ <span id="coalCount">0</span>
+                    </button>
+
+                    <button class="material-btn" data-iron>
+                      🔩 <span id="ironCount">0</span>
+                    </button>
+                    <button class="material-btn" data-gold>
+                      🟡 <span id="goldCount">0</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

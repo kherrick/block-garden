@@ -23,6 +23,34 @@ export function loadSaveState(gThis, saveState) {
       if (seedInventory["WALNUT"] === undefined) {
         seedInventory["WALNUT"] = 0;
       }
+
+      if (seedInventory["BERRY_BUSH"] === undefined) {
+        seedInventory["BERRY_BUSH"] = 0;
+      }
+
+      if (seedInventory["BAMBOO"] === undefined) {
+        seedInventory["BAMBOO"] = 0;
+      }
+
+      if (seedInventory["SUNFLOWER"] === undefined) {
+        seedInventory["SUNFLOWER"] = 0;
+      }
+
+      if (seedInventory["CORN"] === undefined) {
+        seedInventory["CORN"] = 0;
+      }
+
+      if (seedInventory["PINE_TREE"] === undefined) {
+        seedInventory["PINE_TREE"] = 0;
+      }
+
+      if (seedInventory["WILLOW_TREE"] === undefined) {
+        seedInventory["WILLOW_TREE"] = 0;
+      }
+
+      if (seedInventory["FERN"] === undefined) {
+        seedInventory["FERN"] = 0;
+      }
     }
 
     const worldHeight = saveState.config.WORLD_HEIGHT;

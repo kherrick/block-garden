@@ -24,6 +24,13 @@ export function plantSeed({
     MUSHROOM: tiles.MUSHROOM_GROWING,
     CACTUS: tiles.CACTUS_GROWING,
     WALNUT: tiles.TREE_GROWING,
+    BERRY_BUSH: tiles.BERRY_BUSH_GROWING,
+    BAMBOO: tiles.BAMBOO_GROWING,
+    SUNFLOWER: tiles.SUNFLOWER_GROWING,
+    CORN: tiles.CORN_GROWING,
+    PINE_TREE: tiles.PINE_TREE_GROWING,
+    WILLOW_TREE: tiles.WILLOW_TREE_GROWING,
+    FERN: tiles.FERN_GROWING,
   };
 
   if (seedTileMap[seedType] && seedInventory[seedType] > 0) {

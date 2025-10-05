@@ -83,6 +83,31 @@ export const gameConfig = {
       growthTime: 1920,
     }),
     WALNUT: getT({ id: 33, color: "#654321", crop: true, growthTime: 960 }),
+    BERRY_BUSH: getT({ id: 35, color: "#DC143C", crop: true, growthTime: 360 }),
+    BAMBOO: getT({
+      id: 36,
+      color: "#90EE90",
+      solid: true,
+      crop: true,
+      growthTime: 180,
+    }),
+    SUNFLOWER: getT({ id: 37, color: "#FFD700", crop: true, growthTime: 600 }),
+    CORN: getT({ id: 38, color: "#F0E68C", crop: true, growthTime: 420 }),
+    PINE_TREE: getT({
+      id: 39,
+      color: "#2E5930",
+      solid: true,
+      crop: true,
+      growthTime: 1440,
+    }),
+    WILLOW_TREE: getT({
+      id: 40,
+      color: "#8FBC8F",
+      solid: true,
+      crop: true,
+      growthTime: 1800,
+    }),
+    FERN: getT({ id: 41, color: "#3CB371", crop: true, growthTime: 90 }),
     SNOW: getT({ id: 16, color: "#FFFAFA", solid: true, farmable: true }),
     ICE: getT({ id: 17, color: "#B0E0E6", solid: true }),
     LAVA: getT({ id: 18, color: "#FF4500", solid: false }),
@@ -97,6 +122,23 @@ export const gameConfig = {
       solid: true,
       crop: true,
     }),
+    BERRY_BUSH_GROWING: getT({ id: 42, color: "#CD5C5C", crop: true }),
+    BAMBOO_GROWING: getT({ id: 43, color: "#98FB98", solid: true, crop: true }),
+    SUNFLOWER_GROWING: getT({ id: 44, color: "#FFEC8B", crop: true }),
+    CORN_GROWING: getT({ id: 45, color: "#EEE8AA", crop: true }),
+    PINE_TREE_GROWING: getT({
+      id: 46,
+      color: "#556B2F",
+      solid: true,
+      crop: true,
+    }),
+    WILLOW_TREE_GROWING: getT({
+      id: 47,
+      color: "#9BCD9B",
+      solid: true,
+      crop: true,
+    }),
+    FERN_GROWING: getT({ id: 48, color: "#90EE90", crop: true }),
     // Plant parts for grown crops
     WHEAT_STALK: getT({ id: 24, color: "#8B7355" }),
     WHEAT_GRAIN: getT({ id: 25, color: "#FFD700" }),
@@ -106,6 +148,35 @@ export const gameConfig = {
     MUSHROOM_CAP: getT({ id: 29, color: "#8B0000" }),
     CACTUS_BODY: getT({ id: 30, color: "#2E8B57", solid: true }),
     CACTUS_FLOWER: getT({ id: 31, color: "#FF69B4" }),
+    // Berry bush parts
+    BERRY_BUSH_BRANCH: getT({ id: 49, color: "#8B4513", solid: true }),
+    BERRY_BUSH_LEAVES: getT({ id: 50, color: "#228B22", solid: true }),
+    BERRY_BUSH_BERRIES: getT({ id: 51, color: "#DC143C" }),
+    // Bamboo parts
+    BAMBOO_STALK: getT({ id: 52, color: "#90EE90", solid: true }),
+    BAMBOO_JOINT: getT({ id: 53, color: "#6B8E23", solid: true }),
+    BAMBOO_LEAVES: getT({ id: 54, color: "#32CD32" }),
+    // Sunflower parts
+    SUNFLOWER_STEM: getT({ id: 55, color: "#8B7355" }),
+    SUNFLOWER_LEAVES: getT({ id: 56, color: "#228B22" }),
+    SUNFLOWER_CENTER: getT({ id: 57, color: "#8B4513" }),
+    SUNFLOWER_PETALS: getT({ id: 58, color: "#FFD700" }),
+    // Corn parts
+    CORN_STALK: getT({ id: 59, color: "#9ACD32" }),
+    CORN_LEAVES: getT({ id: 60, color: "#6B8E23" }),
+    CORN_EAR: getT({ id: 61, color: "#F0E68C" }),
+    CORN_SILK: getT({ id: 62, color: "#DEB887" }),
+    // Pine tree parts
+    PINE_TRUNK: getT({ id: 63, color: "#8B4513", solid: true }),
+    PINE_NEEDLES: getT({ id: 64, color: "#2E5930", solid: true }),
+    PINE_CONE: getT({ id: 65, color: "#8B7355" }),
+    // Willow tree parts
+    WILLOW_TRUNK: getT({ id: 66, color: "#8B7355", solid: true }),
+    WILLOW_BRANCHES: getT({ id: 67, color: "#8FBC8F", solid: true }),
+    WILLOW_LEAVES: getT({ id: 68, color: "#9ACD32" }),
+    // Fern parts
+    FERN_STEM: getT({ id: 69, color: "#556B2F" }),
+    FERN_FROND: getT({ id: 70, color: "#3CB371" }),
   },
 
   // Biome definitions - keeping as static since they don't change frequently
@@ -144,6 +215,13 @@ export const gameState = {
     MUSHROOM: 0,
     CACTUS: 0,
     WALNUT: 0,
+    BERRY_BUSH: 0,
+    BAMBOO: 0,
+    SUNFLOWER: 0,
+    CORN: 0,
+    PINE_TREE: 0,
+    WILLOW_TREE: 0,
+    FERN: 0,
   }),
   // New materials inventory
   materialsInventory: new Signal.State({
@@ -252,19 +330,30 @@ export function initState(gThis, version) {
   const { TILES, BIOMES } = gameConfig;
   BIOMES.FOREST.surfaceTile = TILES.GRASS;
   BIOMES.FOREST.subTile = TILES.DIRT;
-  BIOMES.FOREST.crops = [TILES.WHEAT, TILES.CARROT];
+  BIOMES.FOREST.crops = [
+    TILES.WHEAT,
+    TILES.CARROT,
+    TILES.BERRY_BUSH,
+    TILES.FERN,
+    TILES.PINE_TREE,
+  ];
 
   BIOMES.DESERT.surfaceTile = TILES.SAND;
   BIOMES.DESERT.subTile = TILES.SAND;
-  BIOMES.DESERT.crops = [TILES.CACTUS];
+  BIOMES.DESERT.crops = [TILES.CACTUS, TILES.SUNFLOWER];
 
   BIOMES.TUNDRA.surfaceTile = TILES.SNOW;
   BIOMES.TUNDRA.subTile = TILES.DIRT;
-  BIOMES.TUNDRA.crops = [];
+  BIOMES.TUNDRA.crops = [TILES.PINE_TREE, TILES.FERN];
 
   BIOMES.SWAMP.surfaceTile = TILES.CLAY;
   BIOMES.SWAMP.subTile = TILES.CLAY;
-  BIOMES.SWAMP.crops = [TILES.MUSHROOM];
+  BIOMES.SWAMP.crops = [
+    TILES.MUSHROOM,
+    TILES.WILLOW_TREE,
+    TILES.BAMBOO,
+    TILES.CORN,
+  ];
 
   return {
     gameConfig,

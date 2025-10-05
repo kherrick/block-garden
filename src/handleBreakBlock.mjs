@@ -1,3 +1,4 @@
+import { getCropToSeed } from "./cropToSeed.mjs";
 import { mapEditorState } from "./mapEditor.mjs";
 import { markWaterRegionDirty } from "./waterPhysics.mjs";
 import { updateState } from "./state.mjs";
@@ -269,15 +270,7 @@ function handleBreakBlock({
 
         // Give small chance to drop seeds from broken natural crops
         if (block.tile.crop && Math.random() < 0.3) {
-          const cropToSeed = {
-            [tiles.WHEAT.id]: "WHEAT",
-            [tiles.CARROT.id]: "CARROT",
-            [tiles.MUSHROOM.id]: "MUSHROOM",
-            [tiles.CACTUS.id]: "CACTUS",
-            [tiles.WALNUT.id]: "WALNUT",
-          };
-
-          const seedType = cropToSeed[block.tile.id];
+          const seedType = getCropToSeed(tiles)[block.tile.id];
           if (seedType) {
             seedUpdates[seedType] = (seedUpdates[seedType] || 0) + 1;
           }

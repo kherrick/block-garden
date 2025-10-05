@@ -1,4 +1,5 @@
 import { addMossToCaves } from "./generateMoss.mjs";
+import { getCropToSeed } from "./cropToSeed.mjs";
 import { gameConfig, gameState, updateState } from "./state.mjs";
 import { generateCaves } from "./generateCaves.mjs";
 import { generateHeightMap } from "./generateHeightMap.mjs";
@@ -146,15 +147,7 @@ export function generateWorld({
         currentWorld.setTile(x, y, crop);
 
         // Add to inventory when found
-        const cropToSeed = {
-          [tiles.WHEAT.id]: "WHEAT",
-          [tiles.CARROT.id]: "CARROT",
-          [tiles.MUSHROOM.id]: "MUSHROOM",
-          [tiles.CACTUS.id]: "CACTUS",
-          [tiles.WALNUT.id]: "WALNUT",
-        };
-
-        const seedType = cropToSeed[crop.id];
+        const seedType = getCropToSeed(tiles)[crop.id];
         if (seedType) {
           updateState("seedInventory", (inv) => ({
             ...inv,
@@ -325,7 +318,14 @@ export function generateNewWorld({
     CARROT: 1,
     MUSHROOM: 1,
     CACTUS: 1,
-    WALNUT: 0,
+    WALNUT: 1,
+    BERRY_BUSH: 1,
+    BAMBOO: 1,
+    SUNFLOWER: 1,
+    CORN: 1,
+    PINE_TREE: 1,
+    WILLOW_TREE: 1,
+    FERN: 1,
   });
 
   gameState.exploredMap = initializeFog({

@@ -1,4 +1,4 @@
-import storage from "../../deps/localforage.mjs";
+import localForage from "../../deps/localForage.mjs";
 
 import { initMapEditor } from "../map/editor.mjs";
 import { initNewWorld } from "./newWorld.mjs";
@@ -82,10 +82,10 @@ export async function initGame(gThis, doc, cnvs) {
 
   resizeCanvas(doc, gameConfig);
 
-  const ver = await storage.setItem("sprite-garden-version", version);
+  const ver = await localForage.setItem(`sprite-garden-version`, version);
   console.log(`Sprite Garden version: ${ver}`);
 
-  gameLoop(
+  await gameLoop(
     gThis,
     gameConfig.worldSeed,
     gameConfig.BIOMES,

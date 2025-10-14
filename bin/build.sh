@@ -17,6 +17,7 @@ npm run clean \
   && npm run copy:pkg \
   && npm run copy:privacy \
   && npm run copy:service-worker \
+  && npm run copy:deps \
   && npm run copy:src \
   && npm run copy:src:index \
   && npm run build:gh-pages:nojekyll \

@@ -1,6 +1,6 @@
 {
   "name": "sprite-garden",
-  "version": "1.9.2",
+  "version": "1.9.3",
   "description": "Sprite Garden - Grow Sprites",
   "homepage": "https://github.com/kherrick/sprite-garden/#sprite-garden",
   "license": "AGPL-3.0",
@@ -27,6 +27,7 @@
     "copy:index:robots": "node bin/ncp.mjs robots.txt dist/robots.txt",
     "copy:index:sitemap": "node bin/ncp.mjs sitemap.txt dist/sitemap.txt",
     "copy:index:styles": "postcss styles.css --no-map --use cssnano --output dist/styles.css",
+    "copy:deps": "node bin/ncp.mjs deps dist/deps",
     "copy:src": "node bin/ncp.mjs src dist/src",
     "copy:src:index": "node bin/ncp.mjs index.mjs dist/index.mjs",
     "copy:index": "node bin/ncp.mjs index.html dist/index.html",

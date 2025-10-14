@@ -1,4 +1,7 @@
+import localForage from "../../deps/localForage.mjs";
+
 import { updateState } from "../state/state.mjs";
+import { updateRangeValue } from "../update/ui/range.mjs";
 
 // Helper function to get tile from material type
 function getTileFromMaterial(materialType, tiles) {
@@ -16,7 +19,7 @@ function getTileFromMaterial(materialType, tiles) {
   return materialToTile[materialType] || null;
 }
 
-export function handlePlaceBlock({
+export async function handlePlaceBlock({
   key,
   materialsInventory,
   player,
@@ -27,58 +30,146 @@ export function handlePlaceBlock({
   worldHeight,
   worldWidth,
 }) {
-  if (!selectedMaterialType) {
-    console.log("No material selected for placement");
-    return;
-  }
-
-  if (materialsInventory[selectedMaterialType] <= 0) {
-    console.log(`No ${selectedMaterialType} available to place`);
-    return;
-  }
-
   const playerTileX = Math.floor((player.x + player.width / 2) / tileSize);
   const playerTileY = Math.floor((player.y + player.height / 2) / tileSize);
 
   let targetX, targetY;
 
+  let rangeValue = (await localForage.getItem("sprite-garden-range")) || 1;
+
   // Determine placement position based on key pressed
   switch (key.toLowerCase()) {
+    case "k": // Middle button
+      await updateRangeValue(globalThis.document);
+
+      return;
     case "u": // Top left
-      targetX = playerTileX - 1;
-      targetY = playerTileY - 1;
+      if (rangeValue === 1) {
+        targetX = playerTileX - rangeValue;
+        targetY = playerTileY - rangeValue;
+      }
+      if (rangeValue === 2) {
+        targetX = playerTileX - 1;
+        targetY = playerTileY - rangeValue;
+      }
+      if (rangeValue === 3) {
+        targetX = playerTileX - 1;
+        targetY = playerTileY - rangeValue;
+      }
       break;
     case "i": // Top
-      targetX = playerTileX;
-      targetY = playerTileY - 1;
+      if (rangeValue === 1) {
+        targetX = playerTileX;
+        targetY = playerTileY - rangeValue;
+      }
+      if (rangeValue === 2) {
+        targetX = playerTileX;
+        targetY = playerTileY - rangeValue;
+      }
+      if (rangeValue === 3) {
+        targetX = playerTileX;
+        targetY = playerTileY - rangeValue;
+      }
       break;
     case "o": // Top right
-      targetX = playerTileX + 1;
-      targetY = playerTileY - 1;
+      if (rangeValue === 1) {
+        targetX = playerTileX + rangeValue;
+        targetY = playerTileY - rangeValue;
+      }
+      if (rangeValue === 2) {
+        targetX = playerTileX + 1;
+        targetY = playerTileY - rangeValue;
+      }
+      if (rangeValue === 3) {
+        targetX = playerTileX + 1;
+        targetY = playerTileY - rangeValue;
+      }
       break;
     case "j": // Left
-      targetX = playerTileX - 1;
-      targetY = playerTileY;
+      if (rangeValue === 1) {
+        targetX = playerTileX - rangeValue;
+        targetY = playerTileY;
+      }
+      if (rangeValue === 2) {
+        targetX = playerTileX - rangeValue;
+        targetY = playerTileY;
+      }
+      if (rangeValue === 3) {
+        targetX = playerTileX - rangeValue;
+        targetY = playerTileY;
+      }
       break;
     case "l": // Right
-      targetX = playerTileX + 1;
-      targetY = playerTileY;
+      if (rangeValue === 1) {
+        targetX = playerTileX + rangeValue;
+        targetY = playerTileY;
+      }
+      if (rangeValue === 2) {
+        targetX = playerTileX + rangeValue;
+        targetY = playerTileY;
+      }
+      if (rangeValue === 3) {
+        targetX = playerTileX + rangeValue;
+        targetY = playerTileY;
+      }
       break;
     case "m": // Bottom Left
-      targetX = playerTileX - 1;
-      targetY = playerTileY + 1;
+      if (rangeValue === 1) {
+        targetX = playerTileX - rangeValue;
+        targetY = playerTileY + rangeValue;
+      }
+      if (rangeValue === 2) {
+        targetX = playerTileX - 1;
+        targetY = playerTileY + rangeValue;
+      }
+      if (rangeValue === 3) {
+        targetX = playerTileX - 1;
+        targetY = playerTileY + rangeValue;
+      }
       break;
     case ",": // Bottom
-      targetX = playerTileX;
-      targetY = playerTileY + 1;
+      if (rangeValue === 1) {
+        targetX = playerTileX;
+        targetY = playerTileY + rangeValue;
+      }
+      if (rangeValue === 2) {
+        targetX = playerTileX;
+        targetY = playerTileY + rangeValue;
+      }
+      if (rangeValue === 3) {
+        targetX = playerTileX;
+        targetY = playerTileY + rangeValue;
+      }
       break;
     case ".": // Bottom Right
-      targetX = playerTileX + 1;
-      targetY = playerTileY + 1;
+      if (rangeValue === 1) {
+        targetX = playerTileX + rangeValue;
+        targetY = playerTileY + rangeValue;
+      }
+      if (rangeValue === 2) {
+        targetX = playerTileX + 1;
+        targetY = playerTileY + rangeValue;
+      }
+      if (rangeValue === 3) {
+        targetX = playerTileX + 1;
+        targetY = playerTileY + rangeValue;
+      }
       break;
     default:
       console.log(`Invalid placement key: ${key}`);
       return;
+  }
+
+  if (!selectedMaterialType) {
+    console.log("No material selected for placement");
+
+    return;
+  }
+
+  if (materialsInventory[selectedMaterialType] <= 0) {
+    console.log(`No ${selectedMaterialType} available to place`);
+
+    return;
   }
 
   // Check if placement position is valid

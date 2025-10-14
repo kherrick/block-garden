@@ -1,6 +1,6 @@
 # [Sprite Garden](https://kherrick.github.io/sprite-garden/)
 
-Sprite Garden is a 2D sandbox exploration and farming game that runs entirely in your web browser. Explore procedurally generated worlds, discover different biomes, mine resources, and cultivate a variety of crops.
+Sprite Garden is a 2D sandbox exploration and farming game. Explore procedurally generated worlds, discover different biomes, mine resources, and cultivate a variety of crops.
 
 
 [![Sprite Garden - Time Lapse](assets/sprite-garden-time-lapse.gif)](https://kherrick.github.io/sprite-garden/)
@@ -22,7 +22,10 @@ Movement: W/A/S/D or Arrow Keys
 Jump: W, ↑, or Space
 Plant/Harvest: F
 Break Block: R
-Place Block: U/I/O/J/K/L/M/,/.
+Change Break Mode: E
+Change Movement Scale: X
+Change Block Range: K
+Place Block: U/I/O/J/L/M/,/.
 World State Menu: Ctrl+S
 Inspect Tiles: Mouse hover
 Tap the bottom corner panel for mobile controls.

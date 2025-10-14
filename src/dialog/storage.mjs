@@ -1,4 +1,4 @@
-import localForage from "../../deps/localforage.mjs";
+import localForage from "../../deps/localForage.mjs";
 
 import { arrayBufferToBase64, base64toBlob } from "../util/conversion.mjs";
 import { compressToBinaryBlob } from "../util/compression.mjs";

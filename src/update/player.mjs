@@ -13,6 +13,7 @@ export function updatePlayer(
   world,
   camera,
   player,
+  movementScale = 1,
 ) {
   const currentPlayer = player.get();
   const currentCamera = camera.get();
@@ -62,7 +63,8 @@ export function updatePlayer(
 
   // Apply horizontal movement with minimum movement threshold
   if (horizontalInput !== 0) {
-    const targetVelocity = horizontalInput * currentPlayer.speed;
+    const targetVelocity =
+      horizontalInput * currentPlayer.speed * movementScale;
 
     // If we're starting from zero velocity or changing direction, apply minimal acceleration
     if (

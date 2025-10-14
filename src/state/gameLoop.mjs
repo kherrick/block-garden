@@ -1,3 +1,5 @@
+import localForage from "../../deps/localForage.mjs";
+
 import { render } from "./render.mjs";
 import { updateBiomeUI } from "../update/ui/biome.mjs";
 import { updateCrops } from "../update/crops.mjs";
@@ -21,8 +23,24 @@ const previousState = {
   camera: { x: 0, y: 0 },
 };
 
+let scaleCache = null;
+let lastFetchTime = 0;
+const fetchInterval = 1000; // ms
+
+async function getScaleThrottled() {
+  const now = Date.now();
+
+  if (now - lastFetchTime > fetchInterval || scaleCache === null) {
+    scaleCache = await localForage.getItem("sprite-garden-movement-scale");
+
+    lastFetchTime = now;
+  }
+
+  return scaleCache;
+}
+
 // Game loop
-export function gameLoop(
+export async function gameLoop(
   gThis,
   worldSeed,
   biomes,
@@ -79,6 +97,7 @@ export function gameLoop(
       world,
       camera,
       player,
+      await getScaleThrottled(),
     );
 
     updateCrops(
@@ -132,34 +151,35 @@ export function gameLoop(
   );
 
   // Continue game loop
-  requestAnimationFrame(() =>
-    gameLoop(
-      gThis,
-      worldSeed,
-      biomes,
-      surfaceLevel,
-      friction,
-      gravity,
-      maxFallSpeed,
-      tileSize,
-      tiles,
-      worldHeight,
-      worldWidth,
-      growthTimers,
-      plantStructures,
-      waterPhysicsQueue,
-      waterPhysicsConfig,
-      world,
-      camera,
-      player,
-      viewMode,
-      fogMode,
-      isFogScaled,
-      fogScale,
-      exploredMap,
-      gameTime,
-      biomeEl,
-      depthEl,
-    ),
+  requestAnimationFrame(
+    async () =>
+      await gameLoop(
+        gThis,
+        worldSeed,
+        biomes,
+        surfaceLevel,
+        friction,
+        gravity,
+        maxFallSpeed,
+        tileSize,
+        tiles,
+        worldHeight,
+        worldWidth,
+        growthTimers,
+        plantStructures,
+        waterPhysicsQueue,
+        waterPhysicsConfig,
+        world,
+        camera,
+        player,
+        viewMode,
+        fogMode,
+        isFogScaled,
+        fogScale,
+        exploredMap,
+        gameTime,
+        biomeEl,
+        depthEl,
+      ),
   );
 }

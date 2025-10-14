@@ -1,4 +1,5 @@
 import editHandler from "../../deps/konami-code-js.mjs";
+import localForage from "../../deps/localForage.mjs";
 
 import { copyToClipboard } from "../util/copyToClipboard.mjs";
 import { createSaveState } from "../state/createSave.mjs";
@@ -15,6 +16,12 @@ import { selectMaterial } from "../misc/selectMaterial.mjs";
 import { selectSeed } from "../misc/selectSeed.mjs";
 import { toggleBreakMode } from "../misc/toggleBreakMode.mjs";
 
+import {
+  updateMovementScaleUI,
+  updateMovementScaleValue,
+} from "../update/ui/movementScale.mjs";
+import { updateRangeUI } from "../update/ui/range.mjs";
+
 import { showAboutDialog } from "../dialog/about.mjs";
 import { showPrivacyDialog } from "../dialog/privacy.mjs";
 import { showStorageDialog } from "../dialog/storage.mjs";
@@ -30,6 +37,26 @@ export function initGlobalEventListeners(gThis) {
   gThis.spriteGarden.touchKeys = {};
 
   setupDialogButtons(gThis);
+  setupMovementScaleUI(gThis.document);
+
+  updateRangeUI(gThis.document);
+  updateMovementScaleUI(gThis.document);
+}
+
+function setupMovementScaleUI(doc) {
+  const scaleKey = doc.querySelector('[data-key="x"].middle');
+
+  if (scaleKey) {
+    scaleKey.addEventListener(
+      "click",
+      async () => await updateMovementScaleValue(doc),
+    );
+
+    scaleKey.addEventListener(
+      "touchstart",
+      async () => await updateMovementScaleValue(doc),
+    );
+  }
 }
 
 function setupDialogButtons(gThis) {
@@ -90,47 +117,63 @@ export function initDocumentEventListeners(gThis) {
   });
 
   // Keyboard events
-  doc.addEventListener("keydown", (e) => {
-    gThis.spriteGarden.keys[e.key.toLowerCase()] = true;
+  doc.addEventListener("keydown", async (e) => {
+    const lowercaseKey = e.key.toLowerCase();
+    gThis.spriteGarden.keys[lowercaseKey] = true;
 
     // Allow digits 0-9, enter, and delete
-    if (e.key.toLowerCase() === "enter") {
+    if (lowercaseKey === "enter") {
       if (e.target.getAttribute("id") === "worldSeedInput") {
         handleGenerateButton();
       }
     }
     if (
-      (e.key.toLowerCase() >= "0" && e.key.toLowerCase() <= "9") ||
-      e.key.toLowerCase() === "backspace" ||
-      e.key.toLowerCase() === "delete"
+      (lowercaseKey >= "0" && lowercaseKey <= "9") ||
+      lowercaseKey === "backspace" ||
+      lowercaseKey === "delete"
     ) {
       return;
     }
 
     // Add 'R' key to regenerate world with random seed
-    if (e.key.toLowerCase() === "r" && e.ctrlKey) {
+    if (lowercaseKey === "r" && e.ctrlKey) {
       e.preventDefault();
 
       handleRandomSeedButton();
     }
 
     // Add 'S' key to show / hide the world generation panel
-    if (e.key.toLowerCase() === "s" && e.ctrlKey) {
+    if (lowercaseKey === "s" && e.ctrlKey) {
       e.preventDefault();
+
       document
         .querySelector('[class="seed-controls"]')
         .toggleAttribute("hidden");
     }
 
     // Add 'G' key to regenerate world with current seed (to see changes)
-    if (e.key.toLowerCase() === "g" && e.ctrlKey) {
+    if (lowercaseKey === "g" && e.ctrlKey) {
       e.preventDefault();
 
       handleGenerateButton();
     }
 
+    // Add 'E' key to handle toggling the break mode
+    if (lowercaseKey === "e") {
+      e.preventDefault();
+
+      toggleBreakMode();
+    }
+
+    // Add 'X' key to handle movement scale actions
+    if (lowercaseKey === "x") {
+      e.preventDefault();
+
+      await updateMovementScaleValue(doc);
+    }
+
     // Handle farming actions
-    if (e.key.toLowerCase() === "f") {
+    if (lowercaseKey === "f") {
       handleFarmAction({
         growthTimers: gameState.growthTimers,
         plantStructures: gameState.plantStructures,
@@ -145,7 +188,7 @@ export function initDocumentEventListeners(gThis) {
       });
     }
 
-    if (e.key.toLowerCase() === "r") {
+    if (lowercaseKey === "r") {
       handleBreakBlockWithWaterPhysics({
         growthTimers: gameState.growthTimers,
         plantStructures: gameState.plantStructures,
@@ -162,9 +205,9 @@ export function initDocumentEventListeners(gThis) {
 
     // Handle block placement keys
     const blockKeys = ["u", "i", "o", "j", "k", "l", "m", ",", "."];
-    if (blockKeys.includes(e.key.toLowerCase())) {
-      handlePlaceBlock({
-        key: e.key.toLowerCase(),
+    if (blockKeys.includes(lowercaseKey)) {
+      await handlePlaceBlock({
+        key: lowercaseKey,
         materialsInventory: gameState.materialsInventory.get(),
         player: gameState.player.get(),
         selectedMaterialType: gameState.selectedMaterialType.get(),

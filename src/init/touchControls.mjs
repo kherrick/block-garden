@@ -121,32 +121,36 @@ export function initTouchControls(doc) {
 
   // Handle block placement mobile controls
   doc.querySelectorAll(".touch-btn.place-block").forEach((pb) => {
-    pb.addEventListener("touchstart", () =>
-      handlePlaceBlock({
-        key: pb.dataset.key,
-        materialsInventory: gameState.materialsInventory.get(),
-        player: gameState.player.get(),
-        selectedMaterialType: gameState.selectedMaterialType.get(),
-        tiles: gameConfig.TILES,
-        tileSize: gameConfig.TILE_SIZE.get(),
-        world: gameState.world.get(),
-        worldHeight: gameConfig.WORLD_HEIGHT.get(),
-        worldWidth: gameConfig.WORLD_WIDTH.get(),
-      }),
+    pb.addEventListener(
+      "touchstart",
+      async () =>
+        await handlePlaceBlock({
+          key: pb.dataset.key,
+          materialsInventory: gameState.materialsInventory.get(),
+          player: gameState.player.get(),
+          selectedMaterialType: gameState.selectedMaterialType.get(),
+          tiles: gameConfig.TILES,
+          tileSize: gameConfig.TILE_SIZE.get(),
+          world: gameState.world.get(),
+          worldHeight: gameConfig.WORLD_HEIGHT.get(),
+          worldWidth: gameConfig.WORLD_WIDTH.get(),
+        }),
     );
 
-    pb.addEventListener("click", () =>
-      handlePlaceBlock({
-        key: pb.dataset.key,
-        materialsInventory: gameState.materialsInventory.get(),
-        player: gameState.player.get(),
-        selectedMaterialType: gameState.selectedMaterialType.get(),
-        tiles: gameConfig.TILES,
-        tileSize: gameConfig.TILE_SIZE.get(),
-        world: gameState.world.get(),
-        worldHeight: gameConfig.WORLD_HEIGHT.get(),
-        worldWidth: gameConfig.WORLD_WIDTH.get(),
-      }),
+    pb.addEventListener(
+      "click",
+      async () =>
+        await handlePlaceBlock({
+          key: pb.dataset.key,
+          materialsInventory: gameState.materialsInventory.get(),
+          player: gameState.player.get(),
+          selectedMaterialType: gameState.selectedMaterialType.get(),
+          tiles: gameConfig.TILES,
+          tileSize: gameConfig.TILE_SIZE.get(),
+          world: gameState.world.get(),
+          worldHeight: gameConfig.WORLD_HEIGHT.get(),
+          worldWidth: gameConfig.WORLD_WIDTH.get(),
+        }),
     );
   });
 

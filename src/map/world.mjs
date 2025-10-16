@@ -44,34 +44,45 @@ export class WorldMap {
     }
   }
 
-  // Convert from old array format
-  static fromArray(oldWorld, width, height) {
+  // Convert from array format
+  static fromArray(worldData, width, height) {
     const worldMap = new WorldMap(width, height);
     const tiles = gameConfig.TILES;
 
-    for (let x = 0; x < width; x++) {
-      if (!oldWorld[x]) continue;
-      for (let y = 0; y < height; y++) {
-        const savedTile = oldWorld[x][y];
+    // Create a map of tile IDs to tile objects for faster lookup
+    const tileIdMap = new Map();
+    for (const [_, tile] of Object.entries(tiles)) {
+      if (tile && typeof tile.id === "number") {
+        tileIdMap.set(tile.id, tile);
+      }
+    }
 
-        if (!savedTile) {
+    for (let x = 0; x < width; x++) {
+      if (!worldData[x]) {
+        continue;
+      }
+
+      for (let y = 0; y < height; y++) {
+        const savedTile = worldData[x][y];
+
+        if (!savedTile || savedTile.id === undefined || savedTile.id === null) {
           worldMap.setTile(x, y, tiles.AIR);
 
           continue;
         }
 
-        // Find the matching tile from tiles by comparing properties
-        let matchingTile = tiles.AIR;
+        // Find the matching tile from our tile map
+        const matchingTile = tileIdMap.get(savedTile.id);
 
-        for (const [_, tile] of Object.entries(tiles)) {
-          if (tile.id === savedTile.id) {
-            matchingTile = tile;
+        if (matchingTile) {
+          worldMap.setTile(x, y, matchingTile);
+        } else {
+          console.warn(
+            `Unknown tile ID ${savedTile.id} at (${x}, ${y}), defaulting to AIR`,
+          );
 
-            break;
-          }
+          worldMap.setTile(x, y, tiles.AIR);
         }
-
-        worldMap.setTile(x, y, matchingTile);
       }
     }
 

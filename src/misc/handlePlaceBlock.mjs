@@ -1,24 +1,8 @@
 import localForage from "../../deps/localForage.mjs";
 
-import { updateState } from "../state/state.mjs";
+import { getTileFromMaterial } from "./getTileFromMaterial.mjs";
 import { updateRangeValue } from "../update/ui/range.mjs";
-
-// Helper function to get tile from material type
-function getTileFromMaterial(materialType, tiles) {
-  const materialToTile = {
-    DIRT: tiles.DIRT,
-    STONE: tiles.STONE,
-    WOOD: tiles.TREE_TRUNK,
-    SAND: tiles.SAND,
-    CLAY: tiles.CLAY,
-    COAL: tiles.COAL,
-    IRON: tiles.IRON,
-    GOLD: tiles.GOLD,
-    PUMICE: tiles.PUMICE,
-  };
-
-  return materialToTile[materialType] || null;
-}
+import { updateState } from "../state/state.mjs";
 
 export async function handlePlaceBlock({
   key,

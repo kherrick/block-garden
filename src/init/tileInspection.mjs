@@ -1,4 +1,3 @@
-// import { gameConfig, gameState } from "./state.mjs";
 import {
   handleMapEditorClick,
   handleMapEditorDrag,
@@ -63,7 +62,7 @@ function inspectTile({
   }
 }
 
-function handleMouseDown({
+export function handleMouseDown({
   e,
   camera,
   scale,

@@ -3,7 +3,7 @@ import { generateCaves } from "./caves.mjs";
 import { generateHeightMap } from "./heightMap.mjs";
 import { generateWaterSources } from "../water/generateWaterSources.mjs";
 import { getBiome } from "../misc/getBiome.mjs";
-import { getCropToSeed } from "../misc/cropToSeed.mjs";
+import { getHarvestMap } from "../misc/getHarvestMap.mjs";
 import { getRandomSeed } from "../misc/getRandomSeed.mjs";
 import { simulateWaterPhysics } from "../water/simulateWaterPhysics.mjs";
 import { updateState } from "../state/state.mjs";
@@ -147,7 +147,7 @@ export function generateWorld({
         currentWorld.setTile(x, y, crop);
 
         // Add to inventory when found
-        const seedType = getCropToSeed(tiles)[crop.id];
+        const seedType = getHarvestMap(tiles)[crop.id];
         if (seedType) {
           updateState("seedInventory", (inv) => ({
             ...inv,

@@ -1,3 +1,4 @@
+import { extractSeeds, mapValuesToProvided } from "../misc/selectSeed.mjs";
 import { gameConfig, gameState } from "../state/state.mjs";
 import { generateWorld } from "../generate/world.mjs";
 import { initFog } from "./fog.mjs";
@@ -44,21 +45,9 @@ export function initNewWorld({
     registerTreeStructures(currentWorld, worldWidth, worldHeight, tiles),
   );
 
-  // set seed inventory
-  seedInventory.set({
-    WHEAT: 1,
-    CARROT: 1,
-    MUSHROOM: 1,
-    CACTUS: 1,
-    WALNUT: 1,
-    BERRY_BUSH: 1,
-    BAMBOO: 1,
-    SUNFLOWER: 1,
-    CORN: 1,
-    PINE_TREE: 1,
-    WILLOW_TREE: 1,
-    FERN: 1,
-  });
+  // Set initial seed inventory
+  const initialSeedInventory = mapValuesToProvided(extractSeeds(tiles));
+  seedInventory.set(initialSeedInventory);
 
   gameState.exploredMap = initFog({
     fog: null,

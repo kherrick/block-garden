@@ -1,5 +1,5 @@
 import { createSaveState } from "../state/createSave.mjs";
-import { gameState } from "../state/state.mjs";
+import { gameConfig, gameState } from "../state/state.mjs";
 import { initNewWorld } from "../init/newWorld.mjs";
 
 export const mapEditorState = {

@@ -1,4 +1,5 @@
-import { getCropToSeed } from "./cropToSeed.mjs";
+import { getHarvestMap } from "./getHarvestMap.mjs";
+import { getMaterialFromTile } from "./getMaterialFromTile.mjs";
 import { mapEditorState } from "../map/editor.mjs";
 import { markWaterRegionDirty } from "../water/markWaterRegionDirty.mjs";
 import { updateState } from "../state/state.mjs";
@@ -14,26 +15,6 @@ function isMaturePlantPart(x, y, plantStructures) {
   }
 
   return false;
-}
-
-// Helper function to get material type from tile
-function getMaterialFromTile(tile, tiles) {
-  const tileToMaterial = {
-    [tiles.DIRT.id]: "DIRT",
-    [tiles.GRASS.id]: "DIRT", // Grass drops dirt
-    [tiles.STONE.id]: "STONE",
-    [tiles.TREE_TRUNK.id]: "WOOD",
-    [tiles.TREE_LEAVES.id]: "WOOD", // Leaves can drop wood occasionally
-    [tiles.SAND.id]: "SAND",
-    [tiles.CLAY.id]: "CLAY",
-    [tiles.COAL.id]: "COAL",
-    [tiles.IRON.id]: "IRON",
-    [tiles.GOLD.id]: "GOLD",
-    [tiles.SNOW.id]: "SAND", // Snow melts to... sand for simplicity,
-    [tiles.PUMICE.id]: "PUMICE",
-  };
-
-  return tileToMaterial[tile.id] || null;
 }
 
 function isTreePart(tile, tiles) {
@@ -271,7 +252,7 @@ function handleBreakBlock({
 
         // Give small chance to drop seeds from broken natural crops
         if (block.tile.crop && Math.random() < 0.3) {
-          const seedType = getCropToSeed(tiles)[block.tile.id];
+          const seedType = getHarvestMap(tiles)[block.tile.id];
           if (seedType) {
             seedUpdates[seedType] = (seedUpdates[seedType] || 0) + 1;
           }

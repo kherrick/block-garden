@@ -1,4 +1,16 @@
 // Farming functions
+export function extractSeeds(tiles) {
+  return Object.fromEntries(
+    Object.entries(tiles)
+      .filter(([_, v]) => v.isSeed)
+      .map(([k, v]) => [v.id, k]),
+  );
+}
+
+export function mapValuesToProvided(obj, provided = 1) {
+  return Object.fromEntries(Object.values(obj).map((v) => [v, provided]));
+}
+
 export function selectSeed(doc, state, event) {
   const [seedType] = Object.keys(event.currentTarget.dataset);
 

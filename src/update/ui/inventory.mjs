@@ -1,48 +1,26 @@
 // Update inventory display
 export function updateInventoryUI({ doc, materialsInventory, seedInventory }) {
-  const seedTypes = [
-    "wheat",
-    "carrot",
-    "mushroom",
-    "cactus",
-    "walnut",
-    "berry_bush",
-    "bamboo",
-    "sunflower",
-    "corn",
-    "pine_tree",
-    "willow_tree",
-    "fern",
-  ];
-
-  const materialTypes = [
-    "dirt",
-    "stone",
-    "wood",
-    "sand",
-    "clay",
-    "coal",
-    "iron",
-    "gold",
-  ];
-
   // Update seed counts
-  seedTypes.forEach((seedType) => {
+  Object.keys(seedInventory).forEach((seedKey) => {
+    const seedType = seedKey.toLowerCase();
     const el = doc?.getElementById(`${seedType}Count`);
+
     try {
-      if (el) {
-        el.textContent = seedInventory[seedType.toUpperCase()];
-      }
-    } catch (e) {}
+      el.textContent = seedInventory[seedType.toUpperCase()];
+    } catch (e) {
+      console.error;
+    }
   });
 
   // Update material counts
-  materialTypes.forEach((materialType) => {
+  Object.keys(materialsInventory).forEach((materialKey) => {
+    const materialType = materialKey.toLowerCase();
     const el = doc?.getElementById(`${materialType}Count`);
+
     try {
-      if (el) {
-        el.textContent = materialsInventory[materialType.toUpperCase()];
-      }
-    } catch (e) {}
+      el.textContent = materialsInventory[materialType.toUpperCase()];
+    } catch (e) {
+      console.error;
+    }
   });
 }

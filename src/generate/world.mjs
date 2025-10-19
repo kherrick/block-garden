@@ -1,3 +1,5 @@
+import { Signal } from "../../deps/signal.mjs";
+
 import { addMossToCaves } from "./moss.mjs";
 import { generateCaves } from "./caves.mjs";
 import { generateHeightMap } from "./heightMap.mjs";
@@ -5,8 +7,8 @@ import { generateWaterSources } from "../water/generateWaterSources.mjs";
 import { getBiome } from "../misc/getBiome.mjs";
 import { getHarvestMap } from "../misc/getHarvestMap.mjs";
 import { getRandomSeed } from "../misc/getRandomSeed.mjs";
-import { simulateWaterPhysics } from "../water/simulateWaterPhysics.mjs";
 import { updateState } from "../state/state.mjs";
+import { updateWaterPhysics } from "../water/updateWaterPhysics.mjs";
 import { WorldMap } from "../map/world.mjs";
 
 // Generate world
@@ -188,14 +190,36 @@ export function generateWorld({
   });
 
   // Simulate water physics to make water settle naturally
-  simulateWaterPhysics({
-    world: currentWorld,
-    worldWidth,
-    worldHeight,
-    tiles,
-    tileSize,
-    iterations: 30,
-  });
+  const initialQueue = new Set();
+  for (let x = 0; x < worldWidth; x++) {
+    for (let y = 0; y < worldHeight; y++) {
+      if (currentWorld.getTile(x, y) === tiles.WATER) {
+        initialQueue.add(`${x},${y}`);
+      }
+    }
+  }
+
+  // (more iterations for world gen)
+  for (let i = 0; i < 100; i++) {
+    const tempQueue = {
+      get: () => initialQueue,
+      set: (v) => initialQueue.clear() || v.forEach((k) => initialQueue.add(k)),
+    };
+
+    updateWaterPhysics({
+      world: new Signal.State(currentWorld),
+      worldWidth,
+      worldHeight,
+      tiles,
+      waterPhysicsQueue: tempQueue,
+      waterPhysicsConfig: { frameCounter: 999 }, // Force immediate update
+    });
+
+    // Water settled
+    if (initialQueue.size === 0) {
+      break;
+    }
+  }
 
   console.log("World generation complete!");
 

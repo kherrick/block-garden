@@ -1,6 +1,6 @@
 {
   "background_color": "#000000",
-  "description": "Sprite Garden - Grow Sprites",
+  "description": "Sprite Garden - A 2D sandbox exploration and farming game. Explore procedurally generated worlds, discover different biomes, mine resources, and cultivate a variety of crops.",
   "display": "fullscreen",
   "id": "sprite-garden",
   "name": "Sprite Garden",

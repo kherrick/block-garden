@@ -16,7 +16,6 @@ export class SpriteGarden {
     this.tiles = this.config.TILES;
   }
 
-  // ============== WORLD MANIPULATION ==============
   getWorld() {
     return this.gThis.spriteGarden.getState("world");
   }
@@ -25,61 +24,99 @@ export class SpriteGarden {
     this.gThis.spriteGarden.setState("world", world);
   }
 
+  setFogMode(mode) {
+    // 'fog', 'clear'
+    this.config.fogMode.set(mode);
+  }
+
+  setBreakMode(mode) {
+    // 'normal' or 'extra'
+    this.config.breakMode.set(mode);
+  }
+
+  getInventory() {
+    return this.state.materialsInventory?.get
+      ? this.state.materialsInventory.get()
+      : {};
+  }
+
+  getMaterialCount(materialType) {
+    return this.getInventory()[materialType] || 0;
+  }
+
+  setMaterialCount(materialType, count) {
+    const inventory = this.getInventory();
+
+    inventory[materialType] = count;
+
+    this.state.materialsInventory.set(inventory);
+  }
+
   setTile(x, y, tileType) {
     const world = this.getWorld();
+
     world.setTile(x, y, tileType);
+
     this.setWorld(world);
   }
 
   getTile(x, y) {
     const world = this.getWorld();
+
     return world.getTile(x, y);
   }
 
   batchSetTiles(updates) {
     const world = this.getWorld();
+
     updates.forEach(({ x, y, tile }) => world.setTile(x, y, tile));
+
     this.setWorld(world);
   }
 
   fillRect(x, y, width, height, tileType) {
     const updates = [];
+
     for (let row = 0; row < height; row++) {
       for (let col = 0; col < width; col++) {
         updates.push({ x: x + col, y: y + row, tile: tileType });
       }
     }
+
     this.batchSetTiles(updates);
   }
 
   drawBorder(x, y, width, height, tileType) {
     const updates = [];
+
     for (let row = 0; row < height; row++) {
       for (let col = 0; col < width; col++) {
         const onBorder =
           row === 0 || row === height - 1 || col === 0 || col === width - 1;
+
         if (onBorder) {
           updates.push({ x: x + col, y: y + row, tile: tileType });
         }
       }
     }
+
     this.batchSetTiles(updates);
   }
 
-  // ============== BITMAP RENDERING ==============
   drawBitmap(bitmap, x, y, onTile, offTile = this.tiles.AIR) {
     const updates = [];
+
     for (let row = 0; row < bitmap.length; row++) {
       for (let col = 0; col < bitmap[row].length; col++) {
         const pixel = bitmap[row][col];
         const tile = pixel === 1 ? onTile : offTile;
+
         updates.push({ x: x + col, y: y + row, tile });
       }
     }
     this.batchSetTiles(updates);
   }
 
-  // ============== TEXT RENDERING ==============
   getTextWidth(text, characters) {
     let width = 0;
     for (const c of text) {
@@ -93,7 +130,15 @@ export class SpriteGarden {
     return Math.max(0, width - 1);
   }
 
-  drawText(text, x, y, onTile, offTile = this.tiles.DIRT, spacing = 1) {
+  drawText(
+    text,
+    x,
+    y,
+    onTile,
+    offTile = this.tiles.DIRT,
+    spacing = 1,
+    characters = Characters,
+  ) {
     const updates = [];
     let currentX = x;
 
@@ -153,7 +198,15 @@ export class SpriteGarden {
     this.fillRect(x + 1, y + 1, boxWidth - 2, boxHeight - 2, backgroundTile);
 
     // Draw text
-    this.drawText(text, x + padding, y + padding, textTile, backgroundTile);
+    this.drawText(
+      text,
+      x + padding,
+      y + padding,
+      textTile,
+      backgroundTile,
+      1,
+      characters,
+    );
 
     // Schedule water drop effect
     if (waterDropDelay > 0) {
@@ -196,6 +249,7 @@ export class SpriteGarden {
       }
 
       this.setWorld(world);
+
       tileIndex = endIndex;
 
       if (tileIndex < bottomTiles.length) {
@@ -218,18 +272,27 @@ export class SpriteGarden {
     });
   }
 
-  async pressKey(keyCode, holdTime = 100) {
-    this.doc.dispatchEvent(this.createKeyEvent("keydown", keyCode));
-    await sleep(holdTime);
-    this.doc.dispatchEvent(this.createKeyEvent("keyup", keyCode));
-  }
-
   async holdKey(keyCode) {
     this.doc.dispatchEvent(this.createKeyEvent("keydown", keyCode));
   }
 
   async releaseKey(keyCode) {
     this.doc.dispatchEvent(this.createKeyEvent("keyup", keyCode));
+  }
+
+  async pressKey(keyCode, holdTime = 100) {
+    this.doc.dispatchEvent(this.createKeyEvent("keydown", keyCode));
+
+    await sleep(holdTime);
+
+    this.doc.dispatchEvent(this.createKeyEvent("keyup", keyCode));
+  }
+
+  async pressKeyRepeat(keyCode, times, delay = 100) {
+    for (let i = 0; i < times; i++) {
+      await this.pressKey(keyCode, 50);
+      await sleep(delay);
+    }
   }
 
   async pressKeySequence(keyCodes, delay = 150) {
@@ -245,29 +308,22 @@ export class SpriteGarden {
     resizeCanvas(this.doc, this.config);
   }
 
-  setFogMode(mode) {
-    this.config.fogMode.set(mode); // 'fog', 'clear'
-  }
+  async moveAndDig(directionKey, totalSteps, chunkSize = 50) {
+    let moved = 0;
 
-  setBreakMode(mode) {
-    this.config.breakMode.set(mode); // 'normal' or 'extra'
-  }
+    while (moved < totalSteps) {
+      const steps = Math.min(chunkSize, totalSteps - moved);
 
-  getInventory() {
-    return this.state.materialsInventory?.get
-      ? this.state.materialsInventory.get()
-      : {};
-  }
+      console.log(
+        `Moving with directionKey ${directionKey} and digging ${steps} tiles`,
+      );
 
-  getMaterialCount(materialType) {
-    return this.getInventory()[materialType] || 0;
-  }
+      await this.holdKey(directionKey);
+      await this.pressKeyRepeat(82, steps, 100);
+      await this.releaseKey(directionKey);
 
-  setMaterialCount(materialType, count) {
-    const inventory = this.getInventory();
-    inventory[materialType] = count;
-
-    this.state.materialsInventory.set(inventory);
+      moved += steps;
+    }
   }
 
   async drawQRCode(
@@ -278,6 +334,7 @@ export class SpriteGarden {
     offTile = this.tiles.COAL,
   ) {
     const qr = qrcode(0, "L");
+
     qr.addData(text);
     qr.make();
 
@@ -288,11 +345,13 @@ export class SpriteGarden {
       for (let col = 0; col < size; col++) {
         const isDark = qr.isDark(row, col);
         const tile = isDark ? onTile : offTile;
+
         updates.push({ x: x + col, y: y + row, tile });
       }
     }
 
     this.batchSetTiles(updates);
+
     return { x, y, width: size, height: size };
   }
 }

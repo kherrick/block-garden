@@ -2,14 +2,16 @@ export function createCaveRoom({
   centerX,
   centerY,
   radius,
-  worldWidth,
-  worldHeight,
   tiles,
+  world,
+  worldHeight,
+  worldWidth,
 }) {
   for (let x = centerX - radius; x <= centerX + radius; x++) {
     for (let y = centerY - radius; y <= centerY + radius; y++) {
       if (x >= 0 && x < worldWidth && y >= 0 && y < worldHeight) {
         const distance = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
+
         if (distance <= radius && world.getTile(x, y) !== tiles.BEDROCK) {
           world.setTile(x, y, tiles.AIR);
         }
@@ -19,14 +21,15 @@ export function createCaveRoom({
 }
 
 export function createCaveTunnel({
-  startX,
-  startY,
   angle,
   length,
-  width,
-  worldWidth,
-  worldHeight,
+  startX,
+  startY,
   tiles,
+  width,
+  world,
+  worldHeight,
+  worldWidth,
 }) {
   let currentX = startX;
   let currentY = startY;
@@ -55,6 +58,10 @@ export function createCaveTunnel({
         centerX: Math.floor(currentX),
         centerY: Math.floor(currentY),
         radius: 2 + Math.floor(Math.random() * 2),
+        tiles,
+        world,
+        worldHeight,
+        worldWidth,
       });
     }
   }
@@ -83,7 +90,15 @@ export function generateCaves({
   }
 
   caveSeeds.forEach((seed) => {
-    createCaveRoom(seed.x, seed.y, seed.size);
+    createCaveRoom({
+      centerX: seed.x,
+      centerY: seed.y,
+      radius: seed.size,
+      tiles,
+      world,
+      worldHeight,
+      worldWidth,
+    });
 
     for (let b = 0; b < seed.branches; b++) {
       const angle =
@@ -92,11 +107,15 @@ export function generateCaves({
       const length = 10 + Math.floor(Math.random() * 20);
 
       createCaveTunnel({
-        startX: seed.x,
-        startY: seed.y,
         angle: angle,
         length: length,
+        startX: seed.x,
+        startY: seed.y,
+        tiles,
         width: 1 + Math.floor(Math.random() * 2),
+        world,
+        worldHeight,
+        worldWidth,
       });
     }
   });
@@ -111,7 +130,15 @@ export function generateCaves({
     const size = 1 + Math.floor(Math.random() * 3);
 
     if (Math.random() < 0.3) {
-      createCaveRoom(x, y, size);
+      createCaveRoom({
+        centerX: x,
+        centerY: y,
+        radius: size,
+        tiles,
+        world,
+        worldHeight,
+        worldWidth,
+      });
     }
   }
 }

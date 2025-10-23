@@ -290,14 +290,14 @@ export class SpriteGarden {
 
   async pressKeyRepeat(keyCode, times, delay = 100) {
     for (let i = 0; i < times; i++) {
-      await this.pressKey(keyCode, 50);
+      await this.pressKey(keyCode, delay / 2);
       await sleep(delay);
     }
   }
 
-  async pressKeySequence(keyCodes, delay = 150) {
+  async pressKeySequence(keyCodes, delay = 100) {
     for (const keyCode of keyCodes) {
-      await this.pressKey(keyCode, 50);
+      await this.pressKey(keyCode, delay / 2);
       await sleep(delay);
     }
   }

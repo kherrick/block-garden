@@ -2,7 +2,19 @@ import { sleep } from "../../util/sleep.mjs";
 
 import { SpriteGarden } from "../SpriteGarden.mjs";
 
+import { getPlayerPosition } from "../player/getPlayerPosition.mjs";
+
 export class Gold extends SpriteGarden {
+  returnToMinDepth = false;
+
+  getMinDepth(worldHeight) {
+    return worldHeight * 0.4;
+  }
+
+  getMaxDepth(worldHeight) {
+    return worldHeight * 0.75;
+  }
+
   getGoldCount() {
     const mats = this.state.materialsInventory?.get
       ? this.state.materialsInventory.get()
@@ -17,7 +29,43 @@ export class Gold extends SpriteGarden {
     console.log(`💎 Gold set to ${amount}`);
   }
 
-  async init(targetGold = 100) {
+  isAtLeftEdge(position) {
+    const { isAtLeft } = position.bounds;
+
+    return isAtLeft;
+  }
+
+  isAtRightEdge(position) {
+    const { isAtRight } = position.bounds;
+
+    return isAtRight;
+  }
+
+  isAtEdge(position) {
+    const { isAtRight, isAtLeft, isAtBottom, isAtTop } = position.bounds;
+
+    return isAtRight || isAtLeft || isAtBottom || isAtTop;
+  }
+
+  // make sure player is at least minDepth down
+  async ensureDepth(player, tileSize, worldHeight, worldWidth) {
+    console.log(
+      `⬇️ Ensuring player is at least ${this.getMinDepth(worldHeight)} down`,
+    );
+
+    while (
+      getPlayerPosition(player, tileSize, worldHeight, worldWidth).tile.y <
+      this.getMinDepth(worldHeight)
+    ) {
+      console.log("⬇️ Dig down");
+
+      await this.pressKey(82);
+
+      await sleep(300);
+    }
+  }
+
+  async init(targetGold = 20) {
     console.log(
       `🪙 Starting gold mining automation! Target: ${targetGold} gold`,
     );
@@ -25,20 +73,58 @@ export class Gold extends SpriteGarden {
     // Start game setup
     await this.pressKey(32, 300);
     await sleep(500);
+
+    // Farm in case starting on tree
     await this.holdKey(70);
     await sleep(500);
     await this.releaseKey(70);
+
     console.log("🌳 Cleared starting position");
 
-    // Dig down 40 tiles initially
-    console.log("⬇️ Initial dig: 40 tiles");
-    await this.moveAndDig(83, 40);
+    // Dig down 20 tiles initially
+    console.log("⬇️ Initial dig: 20 tiles");
+    await this.moveAndDig(83, 20);
+
     await sleep(500);
 
+    const player = this.state.player.get();
+    const tileSize = this.config.TILE_SIZE.get();
+    const worldHeight = this.config.WORLD_HEIGHT.get();
+    const worldWidth = this.config.WORLD_WIDTH.get();
+
+    const halfWorldWidth = Math.ceil(worldWidth / 2);
+
     // First right move: (from center to right edge)
-    const mapWidth = this.config.WORLD_WIDTH.get();
-    console.log(`➡️ Initial dig: move right ${mapWidth} tiles (to right edge)`);
-    await this.moveAndDig(68, mapWidth / 2);
+    console.log(
+      `➡️ Initial dig: move right ${halfWorldWidth} tiles (toward right edge)`,
+    );
+
+    for (let index = 0; index < halfWorldWidth; index++) {
+      const position = getPlayerPosition(
+        player,
+        tileSize,
+        worldHeight,
+        worldWidth,
+      );
+
+      if (position.tile.y > this.getMaxDepth(worldHeight)) {
+        console.log(
+          `🤿 return to minimum depth: ${this.getMinDepth(worldHeight)}`,
+        );
+
+        await this.holdKey(87);
+      }
+
+      // farming for safety
+      await this.holdKey(70);
+      await this.moveAndDig(68, 1, 1);
+      await this.releaseKey(70);
+      await this.releaseKey(87);
+
+      if (this.isAtRightEdge(position)) {
+        break;
+      }
+    }
 
     let gold = this.getGoldCount();
     console.log(`💰 Starting gold: ${gold}/${targetGold}`);
@@ -53,8 +139,10 @@ export class Gold extends SpriteGarden {
       await sleep(300);
 
       console.log("⬇️ Dig down 2 tile at right edge");
-      await this.pressKeyRepeat(82, 1, 50);
+      await this.pressKeyRepeat(82, 1);
       await sleep(300);
+
+      await this.ensureDepth(player, tileSize, worldHeight, worldWidth);
 
       gold = this.getGoldCount();
       console.log(`💰 After right-edge dig: ${gold}/${targetGold}`);
@@ -64,11 +152,44 @@ export class Gold extends SpriteGarden {
       }
 
       console.log(
-        `⬅️ Pass ${pass} - move left ${mapWidth} tiles (to left edge)`,
+        `⬅️ Pass ${pass} - move left ${worldWidth} tiles (to left edge)`,
       );
 
       // Move left and dig
-      await this.moveAndDig(65, mapWidth);
+      for (let index = 0; index < worldWidth; index++) {
+        const position = getPlayerPosition(
+          player,
+          tileSize,
+          worldHeight,
+          worldWidth,
+        );
+
+        if (position.tile.y > this.getMaxDepth(worldHeight)) {
+          this.returnToMinDepth = true;
+
+          console.log(
+            `🤿 return to minimum depth: ${this.getMinDepth(worldHeight)}`,
+          );
+        }
+
+        if (position.tile.y < this.getMinDepth(worldHeight)) {
+          this.returnToMinDepth = false;
+        }
+
+        if (this.returnToMinDepth) {
+          await this.holdKey(87);
+        }
+
+        // farming for safety
+        await this.holdKey(70);
+        await this.moveAndDig(65, 1, 1);
+        await this.releaseKey(70);
+        await this.releaseKey(87);
+
+        if (this.isAtLeftEdge(position)) {
+          break;
+        }
+      }
 
       console.log("🔄 Jumping before dig at left edge");
       await this.pressKey(32, 300);
@@ -79,6 +200,8 @@ export class Gold extends SpriteGarden {
       await this.pressKeyRepeat(82, 1, 50);
       await sleep(300);
 
+      await this.ensureDepth(player, tileSize, worldHeight, worldWidth);
+
       gold = this.getGoldCount();
       console.log(`💰 After left-edge dig: ${gold}/${targetGold}`);
 
@@ -87,7 +210,41 @@ export class Gold extends SpriteGarden {
       }
 
       // Move right again to reset position
-      await this.moveAndDig(68, mapWidth);
+      for (let index = 0; index < worldWidth; index++) {
+        const position = getPlayerPosition(
+          player,
+          tileSize,
+          worldHeight,
+          worldWidth,
+        );
+
+        if (position.tile.y > this.getMaxDepth(worldHeight)) {
+          this.returnToMinDepth = true;
+
+          console.log(
+            `🤿 return to minimum depth: ${this.getMinDepth(worldHeight)}`,
+          );
+        }
+
+        if (position.tile.y < this.getMinDepth(worldHeight)) {
+          this.returnToMinDepth = false;
+        }
+
+        if (this.returnToMinDepth) {
+          await this.holdKey(87);
+        }
+
+        // farming for safety
+        await this.holdKey(70);
+        await this.moveAndDig(68, 1, 1);
+        await this.releaseKey(70);
+        await this.releaseKey(87);
+
+        if (this.isAtRightEdge(position)) {
+          break;
+        }
+      }
+
       gold = this.getGoldCount();
 
       console.log(`💰 After return move: ${gold}/${targetGold}`);
@@ -122,7 +279,7 @@ export async function demo() {
   await sleep(1000);
 
   // Run the automated pattern
-  api.init(100);
+  api.init(20);
 
   const apiText = "spriteGarden.demo.goldAPI";
 

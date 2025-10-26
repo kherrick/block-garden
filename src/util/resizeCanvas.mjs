@@ -17,7 +17,6 @@ export function resizeCanvas(doc, gameConfig) {
       cnvs.style.width = "100vw";
       cnvs.style.height = "100vh";
 
-      gameConfig.canvasScale.set(1);
       gameConfig.fogScale.set(36);
 
       return;
@@ -37,13 +36,11 @@ export function resizeCanvas(doc, gameConfig) {
 
     if (currentResolution === "800") {
       gameConfig.fogScale.set(24);
-      gameConfig.canvasScale.set(size / currentResolution);
 
       return;
     }
 
-    // Updated scale calculation
+    // update scale for remaining resolutions
     gameConfig.fogScale.set(12);
-    gameConfig.canvasScale.set(size / currentResolution);
   }
 }

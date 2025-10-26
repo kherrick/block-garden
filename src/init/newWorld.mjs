@@ -1,7 +1,5 @@
 import { extractSeeds, mapValuesToProvided } from "../misc/selectSeed.mjs";
-import { gameConfig, gameState } from "../state/state.mjs";
 import { generateWorld } from "../generate/world.mjs";
-import { initFog } from "./fog.mjs";
 import { registerTreeStructures } from "../misc/registerTreeStructures.mjs";
 
 export function initNewWorld({
@@ -48,14 +46,6 @@ export function initNewWorld({
   // Set initial seed inventory
   const initialSeedInventory = mapValuesToProvided(extractSeeds(tiles));
   seedInventory.set(initialSeedInventory);
-
-  gameState.exploredMap = initFog({
-    fog: null,
-    isFogScaled: gameConfig.isFogScaled,
-    worldHeight,
-    worldWidth,
-    exploredMap: gameState.exploredMap,
-  });
 
   // Find a good spawn location
   let spawnX = Math.floor(worldWidth / 2);

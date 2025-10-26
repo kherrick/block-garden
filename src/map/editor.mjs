@@ -1,3 +1,5 @@
+import { Signal } from "../../deps/signal.mjs";
+
 import { createSaveState } from "../state/createSave.mjs";
 import { gameConfig, gameState } from "../state/state.mjs";
 import { initNewWorld } from "../init/newWorld.mjs";
@@ -344,7 +346,7 @@ async function saveMapAsState() {
     const saveState = createSaveState(globalThis);
 
     // Reset explored map for fresh fog
-    saveState.state.exploredMap = {};
+    saveState.state.exploredMap = new Signal.State({});
 
     // Set player to a safe spawn location
     const worldWidth = gameConfig.WORLD_WIDTH.get();

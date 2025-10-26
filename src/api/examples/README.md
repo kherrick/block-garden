@@ -18,6 +18,10 @@ Players can use these examples to:
 
 Each source corresponds to a themed animation or behavior. Click here to access bookmarklets and see more details.
 
+## Fullscreen - Set fullscreen and reveal options in settings.
+
+* [Source](https://github.com/kherrick/sprite-garden/tree/main/src/api/examples/Fullscreen.mjs): [Fullscreen.mjs](https://kherrick.github.io/sprite-garden/src/api/examples/Fullscreen.mjs)
+
 ## Fireworks - Particle systems and color trails.
 
 * [Source](https://github.com/kherrick/sprite-garden/tree/main/src/api/examples/Fireworks.mjs): [Fireworks.mjs](https://kherrick.github.io/sprite-garden/src/api/examples/Fireworks.mjs)

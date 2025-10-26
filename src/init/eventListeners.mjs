@@ -3,7 +3,6 @@ import extrasHandler from "../../deps/konami-code-js.mjs";
 import { copyToClipboard } from "../util/copyToClipboard.mjs";
 import { createSaveState } from "../state/createSave.mjs";
 import { gameConfig, gameState } from "../state/state.mjs";
-import { initNewWorld } from "./newWorld.mjs";
 import { getRandomSeed } from "../misc/getRandomSeed.mjs";
 import { handleBreakBlockWithWaterPhysics } from "../misc/handleBreakBlock.mjs";
 import { handleFarmAction } from "../misc/handleFarmAction.mjs";
@@ -25,6 +24,9 @@ import { showAboutDialog } from "../dialog/about.mjs";
 import { showExamplesDialog } from "../dialog/examples.mjs";
 import { showPrivacyDialog } from "../dialog/privacy.mjs";
 import { showStorageDialog } from "../dialog/storage.mjs";
+
+import { initFog } from "./fog.mjs";
+import { initNewWorld } from "./newWorld.mjs";
 
 export function initGlobalEventListeners(gThis) {
   // Setup event listeners
@@ -127,8 +129,10 @@ export function initDocumentEventListeners(gThis) {
     doc.getElementById("examplesBtnContainer").removeAttribute("hidden");
     doc.querySelector('option[value="fullscreen"]').removeAttribute("hidden");
 
-    const settingsContainer = doc.querySelector('#settings > [class="ui-grid__corner--container"]');
-    settingsContainer.removeAttribute('hidden');
+    const settingsContainer = doc.querySelector(
+      '#settings > [class="ui-grid__corner--container"]',
+    );
+    settingsContainer.removeAttribute("hidden");
 
     handler.disable();
   });
@@ -263,6 +267,9 @@ export function initDocumentEventListeners(gThis) {
     const seedInput = doc.getElementById("worldSeedInput");
     const currentSeedDisplay = doc.getElementById("currentSeed");
 
+    const worldHeight = gameConfig.WORLD_HEIGHT.get();
+    const worldWidth = gameConfig.WORLD_WIDTH.get();
+
     const currentWorld = initNewWorld({
       biomes: gameConfig.BIOMES,
       gameTime: gameState.gameTime,
@@ -273,13 +280,18 @@ export function initDocumentEventListeners(gThis) {
       surfaceLevel: gameConfig.SURFACE_LEVEL.get(),
       tiles: gameConfig.TILES,
       tileSize: gameConfig.TILE_SIZE.get(),
-      worldHeight: gameConfig.WORLD_HEIGHT.get(),
-      worldWidth: gameConfig.WORLD_WIDTH.get(),
+      worldHeight,
+      worldWidth,
       worldSeed: gameConfig.worldSeed,
       newSeed: seedInput.value,
     });
 
     gameState.world.set(currentWorld);
+
+    const currentFog = initFog(gameConfig.isFogScaled, worldHeight, worldWidth);
+
+    // Set the fog in state
+    gameState.exploredMap.set(currentFog);
     console.log(`Generated new world with seed: ${seedInput.value}`);
 
     currentSeedDisplay.textContent = seedInput.value;
@@ -290,6 +302,9 @@ export function initDocumentEventListeners(gThis) {
     const seedInput = doc.getElementById("worldSeedInput");
     const randomSeed = getRandomSeed();
 
+    const worldHeight = gameConfig.WORLD_HEIGHT.get();
+    const worldWidth = gameConfig.WORLD_WIDTH.get();
+
     const currentWorld = initNewWorld({
       biomes: gameConfig.BIOMES,
       gameTime: gameState.gameTime,
@@ -300,14 +315,18 @@ export function initDocumentEventListeners(gThis) {
       surfaceLevel: gameConfig.SURFACE_LEVEL.get(),
       tiles: gameConfig.TILES,
       tileSize: gameConfig.TILE_SIZE.get(),
-      worldHeight: gameConfig.WORLD_HEIGHT.get(),
-      worldWidth: gameConfig.WORLD_WIDTH.get(),
+      worldHeight,
+      worldWidth,
       worldSeed: gameConfig.worldSeed,
       newSeed: randomSeed,
     });
 
     gameState.world.set(currentWorld);
 
+    const currentFog = initFog(gameConfig.isFogScaled, worldHeight, worldWidth);
+
+    // Set the fog in state
+    gameState.exploredMap.set(currentFog);
     console.log(`Generated new world with random seed: ${randomSeed}`);
 
     seedInput.value = randomSeed;
@@ -453,6 +472,9 @@ export function initElementEventListeners(doc) {
       const currentSeedDisplay = doc.getElementById("currentSeed");
       currentSeedDisplay.textContent = seedInput.value;
 
+      const worldHeight = gameConfig.WORLD_HEIGHT.get();
+      const worldWidth = gameConfig.WORLD_WIDTH.get();
+
       const currentWorld = initNewWorld({
         biomes: gameConfig.BIOMES,
         gameTime: gameState.gameTime,
@@ -463,13 +485,22 @@ export function initElementEventListeners(doc) {
         surfaceLevel: gameConfig.SURFACE_LEVEL.get(),
         tiles: gameConfig.TILES,
         tileSize: gameConfig.TILE_SIZE.get(),
-        worldHeight: gameConfig.WORLD_HEIGHT.get(),
-        worldWidth: gameConfig.WORLD_WIDTH.get(),
+        worldHeight,
+        worldWidth,
         worldSeed: gameConfig.worldSeed,
         newSeed: seedInput.value,
       });
 
       gameState.world.set(currentWorld);
+
+      const currentFog = initFog(
+        gameConfig.isFogScaled,
+        worldHeight,
+        worldWidth,
+      );
+
+      // Set the fog in state
+      gameState.exploredMap.set(currentFog);
     });
 
   // Seed button event listeners

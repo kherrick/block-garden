@@ -302,7 +302,20 @@ export class SpriteGarden {
     }
   }
 
+  async showFullScreen() {
+    const resolutionSelect = this.doc.getElementById("resolutionSelect");
+    const fullscreenOption = resolutionSelect.querySelector(
+      '[value="fullscreen"]',
+    );
+
+    fullscreenOption.removeAttribute("hidden");
+
+    resolutionSelect.value = "fullscreen";
+  }
+
   async setFullscreen() {
+    this.showFullScreen();
+
     this.config.currentResolution.set("fullscreen");
 
     resizeCanvas(this.doc, this.config);

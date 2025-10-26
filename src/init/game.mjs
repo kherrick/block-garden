@@ -1,8 +1,9 @@
 import localForage from "../../deps/localForage.mjs";
 
+import { initEffects } from "./effects.mjs";
+import { initFog } from "./fog.mjs";
 import { initMapEditor } from "../map/editor.mjs";
 import { initNewWorld } from "./newWorld.mjs";
-import { initEffects } from "./effects.mjs";
 
 import {
   initDocumentEventListeners,
@@ -51,6 +52,9 @@ export async function initGame(gThis, doc, cnvs) {
     worldSeed: gameConfig.worldSeed,
   });
 
+  const worldHeight = gameConfig.WORLD_HEIGHT.get();
+  const worldWidth = gameConfig.WORLD_WIDTH.get();
+
   const currentWorld = initNewWorld({
     biomes: gameConfig.BIOMES,
     gameTime: gameState.gameTime,
@@ -61,13 +65,18 @@ export async function initGame(gThis, doc, cnvs) {
     surfaceLevel: gameConfig.SURFACE_LEVEL.get(),
     tiles: gameConfig.TILES,
     tileSize: gameConfig.TILE_SIZE.get(),
-    worldHeight: gameConfig.WORLD_HEIGHT.get(),
-    worldWidth: gameConfig.WORLD_WIDTH.get(),
+    worldHeight,
+    worldWidth,
     worldSeed: gameConfig.worldSeed,
   });
 
   // Set the world in state
   gameState.world.set(currentWorld);
+
+  const currentFog = initFog(gameConfig.isFogScaled, worldHeight, worldWidth);
+
+  // Set the fog in state
+  gameState.exploredMap.set(currentFog);
 
   initTileInspection({
     cnvs,

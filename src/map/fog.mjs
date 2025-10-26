@@ -78,6 +78,7 @@ export class FogMap {
   // Convert to plain object for saving (returns sparse object for compatibility)
   toObject() {
     const obj = {};
+
     for (let y = 0; y < this.height; y++) {
       for (let x = 0; x < this.width; x++) {
         if (this.isExplored(x, y)) {
@@ -85,6 +86,7 @@ export class FogMap {
         }
       }
     }
+
     return obj;
   }
 

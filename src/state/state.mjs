@@ -3,9 +3,19 @@ import { Signal } from "../../deps/signal.mjs";
 import { gameConfig } from "./config.mjs";
 
 export const gameState = {
-  waterPhysicsQueue: new Signal.State(new Set()),
+  // World data
+  world: new Signal.State([]),
   // Tracks which tiles have been explored for map fog
-  exploredMap: {},
+  exploredMap: new Signal.State({}),
+  // Store plant growth data
+  plantStructures: new Signal.State({}),
+  gameTime: new Signal.State(0),
+  growthTimers: new Signal.State({}),
+  seeds: new Signal.State(0),
+  selectedMaterialType: new Signal.State(null),
+  selectedSeedType: new Signal.State(null),
+  viewMode: new Signal.State("normal"),
+  waterPhysicsQueue: new Signal.State(new Set()),
   seedInventory: new Signal.State({
     [gameConfig.TILES.WHEAT]: 0,
     [gameConfig.TILES.CARROT]: 0,
@@ -31,14 +41,6 @@ export const gameState = {
     [gameConfig.TILES.GOLD]: 0,
     [gameConfig.TILES.PUMICE]: 0,
   }),
-  selectedSeedType: new Signal.State(null),
-  selectedMaterialType: new Signal.State(null),
-  gameTime: new Signal.State(0),
-  growthTimers: new Signal.State({}),
-  // Store plant growth data
-  plantStructures: new Signal.State({}),
-  seeds: new Signal.State(0),
-  viewMode: new Signal.State("normal"),
   // Player character
   player: new Signal.State({
     x: 200,
@@ -54,8 +56,6 @@ export const gameState = {
     // Track last movement direction
     lastDirection: 0,
   }),
-  // World data
-  world: new Signal.State([]),
   // Camera system
   camera: new Signal.State({
     x: 0,

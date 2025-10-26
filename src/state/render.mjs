@@ -19,6 +19,7 @@ export function render(
   const currentPlayer = player.get();
   const currentCamera = camera.get();
   const currentWorld = world.get();
+  const currentExploredMap = exploredMap.get();
 
   // Calculate interpolated positions
   const interpolatedPlayerX =
@@ -100,7 +101,7 @@ export function render(
   // Update fog map based on actual player position (not interpolated)
   const isFogEnabled = fogMode.get() === "fog";
   if (isFogEnabled) {
-    exploredMap.updateFromPlayer(player, tileSize);
+    currentExploredMap.updateFromPlayer(player, tileSize);
   }
 
   // Render fog overlay with interpolated camera
@@ -111,7 +112,7 @@ export function render(
     };
 
     if (isFogScaled.get()) {
-      exploredMap.renderScaled(
+      currentExploredMap.renderScaled(
         ctx,
         canvas,
         tileSize,
@@ -123,7 +124,7 @@ export function render(
       if (Math.abs(velocityX) > 0.1 || Math.abs(velocityY) > 0.1) {
         isFogScaled.set(true);
       }
-      exploredMap.render(ctx, canvas, tileSize, interpolatedCameraObj);
+      currentExploredMap.render(ctx, canvas, tileSize, interpolatedCameraObj);
     }
   }
 }

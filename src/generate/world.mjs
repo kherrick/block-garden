@@ -4,6 +4,7 @@ import { addMossToCaves } from "./moss.mjs";
 import { generateCaves } from "./caves.mjs";
 import { generateHeightMap } from "./heightMap.mjs";
 import { generateWaterSources } from "../water/generateWaterSources.mjs";
+import { generateClouds } from "./generateClouds.mjs";
 import { getBiome } from "../misc/getBiome.mjs";
 import { getHarvestMap } from "../misc/getHarvestMap.mjs";
 import { getRandomSeed } from "../misc/getRandomSeed.mjs";
@@ -187,6 +188,15 @@ export function generateWorld({
     tiles,
     seed: worldSeed,
     tileSize,
+  });
+
+  // Generate clouds in the sky
+  generateClouds({
+    world: currentWorld,
+    worldWidth,
+    surfaceLevel,
+    tiles,
+    seed: worldSeed,
   });
 
   // Simulate water physics to make water settle naturally

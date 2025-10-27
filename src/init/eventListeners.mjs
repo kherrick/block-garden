@@ -505,14 +505,28 @@ export function initElementEventListeners(doc) {
 
   // Seed button event listeners
   doc.querySelectorAll(".seed-btn").forEach((seedBtn) => {
-    seedBtn.addEventListener("click", (e) => selectSeed(doc, gameState, e));
+    seedBtn.addEventListener("click", (e) => {
+      selectSeed(doc, gameState, e);
+
+      const subSection = seedBtn?.parentElement?.parentElement;
+
+      if (subSection) {
+        subSection.scrollTo(0, 0);
+      }
+    });
   });
 
   // Material button event listeners
   doc.querySelectorAll(".material-btn").forEach((materialBtn) => {
-    materialBtn.addEventListener("click", (e) =>
-      selectMaterial(doc, gameState, e),
-    );
+    materialBtn.addEventListener("click", (e) => {
+      selectMaterial(doc, gameState, e);
+
+      const subSection = materialBtn?.parentElement?.parentElement;
+
+      if (subSection) {
+        subSection.scrollTo(0, 0);
+      }
+    });
   });
 
   const toggleBtn = doc.getElementById("toggleView");

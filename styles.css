@@ -545,13 +545,18 @@ select:focus {
   margin-top: 0.5rem;
 }
 
+.swatch-cloud,
 .swatch-grass,
 .swatch-ice,
 .swatch-pumice,
 .swatch-snow {
   display: inline-block;
-  height: 0.75rem;
-  width: 0.75rem;
+  height: 0.625rem;
+  width: 0.625rem;
+}
+
+.swatch-cloud {
+  background: #c5d1d3;
 }
 
 .swatch-grass {

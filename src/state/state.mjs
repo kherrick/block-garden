@@ -45,6 +45,7 @@ export const gameState = {
     [TileName.IRON]: 0,
     [TileName.GOLD]: 0,
     [TileName.PUMICE]: 0,
+    [TileName.CLOUD]: 0,
   }),
   // Player character
   player: new Signal.State({

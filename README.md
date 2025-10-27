@@ -13,6 +13,7 @@ Sprite Garden is a 2D sandbox exploration and farming game. Explore procedurally
 - Resource Mining - Dig for valuable resources like coal, iron, and gold
 - Cave Systems - Discover underground caves filled with resources and challenges
 - Building - Use collected materials to place blocks and shape the world
+- Clouds -  Continue building and farming while in the sky
 - Save & Load - Your progress can be saved on device or as a file to share
 
 ## Controls

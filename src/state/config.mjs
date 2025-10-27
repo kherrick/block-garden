@@ -19,9 +19,85 @@ const getT = (v) => ({
   ...v,
 });
 
+const TileName = {
+  AIR: "AIR",
+  BAMBOO: "BAMBOO",
+  BAMBOO_GROWING: "BAMBOO_GROWING",
+  BAMBOO_JOINT: "BAMBOO_JOINT",
+  BAMBOO_LEAVES: "BAMBOO_LEAVES",
+  BAMBOO_STALK: "BAMBOO_STALK",
+  BEDROCK: "BEDROCK",
+  BERRY_BUSH: "BERRY_BUSH",
+  BERRY_BUSH_BERRIES: "BERRY_BUSH_BERRIES",
+  BERRY_BUSH_BRANCH: "BERRY_BUSH_BRANCH",
+  BERRY_BUSH_GROWING: "BERRY_BUSH_GROWING",
+  BERRY_BUSH_LEAVES: "BERRY_BUSH_LEAVES",
+  CACTUS: "CACTUS",
+  CACTUS_BODY: "CACTUS_BODY",
+  CACTUS_FLOWER: "CACTUS_FLOWER",
+  CACTUS_GROWING: "CACTUS_GROWING",
+  CARROT: "CARROT",
+  CARROT_GROWING: "CARROT_GROWING",
+  CARROT_LEAVES: "CARROT_LEAVES",
+  CARROT_ROOT: "CARROT_ROOT",
+  CLAY: "CLAY",
+  COAL: "COAL",
+  CORN: "CORN",
+  CORN_EAR: "CORN_EAR",
+  CORN_GROWING: "CORN_GROWING",
+  CORN_LEAVES: "CORN_LEAVES",
+  CORN_SILK: "CORN_SILK",
+  CORN_STALK: "CORN_STALK",
+  DIRT: "DIRT",
+  FERN: "FERN",
+  FERN_FROND: "FERN_FROND",
+  FERN_GROWING: "FERN_GROWING",
+  FERN_STEM: "FERN_STEM",
+  GOLD: "GOLD",
+  GRASS: "GRASS",
+  ICE: "ICE",
+  IRON: "IRON",
+  LAVA: "LAVA",
+  MOSS: "MOSS",
+  MUSHROOM: "MUSHROOM",
+  MUSHROOM_CAP: "MUSHROOM_CAP",
+  MUSHROOM_GROWING: "MUSHROOM_GROWING",
+  MUSHROOM_STEM: "MUSHROOM_STEM",
+  PINE_CONE: "PINE_CONE",
+  PINE_NEEDLES: "PINE_NEEDLES",
+  PINE_TREE: "PINE_TREE",
+  PINE_TREE_GROWING: "PINE_TREE_GROWING",
+  PINE_TRUNK: "PINE_TRUNK",
+  PUMICE: "PUMICE",
+  SAND: "SAND",
+  SNOW: "SNOW",
+  STONE: "STONE",
+  SUNFLOWER: "SUNFLOWER",
+  SUNFLOWER_CENTER: "SUNFLOWER_CENTER",
+  SUNFLOWER_GROWING: "SUNFLOWER_GROWING",
+  SUNFLOWER_LEAVES: "SUNFLOWER_LEAVES",
+  SUNFLOWER_PETALS: "SUNFLOWER_PETALS",
+  SUNFLOWER_STEM: "SUNFLOWER_STEM",
+  TREE_GROWING: "TREE_GROWING",
+  TREE_LEAVES: "TREE_LEAVES",
+  TREE_TRUNK: "TREE_TRUNK",
+  WALNUT: "WALNUT",
+  WATER: "WATER",
+  WHEAT: "WHEAT",
+  WHEAT_GRAIN: "WHEAT_GRAIN",
+  WHEAT_GROWING: "WHEAT_GROWING",
+  WHEAT_STALK: "WHEAT_STALK",
+  WILLOW_BRANCHES: "WILLOW_BRANCHES",
+  WILLOW_LEAVES: "WILLOW_LEAVES",
+  WILLOW_TREE: "WILLOW_TREE",
+  WILLOW_TREE_GROWING: "WILLOW_TREE_GROWING",
+  WILLOW_TRUNK: "WILLOW_TRUNK",
+  WOOD: "WOOD",
+};
+
 const TILES = {
-  AIR: getT({ id: 0, color: "#87CEEB" }),
-  WHEAT: getT({
+  [TileName.AIR]: getT({ id: 0, color: "#87CEEB" }),
+  [TileName.WHEAT]: getT({
     id: 12,
     color: "#DAA520",
     crop: true,
@@ -29,7 +105,7 @@ const TILES = {
     drops: "WHEAT",
     isSeed: true,
   }),
-  CARROT: getT({
+  [TileName.CARROT]: getT({
     id: 13,
     color: "#FF8C00",
     crop: true,
@@ -37,7 +113,7 @@ const TILES = {
     drops: "CARROT",
     isSeed: true,
   }),
-  MUSHROOM: getT({
+  [TileName.MUSHROOM]: getT({
     id: 14,
     color: "#8B0000",
     crop: true,
@@ -45,7 +121,7 @@ const TILES = {
     drops: "MUSHROOM",
     isSeed: true,
   }),
-  CACTUS: getT({
+  [TileName.CACTUS]: getT({
     id: 15,
     color: "#32CD32",
     solid: true,
@@ -54,7 +130,7 @@ const TILES = {
     drops: "CACTUS",
     isSeed: true,
   }),
-  WALNUT: getT({
+  [TileName.WALNUT]: getT({
     id: 33,
     color: "#654321",
     crop: true,
@@ -62,7 +138,7 @@ const TILES = {
     drops: "WALNUT",
     isSeed: true,
   }),
-  BERRY_BUSH: getT({
+  [TileName.BERRY_BUSH]: getT({
     id: 35,
     color: "#DC143C",
     crop: true,
@@ -70,7 +146,7 @@ const TILES = {
     drops: "BERRY_BUSH",
     isSeed: true,
   }),
-  BAMBOO: getT({
+  [TileName.BAMBOO]: getT({
     id: 36,
     color: "#90EE90",
     solid: true,
@@ -79,7 +155,7 @@ const TILES = {
     drops: "BAMBOO",
     isSeed: true,
   }),
-  SUNFLOWER: getT({
+  [TileName.SUNFLOWER]: getT({
     id: 37,
     color: "#FFD700",
     crop: true,
@@ -87,7 +163,7 @@ const TILES = {
     drops: "SUNFLOWER",
     isSeed: true,
   }),
-  CORN: getT({
+  [TileName.CORN]: getT({
     id: 38,
     color: "#F0E68C",
     crop: true,
@@ -95,7 +171,7 @@ const TILES = {
     drops: "CORN",
     isSeed: true,
   }),
-  PINE_TREE: getT({
+  [TileName.PINE_TREE]: getT({
     id: 39,
     color: "#2E5930",
     solid: true,
@@ -104,7 +180,7 @@ const TILES = {
     drops: "PINE_TREE",
     isSeed: true,
   }),
-  WILLOW_TREE: getT({
+  [TileName.WILLOW_TREE]: getT({
     id: 40,
     color: "#8FBC8F",
     solid: true,
@@ -113,7 +189,7 @@ const TILES = {
     drops: "WILLOW_TREE",
     isSeed: true,
   }),
-  FERN: getT({
+  [TileName.FERN]: getT({
     id: 41,
     color: "#3CB371",
     crop: true,
@@ -121,137 +197,184 @@ const TILES = {
     drops: "FERN",
     isSeed: true,
   }),
-  WOOD: getT({
+  [TileName.WOOD]: getT({
     id: 73,
     color: "#362200",
     solid: false,
     crop: true,
     drops: "WOOD",
   }),
-  CLAY: getT({
+  [TileName.CLAY]: getT({
     id: 6,
     color: "#CD853F",
     solid: true,
     farmable: true,
     drops: "CLAY",
   }),
-  DIRT: getT({
+  [TileName.DIRT]: getT({
     id: 2,
     color: "#8B4513",
     solid: true,
     farmable: true,
     drops: "DIRT",
   }),
-  GRASS: getT({
+  [TileName.GRASS]: getT({
     id: 1,
     color: "#90EE90",
     solid: true,
     farmable: true,
-    drops: "DIRT",
+    drops: "GRASS",
   }),
-  SAND: getT({
+  [TileName.SAND]: getT({
     id: 5,
     color: "#F4A460",
     solid: true,
     farmable: true,
     drops: "SAND",
   }),
-  TREE_LEAVES: getT({
+  [TileName.TREE_LEAVES]: getT({
     id: 11,
     color: "#228B22",
     solid: true,
     crop: true,
     drops: "WOOD",
   }),
-  TREE_TRUNK: getT({
+  [TileName.TREE_TRUNK]: getT({
     id: 10,
     color: "#59392B",
     solid: true,
     crop: true,
     drops: "WOOD",
   }),
-  SNOW: getT({
+  [TileName.SNOW]: getT({
     id: 16,
     color: "#FFFAFA",
     solid: true,
     farmable: true,
-    drops: "SAND",
+    drops: "SNOW",
   }),
-  CACTUS_GROWING: getT({
+  [TileName.CACTUS_GROWING]: getT({
     id: 23,
     color: "#228B22",
     solid: true,
     crop: true,
   }),
-  PINE_TREE_GROWING: getT({
+  [TileName.PINE_TREE_GROWING]: getT({
     id: 46,
     color: "#556B2F",
     solid: true,
     crop: true,
   }),
-  WILLOW_TREE_GROWING: getT({
+  [TileName.WILLOW_TREE_GROWING]: getT({
     id: 47,
     color: "#9BCD9B",
     solid: true,
     crop: true,
   }),
-  FERN_GROWING: getT({ id: 48, color: "#90EE90", crop: true }),
-  WHEAT_GROWING: getT({ id: 20, color: "#9ACD32", crop: true }),
-  CARROT_GROWING: getT({ id: 21, color: "#FF7F50", crop: true }),
-  TREE_GROWING: getT({ id: 34, color: "#9ACD32", crop: true }),
-  MUSHROOM_GROWING: getT({ id: 22, color: "#CD5C5C", crop: true }),
-  BERRY_BUSH_GROWING: getT({ id: 42, color: "#CD5C5C", crop: true }),
-  BAMBOO_GROWING: getT({ id: 43, color: "#98FB98", solid: true, crop: true }),
-  SUNFLOWER_GROWING: getT({ id: 44, color: "#FFEC8B", crop: true }),
-  CORN_GROWING: getT({ id: 45, color: "#EEE8AA", crop: true }),
-  COAL: getT({ id: 7, color: "#2F4F4F", solid: true, drops: "COAL" }),
-  GOLD: getT({ id: 9, color: "#FFD700", solid: true, drops: "GOLD" }),
-  IRON: getT({ id: 8, color: "#B87333", solid: true, drops: "IRON" }),
-  STONE: getT({ id: 3, color: "#696969", solid: true, drops: "STONE" }),
-  PUMICE: getT({ id: 71, color: "#B8A99A", solid: true, drops: "PUMICE" }),
-  ICE: getT({ id: 17, color: "#B0E0E6", solid: true }),
-  LAVA: getT({ id: 18, color: "#FF4500", solid: false }),
-  BEDROCK: getT({ id: 19, color: "#1C1C1C", solid: true }),
-  WATER: getT({ id: 4, color: "#4169E1" }),
-  MOSS: getT({ id: 32, color: "#556B2F" }),
+  [TileName.FERN_GROWING]: getT({ id: 48, color: "#90EE90", crop: true }),
+  [TileName.WHEAT_GROWING]: getT({ id: 20, color: "#9ACD32", crop: true }),
+  [TileName.CARROT_GROWING]: getT({ id: 21, color: "#FF7F50", crop: true }),
+  [TileName.TREE_GROWING]: getT({ id: 34, color: "#9ACD32", crop: true }),
+  [TileName.MUSHROOM_GROWING]: getT({ id: 22, color: "#CD5C5C", crop: true }),
+  [TileName.BERRY_BUSH_GROWING]: getT({
+    id: 42,
+    color: "#CD5C5C",
+    crop: true,
+  }),
+  [TileName.BAMBOO_GROWING]: getT({
+    id: 43,
+    color: "#98FB98",
+    solid: true,
+    crop: true,
+  }),
+  [TileName.SUNFLOWER_GROWING]: getT({ id: 44, color: "#FFEC8B", crop: true }),
+  [TileName.CORN_GROWING]: getT({ id: 45, color: "#EEE8AA", crop: true }),
+  [TileName.COAL]: getT({
+    id: 7,
+    color: "#2F4F4F",
+    solid: true,
+    drops: "COAL",
+  }),
+  [TileName.GOLD]: getT({
+    id: 9,
+    color: "#FFD700",
+    solid: true,
+    drops: "GOLD",
+  }),
+  [TileName.IRON]: getT({
+    id: 8,
+    color: "#B87333",
+    solid: true,
+    drops: "IRON",
+  }),
+  [TileName.STONE]: getT({
+    id: 3,
+    color: "#696969",
+    solid: true,
+    drops: "STONE",
+  }),
+  [TileName.PUMICE]: getT({
+    id: 71,
+    color: "#B8A99A",
+    solid: true,
+    drops: "PUMICE",
+  }),
+  [TileName.ICE]: getT({
+    id: 17,
+    color: "#B0E0E6",
+    solid: true,
+    drops: "ICE",
+  }),
+  [TileName.BEDROCK]: getT({ id: 19, color: "#1C1C1C", solid: true }),
+  [TileName.LAVA]: getT({ id: 18, color: "#FF4500" }),
+  [TileName.WATER]: getT({ id: 4, color: "#4169E1" }),
+  [TileName.MOSS]: getT({ id: 32, color: "#556B2F" }),
   // Plant parts for grown crops
-  WHEAT_STALK: getT({ id: 24, color: "#8B7355" }),
-  WHEAT_GRAIN: getT({ id: 25, color: "#FFD700" }),
-  CARROT_LEAVES: getT({ id: 26, color: "#228B22" }),
-  CARROT_ROOT: getT({ id: 27, color: "#FF6347" }),
-  MUSHROOM_STEM: getT({ id: 28, color: "#D2691E" }),
-  MUSHROOM_CAP: getT({ id: 29, color: "#8B0000" }),
-  CACTUS_BODY: getT({ id: 30, color: "#2E8B57", solid: true }),
-  CACTUS_FLOWER: getT({ id: 31, color: "#FF69B4" }),
+  [TileName.WHEAT_STALK]: getT({ id: 24, color: "#8B7355" }),
+  [TileName.WHEAT_GRAIN]: getT({ id: 25, color: "#FFD700" }),
+  [TileName.CARROT_LEAVES]: getT({ id: 26, color: "#228B22" }),
+  [TileName.CARROT_ROOT]: getT({ id: 27, color: "#FF6347" }),
+  [TileName.MUSHROOM_STEM]: getT({ id: 28, color: "#D2691E" }),
+  [TileName.MUSHROOM_CAP]: getT({ id: 29, color: "#8B0000" }),
+  [TileName.CACTUS_BODY]: getT({ id: 30, color: "#2E8B57", solid: true }),
+  [TileName.CACTUS_FLOWER]: getT({ id: 31, color: "#FF69B4" }),
   // Berry bush parts
-  BERRY_BUSH_BRANCH: getT({ id: 49, color: "#8B4513", solid: true }),
-  BERRY_BUSH_LEAVES: getT({ id: 50, color: "#228B22", solid: true }),
-  BERRY_BUSH_BERRIES: getT({ id: 51, color: "#DC143C" }),
+  [TileName.BERRY_BUSH_BRANCH]: getT({
+    id: 49,
+    color: "#8B4513",
+    solid: true,
+  }),
+  [TileName.BERRY_BUSH_LEAVES]: getT({
+    id: 50,
+    color: "#228B22",
+    solid: true,
+  }),
+  [TileName.BERRY_BUSH_BERRIES]: getT({ id: 51, color: "#DC143C" }),
   // Bamboo parts
-  BAMBOO_STALK: getT({ id: 52, color: "#90EE90", solid: true }),
-  BAMBOO_JOINT: getT({ id: 53, color: "#6B8E23", solid: true }),
-  BAMBOO_LEAVES: getT({ id: 54, color: "#32CD32" }),
+  [TileName.BAMBOO_STALK]: getT({ id: 52, color: "#90EE90", solid: true }),
+  [TileName.BAMBOO_JOINT]: getT({ id: 53, color: "#6B8E23", solid: true }),
+  [TileName.BAMBOO_LEAVES]: getT({ id: 54, color: "#32CD32" }),
   // Sunflower parts
-  SUNFLOWER_STEM: getT({ id: 55, color: "#8B7355" }),
-  SUNFLOWER_LEAVES: getT({ id: 56, color: "#228B22" }),
-  SUNFLOWER_CENTER: getT({ id: 57, color: "#8B4513" }),
-  SUNFLOWER_PETALS: getT({ id: 58, color: "#FFD700" }),
+  [TileName.SUNFLOWER_STEM]: getT({ id: 55, color: "#8B7355" }),
+  [TileName.SUNFLOWER_LEAVES]: getT({ id: 56, color: "#228B22" }),
+  [TileName.SUNFLOWER_CENTER]: getT({ id: 57, color: "#8B4513" }),
+  [TileName.SUNFLOWER_PETALS]: getT({ id: 58, color: "#FFD700" }),
   // Corn parts
-  CORN_STALK: getT({ id: 59, color: "#9ACD32" }),
-  CORN_LEAVES: getT({ id: 60, color: "#6B8E23" }),
-  CORN_EAR: getT({ id: 61, color: "#F0E68C" }),
-  CORN_SILK: getT({ id: 62, color: "#DEB887" }),
+  [TileName.CORN_STALK]: getT({ id: 59, color: "#9ACD32" }),
+  [TileName.CORN_LEAVES]: getT({ id: 60, color: "#6B8E23" }),
+  [TileName.CORN_EAR]: getT({ id: 61, color: "#F0E68C" }),
+  [TileName.CORN_SILK]: getT({ id: 62, color: "#DEB887" }),
   // Pine tree parts
-  PINE_TRUNK: getT({ id: 63, color: "#8B4513", solid: true }),
-  PINE_NEEDLES: getT({ id: 64, color: "#2E5930", solid: true }),
-  PINE_CONE: getT({ id: 65, color: "#8B7355" }),
+  [TileName.PINE_TRUNK]: getT({ id: 63, color: "#8B4513", solid: true }),
+  [TileName.PINE_NEEDLES]: getT({ id: 64, color: "#2E5930", solid: true }),
+  [TileName.PINE_CONE]: getT({ id: 65, color: "#8B7355" }),
   // Willow tree parts
-  WILLOW_TRUNK: getT({ id: 66, color: "#8B7355", solid: true }),
-  WILLOW_BRANCHES: getT({ id: 67, color: "#8FBC8F", solid: true }),
-  WILLOW_LEAVES: getT({ id: 68, color: "#9ACD32" }),
+  [TileName.WILLOW_TRUNK]: getT({ id: 66, color: "#8B7355", solid: true }),
+  [TileName.WILLOW_BRANCHES]: getT({ id: 67, color: "#8FBC8F", solid: true }),
+  [TileName.WILLOW_LEAVES]: getT({ id: 68, color: "#9ACD32" }),
   // Fern parts
-  FERN_STEM: getT({ id: 69, color: "#556B2F" }),
-  FERN_FROND: getT({ id: 70, color: "#3CB371" }),
+  [TileName.FERN_STEM]: getT({ id: 69, color: "#556B2F" }),
+  [TileName.FERN_FROND]: getT({ id: 70, color: "#3CB371" }),
 };
 
 const biomeFields = {
@@ -300,7 +423,7 @@ BIOMES.DESERT.subTile = TILES.SAND;
 BIOMES.DESERT.crops = [TILES.CACTUS, TILES.SUNFLOWER];
 
 BIOMES.TUNDRA.surfaceTile = TILES.SNOW;
-BIOMES.TUNDRA.subTile = TILES.DIRT;
+BIOMES.TUNDRA.subTile = TILES.ICE;
 BIOMES.TUNDRA.crops = [TILES.PINE_TREE, TILES.FERN];
 
 BIOMES.SWAMP.surfaceTile = TILES.CLAY;
@@ -342,6 +465,7 @@ export const gameConfig = {
   GRAVITY: new Signal.State(0.7),
   FRICTION: new Signal.State(0.8),
   MAX_FALL_SPEED: new Signal.State(15),
-  TILES,
   BIOMES,
+  TILES,
+  TileName,
 };

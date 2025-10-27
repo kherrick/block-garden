@@ -545,11 +545,29 @@ select:focus {
   margin-top: 0.5rem;
 }
 
-.swatch-pumice {
-  background: #b8a99a;
+.swatch-grass,
+.swatch-ice,
+.swatch-pumice,
+.swatch-snow {
   display: inline-block;
   height: 0.75rem;
   width: 0.75rem;
+}
+
+.swatch-grass {
+  background: #90ee90;
+}
+
+.swatch-ice {
+  background: #b0e0e6;
+}
+
+.swatch-pumice {
+  background: #b8a99a;
+}
+
+.swatch-snow {
+  background: #fffafa;
 }
 
 /* Mobile Responsive */

@@ -2,6 +2,8 @@ import { Signal } from "../../deps/signal.mjs";
 
 import { gameConfig } from "./config.mjs";
 
+const { TileName } = gameConfig;
+
 export const gameState = {
   // World data
   world: new Signal.State([]),
@@ -17,29 +19,32 @@ export const gameState = {
   viewMode: new Signal.State("normal"),
   waterPhysicsQueue: new Signal.State(new Set()),
   seedInventory: new Signal.State({
-    [gameConfig.TILES.WHEAT]: 0,
-    [gameConfig.TILES.CARROT]: 0,
-    [gameConfig.TILES.MUSHROOM]: 0,
-    [gameConfig.TILES.CACTUS]: 0,
-    [gameConfig.TILES.WALNUT]: 0,
-    [gameConfig.TILES.BERRY_BUSH]: 0,
-    [gameConfig.TILES.BAMBOO]: 0,
-    [gameConfig.TILES.SUNFLOWER]: 0,
-    [gameConfig.TILES.CORN]: 0,
-    [gameConfig.TILES.PINE_TREE]: 0,
-    [gameConfig.TILES.WILLOW_TREE]: 0,
-    [gameConfig.TILES.FERN]: 0,
+    [TileName.WHEAT]: 0,
+    [TileName.CARROT]: 0,
+    [TileName.MUSHROOM]: 0,
+    [TileName.CACTUS]: 0,
+    [TileName.WALNUT]: 0,
+    [TileName.BERRY_BUSH]: 0,
+    [TileName.BAMBOO]: 0,
+    [TileName.SUNFLOWER]: 0,
+    [TileName.CORN]: 0,
+    [TileName.PINE_TREE]: 0,
+    [TileName.WILLOW_TREE]: 0,
+    [TileName.FERN]: 0,
   }),
   materialsInventory: new Signal.State({
-    [gameConfig.TILES.DIRT]: 0,
-    [gameConfig.TILES.STONE]: 0,
-    [gameConfig.TILES.WOOD]: 0,
-    [gameConfig.TILES.SAND]: 0,
-    [gameConfig.TILES.CLAY]: 0,
-    [gameConfig.TILES.COAL]: 0,
-    [gameConfig.TILES.IRON]: 0,
-    [gameConfig.TILES.GOLD]: 0,
-    [gameConfig.TILES.PUMICE]: 0,
+    [TileName.DIRT]: 0,
+    [TileName.STONE]: 0,
+    [TileName.GRASS]: 0,
+    [TileName.SNOW]: 0,
+    [TileName.ICE]: 0,
+    [TileName.WOOD]: 0,
+    [TileName.SAND]: 0,
+    [TileName.CLAY]: 0,
+    [TileName.COAL]: 0,
+    [TileName.IRON]: 0,
+    [TileName.GOLD]: 0,
+    [TileName.PUMICE]: 0,
   }),
   // Player character
   player: new Signal.State({

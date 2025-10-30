@@ -178,6 +178,15 @@ export function generateWorld({
     tiles,
   });
 
+  // Generate clouds in the sky
+  generateClouds({
+    world: currentWorld,
+    worldWidth,
+    surfaceLevel,
+    tiles,
+    seed: worldSeed,
+  });
+
   // Generate water sources using seeded noise
   generateWaterSources({
     world: currentWorld,
@@ -188,15 +197,6 @@ export function generateWorld({
     tiles,
     seed: worldSeed,
     tileSize,
-  });
-
-  // Generate clouds in the sky
-  generateClouds({
-    world: currentWorld,
-    worldWidth,
-    surfaceLevel,
-    tiles,
-    seed: worldSeed,
   });
 
   // Simulate water physics to make water settle naturally

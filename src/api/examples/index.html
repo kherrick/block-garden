@@ -13,13 +13,22 @@
       content="Examples - Sprite Garden - A 2D sandbox exploration and farming game. Explore procedurally generated worlds, discover different biomes, mine resources, and cultivate a variety of crops."
     />
     <meta name="theme-color" content="#000000" />
-    <link rel="stylesheet" href="styles.css" type="text/css" />
     <link rel="manifest" href="manifest.json" />
     <link rel="icon" href="assets/icons/favicon.ico" type="image/x-icon" />
     <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png" />
-  </head>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 2rem;
+      }
 
-  <body class="examples sprite-garden">
+      li {
+        margin: 0.25rem 0;
+      }
+    </style>
+  </head>
+  <body class="examples">
     <div class="examples-content">
       <header class="examples-content_header">
         <h1>
@@ -67,7 +76,7 @@
         <li>
           <p>
             <a
-              href="javascript:document.querySelector(%22dialog.examples-content%22)?.close();if(!document.getElementById(%22mapEditorControls%22).hasAttribute(%22hidden%22))document.getElementById(%22toggleMapEditor%22)?.click();var e;(e=document.createElement(%22script%22)).setAttribute(%22type%22,%22module%22),e.innerHTML=%22(await import(%27https://kherrick.github.io/sprite-garden/src/api/examples/Fullscreen.mjs%27)).demo()%22,document.body.append(e);"
+              href="javascript:var el=(document.querySelector(%22sprite-garden%22)?.shadowRoot ?? document);el.querySelector(%22dialog.examples-content%22)?.close();if(!el.getElementById(%22mapEditorControls%22).hasAttribute(%22hidden%22))el.getElementById(%22toggleMapEditor%22)?.click();var e;(e=document.createElement(%22script%22)).setAttribute(%22type%22,%22module%22),e.innerHTML=%22(await import(%27https://kherrick.github.io/sprite-garden/src/api/examples/Fullscreen.mjs%27)).demo()%22,document.body.append(e);"
               rel="nofollow"
               >Sprite Garden - Fullscreen - Bookmarklet</a
             >
@@ -75,7 +84,7 @@
           <p class="bookmarklet">
             <a
               title="Sprite Garden - Fullscreen - Bookmarklet"
-              href="javascript:document.querySelector(%22dialog.examples-content%22)?.close();if(!document.getElementById(%22mapEditorControls%22).hasAttribute(%22hidden%22))document.getElementById(%22toggleMapEditor%22)?.click();var e;(e=document.createElement(%22script%22)).setAttribute(%22type%22,%22module%22),e.innerHTML=%22(await import(%27https://kherrick.github.io/sprite-garden/src/api/examples/Fullscreen.mjs%27)).demo()%22,document.body.append(e);"
+              href="javascript:var el=(document.querySelector(%22sprite-garden%22)?.shadowRoot ?? document);el.querySelector(%22dialog.examples-content%22)?.close();if(!el.getElementById(%22mapEditorControls%22).hasAttribute(%22hidden%22))el.getElementById(%22toggleMapEditor%22)?.click();var e;(e=document.createElement(%22script%22)).setAttribute(%22type%22,%22module%22),e.innerHTML=%22(await import(%27https://kherrick.github.io/sprite-garden/src/api/examples/Fullscreen.mjs%27)).demo()%22,document.body.append(e);"
               rel="nofollow"
               ><svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -113,7 +122,7 @@
         <li>
           <p>
             <a
-              href="javascript:document.querySelector(%22dialog.examples-content%22)?.close();if(!document.getElementById(%22mapEditorControls%22).hasAttribute(%22hidden%22))document.getElementById(%22toggleMapEditor%22)?.click();var e;(e=document.createElement(%22script%22)).setAttribute(%22type%22,%22module%22),e.innerHTML=%22(await import(%27https://kherrick.github.io/sprite-garden/src/api/examples/Fireworks.mjs%27)).demo()%22,document.body.append(e);"
+              href="javascript:var el=(document.querySelector(%22sprite-garden%22)?.shadowRoot ?? document);el.querySelector(%22dialog.examples-content%22)?.close();if(!el.getElementById(%22mapEditorControls%22).hasAttribute(%22hidden%22))el.getElementById(%22toggleMapEditor%22)?.click();var e;(e=document.createElement(%22script%22)).setAttribute(%22type%22,%22module%22),e.innerHTML=%22(await import(%27https://kherrick.github.io/sprite-garden/src/api/examples/Fireworks.mjs%27)).demo()%22,document.body.append(e);"
               rel="nofollow"
               >Sprite Garden - Fireworks - Bookmarklet</a
             >
@@ -121,7 +130,7 @@
           <p class="bookmarklet">
             <a
               title="Sprite Garden - Fireworks - Bookmarklet"
-              href="javascript:document.querySelector(%22dialog.examples-content%22)?.close();if(!document.getElementById(%22mapEditorControls%22).hasAttribute(%22hidden%22))document.getElementById(%22toggleMapEditor%22)?.click();var e;(e=document.createElement(%22script%22)).setAttribute(%22type%22,%22module%22),e.innerHTML=%22(await import(%27https://kherrick.github.io/sprite-garden/src/api/examples/Fireworks.mjs%27)).demo()%22,document.body.append(e);"
+              href="javascript:var el=(document.querySelector(%22sprite-garden%22)?.shadowRoot ?? document);el.querySelector(%22dialog.examples-content%22)?.close();if(!el.getElementById(%22mapEditorControls%22).hasAttribute(%22hidden%22))el.getElementById(%22toggleMapEditor%22)?.click();var e;(e=document.createElement(%22script%22)).setAttribute(%22type%22,%22module%22),e.innerHTML=%22(await import(%27https://kherrick.github.io/sprite-garden/src/api/examples/Fireworks.mjs%27)).demo()%22,document.body.append(e);"
               rel="nofollow"
               ><svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -159,7 +168,7 @@
         <li>
           <p>
             <a
-              href="javascript:document.querySelector(%22dialog.examples-content%22)?.close();if(!document.getElementById(%22mapEditorControls%22).hasAttribute(%22hidden%22))document.getElementById(%22toggleMapEditor%22)?.click();var e;(e=document.createElement(%22script%22)).setAttribute(%22type%22,%22module%22),e.innerHTML=%22(await import(%27https://kherrick.github.io/sprite-garden/src/api/examples/Gold.mjs%27)).demo()%22,document.body.append(e);"
+              href="javascript:var el=(document.querySelector(%22sprite-garden%22)?.shadowRoot ?? document);el.querySelector(%22dialog.examples-content%22)?.close();if(!el.getElementById(%22mapEditorControls%22).hasAttribute(%22hidden%22))el.getElementById(%22toggleMapEditor%22)?.click();var e;(e=document.createElement(%22script%22)).setAttribute(%22type%22,%22module%22),e.innerHTML=%22(await import(%27https://kherrick.github.io/sprite-garden/src/api/examples/Gold.mjs%27)).demo()%22,document.body.append(e);"
               rel="nofollow"
               >Sprite Garden - Gold - Bookmarklet</a
             >
@@ -167,7 +176,7 @@
           <p class="bookmarklet">
             <a
               title="Sprite Garden - Gold - Bookmarklet"
-              href="javascript:document.querySelector(%22dialog.examples-content%22)?.close();if(!document.getElementById(%22mapEditorControls%22).hasAttribute(%22hidden%22))document.getElementById(%22toggleMapEditor%22)?.click();var e;(e=document.createElement(%22script%22)).setAttribute(%22type%22,%22module%22),e.innerHTML=%22(await import(%27https://kherrick.github.io/sprite-garden/src/api/examples/Gold.mjs%27)).demo()%22,document.body.append(e);"
+              href="javascript:var el=(document.querySelector(%22sprite-garden%22)?.shadowRoot ?? document);el.querySelector(%22dialog.examples-content%22)?.close();if(!el.getElementById(%22mapEditorControls%22).hasAttribute(%22hidden%22))el.getElementById(%22toggleMapEditor%22)?.click();var e;(e=document.createElement(%22script%22)).setAttribute(%22type%22,%22module%22),e.innerHTML=%22(await import(%27https://kherrick.github.io/sprite-garden/src/api/examples/Gold.mjs%27)).demo()%22,document.body.append(e);"
               rel="nofollow"
               ><svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -205,7 +214,7 @@
         <li>
           <p>
             <a
-              href="javascript:document.querySelector(%22dialog.examples-content%22)?.close();if(!document.getElementById(%22mapEditorControls%22).hasAttribute(%22hidden%22))document.getElementById(%22toggleMapEditor%22)?.click();var e;(e=document.createElement(%22script%22)).setAttribute(%22type%22,%22module%22),e.innerHTML=%22(await import(%27https://kherrick.github.io/sprite-garden/src/api/examples/GOL.mjs%27)).demo()%22,document.body.append(e);"
+              href="javascript:var el=(document.querySelector(%22sprite-garden%22)?.shadowRoot ?? document);el.querySelector(%22dialog.examples-content%22)?.close();if(!el.getElementById(%22mapEditorControls%22).hasAttribute(%22hidden%22))el.getElementById(%22toggleMapEditor%22)?.click();var e;(e=document.createElement(%22script%22)).setAttribute(%22type%22,%22module%22),e.innerHTML=%22(await import(%27https://kherrick.github.io/sprite-garden/src/api/examples/GOL.mjs%27)).demo()%22,document.body.append(e);"
               rel="nofollow"
               >Sprite Garden - GOL - Bookmarklet</a
             >
@@ -213,7 +222,7 @@
           <p class="bookmarklet">
             <a
               title="Sprite Garden - GOL - Bookmarklet"
-              href="javascript:document.querySelector(%22dialog.examples-content%22)?.close();if(!document.getElementById(%22mapEditorControls%22).hasAttribute(%22hidden%22))document.getElementById(%22toggleMapEditor%22)?.click();var e;(e=document.createElement(%22script%22)).setAttribute(%22type%22,%22module%22),e.innerHTML=%22(await import(%27https://kherrick.github.io/sprite-garden/src/api/examples/GOL.mjs%27)).demo()%22,document.body.append(e);"
+              href="javascript:var el=(document.querySelector(%22sprite-garden%22)?.shadowRoot ?? document);el.querySelector(%22dialog.examples-content%22)?.close();if(!el.getElementById(%22mapEditorControls%22).hasAttribute(%22hidden%22))el.getElementById(%22toggleMapEditor%22)?.click();var e;(e=document.createElement(%22script%22)).setAttribute(%22type%22,%22module%22),e.innerHTML=%22(await import(%27https://kherrick.github.io/sprite-garden/src/api/examples/GOL.mjs%27)).demo()%22,document.body.append(e);"
               rel="nofollow"
               ><svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -251,7 +260,7 @@
         <li>
           <p>
             <a
-              href="javascript:document.querySelector(%22dialog.examples-content%22)?.close();if(!document.getElementById(%22mapEditorControls%22).hasAttribute(%22hidden%22))document.getElementById(%22toggleMapEditor%22)?.click();var e;(e=document.createElement(%22script%22)).setAttribute(%22type%22,%22module%22),e.innerHTML=%22(await import(%27https://kherrick.github.io/sprite-garden/src/api/examples/Heart.mjs%27)).demo()%22,document.body.append(e);"
+              href="javascript:var el=(document.querySelector(%22sprite-garden%22)?.shadowRoot ?? document);el.querySelector(%22dialog.examples-content%22)?.close();if(!el.getElementById(%22mapEditorControls%22).hasAttribute(%22hidden%22))el.getElementById(%22toggleMapEditor%22)?.click();var e;(e=document.createElement(%22script%22)).setAttribute(%22type%22,%22module%22),e.innerHTML=%22(await import(%27https://kherrick.github.io/sprite-garden/src/api/examples/Heart.mjs%27)).demo()%22,document.body.append(e);"
               rel="nofollow"
               >Sprite Garden - Heart - Bookmarklet</a
             >
@@ -259,7 +268,7 @@
           <p class="bookmarklet">
             <a
               title="Sprite Garden - Heart - Bookmarklet"
-              href="javascript:document.querySelector(%22dialog.examples-content%22)?.close();if(!document.getElementById(%22mapEditorControls%22).hasAttribute(%22hidden%22))document.getElementById(%22toggleMapEditor%22)?.click();var e;(e=document.createElement(%22script%22)).setAttribute(%22type%22,%22module%22),e.innerHTML=%22(await import(%27https://kherrick.github.io/sprite-garden/src/api/examples/Heart.mjs%27)).demo()%22,document.body.append(e);"
+              href="javascript:var el=(document.querySelector(%22sprite-garden%22)?.shadowRoot ?? document);el.querySelector(%22dialog.examples-content%22)?.close();if(!el.getElementById(%22mapEditorControls%22).hasAttribute(%22hidden%22))el.getElementById(%22toggleMapEditor%22)?.click();var e;(e=document.createElement(%22script%22)).setAttribute(%22type%22,%22module%22),e.innerHTML=%22(await import(%27https://kherrick.github.io/sprite-garden/src/api/examples/Heart.mjs%27)).demo()%22,document.body.append(e);"
               rel="nofollow"
               ><svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -300,7 +309,7 @@
         <li>
           <p>
             <a
-              href="javascript:document.querySelector(%22dialog.examples-content%22)?.close();if(!document.getElementById(%22mapEditorControls%22).hasAttribute(%22hidden%22))document.getElementById(%22toggleMapEditor%22)?.click();var e;(e=document.createElement(%22script%22)).setAttribute(%22type%22,%22module%22),e.innerHTML=%22(await import(%27https://kherrick.github.io/sprite-garden/src/api/examples/KonamiCode.mjs%27)).demo()%22,document.body.append(e);"
+              href="javascript:var el=(document.querySelector(%22sprite-garden%22)?.shadowRoot ?? document);el.querySelector(%22dialog.examples-content%22)?.close();if(!el.getElementById(%22mapEditorControls%22).hasAttribute(%22hidden%22))el.getElementById(%22toggleMapEditor%22)?.click();var e;(e=document.createElement(%22script%22)).setAttribute(%22type%22,%22module%22),e.innerHTML=%22(await import(%27https://kherrick.github.io/sprite-garden/src/api/examples/KonamiCode.mjs%27)).demo()%22,document.body.append(e);"
               rel="nofollow"
               >Sprite Garden - Konami Code - Bookmarklet</a
             >
@@ -308,7 +317,7 @@
           <p class="bookmarklet">
             <a
               title="Sprite Garden - Konami Code - Bookmarklet"
-              href="javascript:document.querySelector(%22dialog.examples-content%22)?.close();if(!document.getElementById(%22mapEditorControls%22).hasAttribute(%22hidden%22))document.getElementById(%22toggleMapEditor%22)?.click();var e;(e=document.createElement(%22script%22)).setAttribute(%22type%22,%22module%22),e.innerHTML=%22(await import(%27https://kherrick.github.io/sprite-garden/src/api/examples/KonamiCode.mjs%27)).demo()%22,document.body.append(e);"
+              href="javascript:var el=(document.querySelector(%22sprite-garden%22)?.shadowRoot ?? document);el.querySelector(%22dialog.examples-content%22)?.close();if(!el.getElementById(%22mapEditorControls%22).hasAttribute(%22hidden%22))el.getElementById(%22toggleMapEditor%22)?.click();var e;(e=document.createElement(%22script%22)).setAttribute(%22type%22,%22module%22),e.innerHTML=%22(await import(%27https://kherrick.github.io/sprite-garden/src/api/examples/KonamiCode.mjs%27)).demo()%22,document.body.append(e);"
               rel="nofollow"
               ><svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -348,7 +357,7 @@
         <li>
           <p>
             <a
-              href="javascript:document.querySelector(%22dialog.examples-content%22)?.close();if(!document.getElementById(%22mapEditorControls%22).hasAttribute(%22hidden%22))document.getElementById(%22toggleMapEditor%22)?.click();var e;(e=document.createElement(%22script%22)).setAttribute(%22type%22,%22module%22),e.innerHTML=%22(await import(%27https://kherrick.github.io/sprite-garden/src/api/examples/Messaging.mjs%27)).demo()%22,document.body.append(e);"
+              href="javascript:var el=(document.querySelector(%22sprite-garden%22)?.shadowRoot ?? document);el.querySelector(%22dialog.examples-content%22)?.close();if(!el.getElementById(%22mapEditorControls%22).hasAttribute(%22hidden%22))el.getElementById(%22toggleMapEditor%22)?.click();var e;(e=document.createElement(%22script%22)).setAttribute(%22type%22,%22module%22),e.innerHTML=%22(await import(%27https://kherrick.github.io/sprite-garden/src/api/examples/Messaging.mjs%27)).demo()%22,document.body.append(e);"
               rel="nofollow"
               >Sprite Garden - Messaging - Bookmarklet</a
             >
@@ -356,7 +365,7 @@
           <p class="bookmarklet">
             <a
               title="Sprite Garden - Messaging - Bookmarklet"
-              href="javascript:document.querySelector(%22dialog.examples-content%22)?.close();if(!document.getElementById(%22mapEditorControls%22).hasAttribute(%22hidden%22))document.getElementById(%22toggleMapEditor%22)?.click();var e;(e=document.createElement(%22script%22)).setAttribute(%22type%22,%22module%22),e.innerHTML=%22(await import(%27https://kherrick.github.io/sprite-garden/src/api/examples/Messaging.mjs%27)).demo()%22,document.body.append(e);"
+              href="javascript:var el=(document.querySelector(%22sprite-garden%22)?.shadowRoot ?? document);el.querySelector(%22dialog.examples-content%22)?.close();if(!el.getElementById(%22mapEditorControls%22).hasAttribute(%22hidden%22))el.getElementById(%22toggleMapEditor%22)?.click();var e;(e=document.createElement(%22script%22)).setAttribute(%22type%22,%22module%22),e.innerHTML=%22(await import(%27https://kherrick.github.io/sprite-garden/src/api/examples/Messaging.mjs%27)).demo()%22,document.body.append(e);"
               rel="nofollow"
               ><svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -394,7 +403,7 @@
         <li>
           <p>
             <a
-              href="javascript:document.querySelector(%22dialog.examples-content%22)?.close();if(!document.getElementById(%22mapEditorControls%22).hasAttribute(%22hidden%22))document.getElementById(%22toggleMapEditor%22)?.click();var e;(e=document.createElement(%22script%22)).setAttribute(%22type%22,%22module%22),e.innerHTML=%22(await import(%27https://kherrick.github.io/sprite-garden/src/api/examples/QRCode.mjs%27)).demo()%22,document.body.append(e);"
+              href="javascript:var el=(document.querySelector(%22sprite-garden%22)?.shadowRoot ?? document);el.querySelector(%22dialog.examples-content%22)?.close();if(!el.getElementById(%22mapEditorControls%22).hasAttribute(%22hidden%22))el.getElementById(%22toggleMapEditor%22)?.click();var e;(e=document.createElement(%22script%22)).setAttribute(%22type%22,%22module%22),e.innerHTML=%22(await import(%27https://kherrick.github.io/sprite-garden/src/api/examples/QRCode.mjs%27)).demo()%22,document.body.append(e);"
               rel="nofollow"
               >Sprite Garden - QRCode - Bookmarklet</a
             >
@@ -402,7 +411,7 @@
           <p class="bookmarklet">
             <a
               title="Sprite Garden - QRCode - Bookmarklet"
-              href="javascript:document.querySelector(%22dialog.examples-content%22)?.close();if(!document.getElementById(%22mapEditorControls%22).hasAttribute(%22hidden%22))document.getElementById(%22toggleMapEditor%22)?.click();var e;(e=document.createElement(%22script%22)).setAttribute(%22type%22,%22module%22),e.innerHTML=%22(await import(%27https://kherrick.github.io/sprite-garden/src/api/examples/QRCode.mjs%27)).demo()%22,document.body.append(e);"
+              href="javascript:var el=(document.querySelector(%22sprite-garden%22)?.shadowRoot ?? document);el.querySelector(%22dialog.examples-content%22)?.close();if(!el.getElementById(%22mapEditorControls%22).hasAttribute(%22hidden%22))el.getElementById(%22toggleMapEditor%22)?.click();var e;(e=document.createElement(%22script%22)).setAttribute(%22type%22,%22module%22),e.innerHTML=%22(await import(%27https://kherrick.github.io/sprite-garden/src/api/examples/QRCode.mjs%27)).demo()%22,document.body.append(e);"
               rel="nofollow"
               ><svg
                 xmlns="http://www.w3.org/2000/svg"

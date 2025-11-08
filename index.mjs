@@ -1,9 +1,1839 @@
 import { initGame } from "./src/init/game.mjs";
 
-const gThis = globalThis;
-const doc = gThis.document;
+export const tagName = "sprite-garden";
+export class SpriteGarden extends HTMLElement {
+  constructor() {
+    super();
 
-// Start the game
-doc.addEventListener("DOMContentLoaded", async function () {
-  await initGame(gThis, doc, doc.getElementById("canvas"));
-});
+    if (!this.shadowRoot) {
+      const template = globalThis.document.createElement("template");
+      template.innerHTML = `
+        <style>
+          [hidden] {
+            display: none;
+          }
+
+          :focus {
+            outline: none;
+          }
+
+          :host {
+            align-items: center;
+            display: flex;
+            height: var(--sg-host-height, 100vh);
+            height: var(--sg-host-height, 100dvh);
+            justify-content: center;
+            overflow: var(--sg-host-overflow, hidden);
+            position: relative;
+            width: var(--sg-host-width, 100vw);
+            width: var(--sg-host-width, 100dvw);
+
+            --sg-color-amber-500: #f39c12;
+            --sg-color-amber-800: #8b4513;
+            --sg-color-amber-900: #654321;
+            --sg-color-black-alpha-80: #00000099;
+            --sg-color-black-transparent: #000000cc;
+            --sg-color-black: #000;
+            --sg-color-blue-400: #4a90e2;
+            --sg-color-blue-500: #2196f3;
+            --sg-color-blue-700: #0066cc;
+            --sg-color-emerald-600: #45a049;
+            --sg-color-emerald-700: #27ae60;
+            --sg-color-gray-100: #eee;
+            --sg-color-gray-200: #e3e3e3;
+            --sg-color-gray-300: #e0e0e0;
+            --sg-color-gray-400: #ddd;
+            --sg-color-gray-50: #f0f0f0;
+            --sg-color-gray-500: #ccc;
+            --sg-color-gray-600: #bbb;
+            --sg-color-gray-700: #888;
+            --sg-color-gray-800: #666666;
+            --sg-color-gray-900: #333;
+            --sg-color-gray-alpha-30: #ffffff4d;
+            --sg-color-gray-alpha-50: #ffffff33;
+            --sg-color-gray-alpha-70: #ffffff1a;
+            --sg-color-green-500: #4caf50;
+            --sg-color-neutral-950: #555;
+            --sg-color-orange-500: #ff6b35;
+            --sg-color-red-500: #ff4444;
+            --sg-color-sky-50: #e6f3ff;
+            --sg-color-stone-100: #f1f1f1;
+            --sg-color-stone-50: #fffafa;
+            --sg-color-white: #fff;
+
+            --sg-tile-color-agave-base: #32cd32;
+            --sg-tile-color-agave-flower-stalk: #9acd32;
+            --sg-tile-color-agave-flower: #ffff00;
+            --sg-tile-color-agave-growing: #adff2f;
+            --sg-tile-color-agave-spike: #7cfc00;
+            --sg-tile-color-agave: #7cfc00;
+            --sg-tile-color-air: #87ceeb;
+            --sg-tile-color-bamboo-growing: #98fb98;
+            --sg-tile-color-bamboo-joint: #6b8e23;
+            --sg-tile-color-bamboo-leaves: #32cd32;
+            --sg-tile-color-bamboo-stalk: #90ee90;
+            --sg-tile-color-bamboo: #90ee90;
+            --sg-tile-color-bedrock: #1c1c1c;
+            --sg-tile-color-berry-bush-berries: #dc143c;
+            --sg-tile-color-berry-bush-branch: #8b4513;
+            --sg-tile-color-berry-bush-growing: #cd5c5c;
+            --sg-tile-color-berry-bush-leaves: #228b22;
+            --sg-tile-color-berry-bush: #dc143c;
+            --sg-tile-color-birch-bark: #ffffff;
+            --sg-tile-color-birch-branches: #8b7355;
+            --sg-tile-color-birch-catkins: #f0e68c;
+            --sg-tile-color-birch-growing: #fffacd;
+            --sg-tile-color-birch-leaves: #98fb98;
+            --sg-tile-color-birch-trunk: #f5f5dc;
+            --sg-tile-color-birch: #f5f5dc;
+            --sg-tile-color-cactus-body: #2e8b57;
+            --sg-tile-color-cactus-flower: #ff69b4;
+            --sg-tile-color-cactus-growing: #228b22;
+            --sg-tile-color-cactus: #32cd32;
+            --sg-tile-color-carrot-growing: #ff7f50;
+            --sg-tile-color-carrot-leaves: #228b22;
+            --sg-tile-color-carrot-root: #ff6347;
+            --sg-tile-color-carrot: #ff8c00;
+            --sg-tile-color-clay: #cd853f;
+            --sg-tile-color-cloud: #c5d1d3ff;
+            --sg-tile-color-coal: #2f4f4f;
+            --sg-tile-color-corn-ear: #f0e68c;
+            --sg-tile-color-corn-growing: #eee8aa;
+            --sg-tile-color-corn-leaves: #6b8e23;
+            --sg-tile-color-corn-silk: #deb887;
+            --sg-tile-color-corn-stalk: #9acd32;
+            --sg-tile-color-corn: #f0e68c;
+            --sg-tile-color-dirt: #8b4513;
+            --sg-tile-color-fern-frond: #3cb371;
+            --sg-tile-color-fern-growing: #90ee90;
+            --sg-tile-color-fern-stem: #556b2f;
+            --sg-tile-color-fern: #3cb371;
+            --sg-tile-color-gold: #ffd700;
+            --sg-tile-color-grass: #90ee90;
+            --sg-tile-color-ice: #b0e0e6;
+            --sg-tile-color-iron: #b87333;
+            --sg-tile-color-kelp-blade: #2e8b57;
+            --sg-tile-color-kelp-bulb: #4f7942;
+            --sg-tile-color-kelp-growing: #8fbc8f;
+            --sg-tile-color-kelp: #2f4f2f;
+            --sg-tile-color-lava: #ff4500;
+            --sg-tile-color-lavender-bush: #8a7fc8;
+            --sg-tile-color-lavender-flowers: #9370db;
+            --sg-tile-color-lavender-growing: #dda0dd;
+            --sg-tile-color-lavender-stem: #556b2f;
+            --sg-tile-color-lavender: #9370db;
+            --sg-tile-color-loading-pixel: #87ceeb;
+            --sg-tile-color-lotus-bud: #ffb6d9;
+            --sg-tile-color-lotus-flower: #ffc0cb;
+            --sg-tile-color-lotus-growing: #ffe4e1;
+            --sg-tile-color-lotus-pad: #3cb371;
+            --sg-tile-color-lotus-stem: #2e8b57;
+            --sg-tile-color-lotus: #ffc0cb;
+            --sg-tile-color-moss: #556b2f;
+            --sg-tile-color-mushroom-cap: #8b0000;
+            --sg-tile-color-mushroom-growing: #cd5c5c;
+            --sg-tile-color-mushroom-stem: #d2691e;
+            --sg-tile-color-mushroom: #8b0000;
+            --sg-tile-color-pine-cone: #8b7355;
+            --sg-tile-color-pine-needles: #2e5930;
+            --sg-tile-color-pine-tree-growing: #556b2f;
+            --sg-tile-color-pine-tree: #2e5930;
+            --sg-tile-color-pine-trunk: #8b4513;
+            --sg-tile-color-pumice: #b8a99a;
+            --sg-tile-color-pumpkin-fruit: #ff8c00;
+            --sg-tile-color-pumpkin-growing: #ffa54f;
+            --sg-tile-color-pumpkin-leaves: #9acd32;
+            --sg-tile-color-pumpkin-stem: #8b4513;
+            --sg-tile-color-pumpkin-vine: #6b8e23;
+            --sg-tile-color-pumpkin: #ff8c00;
+            --sg-tile-color-rose-bloom: #dc143c;
+            --sg-tile-color-rose-bud: #cd5c5c;
+            --sg-tile-color-rose-growing: #f08080;
+            --sg-tile-color-rose-leaves: #2f4f2f;
+            --sg-tile-color-rose-stem: #654321;
+            --sg-tile-color-rose-thorns: #8b4513;
+            --sg-tile-color-rose: #dc143c;
+            --sg-tile-color-sand: #f4a460;
+            --sg-tile-color-snow: #fffafa;
+            --sg-tile-color-stone: #696969;
+            --sg-tile-color-sunflower-center: #8b4513;
+            --sg-tile-color-sunflower-growing: #ffec8b;
+            --sg-tile-color-sunflower-leaves: #228b22;
+            --sg-tile-color-sunflower-petals: #ffd700;
+            --sg-tile-color-sunflower-stem: #8b7355;
+            --sg-tile-color-sunflower: #ffd700;
+            --sg-tile-color-tree-growing: #9acd32;
+            --sg-tile-color-tree-leaves: #228b22;
+            --sg-tile-color-tree-trunk: #59392b;
+            --sg-tile-color-tulip-bulb: #8b4513;
+            --sg-tile-color-tulip-growing: #ffb6c1;
+            --sg-tile-color-tulip-leaves: #228b22;
+            --sg-tile-color-tulip-petals: #ff1493;
+            --sg-tile-color-tulip-stem: #6b8e23;
+            --sg-tile-color-tulip: #ff1493;
+            --sg-tile-color-walnut: #654321;
+            --sg-tile-color-water: #4169e1;
+            --sg-tile-color-wheat-grain: #ffd700;
+            --sg-tile-color-wheat-growing: #9acd32;
+            --sg-tile-color-wheat-stalk: #8b7355;
+            --sg-tile-color-wheat: #daa520;
+            --sg-tile-color-willow-branches: #8fbc8f;
+            --sg-tile-color-willow-leaves: #9acd32;
+            --sg-tile-color-willow-tree-growing: #9bcd9b;
+            --sg-tile-color-willow-tree: #8fbc8f;
+            --sg-tile-color-willow-trunk: #8b7355;
+            --sg-tile-color-wood: #362200;
+            --sg-tile-color-xray: #6464644d;
+          }
+
+          #canvas {
+            object-fit: cover;
+            background: var(--sg-color-black);
+            display: block;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: -webkit-crisp-edges;
+            image-rendering: crisp-edges;
+            position: absolute;
+          }
+
+          #loading {
+            animation: pulseSpin 1.8s infinite;
+            height: 11rem;
+            image-rendering: pixelated;
+            position: relative;
+            width: 11rem;
+            z-index: 1;
+          }
+
+          #loading .pixel {
+            background: var(--sg-tile-color-loading-pixel);
+            height: 4rem;
+            position: absolute;
+            width: 4rem;
+          }
+
+          .pixel-one {
+            top: 0;
+            left: 4rem;
+          }
+
+          .pixel-two {
+            top: 1rem;
+            left: 1rem;
+          }
+
+          .pixel-three {
+            top: 1rem;
+            left: 7rem;
+          }
+
+          .pixel-four {
+            top: 4rem;
+            left: 0;
+          }
+
+          .pixel-five {
+            top: 4rem;
+            left: 8rem;
+          }
+
+          .pixel-six {
+            top: 7rem;
+            left: 1rem;
+          }
+
+          .pixel-seven {
+            top: 7rem;
+            left: 7rem;
+          }
+
+          .pixel-eight {
+            top: 8rem;
+            left: 4rem;
+          }
+
+          .pixel-nine {
+            top: 4rem;
+            left: 4rem;
+          }
+
+          @keyframes pulseSpin {
+            0% {
+              transform: scale(0.05) rotate(0deg);
+              opacity: 0;
+            }
+            50% {
+              transform: scale(1) rotate(-180deg);
+              opacity: 1;
+            }
+            100% {
+              transform: scale(0.05) rotate(-360deg);
+              opacity: 0;
+            }
+          }
+
+          .ui-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            height: var(--sg-ui-grid-height, calc(100vh - 1rem));
+            height: var(--sg-ui-grid-height, calc(100dvh - 1rem));
+            margin: 0.5rem;
+            pointer-events: none;
+            position: absolute;
+            top: 0;
+            width: var(--sg-ui-grid-width, calc(100vw - 1rem));
+            width: var(--sg-ui-grid-width, calc(100dvw - 1rem));
+          }
+
+          .ui-grid__corner {
+            max-height: var(--sg-ui-grid--corner-max-height, calc(100vh - 1rem));
+            max-height: var(--sg-ui-grid--corner-max-height, calc(100dvh - 1rem));
+            overflow-y: auto;
+            pointer-events: auto;
+            transition: height 0.35s cubic-bezier(0.68, -0.55, 0.27, 1.5);
+          }
+
+          .ui-grid__corner--heading {
+            backdrop-filter: blur(0.3125rem);
+            background: var(--sg-color-black-transparent);
+            border-radius: 0.5rem;
+            border: 0.0625rem solid var(--sg-color-gray-alpha-70);
+            color: var(--sg-color-white);
+            cursor: pointer;
+            font-size: 0.75rem;
+            padding: 0.75rem;
+          }
+
+          .ui-grid__corner--container {
+            padding: 0.5rem;
+          }
+
+          #controls .ui-grid__corner--container {
+            cursor: pointer;
+          }
+
+          .ui-grid__corner--sub-heading {
+            margin: 1rem 0 0.3125rem 0;
+          }
+
+          .ui-grid__corner--sub-section {
+            overflow: auto;
+          }
+
+          .ui-grid__corner {
+            scrollbar-width: thin; /* Slim scrollbar */
+            scrollbar-color: var(--sg-color-gray-700) var(--sg-color-stone-100); /* Handle and track colors */
+          }
+
+          .ui-grid__corner::-webkit-scrollbar {
+            width: 0.625rem; /* Custom width */
+          }
+
+          .ui-grid__corner::-webkit-scrollbar-track {
+            background: var(--sg-color-stone-100); /* Track background */
+          }
+
+          .ui-grid__corner::-webkit-scrollbar-thumb {
+            background: var(--sg-color-gray-700); /* Handle color */
+            border-radius: 0.625rem; /* Rounded edges */
+            border: 0.125rem solid var(--sg-color-stone-100); /* Padding around handle */
+          }
+
+          .ui-grid__corner::-webkit-scrollbar-thumb:hover {
+            background: var(--sg-color-neutral-950); /* Highlight on hover */
+          }
+
+          /* Element modifiers for sticky corners */
+          .ui-grid__corner--top-left {
+            align-self: start;
+            grid-column: 1;
+            grid-row: 1;
+            justify-self: start;
+          }
+
+          .ui-grid__corner--top-right {
+            align-self: start;
+            grid-column: 2;
+            grid-row: 1;
+            justify-self: end;
+            z-index: 1;
+          }
+
+          .ui-grid__corner--bottom-left {
+            align-self: end;
+            grid-column: 1;
+            grid-row: 2;
+            justify-self: start;
+          }
+
+          .ui-grid__corner--bottom-right {
+            align-self: end;
+            grid-column: 2;
+            grid-row: 2;
+            justify-self: end;
+            max-width: 15.625rem;
+          }
+
+          #stats,
+          #controls,
+          #settings,
+          #inventory,
+          .seed-controls {
+            font-size: 0.5625rem;
+          }
+
+          /* Stats Panel */
+          #stats {
+            backdrop-filter: blur(0.3125rem);
+            background: var(--sg-color-black-transparent);
+            border-radius: 0.5rem;
+            border: 0.0625rem solid var(--sg-color-gray-alpha-70);
+            color: var(--sg-color-white);
+          }
+
+          /* Settings Panel */
+          #settings {
+            backdrop-filter: blur(0.3125rem);
+            background: var(--sg-color-black-transparent);
+            border-radius: 0.5rem;
+            border: 0.0625rem solid var(--sg-color-gray-alpha-70);
+            color: var(--sg-color-white);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+          }
+
+          #settings .settings-actions {
+            display: flex;
+            flex-direction: column;
+          }
+
+          #settings #resolution,
+          #settings select,
+          #settings button {
+            width: 100%;
+          }
+
+          .map-editor-controls_header,
+          .map-editor-controls-section_header {
+            margin-bottom: 0.3125rem;
+          }
+
+          .map-editor-controls-section {
+            margin-top: 0.3125rem;
+          }
+
+          .map-editor-controls-section_buttons-container {
+            display: grid;
+            gap: 0.125rem;
+            grid-template-columns: repeat(4, 1fr);
+            margin-bottom: 0.625rem;
+          }
+
+          /* Inventory Panel */
+          #inventory {
+            backdrop-filter: blur(0.3125rem);
+            background: var(--sg-color-black-transparent);
+            border-radius: 0.5rem;
+            border-top: 0.0625rem solid var(--sg-color-gray-500);
+            border: 0.0625rem solid var(--sg-color-gray-alpha-70);
+            bottom: 1.625rem;
+            color: var(--sg-color-white);
+          }
+
+          /* Controls Panel */
+          #controls {
+            backdrop-filter: blur(0.3125rem);
+            background: var(--sg-color-black-transparent);
+            border-radius: 0.5rem;
+            border: 0.0625rem solid var(--sg-color-gray-alpha-70);
+            color: var(--sg-color-white);
+          }
+
+          .control-instruction {
+            padding: 0.25rem 0;
+          }
+
+          .control-instruction_icon-container {
+            align-items: center;
+            display: flex;
+          }
+
+          .control-instruction_icon-container svg {
+            padding-right: 0.25rem;
+          }
+
+          .touch-controls {
+            bottom: 6rem;
+            position: absolute;
+            width: 100%;
+          }
+
+          .touch-btn {
+            align-items: center;
+            backdrop-filter: blur(0.3125rem);
+            background: var(--sg-color-black-alpha-60);
+            border-radius: 50%;
+            border: 0.125rem solid var(--sg-color-gray-alpha-30);
+            color: var(--sg-color-white);
+            cursor: pointer;
+            display: inline-flex;
+            font-size: 0.7rem;
+            height: 3.25rem;
+            justify-content: center;
+            padding: 0.125rem;
+            touch-action: manipulation;
+            user-select: none;
+            width: 3.25rem;
+            z-index: 3;
+          }
+
+          .touch-btn:active {
+            background: var(--sg-color-gray-alpha-50);
+            transform: scale(0.95);
+          }
+
+          .dpad-container {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            padding: 0 1rem 1rem 0.5rem;
+          }
+
+          .dpad {
+            display: grid;
+            gap: 0.3125rem;
+            grid-template-columns: 3.125rem 3.125rem 3.125rem;
+            grid-template-rows: 3.125rem 3.125rem 3.125rem;
+            justify-content: left;
+            position: relative;
+            z-index: 3;
+          }
+
+          .dpad .up-left {
+            grid-column: 1;
+            grid-row: 1;
+            margin-left: 0.5rem;
+            margin-top: 0.5rem;
+            padding: 0;
+            z-index: 4;
+          }
+
+          .dpad .up {
+            grid-column: 2;
+            grid-row: 1;
+            margin-left: 0.125rem;
+          }
+
+          .dpad .up-right {
+            grid-column: 3;
+            grid-row: 1;
+            margin-right: 0.5rem;
+            margin-top: 0.5rem;
+            padding: 0;
+            z-index: 4;
+          }
+
+          .dpad .left {
+            grid-column: 1;
+            grid-row: 2;
+            margin-top: 0.125rem;
+          }
+
+          .dpad .middle {
+            grid-column: 2;
+            grid-row: 2;
+            z-index: 2;
+          }
+
+          .dpad .right {
+            grid-column: 3;
+            grid-row: 2;
+            margin-top: 0.125rem;
+          }
+
+          .dpad .down-left {
+            grid-column: 1;
+            grid-row: 3;
+            margin-bottom: 0.5rem;
+            margin-left: 0.5rem;
+            padding: 0;
+            z-index: 4;
+          }
+
+          .dpad .down {
+            grid-column: 2;
+            grid-row: 3;
+            margin-left: 0.125rem;
+          }
+
+          .dpad .down-right {
+            grid-column: 3;
+            grid-row: 3;
+            margin-bottom: 0.5rem;
+            margin-right: 0.5rem;
+            padding: 0;
+            z-index: 4;
+          }
+
+          .action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.625rem;
+            justify-content: end;
+          }
+
+          /* Button Styles */
+          button,
+          select {
+            background: var(--sg-color-green-500);
+            border-radius: 0.25rem;
+            border: none;
+            color: var(--sg-color-white);
+            cursor: pointer;
+            font-size: 0.625rem;
+            margin: 0.125rem;
+            padding: 0.375rem 0.75rem;
+            transition: background 0.2s;
+          }
+
+          button:hover,
+          button:focus {
+            outline: none;
+          }
+
+          button:active {
+            transform: scale(0.95);
+          }
+
+          select {
+            background: var(--sg-color-gray-900);
+            border: 0.0625rem solid var(--sg-color-neutral-950);
+          }
+
+          select:focus {
+            outline: 0.125rem solid var(--sg-color-green-500);
+          }
+
+          .material-btn,
+          .seed-btn {
+            border: 0.0625rem solid var(--sg-color-black);
+            cursor: pointer;
+            font-size: 0.5625rem;
+            margin: 0.125rem;
+            padding: 0.25rem 0.5rem;
+          }
+
+          .material-btn {
+            background: var(--sg-color-gray-100);
+            color: var(--sg-color-black);
+          }
+
+          .material-btn--cloud,
+          .material-btn--grass,
+          .material-btn--ice,
+          .material-btn--iron,
+          .material-btn--pumice,
+          .material-btn--sand,
+          .material-btn--snow {
+            background: var(--sg-color-gray-800);
+            color: var(--sg-color-white);
+          }
+
+          .material-btn:hover {
+            background: var(--sg-color-gray-alpha-70);
+            color: var(--sg-color-white);
+          }
+
+          .material-btn.selected,
+          .seed-btn.selected {
+            border: 0.125rem solid var(--sg-color-sky-50);
+            outline: 0.125rem solid var(--sg-color-blue-500);
+          }
+
+          .seed-btn:hover {
+            background: var(--sg-color-amber-900);
+            color: var(--sg-color-white);
+          }
+
+          .seed-btn {
+            background: var(--sg-color-amber-800);
+            color: var(--sg-color-white);
+          }
+
+          .seed-btn--berry-bush {
+            background: var(--sg-tile-color-berry-bush);
+          }
+
+          .seed-btn--bamboo {
+            background: var(--sg-tile-color-bamboo);
+            color: var(--sg-color-black);
+          }
+
+          .seed-btn--sunflower {
+            background: var(--sg-tile-color-sunflower);
+            color: var(--sg-color-black);
+          }
+
+          .seed-btn--corn {
+            background: var(--sg-tile-color-corn);
+            color: var(--sg-color-black);
+          }
+
+          .seed-btn--pine-tree {
+            background: var(--sg-tile-color-pine-tree);
+          }
+
+          .seed-btn--willow-tree {
+            background: var(--sg-tile-color-willow-tree);
+            color: var(--sg-color-black);
+          }
+
+          .seed-btn--fern {
+            background: var(--sg-tile-color-fern);
+            color: var(--sg-color-black);
+          }
+
+          .seed-btn--tulip {
+            background: var(--sg-tile-color-tulip);
+          }
+
+          .seed-btn--agave {
+            color: var(--sg-color-black);
+            background: var(--sg-tile-color-agave);
+          }
+
+          .seed-btn--lavender {
+            background: var(--sg-tile-color-lavender);
+          }
+
+          .seed-btn--kelp {
+            background: var(--sg-tile-color-kelp);
+          }
+
+          .seed-btn--rose {
+            background: var(--sg-tile-color-rose);
+          }
+
+          .seed-btn--pumpkin {
+            background: var(--sg-tile-color-pumpkin);
+          }
+
+          .seed-btn--lotus {
+            color: var(--sg-color-black);
+            background: var(--sg-tile-color-lotus);
+          }
+
+          .seed-btn--birch {
+            color: var(--sg-color-black);
+            background: var(--sg-tile-color-birch);
+          }
+
+          .info-buttons-container {
+            border-top: 0.0625rem solid var(--sg-color-gray-500);
+            margin-top: 0.9375rem;
+            padding-top: 0.625rem;
+          }
+
+          #aboutBtn,
+          #privacyBtn {
+            border-radius: 0.25rem;
+            border: none;
+            color: var(--sg-color-white);
+            cursor: pointer;
+            margin: 0.25rem;
+            padding: 0.5rem 1rem;
+            width: calc(100% - 0.5rem);
+          }
+
+          #aboutBtn {
+            background: var(--sg-color-green-500);
+          }
+
+          #privacyBtn {
+            background: var(--sg-color-blue-500);
+          }
+
+          #resolution {
+            display: inline;
+            margin-bottom: 0.5rem;
+          }
+
+          /* Desktop Resolution Classes */
+          .resolution-400 #canvas {
+            border: 0.125rem solid var(--sg-color-gray-900);
+            height: 25rem;
+            margin: auto;
+            width: 25rem;
+          }
+
+          .resolution-800 #canvas {
+            border: 0.125rem solid (var(--sg-color-gray-900));
+            height: 50rem;
+            margin: auto;
+            width: 50rem;
+          }
+
+          .resolution #gameContainer {
+            background: var(--sg-color-black);
+          }
+
+          .seed-controls {
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 0.3125rem;
+            bottom: 3rem;
+            color: var(--sg-color-white);
+            margin: 0.625rem 0;
+            padding: 0.625rem;
+            position: absolute;
+            z-index: 2;
+          }
+
+          .seed-controls__actions {
+            align-items: center;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.625rem;
+          }
+
+          .seed-controls h4 {
+            color: var(--sg-color-white);
+            margin: 0 0 0.625rem 0;
+          }
+
+          .seed-controls input {
+            font-size: 0.75rem;
+            margin-left: 0.3125rem;
+            padding: 0.125rem 0.3125rem;
+            width: 5rem;
+            font-size: 0.5rem;
+          }
+
+          .seed-controls input:focus {
+            outline: 0.125rem solid var(--sg-color-blue-400);
+          }
+
+          .tile-btn {
+            border-radius: 0.125rem;
+            border: 0.0625rem solid var(--sg-color-gray-500);
+            cursor: pointer;
+            font-size: 0.625rem;
+            padding: 0.25rem 0.375rem;
+            transition: all 0.2s;
+          }
+
+          .tile-btn--air {
+            background: var(--sg-tile-color-air);
+            color: var(--sg-color-black);
+          }
+
+          .tile-btn--sand {
+            background: var(--sg-tile-color-sand);
+            color: var(--sg-color-black);
+          }
+
+          .tile-btn--birch {
+            color: var(--sg-color-black);
+          }
+
+          .tile-btn--clay {
+            background: var(--sg-tile-color-clay);
+          }
+
+          .tile-btn--cloud,
+          .tile-btn--gold,
+          .tile-btn--grass,
+          .tile-btn--ice,
+          .tile-btn--pumice,
+          .tile-btn--snow {
+            color: var(--sg-color-gray-900);
+          }
+
+          .tile-btn--cloud {
+            background: var(--sg-tile-color-cloud);
+          }
+
+          .tile-btn--gold {
+            background: var(--sg-tile-color-gold);
+          }
+
+          .tile-btn--grass {
+            background: var(--sg-tile-color-grass);
+          }
+
+          .tile-btn--ice {
+            background: var(--sg-tile-color-ice);
+          }
+
+          .tile-btn--pumice {
+            background: var(--sg-tile-color-pumice);
+          }
+
+          .tile-btn--snow {
+            background: var(--sg-tile-color-snow);
+          }
+
+          .tile-btn--coal,
+          .tile-btn--dirt,
+          .tile-btn--lava,
+          .tile-btn--mushroom,
+          .tile-btn--stone,
+          .tile-btn--tree-leaves,
+          .tile-btn--tree-trunk,
+          .tile-btn--water {
+            color: var(--sg-color-white);
+          }
+
+          .tile-btn--iron {
+            background: var(--sg-tile-color-iron);
+          }
+
+          .tile-btn--wheat {
+            background: var(--sg-tile-color-wheat);
+            color: var(--sg-color-black);
+          }
+
+          .tile-btn--carrot {
+            background: var(--sg-tile-color-carrot);
+          }
+
+          .tile-btn--cactus {
+            background: var(--sg-tile-color-cactus);
+            color: var(--sg-color-black);
+          }
+
+          .tile-btn--tulip {
+            background: var(--sg-tile-color-tulip);
+          }
+
+          .tile-btn--agave {
+            background: var(--sg-tile-color-agave);
+            color: var(--sg-color-black);
+          }
+
+          .tile-btn--lavender {
+            background: var(--sg-tile-color-lavender);
+          }
+
+          .tile-btn--kelp {
+            background: var(--sg-tile-color-kelp);
+          }
+
+          .tile-btn--rose {
+            background: var(--sg-tile-color-rose);
+          }
+
+          .tile-btn--pumpkin {
+            background: var(--sg-tile-color-pumpkin);
+          }
+
+          .tile-btn--lotus {
+            background: var(--sg-tile-color-lotus);
+            color: var(--sg-color-black);
+          }
+
+          .tile-btn--birch {
+            background: var(--sg-tile-color-birch);
+          }
+
+          .tile-btn--coal {
+            background: var(--sg-tile-color-coal);
+          }
+
+          .tile-btn--dirt {
+            background: var(--sg-tile-color-dirt);
+          }
+
+          .tile-btn--lava {
+            background: var(--sg-tile-color-lava);
+          }
+
+          .tile-btn--mushroom {
+            background: var(--sg-tile-color-mushroom);
+          }
+
+          .tile-btn--stone {
+            background: var(--sg-tile-color-stone);
+          }
+
+          .tile-btn--tree_trunk {
+            background: var(--sg-tile-color-tree-trunk);
+          }
+
+          .tile-btn--tree_leaves {
+            background: var(--sg-tile-color-tree-leaves);
+          }
+
+          .tile-btn--water {
+            background: var(--sg-tile-color-water);
+          }
+
+          .tile-btn:hover {
+            border-color: var(--sg-color-gray-800);
+            transform: scale(1.05);
+          }
+
+          .tile-btn.selected {
+            border: 0.125rem solid var(--sg-color-sky-50);
+            outline: 0.125rem solid var(--sg-color-blue-500);
+            font-weight: bold;
+          }
+
+          #mapEditor,
+          #examplesBtnContainer {
+            border-top: 0.0625rem solid var(--sg-color-gray-500);
+            margin-top: 0.625rem;
+            padding-top: 0.625rem;
+          }
+
+          #mapEditorControls {
+            display: flex;
+            flex-direction: column;
+            margin-top: 0.3125rem;
+            padding-right: 1rem;
+          }
+
+          #mapEditorControls div {
+            margin-bottom: 0.5rem;
+          }
+
+          #brushSizeSelect {
+            margin-left: 0.3125rem;
+            padding: 0.125rem;
+          }
+
+          #generateWithSeed {
+            background: var(--sg-color-blue-400);
+          }
+
+          #randomSeed {
+            background: var(--sg-color-amber-500);
+          }
+
+          #copySeed {
+            background: var(--sg-color-emerald-700);
+          }
+
+          .seed-controls button {
+            border-radius: 0.1875rem;
+            border: none;
+            color: var(--sg-color-white);
+            cursor: pointer;
+            font-size: 0.75rem;
+            padding: 0.3125rem 0.625rem;
+          }
+
+          .seed-controls button:hover {
+            opacity: 0.8;
+            transform: translateY(-0.0625rem);
+          }
+
+          .seed-controls button:active {
+            transform: translateY(0);
+          }
+
+          .current-seed {
+            color: var(--sg-color-gray-600);
+            font-size: 0.6875rem;
+            margin-top: 0.5rem;
+          }
+
+          .swatch-cloud,
+          .swatch-grass,
+          .swatch-ice,
+          .swatch-kelp,
+          .swatch-pumice,
+          .swatch-snow {
+            display: inline-block;
+            height: 0.625rem;
+            width: 0.625rem;
+          }
+
+          .swatch-cloud {
+            background: var(--sg-tile-color-cloud);
+          }
+
+          .swatch-grass {
+            background: var(--sg-tile-color-grass);
+          }
+
+          .swatch-kelp {
+            background: var(--sg-tile-color-kelp);
+          }
+
+          .swatch-ice {
+            background: var(--sg-tile-color-ice);
+          }
+
+          .swatch-pumice {
+            background: var(--sg-tile-color-pumice);
+          }
+
+          .swatch-snow {
+            background: var(--sg-tile-color-snow);
+          }
+
+          .about,
+          .examples,
+          .privacy {
+            background: var(--sg-color-white);
+            line-height: 1.5;
+            overflow: auto;
+            padding: 0.5rem 1rem 1rem 2rem;
+          }
+
+          dialog.about-content,
+          dialog.examples-content,
+          dialog.privacy-content {
+            background: var(--sg-color-gray-50);
+            border-radius: 0.5rem;
+            border: 0.125rem solid var(--sg-color-gray-900);
+            color: var(--sg-color-gray-900);
+            font-family: monospace;
+            line-height: 1.5;
+            max-height: 80vh;
+            max-height: 80dvh;
+            max-width: 50rem;
+            width: 90%;
+          }
+
+          .about-content li,
+          .examples-content li,
+          .privacy-content li {
+            margin: 0.25rem 0;
+          }
+
+          .about-content_header,
+          .examples-content_header,
+          .privacy-content_header {
+            align-items: center;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            padding-top: 1rem;
+          }
+
+          .about-content_close-btn,
+          .examples-content_close-btn,
+          .privacy-content_close-btn {
+            background: var(--sg-color-red-500);
+            border-radius: 0.25rem;
+            border: none;
+            color: var(--sg-color-white);
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 0.5rem 1rem;
+          }
+
+          .about-controls {
+            background: var(--sg-color-gray-300);
+            border-radius: 0.25rem;
+            list-style-type: none;
+            margin-bottom: 1.5rem;
+            margin-top: 0.5rem;
+            padding: 1rem;
+          }
+
+          /* Mobile Responsive */
+          @media (min-width: 30rem) {
+            .ui-grid__corner--heading {
+              font-size: 1rem;
+            }
+
+            #stats,
+            #controls,
+            #settings,
+            #inventory,
+            .seed-controls {
+              font-size: 0.725rem;
+            }
+
+            .touch-btn {
+              font-size: 0.75rem;
+            }
+
+            .seed-controls {
+              font-size: 0.6875rem;
+            }
+
+            .seed-controls button {
+              font-size: 0.6875rem;
+              padding: 0.25rem 0.5rem;
+            }
+
+            .seed-controls input {
+              width: 3.75rem;
+            }
+          }
+
+          @media (min-width: 48rem) {
+            .ui-grid__corner--heading {
+              font-size: 1.25rem;
+            }
+
+            #stats,
+            #controls,
+            #settings,
+            #inventory,
+            .seed-controls {
+              font-size: 1.25rem;
+            }
+
+            .touch-btn {
+              font-size: 0.875rem;
+            }
+          }
+        </style>
+
+        <div id="loading">
+          <div class="pixel pixel-one"></div>
+          <div class="pixel pixel-two"></div>
+          <div class="pixel pixel-three"></div>
+          <div class="pixel pixel-four"></div>
+          <div class="pixel pixel-five"></div>
+          <div class="pixel pixel-six"></div>
+          <div class="pixel pixel-seven"></div>
+          <div class="pixel pixel-eight"></div>
+          <div class="pixel pixel-nine"></div>
+        </div>
+        <canvas id="canvas" tabindex="0"></canvas>
+        <div id="ui-grid" class="ui-grid">
+          <div class="ui-grid__corner ui-grid__corner--top-left">
+            <div id="stats">
+              <div class="ui-grid__corner--heading">🌱 Sprite Garden</div>
+              <div class="ui-grid__corner--container" hidden="hidden">
+                <div>Biome: <span id="currentBiome">Forest</span></div>
+                <div>Depth: <span id="currentDepth">Surface</span></div>
+                <div>Total Seeds: <span id="seedCount">0</span></div>
+                <div>Time: <span id="gameTime">0</span>s</div>
+
+                <div class="info-buttons-container">
+                  <button id="aboutBtn">ℹ️ About</button>
+                  <button id="privacyBtn">🔒 Privacy</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="ui-grid__corner ui-grid__corner--top-right">
+            <div id="settings">
+              <div class="ui-grid__corner--heading">⚙️ Settings</div>
+              <div class="ui-grid__corner--container" hidden="hidden">
+                <div class="settings-actions">
+                  <div id="resolution">
+                    <select id="resolutionSelect">
+                      <option value="400">400x400</option>
+                      <option value="800">800x800</option>
+                      <option hidden="hidden" value="fullscreen">
+                        Fullscreen
+                      </option>
+                    </select>
+                  </div>
+                  <button id="worldState">🌍 World State</button>
+                  <button id="toggleView">
+                    🔍 <span id="viewModeText">View Normal</span>
+                  </button>
+                  <button id="toggleFog">
+                    ☁ <span id="fogModeText">Fog</span>
+                  </button>
+                  <button id="toggleBreakMode">
+                    ⛏️ <span id="breakModeText">Dig Regular</span>
+                  </button>
+                </div>
+
+                <div class="settings-actions">
+                  <div id="customizeColorsBtnContainer" hidden="hidden">
+                    <div class="ui-grid__corner--sub-heading">🗺️ Colors</div>
+                    <button id="customizeColorsBtn">Customize</button>
+                  </div>
+                  <div id="examplesBtnContainer" hidden="hidden">
+                    <div class="ui-grid__corner--sub-heading">🗺️ Examples</div>
+                    <button id="examplesBtn">
+                      📝 <span id="examplesBtnText">Open</span>
+                    </button>
+                  </div>
+                  <div id="mapEditor" hidden="hidden">
+                    <div class="ui-grid__corner--sub-heading">
+                      🗺️ Map Editor
+                    </div>
+                    <button id="toggleMapEditor">
+                      📝 <span id="mapEditorText">Enable Editor</span>
+                    </button>
+                    <div
+                      class="ui-grid__corner--sub-section"
+                      id="mapEditorControls"
+                      hidden="hidden"
+                    >
+                      <div>
+                        Brush Size:
+                        <select id="brushSizeSelect">
+                          <option value="1">1x1</option>
+                          <option value="3">3x3</option>
+                          <option value="5">5x5</option>
+                        </select>
+                      </div>
+                      <div class="map-editor-controls-section">
+                        <div class="map-editor-controls-section_header">
+                          🌍 Terrain:
+                        </div>
+                        <div
+                          class="map-editor-controls-section_buttons-container"
+                        >
+                          <button
+                            class="tile-btn tile-btn--air"
+                            data-tile="AIR"
+                          >
+                            Air
+                          </button>
+                          <button
+                            class="tile-btn tile-btn--dirt"
+                            data-tile="DIRT"
+                          >
+                            Dirt
+                          </button>
+                          <button
+                            class="tile-btn tile-btn--grass"
+                            data-tile="GRASS"
+                          >
+                            Grass
+                          </button>
+                          <button
+                            class="tile-btn tile-btn--stone"
+                            data-tile="STONE"
+                          >
+                            Stone
+                          </button>
+                          <button
+                            class="tile-btn tile-btn--sand"
+                            data-tile="SAND"
+                          >
+                            Sand
+                          </button>
+                          <button
+                            class="tile-btn tile-btn--clay"
+                            data-tile="CLAY"
+                          >
+                            Clay
+                          </button>
+                          <button
+                            class="tile-btn tile-btn--snow"
+                            data-tile="SNOW"
+                          >
+                            Snow
+                          </button>
+                          <button
+                            class="tile-btn tile-btn--ice"
+                            data-tile="ICE"
+                          >
+                            Ice
+                          </button>
+                          <button
+                            class="tile-btn tile-btn--cloud"
+                            data-tile="CLOUD"
+                          >
+                            Cloud
+                          </button>
+                        </div>
+                        <div class="map-editor-controls_header">
+                          🏔️ Resources:
+                        </div>
+                        <div
+                          class="map-editor-controls-section_buttons-container"
+                        >
+                          <button
+                            class="tile-btn tile-btn--coal"
+                            data-tile="COAL"
+                          >
+                            Coal
+                          </button>
+                          <button
+                            class="tile-btn tile-btn--iron"
+                            data-tile="IRON"
+                          >
+                            Iron
+                          </button>
+                          <button
+                            class="tile-btn tile-btn--gold"
+                            data-tile="GOLD"
+                          >
+                            Gold
+                          </button>
+                          <button
+                            class="tile-btn tile-btn--pumice"
+                            data-tile="PUMICE"
+                          >
+                            Pumice
+                          </button>
+                        </div>
+                        <div class="map-editor-controls_header">🌳 Nature:</div>
+                        <div
+                          class="map-editor-controls-section_buttons-container"
+                        >
+                          <button
+                            class="tile-btn tile-btn--tree_trunk"
+                            data-tile="TREE_TRUNK"
+                          >
+                            Trunk
+                          </button>
+                          <button
+                            class="tile-btn tile-btn--tree_leaves"
+                            data-tile="TREE_LEAVES"
+                          >
+                            Leaves
+                          </button>
+                          <button
+                            class="tile-btn tile-btn--water"
+                            data-tile="WATER"
+                          >
+                            Water
+                          </button>
+                          <button
+                            class="tile-btn tile-btn--lava"
+                            data-tile="LAVA"
+                          >
+                            Lava
+                          </button>
+                        </div>
+                        <div class="map-editor-controls_header">🌱 Crops:</div>
+                        <div
+                          class="map-editor-controls-section_buttons-container"
+                        >
+                          <button
+                            class="tile-btn tile-btn--wheat"
+                            data-tile="WHEAT"
+                          >
+                            Wheat
+                          </button>
+                          <button
+                            class="tile-btn tile-btn--carrot"
+                            data-tile="CARROT"
+                          >
+                            Carrot
+                          </button>
+                          <button
+                            class="tile-btn tile-btn--mushroom"
+                            data-tile="MUSHROOM"
+                          >
+                            Mushroom
+                          </button>
+                          <button
+                            class="tile-btn tile-btn--cactus"
+                            data-tile="CACTUS"
+                          >
+                            Cactus
+                          </button>
+                          <button
+                            class="tile-btn tile-btn--tulip"
+                            data-tile="TULIP"
+                          >
+                            Tulip
+                          </button>
+                          <button
+                            class="tile-btn tile-btn--agave"
+                            data-tile="AGAVE"
+                          >
+                            Agave
+                          </button>
+                          <button
+                            class="tile-btn tile-btn--lavender"
+                            data-tile="LAVENDER"
+                          >
+                            Lavender
+                          </button>
+                          <button
+                            class="tile-btn tile-btn--kelp"
+                            data-tile="KELP"
+                          >
+                            Kelp
+                          </button>
+                          <button
+                            class="tile-btn tile-btn--rose"
+                            data-tile="ROSE"
+                          >
+                            Rose
+                          </button>
+                          <button
+                            class="tile-btn tile-btn--pumpkin"
+                            data-tile="PUMPKIN"
+                          >
+                            Pumpkin
+                          </button>
+                          <button
+                            class="tile-btn tile-btn--lotus"
+                            data-tile="LOTUS"
+                          >
+                            Lotus
+                          </button>
+                          <button
+                            class="tile-btn tile-btn--birch"
+                            data-tile="BIRCH"
+                          >
+                            Birch
+                          </button>
+                        </div>
+                      </div>
+                      <div>
+                        <button id="clearMapEditor">🧹 Clear All</button>
+                        <button id="fillMapEditor">🪣 Fill Layer</button>
+                        <button id="saveMapAsState">💾 Save as State</button>
+                        <button id="regenerateMap">🌍 Regenerate Map</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="ui-grid__corner ui-grid__corner--bottom-left">
+            <div id="controls">
+              <div class="ui-grid__corner--heading">⌨️ Controls</div>
+              <div class="ui-grid__corner--container" hidden="hidden">
+                <div class="control-instruction">w/↑/Space: Jump</div>
+                <div class="control-instruction">a/d or ←/→: Move</div>
+                <div class="control-instruction">f: Plant/Harvest</div>
+                <div class="control-instruction">r: Break Block</div>
+                <div class="control-instruction">e/x/k: Change scale/mode</div>
+                <div class="control-instruction">
+                  u/i/o/j/l/m/,/.: Set Block
+                </div>
+                <div class="control-instruction">ctrl+s: World State</div>
+                <div class="control-instruction">Mouse: Inspect Tiles</div>
+                <div
+                  class="control-instruction control-instruction_icon-container"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    height="24px"
+                    viewBox="0 -960 960 960"
+                    width="24px"
+                    fill="var(--sg-color-gray-200)"
+                  >
+                    <path
+                      d="M419-80q-28 0-52.5-12T325-126L107-403l19-20q20-21 48-25t52 11l74 45v-328q0-17 11.5-28.5T340-760q17 0 29 11.5t12 28.5v472l-97-60 104 133q6 7 14 11t17 4h221q33 0 56.5-23.5T720-240v-160q0-17-11.5-28.5T680-440H461v-80h219q50 0 85 35t35 85v160q0 66-47 113T640-80H419ZM167-620q-13-22-20-47.5t-7-52.5q0-83 58.5-141.5T340-920q83 0 141.5 58.5T540-720q0 27-7 52.5T513-620l-69-40q8-14 12-28.5t4-31.5q0-50-35-85t-85-35q-50 0-85 35t-35 85q0 17 4 31.5t12 28.5l-69 40Zm335 280Z"
+                    />
+                  </svg>
+                  Mobile Controls
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="ui-grid__corner ui-grid__corner--bottom-right">
+            <div id="inventory">
+              <div class="ui-grid__corner--heading" id="seeds">
+                🎒 Inventory
+              </div>
+              <div class="ui-grid__corner--container" hidden="hidden">
+                <div class="ui-grid__corner--sub-heading">🫘 Seeds</div>
+                <div class="ui-grid__corner--sub-section">
+                  <div>Selected: <span id="selectedSeed">None</span></div>
+                  <div>
+                    <button class="seed-btn" data-wheat="data-wheat">
+                      🌾 <span id="wheatCount">0</span>
+                    </button>
+                    <button class="seed-btn" data-carrot="data-carrot">
+                      🥕 <span id="carrotCount">0</span>
+                    </button>
+                    <button class="seed-btn" data-mushroom="data-mushroom">
+                      🍄 <span id="mushroomCount">0</span>
+                    </button>
+                    <button class="seed-btn" data-cactus="data-cactus">
+                      🌵 <span id="cactusCount">0</span>
+                    </button>
+                    <button class="seed-btn" data-walnut="data-walnut">
+                      🌰 <span id="walnutCount">0</span>
+                    </button>
+                    <button
+                      class="seed-btn seed-btn--berry-bush"
+                      data-berry_bush="data-berry_bush"
+                    >
+                      🍓 <span id="berry_bushCount">0</span>
+                    </button>
+
+                    <button
+                      class="seed-btn seed-btn--bamboo"
+                      data-bamboo="data-bamboo"
+                    >
+                      🎋 <span id="bambooCount">0</span>
+                    </button>
+
+                    <button
+                      class="seed-btn seed-btn--sunflower"
+                      data-sunflower="data-sunflower"
+                    >
+                      🌻 <span id="sunflowerCount">0</span>
+                    </button>
+
+                    <button
+                      class="seed-btn seed-btn--corn"
+                      data-corn="data-corn"
+                    >
+                      🌽 <span id="cornCount">0</span>
+                    </button>
+
+                    <button
+                      class="seed-btn seed-btn--pine-tree"
+                      data-pine_tree="data-pine_tree"
+                    >
+                      🌲 <span id="pine_treeCount">0</span>
+                    </button>
+
+                    <button
+                      class="seed-btn seed-btn--willow-tree"
+                      data-willow_tree="data-willow_tree"
+                    >
+                      🌳 <span id="willow_treeCount">0</span>
+                    </button>
+
+                    <button
+                      class="seed-btn seed-btn--fern"
+                      data-fern="data-fern"
+                    >
+                      🌿 <span id="fernCount">0</span>
+                    </button>
+                    <button
+                      class="seed-btn seed-btn--tulip"
+                      data-tulip="data-tulip"
+                    >
+                      🌷 <span id="tulipCount">0</span>
+                    </button>
+                    <button
+                      class="seed-btn seed-btn--agave"
+                      data-agave="data-agave"
+                    >
+                      🌱 <span id="agaveCount">0</span>
+                    </button>
+                    <button
+                      class="seed-btn seed-btn--lavender"
+                      data-lavender="data-lavender"
+                    >
+                      🌺 <span id="lavenderCount">0</span>
+                    </button>
+                    <button
+                      class="seed-btn seed-btn--kelp"
+                      data-kelp="data-kelp"
+                    >
+                      <div class="swatch-kelp"></div>
+                      <span id="kelpCount">0</span>
+                    </button>
+                    <button
+                      class="seed-btn seed-btn--rose"
+                      data-rose="data-rose"
+                    >
+                      🌸 <span id="roseCount">0</span>
+                    </button>
+                    <button
+                      class="seed-btn seed-btn--pumpkin"
+                      data-pumpkin="data-pumpkin"
+                    >
+                      🎃 <span id="pumpkinCount">0</span>
+                    </button>
+                    <button
+                      class="seed-btn seed-btn--lotus"
+                      data-lotus="data-lotus"
+                    >
+                      🪷 <span id="lotusCount">0</span>
+                    </button>
+                    <button
+                      class="seed-btn seed-btn--birch"
+                      data-birch="data-birch"
+                    >
+                      🪵 <span id="birchCount">0</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div id="materials">
+                  <div class="ui-grid__corner--sub-heading">🧱 Materials</div>
+                  <div class="ui-grid__corner--sub-section">
+                    <div>Selected: <span id="selectedMaterial">None</span></div>
+                    <div>
+                      <button
+                        class="material-btn material-btn--dirt"
+                        data-dirt="data-dirt"
+                      >
+                        🟤 <span id="dirtCount">0</span>
+                      </button>
+                      <button
+                        class="material-btn material-btn--stone"
+                        data-stone="data-stone"
+                      >
+                        🪨 <span id="stoneCount">0</span>
+                      </button>
+
+                      <button
+                        class="material-btn material-btn--grass"
+                        data-grass="data-grass"
+                      >
+                        <div class="swatch-grass"></div>
+                        <span id="grassCount">0</span>
+                      </button>
+
+                      <button
+                        class="material-btn material-btn--snow"
+                        data-snow="data-snow"
+                      >
+                        ❄️ <span id="snowCount">0</span>
+                      </button>
+
+                      <button
+                        class="material-btn material-btn--ice"
+                        data-ice="data-ice"
+                      >
+                        🧊 <span id="iceCount">0</span>
+                      </button>
+
+                      <button
+                        class="material-btn material-btn--wood"
+                        data-wood="data-wood"
+                      >
+                        🪵 <span id="woodCount">0</span>
+                      </button>
+                      <button
+                        class="material-btn material-btn--sand"
+                        data-sand="data-sand"
+                      >
+                        🏖️ <span id="sandCount">0</span>
+                      </button>
+
+                      <button
+                        class="material-btn material-btn--clay"
+                        data-clay="data-clay"
+                      >
+                        🧱 <span id="clayCount">0</span>
+                      </button>
+                      <button
+                        class="material-btn material-btn--coal"
+                        data-coal="data-coal"
+                      >
+                        ⚫ <span id="coalCount">0</span>
+                      </button>
+
+                      <button
+                        class="material-btn material-btn--iron"
+                        data-iron="data-iron"
+                      >
+                        🔩 <span id="ironCount">0</span>
+                      </button>
+                      <button
+                        class="material-btn material-btn--gold"
+                        data-gold="data-gold"
+                      >
+                        🟡 <span id="goldCount">0</span>
+                      </button>
+                      <button
+                        class="material-btn material-btn--pumice"
+                        data-pumice="data-pumice"
+                      >
+                        <div class="swatch-pumice"></div>
+                        <span id="pumiceCount">0</span>
+                      </button>
+                      <button
+                        class="material-btn material-btn--cloud"
+                        data-cloud="data-cloud"
+                      >
+                        ☁️ <span id="cloudCount">0</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="seed-controls" hidden="hidden">
+          <h4>World Generation</h4>
+
+          <div class="seed-controls__actions">
+            <label>
+              Seed:
+              <input
+                id="worldSeedInput"
+                placeholder="Enter seed..."
+                type="number"
+              />
+            </label>
+
+            <button id="generateWithSeed">Generate</button>
+            <button id="randomSeed">Random</button>
+            <button id="copySeed">Copy Seed</button>
+          </div>
+
+          <div class="current-seed">
+            <p>Current seed: <span id="currentSeed"></span></p>
+          </div>
+
+          <h4>New Game, Load / Save Game File</h4>
+
+          <div class="seed-controls__save-load">
+            <button id="initNewWorld">🌍 New World</button>
+            <button id="loadCompressedState">Load Game File</button>
+            <button id="saveCompressedState">Save Game File</button>
+            <button id="useStorageBtn">💾 Use Storage</button>
+          </div>
+        </div>
+
+        <div class="touch-controls" hidden="hidden">
+          <div class="dpad-container">
+            <div class="dpad">
+              <div class="touch-btn up-left" data-key="upleft">↖</div>
+              <div class="touch-btn up" data-key="w">↑</div>
+              <div class="touch-btn up-right" data-key="upright">↗</div>
+
+              <div class="touch-btn left" data-key="a">←</div>
+              <div class="touch-btn middle" data-key="x">&times;</div>
+              <div class="touch-btn right" data-key="d">→</div>
+
+              <div class="touch-btn down-left" data-key="downleft">↙</div>
+              <div class="touch-btn down" data-key="s">↓</div>
+              <div class="touch-btn down-right" data-key="downright">↘</div>
+            </div>
+            <div class="dpad">
+              <div class="touch-btn place-block up-left" data-key="u">↖</div>
+              <div class="touch-btn place-block up" data-key="i">↑</div>
+              <div class="touch-btn place-block up-right" data-key="o">↗</div>
+
+              <div class="touch-btn place-block left" data-key="j">←</div>
+              <div class="touch-btn place-block middle" data-key="k">
+                &times;
+              </div>
+              <div class="touch-btn place-block right" data-key="l">→</div>
+
+              <div class="touch-btn place-block down-left" data-key="m">↙</div>
+              <div class="touch-btn place-block down" data-key=",">↓</div>
+              <div class="touch-btn place-block down-right" data-key=".">
+                ↘
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="action-buttons">
+              <div class="touch-btn" data-key=" ">🦘</div>
+              <div class="touch-btn" data-key="r">⛏️</div>
+              <div class="touch-btn" data-key="f">🧑‍🌾</div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Attach open shadow root
+      const shadow = this.attachShadow({ mode: "open" });
+      // Clone the template content and append to shadow root
+      shadow.appendChild(template.content.cloneNode(true));
+    }
+  }
+
+  async connectedCallback() {
+    const shadow = this.shadowRoot;
+    const canvas = shadow.querySelector("canvas");
+
+    await initGame(globalThis, shadow, canvas);
+  }
+}
+
+if (!globalThis.customElements?.get(tagName)) {
+  globalThis.customElements?.define(tagName, SpriteGarden);
+}

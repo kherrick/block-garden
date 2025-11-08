@@ -3,7 +3,6 @@ import { isKeyPressed } from "../util/isKeyPressed.mjs";
 
 // Update player physics
 export function updatePlayer(
-  gThis,
   friction,
   gravity,
   maxFallSpeed,
@@ -14,6 +13,8 @@ export function updatePlayer(
   camera,
   player,
   movementScale = 1,
+  cnvs,
+  shadow,
 ) {
   const currentPlayer = player.get();
   const currentCamera = camera.get();
@@ -29,34 +30,37 @@ export function updatePlayer(
   let verticalInput = 0;
 
   // Check for diagonal inputs first
-  if (isKeyPressed(gThis, "upleft")) {
+  if (isKeyPressed(shadow, "upleft")) {
     horizontalInput = -1;
     verticalInput = -1;
     currentPlayer.lastDirection = -1;
-  } else if (isKeyPressed(gThis, "upright")) {
+  } else if (isKeyPressed(shadow, "upright")) {
     horizontalInput = 1;
     verticalInput = -1;
     currentPlayer.lastDirection = 1;
-  } else if (isKeyPressed(gThis, "downleft")) {
+  } else if (isKeyPressed(shadow, "downleft")) {
     horizontalInput = -1;
     verticalInput = 1;
     currentPlayer.lastDirection = -1;
-  } else if (isKeyPressed(gThis, "downright")) {
+  } else if (isKeyPressed(shadow, "downright")) {
     horizontalInput = 1;
     verticalInput = 1;
     currentPlayer.lastDirection = 1;
   } else {
     // Check for individual directional inputs
-    if (isKeyPressed(gThis, "a") || isKeyPressed(gThis, "arrowleft")) {
+    if (isKeyPressed(shadow, "a") || isKeyPressed(shadow, "arrowleft")) {
       horizontalInput = -1;
       currentPlayer.lastDirection = -1;
-    } else if (isKeyPressed(gThis, "d") || isKeyPressed(gThis, "arrowright")) {
+    } else if (
+      isKeyPressed(shadow, "d") ||
+      isKeyPressed(shadow, "arrowright")
+    ) {
       horizontalInput = 1;
       currentPlayer.lastDirection = 1;
     }
 
     // Vertical input for diagonal movement (not jumping)
-    if (isKeyPressed(gThis, "s")) {
+    if (isKeyPressed(shadow, "s")) {
       verticalInput = 1;
     }
   }
@@ -82,11 +86,11 @@ export function updatePlayer(
 
   // Handle jumping (including diagonal up movements)
   if (
-    (isKeyPressed(gThis, "w") ||
-      isKeyPressed(gThis, "arrowup") ||
-      isKeyPressed(gThis, " ") ||
-      isKeyPressed(gThis, "upleft") ||
-      isKeyPressed(gThis, "upright")) &&
+    (isKeyPressed(shadow, "w") ||
+      isKeyPressed(shadow, "arrowup") ||
+      isKeyPressed(shadow, " ") ||
+      isKeyPressed(shadow, "upleft") ||
+      isKeyPressed(shadow, "upright")) &&
     currentPlayer.onGround
   ) {
     currentPlayer.velocityY = -currentPlayer.jumpPower;
@@ -152,11 +156,10 @@ export function updatePlayer(
   );
 
   // Update camera to follow player
-  const canvas = gThis.document?.getElementById("canvas");
   const targetCameraX =
-    currentPlayer.x + currentPlayer.width / 2 - canvas.width / 2;
+    currentPlayer.x + currentPlayer.width / 2 - cnvs.width / 2;
   const targetCameraY =
-    currentPlayer.y + currentPlayer.height / 2 - canvas.height / 2;
+    currentPlayer.y + currentPlayer.height / 2 - cnvs.height / 2;
 
   currentCamera.x += (targetCameraX - currentCamera.x) * 0.1;
   currentCamera.y += (targetCameraY - currentCamera.y) * 0.1;
@@ -164,10 +167,10 @@ export function updatePlayer(
   // Keep camera in bounds
   currentCamera.x = Math.max(
     0,
-    Math.min(currentCamera.x, worldWidth * tileSize - canvas.width),
+    Math.min(currentCamera.x, worldWidth * tileSize - cnvs.width),
   );
   currentCamera.y = Math.max(
     0,
-    Math.min(currentCamera.y, worldHeight * tileSize - canvas.height),
+    Math.min(currentCamera.y, worldHeight * tileSize - cnvs.height),
   );
 }

@@ -1,5 +1,3 @@
-import { getRandomInt } from "../../util/getRandomInt.mjs";
-
 import { SpriteGarden } from "../SpriteGarden.mjs";
 
 export class KonamiCode extends SpriteGarden {
@@ -21,7 +19,7 @@ export async function demo(
   api.setFogMode("clear");
   api.setBreakMode("extra");
 
-  api.doc.querySelector(settingsSelector).click();
+  api.shadow.querySelector(settingsSelector).click();
 
   console.log("🎮 SpriteGarden Demo: KonamiCode");
 
@@ -29,7 +27,7 @@ export async function demo(
   console.log("🧬 KonamiCode started!");
   await api.start();
 
-  api.doc.getElementById("toggleMapEditor").click();
+  api.shadow.getElementById("toggleMapEditor").click();
 
   const apiText = "spriteGarden.demo.konamiCodeAPI";
 

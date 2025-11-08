@@ -53,7 +53,7 @@ export function render(
   if (!ctx) return;
 
   // Clear canvas
-  ctx.fillStyle = "#87CEEB";
+  ctx.fillStyle = tileColorMap["air"];
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   // Render world tiles

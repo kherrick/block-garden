@@ -75,7 +75,7 @@ export async function runCompress(gThis, stringData) {
     anchor.href = url;
     anchor.download = filename;
 
-    gThis.document.body.appendChild(anchor);
+    gThis.document.body.append(anchor);
 
     anchor.click();
 

@@ -1,4 +1,4 @@
 // Combined input check
-export function isKeyPressed(gThis, key) {
-  return gThis.spriteGarden?.keys[key] || gThis.spriteGarden?.touchKeys[key];
+export function isKeyPressed(shadow, key) {
+  return shadow.host?.keys[key] || shadow.host?.touchKeys[key];
 }

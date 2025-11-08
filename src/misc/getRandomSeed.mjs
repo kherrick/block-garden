@@ -12,7 +12,7 @@ export function getCryptoRandomInt(min, max) {
   limit = maxUint32 - (maxUint32 % range);
 
   do {
-    rand32 = window.crypto.getRandomValues(new Uint32Array(1))[0];
+    rand32 = globalThis.crypto.getRandomValues(new Uint32Array(1))[0];
   } while (rand32 > limit);
   return min + (rand32 % range);
 }

@@ -2,34 +2,30 @@ import { effect } from "../../deps/signal.mjs";
 
 import { updateInventoryUI } from "../update/ui/inventory.mjs";
 
-export function initEffects({
+export function initEffects(
+  shadow,
+  totalSeeds,
   breakMode,
-  doc,
   fogMode,
+  worldSeed,
   gameTime,
   materialsInventory,
   seedInventory,
   selectedMaterialType,
   selectedSeedType,
-  totalSeeds,
   viewMode,
-  worldSeed,
-}) {
+) {
   // Set up reactive effects for UI updates
   effect(() => {
     // Auto-update inventory display when materials or seeds change
-    updateInventoryUI({
-      doc: doc,
-      materialsInventory: materialsInventory.get(),
-      seedInventory: seedInventory.get(),
-    });
+    updateInventoryUI(shadow, materialsInventory.get(), seedInventory.get());
   });
 
   effect(() => {
-    const seedInput = doc.getElementById("worldSeedInput");
+    const seedInput = shadow.getElementById("worldSeedInput");
 
     if (seedInput && !seedInput.value) {
-      const currentSeedDisplay = doc.getElementById("currentSeed");
+      const currentSeedDisplay = shadow.getElementById("currentSeed");
       const currentWorldSeed = worldSeed.get();
 
       if (currentSeedDisplay && currentWorldSeed) {
@@ -49,7 +45,8 @@ export function initEffects({
   effect(() => {
     // Auto-update gameState
     const currentGameTime = gameTime.get();
-    const gameTimeEl = doc.getElementById("gameTime");
+    const gameTimeEl = shadow.getElementById("gameTime");
+
     if (gameTimeEl) {
       gameTimeEl.textContent = Math.floor(currentGameTime);
     }
@@ -58,8 +55,8 @@ export function initEffects({
   effect(() => {
     // Auto-update viewMode
     const currentViewMode = viewMode.get();
+    const viewModeTextEl = shadow.getElementById("viewModeText");
 
-    const viewModeTextEl = doc.getElementById("viewModeText");
     if (viewModeTextEl) {
       viewModeTextEl.textContent =
         currentViewMode === "normal" ? "View Normal" : "View X-Ray";
@@ -70,7 +67,7 @@ export function initEffects({
     // Auto-update fogMode
     const currentFogMode = fogMode.get();
 
-    const fogModeTextEl = doc.getElementById("fogModeText");
+    const fogModeTextEl = shadow.getElementById("fogModeText");
     if (fogModeTextEl) {
       fogModeTextEl.textContent = currentFogMode === "fog" ? "Fog" : "Clear";
     }
@@ -80,7 +77,7 @@ export function initEffects({
     // Auto-update breakMode
     const currentBreakMode = breakMode.get();
 
-    const breakModeTextEl = doc.getElementById("breakModeText");
+    const breakModeTextEl = shadow.getElementById("breakModeText");
     if (breakModeTextEl) {
       breakModeTextEl.textContent =
         currentBreakMode === "regular" ? "Dig Regular" : "Dig Extra";
@@ -91,7 +88,7 @@ export function initEffects({
     // Auto-update total seeds display
     const currentTotalSeeds = totalSeeds.get();
 
-    const seedCountEl = doc.getElementById("seedCount");
+    const seedCountEl = shadow.getElementById("seedCount");
     if (seedCountEl) {
       seedCountEl.textContent = currentTotalSeeds;
     }
@@ -101,7 +98,7 @@ export function initEffects({
     // Auto-update selected seed display
     const selectedSeed = selectedSeedType.get();
 
-    const selectedSeedEl = doc.getElementById("selectedSeed");
+    const selectedSeedEl = shadow.getElementById("selectedSeed");
     if (selectedSeedEl) {
       selectedSeedEl.textContent = selectedSeed || "None";
     }
@@ -111,7 +108,7 @@ export function initEffects({
     // Auto-update selected material display
     const selectedMaterial = selectedMaterialType.get();
 
-    const selectedMaterialEl = doc.getElementById("selectedMaterial");
+    const selectedMaterialEl = shadow.getElementById("selectedMaterial");
     if (selectedMaterialEl) {
       selectedMaterialEl.textContent = selectedMaterial || "None";
     }

@@ -1,9 +1,7 @@
-import { showPrivacyDialog } from "./privacy.mjs";
-
 export class AboutDialog {
-  constructor(gThis) {
-    this.gThis = gThis;
-    this.doc = gThis.document;
+  constructor(doc, shadow) {
+    this.doc = doc;
+    this.shadow = shadow;
     this.dialog = null;
 
     this.close = this.close.bind(this);
@@ -16,11 +14,11 @@ export class AboutDialog {
     }
 
     const dialogClass = `${part}-content`;
-    let dialog = this.doc.querySelector(`.${dialogClass}`);
+    let dialog = this.shadow.querySelector(`.${dialogClass}`);
 
     if (!dialog) {
       dialog = this.doc.createElement("dialog");
-      dialog.setAttribute("class", `${dialogClass} sprite-garden`);
+      dialog.setAttribute("class", dialogClass);
 
       const parser = new DOMParser();
       const documentText = await (await fetch(part)).text();
@@ -29,8 +27,8 @@ export class AboutDialog {
 
       dialog.innerHTML = content.innerHTML;
 
-      this.doc.body.appendChild(dialog);
-      this.doc
+      this.shadow.append(dialog);
+      this.shadow
         .querySelector(`.${part}-content_close-btn`)
         .removeAttribute("hidden");
     }
@@ -71,8 +69,8 @@ export class AboutDialog {
   }
 }
 
-async function showAboutDialog(gThis) {
-  const aboutDialog = new AboutDialog(gThis);
+async function showAboutDialog(doc, shadow) {
+  const aboutDialog = new AboutDialog(doc, shadow);
 
   await aboutDialog.createDialog("about");
   aboutDialog.show();

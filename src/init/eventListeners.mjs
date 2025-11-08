@@ -12,6 +12,7 @@ import { resizeCanvas } from "../util/resizeCanvas.mjs";
 import { runCompress } from "../util/compression.mjs";
 import { selectMaterial } from "../misc/selectMaterial.mjs";
 import { selectSeed } from "../misc/selectSeed.mjs";
+import { showColorCustomizationDialog } from "../misc/customColors.mjs";
 import { toggleBreakMode } from "../misc/toggleBreakMode.mjs";
 
 import {
@@ -28,48 +29,63 @@ import { showStorageDialog } from "../dialog/storage.mjs";
 import { initFog } from "./fog.mjs";
 import { initNewWorld } from "./newWorld.mjs";
 
-export function initGlobalEventListeners(gThis) {
-  // Setup event listeners
-  gThis.addEventListener("resize", () => {
-    resizeCanvas(gThis.document, gameConfig);
+export function initGlobalEventListeners(gThis, doc, shadow) {
+  function debounce(func, delay) {
+    let timeout;
+
+    return function (...args) {
+      clearTimeout(timeout);
+
+      timeout = setTimeout(() => func.apply(this, args), delay);
+    };
+  }
+
+  const debouncedResize = debounce(() => {
+    resizeCanvas(doc, gameConfig);
+  }, 200);
+
+  const resizeObserver = new ResizeObserver((entries) => {
+    debouncedResize();
   });
 
-  // Input handling
-  gThis.spriteGarden.keys = {};
-  gThis.spriteGarden.touchKeys = {};
+  resizeObserver.observe(shadow.host);
 
-  setupDialogButtons(gThis);
-  setupMovementScaleUI(gThis.document);
+  setupDialogButtons(gThis, shadow);
+  setupMovementScaleUI(shadow);
 
-  updateRangeUI(gThis.document);
-  updateMovementScaleUI(gThis.document);
+  updateRangeUI(shadow);
+  updateMovementScaleUI(shadow);
+
+  const customizeColors = shadow.getElementById("customizeColorsBtn");
+  if (customizeColors) {
+    customizeColors.addEventListener("click", () => {
+      showColorCustomizationDialog(gThis, doc, shadow);
+    });
+  }
 }
 
-function setupMovementScaleUI(doc) {
-  const scaleKey = doc.querySelector('[data-key="x"].middle');
+function setupMovementScaleUI(shadow) {
+  const scaleKey = shadow.querySelector('[data-key="x"].middle');
 
   if (scaleKey) {
     scaleKey.addEventListener(
       "click",
-      async () => await updateMovementScaleValue(doc),
+      async () => await updateMovementScaleValue(shadow),
     );
 
     scaleKey.addEventListener(
       "touchstart",
-      async () => await updateMovementScaleValue(doc),
+      async () => await updateMovementScaleValue(shadow),
     );
   }
 }
 
-function setupDialogButtons(gThis) {
-  const doc = gThis.document;
-
-  // About button
-  const aboutBtn = doc.getElementById("aboutBtn");
+function setupDialogButtons(gThis, shadow) {
+  const aboutBtn = shadow.getElementById("aboutBtn");
   if (aboutBtn) {
     aboutBtn.addEventListener("click", async function () {
       try {
-        await showAboutDialog(gThis);
+        await showAboutDialog(gThis.document, shadow);
       } catch (error) {
         console.error("Failed to open about dialog:", error);
         alert("Failed to open about dialog. Check console for details.");
@@ -78,11 +94,11 @@ function setupDialogButtons(gThis) {
   }
 
   // Examples button
-  const examplesBtn = doc.getElementById("examplesBtn");
+  const examplesBtn = shadow.getElementById("examplesBtn");
   if (examplesBtn) {
     examplesBtn.addEventListener("click", async function () {
       try {
-        await showExamplesDialog(gThis);
+        await showExamplesDialog(gThis.document, shadow);
       } catch (error) {
         console.error("Failed to open examples dialog:", error);
         alert("Failed to open examples dialog. Check console for details.");
@@ -91,13 +107,14 @@ function setupDialogButtons(gThis) {
   }
 
   // Privacy button
-  const privacyBtn = doc.getElementById("privacyBtn");
+  const privacyBtn = shadow.getElementById("privacyBtn");
   if (privacyBtn) {
     privacyBtn.addEventListener("click", async function () {
       try {
-        await showPrivacyDialog(gThis);
+        await showPrivacyDialog(gThis.document, shadow);
       } catch (error) {
         console.error("Failed to open privacy dialog:", error);
+
         alert("Failed to open privacy dialog. Check console for details.");
       }
     });
@@ -120,16 +137,19 @@ function handleCornerClick(e) {
   cornerContainer.setAttribute("hidden", "hidden");
 }
 
-export function initDocumentEventListeners(gThis) {
-  const doc = gThis.document;
-
+export function initDocumentEventListeners(gThis, shadow) {
   // Extras
   new extrasHandler((handler) => {
-    doc.getElementById("mapEditor").removeAttribute("hidden");
-    doc.getElementById("examplesBtnContainer").removeAttribute("hidden");
-    doc.querySelector('option[value="fullscreen"]').removeAttribute("hidden");
+    shadow.getElementById("mapEditor").removeAttribute("hidden");
+    shadow
+      .getElementById("customizeColorsBtnContainer")
+      .removeAttribute("hidden");
+    shadow.getElementById("examplesBtnContainer").removeAttribute("hidden");
+    shadow
+      .querySelector('option[value="fullscreen"]')
+      .removeAttribute("hidden");
 
-    const settingsContainer = doc.querySelector(
+    const settingsContainer = shadow.querySelector(
       '#settings > [class="ui-grid__corner--container"]',
     );
     settingsContainer.removeAttribute("hidden");
@@ -138,9 +158,9 @@ export function initDocumentEventListeners(gThis) {
   });
 
   // Keyboard events
-  doc.addEventListener("keydown", async (e) => {
+  shadow.addEventListener("keydown", async (e) => {
     const lowercaseKey = e.key.toLowerCase();
-    gThis.spriteGarden.keys[lowercaseKey] = true;
+    shadow.host.keys[lowercaseKey] = true;
 
     // Allow digits 0-9, enter, and delete
     if (lowercaseKey === "enter") {
@@ -151,7 +171,7 @@ export function initDocumentEventListeners(gThis) {
 
     // Always hide the world generation panel with escape
     if (lowercaseKey === "escape") {
-      document
+      shadow
         .querySelector('[class="seed-controls"]')
         .setAttribute("hidden", "hidden");
     }
@@ -160,9 +180,7 @@ export function initDocumentEventListeners(gThis) {
     if (lowercaseKey === "s" && e.ctrlKey) {
       e.preventDefault();
 
-      document
-        .querySelector('[class="seed-controls"]')
-        .toggleAttribute("hidden");
+      shadow.querySelector('[class="seed-controls"]').toggleAttribute("hidden");
     }
 
     if (
@@ -199,7 +217,7 @@ export function initDocumentEventListeners(gThis) {
     if (lowercaseKey === "x") {
       e.preventDefault();
 
-      await updateMovementScaleValue(doc);
+      await updateMovementScaleValue(shadow);
     }
 
     // Handle farming actions
@@ -253,9 +271,9 @@ export function initDocumentEventListeners(gThis) {
     e.preventDefault();
   });
 
-  const fogButton = doc.getElementById("toggleFog");
+  const fogButton = shadow.getElementById("toggleFog");
   fogButton.addEventListener("click", function toggleFog() {
-    const fogModeText = doc.getElementById("fogModeText");
+    const fogModeText = shadow.getElementById("fogModeText");
 
     if (fogModeText.textContent === "Clear") {
       gameConfig.fogMode.set("fog");
@@ -267,34 +285,34 @@ export function initDocumentEventListeners(gThis) {
   });
 
   function handleWorldStateButton() {
-    doc.querySelector('[class="seed-controls"]').toggleAttribute("hidden");
+    shadow.querySelector('[class="seed-controls"]').toggleAttribute("hidden");
   }
 
-  const worldStateBtn = doc.getElementById("worldState");
+  const worldStateBtn = shadow.getElementById("worldState");
   worldStateBtn.addEventListener("click", handleWorldStateButton);
 
   function handleGenerateButton() {
-    const seedInput = doc.getElementById("worldSeedInput");
-    const currentSeedDisplay = doc.getElementById("currentSeed");
+    const seedInput = shadow.getElementById("worldSeedInput");
+    const currentSeedDisplay = shadow.getElementById("currentSeed");
 
     const worldHeight = gameConfig.WORLD_HEIGHT.get();
     const worldWidth = gameConfig.WORLD_WIDTH.get();
 
-    const currentWorld = initNewWorld({
-      biomes: gameConfig.BIOMES,
-      gameTime: gameState.gameTime,
-      growthTimers: gameState.growthTimers,
-      plantStructures: gameState.plantStructures,
-      player: gameState.player,
-      seedInventory: gameState.seedInventory,
-      surfaceLevel: gameConfig.SURFACE_LEVEL.get(),
-      tiles: gameConfig.TILES,
-      tileSize: gameConfig.TILE_SIZE.get(),
+    const currentWorld = initNewWorld(
+      gameConfig.BIOMES,
+      gameConfig.SURFACE_LEVEL.get(),
+      gameConfig.TILE_SIZE.get(),
+      gameConfig.TILES,
       worldHeight,
       worldWidth,
-      worldSeed: gameConfig.worldSeed,
-      newSeed: seedInput.value,
-    });
+      gameConfig.worldSeed,
+      gameState.gameTime,
+      gameState.growthTimers,
+      gameState.plantStructures,
+      gameState.player,
+      gameState.seedInventory,
+      seedInput.value,
+    );
 
     gameState.world.set(currentWorld);
 
@@ -308,28 +326,28 @@ export function initDocumentEventListeners(gThis) {
   }
 
   function handleRandomSeedButton() {
-    const currentSeedDisplay = doc.getElementById("currentSeed");
-    const seedInput = doc.getElementById("worldSeedInput");
+    const currentSeedDisplay = shadow.getElementById("currentSeed");
+    const seedInput = shadow.getElementById("worldSeedInput");
     const randomSeed = getRandomSeed();
 
     const worldHeight = gameConfig.WORLD_HEIGHT.get();
     const worldWidth = gameConfig.WORLD_WIDTH.get();
 
-    const currentWorld = initNewWorld({
-      biomes: gameConfig.BIOMES,
-      gameTime: gameState.gameTime,
-      growthTimers: gameState.growthTimers,
-      plantStructures: gameState.plantStructures,
-      player: gameState.player,
-      seedInventory: gameState.seedInventory,
-      surfaceLevel: gameConfig.SURFACE_LEVEL.get(),
-      tiles: gameConfig.TILES,
-      tileSize: gameConfig.TILE_SIZE.get(),
+    const currentWorld = initNewWorld(
+      gameConfig.BIOMES,
+      gameConfig.SURFACE_LEVEL.get(),
+      gameConfig.TILE_SIZE.get(),
+      gameConfig.TILES,
       worldHeight,
       worldWidth,
-      worldSeed: gameConfig.worldSeed,
-      newSeed: randomSeed,
-    });
+      gameConfig.worldSeed,
+      gameState.gameTime,
+      gameState.growthTimers,
+      gameState.plantStructures,
+      gameState.player,
+      gameState.seedInventory,
+      randomSeed,
+    );
 
     gameState.world.set(currentWorld);
 
@@ -343,20 +361,20 @@ export function initDocumentEventListeners(gThis) {
     currentSeedDisplay.textContent = randomSeed;
   }
 
-  const generateBtn = doc.getElementById("generateWithSeed");
+  const generateBtn = shadow.getElementById("generateWithSeed");
   generateBtn.addEventListener("click", handleGenerateButton);
 
-  const randomBtn = doc.getElementById("randomSeed");
+  const randomBtn = shadow.getElementById("randomSeed");
   randomBtn.addEventListener("click", handleRandomSeedButton);
 
-  const copySeedBtn = doc.getElementById("copySeed");
+  const copySeedBtn = shadow.getElementById("copySeed");
   copySeedBtn.addEventListener("click", async function () {
-    const seedInput = doc.getElementById("worldSeedInput");
+    const seedInput = shadow.getElementById("worldSeedInput");
 
     await copyToClipboard(gThis, seedInput.value);
   });
 
-  const saveCompressedBtn = doc.getElementById("saveCompressedState");
+  const saveCompressedBtn = shadow.getElementById("saveCompressedState");
   saveCompressedBtn.addEventListener("click", async function () {
     try {
       const saveState = createSaveState(gThis);
@@ -370,11 +388,11 @@ export function initDocumentEventListeners(gThis) {
     }
   });
 
-  const loadCompressedBtn = doc.getElementById("loadCompressedState");
+  const loadCompressedBtn = shadow.getElementById("loadCompressedState");
   loadCompressedBtn.addEventListener("click", async function () {
     try {
-      const currentSeedDisplay = doc.getElementById("currentSeed");
-      const seedInput = doc.getElementById("worldSeedInput");
+      const currentSeedDisplay = shadow.getElementById("currentSeed");
+      const seedInput = shadow.getElementById("worldSeedInput");
 
       let file;
 
@@ -392,12 +410,12 @@ export function initDocumentEventListeners(gThis) {
         file = await fileHandle.getFile();
       } else {
         // Fallback for browsers without showOpenFilePicker
-        const input = doc.createElement("input");
+        const input = shadow.createElement("input");
         input.type = "file";
         input.accept = ".sgs";
         input.style.display = "none";
 
-        doc.body.appendChild(input);
+        shadow.append(input);
 
         const filePromise = new Promise((resolve) => {
           input.onchange = () => resolve(input.files[0]);
@@ -407,7 +425,7 @@ export function initDocumentEventListeners(gThis) {
 
         file = await filePromise;
 
-        doc.body.removeChild(input);
+        shadow.removeChild(input);
       }
 
       let stateJSON;
@@ -438,11 +456,11 @@ export function initDocumentEventListeners(gThis) {
   });
 
   // Add event listener for storage dialog button
-  const useStorageBtn = doc.getElementById("useStorageBtn");
+  const useStorageBtn = shadow.getElementById("useStorageBtn");
   if (useStorageBtn) {
     useStorageBtn.addEventListener("click", async function () {
       try {
-        await showStorageDialog(gThis);
+        await showStorageDialog(gThis, gThis.document, shadow);
       } catch (error) {
         console.error("Failed to open storage dialog:", error);
         alert("Failed to open storage dialog. Check console for details.");
@@ -450,7 +468,7 @@ export function initDocumentEventListeners(gThis) {
     });
   }
 
-  const corners = doc.querySelectorAll(".ui-grid__corner");
+  const corners = shadow.querySelectorAll(".ui-grid__corner");
 
   corners.forEach((corner) => {
     const heading = corner.querySelector(".ui-grid__corner--heading");
@@ -459,47 +477,48 @@ export function initDocumentEventListeners(gThis) {
   });
 }
 
-export function initElementEventListeners(doc) {
-  doc.getElementById("controls").addEventListener("click", (e) => {
+export function initElementEventListeners(shadow) {
+  shadow.getElementById("controls").addEventListener("click", (e) => {
     e.stopPropagation();
     e.preventDefault();
-    doc.getElementById("touchControls").toggleAttribute("hidden");
+
+    shadow.querySelector(".touch-controls").toggleAttribute("hidden");
   });
 
-  const resolutionSelectEl = doc.getElementById("resolutionSelect");
+  const resolutionSelectEl = shadow.getElementById("resolutionSelect");
   if (resolutionSelectEl) {
     resolutionSelectEl.addEventListener("change", (e) => {
       gameConfig.currentResolution.set(e.currentTarget.value);
 
-      resizeCanvas(doc, gameConfig);
+      resizeCanvas(shadow, gameConfig);
     });
   }
 
-  const genBtn = doc.getElementById("initNewWorld");
+  const genBtn = shadow.getElementById("initNewWorld");
   if (genBtn) {
     genBtn.addEventListener("click", () => {
-      const seedInput = doc.getElementById("worldSeedInput");
-      const currentSeedDisplay = doc.getElementById("currentSeed");
+      const seedInput = shadow.getElementById("worldSeedInput");
+      const currentSeedDisplay = shadow.getElementById("currentSeed");
       currentSeedDisplay.textContent = seedInput.value;
 
       const worldHeight = gameConfig.WORLD_HEIGHT.get();
       const worldWidth = gameConfig.WORLD_WIDTH.get();
 
-      const currentWorld = initNewWorld({
-        biomes: gameConfig.BIOMES,
-        gameTime: gameState.gameTime,
-        growthTimers: gameState.growthTimers,
-        plantStructures: gameState.plantStructures,
-        player: gameState.player,
-        seedInventory: gameState.seedInventory,
-        surfaceLevel: gameConfig.SURFACE_LEVEL.get(),
-        tiles: gameConfig.TILES,
-        tileSize: gameConfig.TILE_SIZE.get(),
+      const currentWorld = initNewWorld(
+        gameConfig.BIOMES,
+        gameConfig.SURFACE_LEVEL.get(),
+        gameConfig.TILE_SIZE.get(),
+        gameConfig.TILES,
         worldHeight,
         worldWidth,
-        worldSeed: gameConfig.worldSeed,
-        newSeed: seedInput.value,
-      });
+        gameConfig.worldSeed,
+        gameState.gameTime,
+        gameState.growthTimers,
+        gameState.plantStructures,
+        gameState.player,
+        gameState.seedInventory,
+        seedInput.value,
+      );
 
       gameState.world.set(currentWorld);
 
@@ -514,21 +533,21 @@ export function initElementEventListeners(doc) {
     });
 
     // Seed button event listeners
-    doc.querySelectorAll(".seed-btn").forEach((seedBtn) => {
+    shadow.querySelectorAll(".seed-btn").forEach((seedBtn) => {
       seedBtn.addEventListener("click", (e) => {
         selectSeed(gameState, e);
       });
     });
 
     // Material button event listeners
-    doc.querySelectorAll(".material-btn").forEach((materialBtn) => {
+    shadow.querySelectorAll(".material-btn").forEach((materialBtn) => {
       materialBtn.addEventListener("click", (e) => {
-        selectMaterial(doc, gameState, e);
+        selectMaterial(shadow, gameState, e);
       });
     });
   }
 
-  const toggleBtn = doc.getElementById("toggleView");
+  const toggleBtn = shadow.getElementById("toggleView");
   if (toggleBtn) {
     toggleBtn.addEventListener("click", () =>
       gameState.viewMode.set(
@@ -537,13 +556,13 @@ export function initElementEventListeners(doc) {
     );
   }
 
-  const toggleBreakBtn = doc.getElementById("toggleBreakMode");
+  const toggleBreakBtn = shadow.getElementById("toggleBreakMode");
   if (toggleBreakBtn) {
     toggleBreakBtn.addEventListener("click", () => toggleBreakMode());
   }
 
   // Set default to 400x400 and update the select element
-  const sel = doc.getElementById("resolutionSelect");
+  const sel = shadow.getElementById("resolutionSelect");
   if (sel) {
     sel.value = "400";
   }

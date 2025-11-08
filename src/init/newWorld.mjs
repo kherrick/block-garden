@@ -2,28 +2,28 @@ import { extractSeeds, mapValuesToProvided } from "../misc/selectSeed.mjs";
 import { generateWorld } from "../generate/world.mjs";
 import { registerTreeStructures } from "../misc/registerTreeStructures.mjs";
 
-export function initNewWorld({
+export function initNewWorld(
   biomes,
+  surfaceLevel,
+  tileSize,
+  tiles,
+  worldHeight,
+  worldWidth,
+  worldSeed,
   gameTime,
   growthTimers,
   plantStructures,
   player,
   seedInventory,
-  surfaceLevel,
-  tiles,
-  tileSize,
-  worldSeed,
-  worldHeight,
-  worldWidth,
   newSeed = null,
-}) {
+) {
   let currentWorldSeed;
 
   if (newSeed !== null) {
     worldSeed.set(newSeed.toString());
     currentWorldSeed = newSeed;
   } else {
-    currentWorldSeed = worldSeed.get();
+    currentWorldSeed = worldSeed?.get();
   }
 
   const currentWorld = generateWorld({

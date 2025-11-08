@@ -5,6 +5,8 @@ import { initFog } from "./fog.mjs";
 import { initMapEditor } from "../map/editor.mjs";
 import { initNewWorld } from "./newWorld.mjs";
 
+import { initColors } from "../dialog/colors/index.mjs";
+
 import {
   initDocumentEventListeners,
   initElementEventListeners,
@@ -20,7 +22,19 @@ import { computedSignals, initState } from "../state/state.mjs";
 import { gameLoop } from "../state/gameLoop.mjs";
 
 // Initialize game
-export async function initGame(gThis, doc, cnvs) {
+export async function initGame(gThis, shadow, cnvs) {
+  if (!cnvs) {
+    console.error("HTML canvas is required to init Sprite Garden.");
+
+    return;
+  }
+
+  shadow.addEventListener("focusout", (e) => {
+    cnvs.focus();
+  });
+
+  cnvs.focus();
+
   let version = "1";
 
   try {
@@ -30,45 +44,52 @@ export async function initGame(gThis, doc, cnvs) {
   }
 
   const { gameConfig, gameState } = initState(gThis, version);
+  const doc = gThis.document;
 
-  initMapEditor(doc, gameConfig.fogMode, gameState.viewMode);
+  // Input handling
+  shadow.host.keys = {};
+  shadow.host.touchKeys = {};
 
-  initGlobalEventListeners(gThis);
-  initDocumentEventListeners(gThis);
-  initElementEventListeners(doc);
-  initTouchControls(doc);
+  await initColors(gThis, shadow);
 
-  initEffects({
-    doc,
-    breakMode: gameConfig.breakMode,
-    fogMode: gameConfig.fogMode,
-    gameTime: gameState.gameTime,
-    materialsInventory: gameState.materialsInventory,
-    seedInventory: gameState.seedInventory,
-    selectedMaterialType: gameState.selectedMaterialType,
-    selectedSeedType: gameState.selectedSeedType,
-    totalSeeds: computedSignals.totalSeeds,
-    viewMode: gameState.viewMode,
-    worldSeed: gameConfig.worldSeed,
-  });
+  initMapEditor(doc, shadow, gameConfig.fogMode, gameState.viewMode);
+
+  initGlobalEventListeners(gThis, doc, shadow);
+  initDocumentEventListeners(gThis, shadow);
+  initElementEventListeners(shadow);
+  initTouchControls(shadow);
+
+  initEffects(
+    shadow,
+    computedSignals.totalSeeds,
+    gameConfig.breakMode,
+    gameConfig.fogMode,
+    gameConfig.worldSeed,
+    gameState.gameTime,
+    gameState.materialsInventory,
+    gameState.seedInventory,
+    gameState.selectedMaterialType,
+    gameState.selectedSeedType,
+    gameState.viewMode,
+  );
 
   const worldHeight = gameConfig.WORLD_HEIGHT.get();
   const worldWidth = gameConfig.WORLD_WIDTH.get();
 
-  const currentWorld = initNewWorld({
-    biomes: gameConfig.BIOMES,
-    gameTime: gameState.gameTime,
-    growthTimers: gameState.growthTimers,
-    plantStructures: gameState.plantStructures,
-    player: gameState.player,
-    seedInventory: gameState.seedInventory,
-    surfaceLevel: gameConfig.SURFACE_LEVEL.get(),
-    tiles: gameConfig.TILES,
-    tileSize: gameConfig.TILE_SIZE.get(),
+  const currentWorld = initNewWorld(
+    gameConfig.BIOMES,
+    gameConfig.SURFACE_LEVEL.get(),
+    gameConfig.TILE_SIZE.get(),
+    gameConfig.TILES,
     worldHeight,
     worldWidth,
-    worldSeed: gameConfig.worldSeed,
-  });
+    gameConfig.worldSeed,
+    gameState.gameTime,
+    gameState.growthTimers,
+    gameState.plantStructures,
+    gameState.player,
+    gameState.seedInventory,
+  );
 
   // Set the world in state
   gameState.world.set(currentWorld);
@@ -89,39 +110,42 @@ export async function initGame(gThis, doc, cnvs) {
     world: gameState.world,
   });
 
-  resizeCanvas(doc, gameConfig);
+  resizeCanvas(shadow, gameConfig);
 
   const ver = await localForage.setItem(`sprite-garden-version`, version);
   console.log(`Sprite Garden version: ${ver}`);
 
   await gameLoop(
     gThis,
-    gameConfig.worldSeed,
+    shadow,
+    shadow.getElementById("currentBiome"),
+    shadow.getElementById("currentDepth"),
+    cnvs,
     gameConfig.BIOMES,
-    gameConfig.SURFACE_LEVEL.get(),
+    gameConfig.fogMode,
+    gameConfig.fogScale,
     gameConfig.FRICTION.get(),
     gameConfig.GRAVITY.get(),
+    gameConfig.isFogScaled,
     gameConfig.MAX_FALL_SPEED.get(),
+    gameConfig.SURFACE_LEVEL.get(),
     gameConfig.TILE_SIZE.get(),
     gameConfig.TILES,
+    gameConfig.waterPhysics,
     gameConfig.WORLD_HEIGHT.get(),
     gameConfig.WORLD_WIDTH.get(),
-    gameState.growthTimers,
-    gameState.plantStructures,
-    gameState.waterPhysicsQueue,
-    gameConfig.waterPhysics,
-    gameState.world,
+    gameConfig.worldSeed,
     gameState.camera,
-    gameState.player,
-    gameState.viewMode,
-    gameConfig.fogMode,
-    gameConfig.isFogScaled,
-    gameConfig.fogScale,
     gameState.exploredMap,
     gameState.gameTime,
-    doc.getElementById("currentBiome"),
-    doc.getElementById("currentDepth"),
+    gameState.growthTimers,
+    gameState.plantStructures,
+    gameState.player,
+    gameState.viewMode,
+    gameState.waterPhysicsQueue,
+    gameState.world,
   );
 
-  doc.getElementById("loading").setAttribute("hidden", "hidden");
+  // hide loading animation
+  shadow.getElementById("loading").setAttribute("hidden", "hidden");
 }

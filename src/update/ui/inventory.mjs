@@ -1,9 +1,9 @@
 // Update inventory display
-export function updateInventoryUI({ doc, materialsInventory, seedInventory }) {
+export function updateInventoryUI(shadow, materialsInventory, seedInventory) {
   // Update seed counts
   Object.keys(seedInventory).forEach((seedKey) => {
     const seedType = seedKey.toLowerCase();
-    const el = doc?.getElementById(`${seedType}Count`);
+    const el = shadow?.getElementById(`${seedType}Count`);
 
     try {
       el.textContent = seedInventory[seedType.toUpperCase()];
@@ -15,7 +15,7 @@ export function updateInventoryUI({ doc, materialsInventory, seedInventory }) {
   // Update material counts
   Object.keys(materialsInventory).forEach((materialKey) => {
     const materialType = materialKey.toLowerCase();
-    const el = doc?.getElementById(`${materialType}Count`);
+    const el = shadow?.getElementById(`${materialType}Count`);
 
     try {
       el.textContent = materialsInventory[materialType.toUpperCase()];

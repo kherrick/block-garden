@@ -1,7 +1,7 @@
 export class ExamplesDialog {
-  constructor(gThis) {
-    this.gThis = gThis;
-    this.doc = gThis.document;
+  constructor(doc, shadow) {
+    this.doc = doc;
+    this.shadow = shadow;
     this.dialog = null;
 
     this.close = this.close.bind(this);
@@ -14,11 +14,11 @@ export class ExamplesDialog {
     }
 
     const dialogClass = `${part}-content`;
-    let dialog = this.doc.querySelector(`.${dialogClass}`);
+    let dialog = this.shadow.querySelector(`.${dialogClass}`);
 
     if (!dialog) {
       dialog = this.doc.createElement("dialog");
-      dialog.setAttribute("class", `${dialogClass} sprite-garden`);
+      dialog.setAttribute("class", dialogClass);
 
       const parser = new DOMParser();
       const documentText = await (await fetch(`${path}/${part}`)).text();
@@ -27,8 +27,8 @@ export class ExamplesDialog {
 
       dialog.innerHTML = content.innerHTML;
 
-      this.doc.body.appendChild(dialog);
-      this.doc
+      this.shadow.append(dialog);
+      this.shadow
         .querySelector(`.${part}-content_close-btn`)
         .removeAttribute("hidden");
     }
@@ -69,8 +69,8 @@ export class ExamplesDialog {
   }
 }
 
-async function showExamplesDialog(gThis) {
-  const examplesDialog = new ExamplesDialog(gThis);
+async function showExamplesDialog(doc, shadow) {
+  const examplesDialog = new ExamplesDialog(doc, shadow);
 
   await examplesDialog.createDialog("examples", "src/api");
   examplesDialog.show();

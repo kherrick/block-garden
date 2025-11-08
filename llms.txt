@@ -1,0 +1,50 @@
+# Sprite Garden
+
+> Sprite Garden is a 2D sandbox exploration and farming game available at https://kherrick.github.io/sprite-garden/. Players explore procedurally generated worlds, discover biomes, dig for resources, cultivate crops. and build.
+
+The gameplay is accessible without login, and all progress is stored locally or as downloadable save files. Controls include keyboard and mouse for desktop and touch for mobile devices.
+
+Players start exploring their surroundings, by pressing "W" or the "Up Arrow" to start gathering seeds and materials, planting crops with the "F" key, and digging for resources using "R". Progress can be saved via World State (Ctrl+S). Game modifications and feature extensions are supported through bookmarklet scripts and API examples in the /src/api/examples/ folder.
+
+Privacy and safety practices are outlined at /privacy/. For further details, see the About page.
+
+## Documentation
+
+- [About](https://kherrick.github.io/sprite-garden/about/): Site background and design philosophy.
+- [Game README](https://kherrick.github.io/sprite-garden/README.md): Detailed game overview, features, controls, and tips for new players.
+- [Privacy Policy](https://kherrick.github.io/sprite-garden/privacy/): Information on data handling and user privacy.
+
+## Modding and API References
+
+- [Source Code](https://github.com/kherrick/sprite-garden): Full project source for contributions and custom development.
+- [API Example Scripts](https://kherrick.github.io/sprite-garden/src/api/examples/): Bookmarklet and modular scripts for extending game functionality (including Fullscreen, Fireworks, Gold, Game of Life, Heart, Konami Code, Messaging, QRCode).
+
+## Try it out
+
+- [Main Game](https://kherrick.github.io/sprite-garden/) - Playable version for direct access
+  - [Sprite Garden](https://kherrick.github.io/sprite-garden/)
+
+- Fullscreen - Set fullscreen and reveal options in settings.
+  - Demo: [Fullscreen.mjs](https://kherrick.github.io/sprite-garden/src/api/examples/Fullscreen.mjs)
+
+
+- Fireworks - Particle systems and color trails.
+  - Demo: [Fireworks.mjs](https://kherrick.github.io/sprite-garden/src/api/examples/Fireworks.mjs)
+
+- Gold - Automate digging for gold.
+  - Demo: [Gold.mjs](https://kherrick.github.io/sprite-garden/src/api/examples/Gold.mjs)
+
+- GOL - Conway's Game of Life using sprite entities.
+  - Demo: [GOL.mjs](https://kherrick.github.io/sprite-garden/src/api/examples/GOL.mjs)
+
+- Heart - Draws dynamically animated heart patterns.
+  - Demo: [Heart.mjs](https://kherrick.github.io/sprite-garden/src/api/examples/Heart.mjs)
+
+- Konami Code - Shows handling of keyboard sequences and hidden interactions.
+  - Demo: [KonamiCode.mjs](https://kherrick.github.io/sprite-garden/src/api/examples/KonamiCode.mjs)
+
+- Messaging - Draw text on the map filled with water.
+  - Demo: [Messaging.mjs](https://kherrick.github.io/sprite-garden/src/api/examples/Messaging.mjs)
+
+- QRCode - Add a QRCode to the map.
+  - Demo: [QRCode.mjs](https://kherrick.github.io/sprite-garden/src/api/examples/QRCode.mjs)

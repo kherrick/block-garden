@@ -1,13 +1,13 @@
 import localForage from "../../../deps/localForage.mjs";
 
-export async function updateRangeUI(doc) {
+export async function updateRangeUI(shadow) {
   const rangeValue = (await localForage.getItem("sprite-garden-range")) || 1;
 
-  doc.querySelector('[data-key="k"].middle').innerHTML =
+  shadow.querySelector('[data-key="k"].middle').innerHTML =
     `&times;${Number(rangeValue)}`;
 }
 
-export async function updateRangeValue(doc) {
+export async function updateRangeValue(shadow) {
   let rangeValue = Number(
     (await localForage.getItem("sprite-garden-range")) || 1,
   );
@@ -20,5 +20,5 @@ export async function updateRangeValue(doc) {
 
   await localForage.setItem("sprite-garden-range", newRangeValue);
 
-  await updateRangeUI(doc);
+  await updateRangeUI(shadow);
 }

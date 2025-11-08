@@ -6,7 +6,7 @@ import { BIOMES } from "./biomes.mjs";
 import { TILES, TileName } from "./tiles.mjs";
 
 let initialWorldSeed;
-const params = new URLSearchParams(globalThis.location.search);
+const params = new URLSearchParams(globalThis.location?.search);
 if (params.has("seed")) {
   initialWorldSeed = params.get("seed");
 } else {

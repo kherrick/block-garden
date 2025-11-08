@@ -11,6 +11,7 @@ export class SpriteGarden {
   constructor() {
     this.gThis = globalThis;
     this.doc = this.gThis.document;
+    this.shadow = this.doc.querySelector("sprite-garden").shadowRoot;
     this.config = this.gThis.spriteGarden.config;
     this.state = this.gThis.spriteGarden.state;
     this.tiles = this.config.TILES;
@@ -273,19 +274,19 @@ export class SpriteGarden {
   }
 
   async holdKey(keyCode) {
-    this.doc.dispatchEvent(this.createKeyEvent("keydown", keyCode));
+    this.shadow.dispatchEvent(this.createKeyEvent("keydown", keyCode));
   }
 
   async releaseKey(keyCode) {
-    this.doc.dispatchEvent(this.createKeyEvent("keyup", keyCode));
+    this.shadow.dispatchEvent(this.createKeyEvent("keyup", keyCode));
   }
 
   async pressKey(keyCode, holdTime = 100) {
-    this.doc.dispatchEvent(this.createKeyEvent("keydown", keyCode));
+    this.shadow.dispatchEvent(this.createKeyEvent("keydown", keyCode));
 
     await sleep(holdTime);
 
-    this.doc.dispatchEvent(this.createKeyEvent("keyup", keyCode));
+    this.shadow.dispatchEvent(this.createKeyEvent("keyup", keyCode));
   }
 
   async pressKeyRepeat(keyCode, times, delay = 100) {
@@ -303,7 +304,7 @@ export class SpriteGarden {
   }
 
   async showFullScreen() {
-    const resolutionSelect = this.doc.getElementById("resolutionSelect");
+    const resolutionSelect = this.shadow.getElementById("resolutionSelect");
     const fullscreenOption = resolutionSelect.querySelector(
       '[value="fullscreen"]',
     );
@@ -318,7 +319,7 @@ export class SpriteGarden {
 
     this.config.currentResolution.set("fullscreen");
 
-    resizeCanvas(this.doc, this.config);
+    resizeCanvas(this.shadow, this.config);
   }
 
   async moveAndDig(directionKey, totalSteps, chunkSize = 50) {

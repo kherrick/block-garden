@@ -13,7 +13,7 @@ const dataProjectRoot = join(__dirname, "..");
 
 chdir(dataProjectRoot);
 
-const [, script, filename, attribute, newValue, tagName] = argv;
+const [, script, filename, tagName, attribute, newValue] = argv;
 
 function usage() {
   console.error(`${script} [filename] [attribute] [new-value] [tagName]`);

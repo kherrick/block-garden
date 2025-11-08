@@ -1,14 +1,14 @@
 import localForage from "../../deps/localForage.mjs";
 
-import { render } from "./render.mjs";
+import { buildTileColorMap } from "./config/tiles.mjs";
+
 import { updateBiomeUI } from "../update/ui/biome.mjs";
 import { updateCrops } from "../update/crops.mjs";
 import { updateDepthUI } from "../update/ui/depth.mjs";
 import { updatePlayer } from "../update/player.mjs";
 import { updateWaterPhysics } from "../water/updateWaterPhysics.mjs";
-import { buildTileColorMap } from "./config/tiles.mjs";
 
-const canvas = globalThis.document.getElementById("canvas");
+import { render } from "./render.mjs";
 
 // Fixed timestep configuration
 const TARGET_FPS = 50;
@@ -26,6 +26,7 @@ const previousState = {
 
 let scaleCache = null;
 let lastFetchTime = 0;
+
 const fetchInterval = 1000; // ms
 
 async function getScaleThrottled() {
@@ -43,36 +44,38 @@ async function getScaleThrottled() {
 // Game loop
 export async function gameLoop(
   gThis,
-  worldSeed,
-  biomes,
-  surfaceLevel,
-  friction,
-  gravity,
-  maxFallSpeed,
-  tileSize,
-  tiles,
-  worldHeight,
-  worldWidth,
-  growthTimers,
-  plantStructures,
-  waterPhysicsQueue,
-  waterPhysicsConfig,
-  world,
-  camera,
-  player,
-  viewMode,
-  fogMode,
-  isFogScaled,
-  fogScale,
-  exploredMap,
-  gameTime,
+  shadow,
   biomeEl,
   depthEl,
+  cnvs,
+  biomes,
+  fogMode,
+  fogScale,
+  friction,
+  gravity,
+  isFogScaled,
+  maxFallSpeed,
+  surfaceLevel,
+  tileSize,
+  tiles,
+  waterPhysicsConfig,
+  worldHeight,
+  worldWidth,
+  worldSeed,
+  camera,
+  exploredMap,
+  gameTime,
+  growthTimers,
+  plantStructures,
+  player,
+  viewMode,
+  waterPhysicsQueue,
+  world,
 ) {
   const currentTime = performance.now();
-  const frameTime = Math.min(currentTime - lastFrameTime, 250); // Cap at 250ms (4 FPS minimum)
-  lastFrameTime = currentTime;
+  const frameTime = Math.min(currentTime - lastFrameTime, 250);
 
+  lastFrameTime = currentTime;
   accumulatedTime += frameTime;
 
   // Fixed timestep updates - run physics at consistent rate
@@ -81,6 +84,7 @@ export async function gameLoop(
     // Store previous state before update
     const currentPlayer = player.get();
     const currentCamera = camera.get();
+
     previousState.player.x = currentPlayer.x;
     previousState.player.y = currentPlayer.y;
     previousState.camera.x = currentCamera.x;
@@ -88,7 +92,6 @@ export async function gameLoop(
 
     // Update game logic at fixed timestep
     updatePlayer(
-      gThis,
       friction,
       gravity,
       maxFallSpeed,
@@ -99,6 +102,8 @@ export async function gameLoop(
       camera,
       player,
       await getScaleThrottled(),
+      cnvs,
+      shadow,
     );
 
     updateCrops(
@@ -110,14 +115,14 @@ export async function gameLoop(
       worldWidth,
     );
 
-    updateWaterPhysics({
-      world,
-      waterPhysicsQueue,
-      waterPhysicsConfig,
-      worldWidth,
+    updateWaterPhysics(
       tiles,
+      waterPhysicsConfig,
+      waterPhysicsQueue,
+      world,
       worldHeight,
-    });
+      worldWidth,
+    );
 
     updateBiomeUI(biomeEl, player, biomes, tileSize, worldWidth, worldSeed);
     updateDepthUI(depthEl, player, surfaceLevel, tileSize);
@@ -133,14 +138,11 @@ export async function gameLoop(
   const interpolation = accumulatedTime / FIXED_TIMESTEP;
 
   // Build color map for tiles
-  const tileColorMap = buildTileColorMap(
-    gThis.document.getElementById("gameContainer"),
-    gThis.getComputedStyle,
-  );
+  const tileColorMap = buildTileColorMap(shadow.host, gThis.getComputedStyle);
 
   // Render with interpolation for smooth visuals
   render(
-    canvas,
+    cnvs,
     player,
     camera,
     tiles,
@@ -163,31 +165,33 @@ export async function gameLoop(
     async () =>
       await gameLoop(
         gThis,
-        worldSeed,
-        biomes,
-        surfaceLevel,
-        friction,
-        gravity,
-        maxFallSpeed,
-        tileSize,
-        tiles,
-        worldHeight,
-        worldWidth,
-        growthTimers,
-        plantStructures,
-        waterPhysicsQueue,
-        waterPhysicsConfig,
-        world,
-        camera,
-        player,
-        viewMode,
-        fogMode,
-        isFogScaled,
-        fogScale,
-        exploredMap,
-        gameTime,
+        shadow,
         biomeEl,
         depthEl,
+        cnvs,
+        biomes,
+        fogMode,
+        fogScale,
+        friction,
+        gravity,
+        isFogScaled,
+        maxFallSpeed,
+        surfaceLevel,
+        tileSize,
+        tiles,
+        waterPhysicsConfig,
+        worldHeight,
+        worldWidth,
+        worldSeed,
+        camera,
+        exploredMap,
+        gameTime,
+        growthTimers,
+        plantStructures,
+        player,
+        viewMode,
+        waterPhysicsQueue,
+        world,
       ),
   );
 }

@@ -6,8 +6,8 @@ export function resizeCanvas(doc, gameConfig) {
 
     if (currentResolution === "fullscreen") {
       // Fullscreen mode
-      doc?.body.classList.remove(
-        "desktop-resolution",
+      doc?.host.classList.remove(
+        "resolution",
         "resolution-400",
         "resolution-800",
       );
@@ -23,8 +23,8 @@ export function resizeCanvas(doc, gameConfig) {
     }
 
     // Fixed resolution mode
-    doc.body.classList.add("desktop-resolution");
-    doc.body.classList.remove("resolution-400", "resolution-800");
+    doc.host.classList.add("resolution");
+    doc.host.classList.remove("resolution-400", "resolution-800");
 
     const size = parseInt(currentResolution);
     cnvs.width = size;
@@ -32,7 +32,7 @@ export function resizeCanvas(doc, gameConfig) {
     cnvs.style.width = size + "px";
     cnvs.style.height = size + "px";
 
-    doc.body.classList.add(`resolution-${size}`);
+    doc.host.classList.add(`resolution-${size}`);
 
     if (currentResolution === "800") {
       gameConfig.fogScale.set(24);

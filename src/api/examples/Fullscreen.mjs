@@ -8,6 +8,8 @@ export async function demo() {
   // Setup
   await api.setFullscreen();
 
+  api.setFogMode("clear");
+
   console.log("🎮 SpriteGarden Demo: Fullscreen");
 
   // Expose to console for interaction

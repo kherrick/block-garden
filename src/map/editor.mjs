@@ -13,25 +13,26 @@ export const mapEditorState = {
 };
 
 // Initialize map editor mode
-export function initMapEditor(doc, fogMode, viewMode) {
+export function initMapEditor(doc, shadow, fogMode, viewMode) {
   // Add map editor UI to the existing UI
   setupMapEditorControls({
     doc,
+    shadow,
     fogMode,
     viewMode,
   });
 }
 
 // Setup map editor controls
-function setupMapEditorControls({ doc, fogMode, viewMode }) {
+function setupMapEditorControls({ doc, shadow, fogMode, viewMode }) {
   // Toggle map editor mode
-  const toggleBtn = doc.getElementById("toggleMapEditor");
+  const toggleBtn = shadow.getElementById("toggleMapEditor");
   if (toggleBtn) {
     toggleBtn.addEventListener("click", () => {
       mapEditorState.isEnabled = !mapEditorState.isEnabled;
 
       updateMapEditorUI({
-        doc,
+        shadow,
         fogMode,
         viewMode,
       });
@@ -39,7 +40,7 @@ function setupMapEditorControls({ doc, fogMode, viewMode }) {
   }
 
   // Brush size selector
-  const brushSizeSelect = doc.getElementById("brushSizeSelect");
+  const brushSizeSelect = shadow.getElementById("brushSizeSelect");
   if (brushSizeSelect) {
     brushSizeSelect.addEventListener("change", (e) => {
       mapEditorState.brushSize = parseInt(e.target.value);
@@ -47,15 +48,15 @@ function setupMapEditorControls({ doc, fogMode, viewMode }) {
   }
 
   // Tile selection buttons
-  doc.querySelectorAll(".tile-btn").forEach((btn) => {
+  shadow.querySelectorAll(".tile-btn").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       const tileType = e.target.dataset.tile;
-      selectTile(doc, tileType);
+      selectTile(shadow, tileType);
     });
   });
 
   // Clear all button
-  const clearBtn = doc.getElementById("clearMapEditor");
+  const clearBtn = shadow.getElementById("clearMapEditor");
   if (clearBtn) {
     clearBtn.addEventListener("click", () => {
       if (confirm("Clear the entire map? This cannot be undone.")) {
@@ -65,45 +66,57 @@ function setupMapEditorControls({ doc, fogMode, viewMode }) {
   }
 
   // Fill layer button
-  const fillBtn = doc.getElementById("fillMapEditor");
+  const fillBtn = shadow.getElementById("fillMapEditor");
   if (fillBtn) {
     fillBtn.addEventListener("click", () => {
       if (
         mapEditorState.selectedTile &&
         confirm(`Fill current layer with ${mapEditorState.selectedTile}?`)
       ) {
-        fillCurrentLayer();
+        fillCurrentLayer(shadow.getElementById("canvas"));
       }
     });
   }
 
   // Save as state button
-  const saveBtn = doc.getElementById("saveMapAsState");
+  const saveBtn = shadow.getElementById("saveMapAsState");
   if (saveBtn) {
     saveBtn.addEventListener("click", () => {
       saveMapAsState();
     });
   }
 
-  // Reset to generated world button
-  const resetBtn = doc.getElementById("resetToGenerated");
-  if (resetBtn) {
-    resetBtn.addEventListener("click", () => {
-      if (
-        confirm("Reset to generated world? This will lose all editor changes.")
-      ) {
-        initNewWorld({
-          doc,
-        });
+  // Regenerate world button
+  const regenerateBtn = shadow.getElementById("regenerateMap");
+  if (regenerateBtn) {
+    regenerateBtn.addEventListener("click", () => {
+      if (confirm("Regenerated world? This will lose all editor changes.")) {
+        const currentWorld = initNewWorld(
+          gameConfig.BIOMES,
+          gameConfig.SURFACE_LEVEL.get(),
+          gameConfig.TILE_SIZE.get(),
+          gameConfig.TILES,
+          gameConfig.WORLD_HEIGHT.get(),
+          gameConfig.WORLD_WIDTH.get(),
+          gameConfig.worldSeed,
+          gameState.gameTime,
+          gameState.growthTimers,
+          gameState.plantStructures,
+          gameState.player,
+          gameState.seedInventory,
+        );
+
+        // Set the world in state
+        gameState.world.set(currentWorld);
       }
     });
   }
 }
 
 // Update map editor UI state
-function updateMapEditorUI({ doc, fogMode, viewMode }) {
-  const mapEditorText = doc.getElementById("mapEditorText");
-  const mapEditorControls = doc.getElementById("mapEditorControls");
+function updateMapEditorUI({ shadow, fogMode, viewMode }) {
+  const mapEditorText = shadow.getElementById("mapEditorText");
+  const mapEditorControls = shadow.getElementById("mapEditorControls");
 
   if (mapEditorText && mapEditorControls) {
     if (mapEditorState.isEnabled) {
@@ -125,7 +138,7 @@ function updateMapEditorUI({ doc, fogMode, viewMode }) {
 }
 
 // Select a tile type for painting
-function selectTile(doc, tileType) {
+function selectTile(shadow, tileType) {
   mapEditorState.selectedTile = tileType;
 
   console.log(
@@ -136,11 +149,11 @@ function selectTile(doc, tileType) {
   );
 
   // Update UI to show selected tile
-  doc.querySelectorAll(".tile-btn").forEach((btn) => {
+  shadow.querySelectorAll(".tile-btn").forEach((btn) => {
     btn.classList.remove("selected");
   });
 
-  const selectedBtn = doc.querySelector(`[data-tile="${tileType}"]`);
+  const selectedBtn = shadow.querySelector(`[data-tile="${tileType}"]`);
   if (selectedBtn) {
     selectedBtn.classList.add("selected");
   }
@@ -307,7 +320,7 @@ function clearMap() {
 }
 
 // Fill current visible layer with selected tile
-function fillCurrentLayer() {
+function fillCurrentLayer(canvas) {
   if (!mapEditorState.selectedTile) {
     return;
   }
@@ -321,7 +334,6 @@ function fillCurrentLayer() {
   const worldWidth = gameConfig.WORLD_WIDTH.get();
 
   // Get visible area
-  const canvas = document.getElementById("canvas");
   const startX = Math.floor(camera.x / tileSize);
   const startY = Math.floor(camera.y / tileSize);
   const endX = Math.min(
@@ -385,7 +397,7 @@ async function saveMapAsState() {
     const a = document.createElement("a");
     a.href = url;
     a.download = `sprite-garden-map-${Date.now()}.json`;
-    document.body.appendChild(a);
+    document.body.append(a);
     a.click();
     document.body.removeChild(a);
 

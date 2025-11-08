@@ -4,8 +4,8 @@ import { handleFarmAction } from "../misc/handleFarmAction.mjs";
 import { handlePlaceBlock } from "../misc/handlePlaceBlock.mjs";
 
 // Touch controls
-export function initTouchControls(doc) {
-  const touchButtons = doc.querySelectorAll(".touch-btn");
+export function initTouchControls(shadow) {
+  const touchButtons = shadow.querySelectorAll(".touch-btn");
 
   touchButtons.forEach((btn) => {
     const key = btn.getAttribute("data-key");
@@ -13,8 +13,8 @@ export function initTouchControls(doc) {
     let intervalId = null;
 
     function executeKeyAction() {
-      globalThis.spriteGarden.touchKeys[key] = true;
-      btn.style.background = "rgba(255, 255, 255, 0.3)";
+      shadow.host.touchKeys[key] = true;
+      btn.style.background = "var(--sg-color-gray-alpha-30)";
 
       if (key === "f") {
         handleFarmAction({
@@ -66,7 +66,7 @@ export function initTouchControls(doc) {
 
     function stopHeldAction() {
       isPressed = false;
-      globalThis.spriteGarden.touchKeys[key] = false;
+      shadow.host.touchKeys[key] = false;
       btn.style.background = "rgba(0, 0, 0, 0.6)";
 
       if (intervalId) {
@@ -121,7 +121,7 @@ export function initTouchControls(doc) {
   });
 
   // Handle block placement mobile controls
-  doc.querySelectorAll(".touch-btn.place-block").forEach((pb) => {
+  shadow.querySelectorAll(".touch-btn.place-block").forEach((pb) => {
     pb.addEventListener(
       "touchstart",
       async () =>
@@ -155,37 +155,46 @@ export function initTouchControls(doc) {
     );
   });
 
-  doc.addEventListener("keyup", (e) => {
-    globalThis.spriteGarden.keys[e.key.toLowerCase()] = false;
+  shadow.addEventListener("keyup", (e) => {
+    shadow.host.keys[e.key.toLowerCase()] = false;
 
     e.preventDefault();
   });
 
   // Prevent default touch behaviors
-  doc.addEventListener(
+  shadow.addEventListener(
     "touchstart",
     (e) => {
-      if (e.target.closest("#touchControls") || e.target === canvas) {
+      if (
+        e.target.closest(".touch-controls") ||
+        e.target === shadow.getElementById("canvas")
+      ) {
         e.preventDefault();
       }
     },
     { passive: false },
   );
 
-  doc.addEventListener(
+  shadow.addEventListener(
     "touchmove",
     (e) => {
-      if (e.target.closest("#touchControls") || e.target === canvas) {
+      if (
+        e.target.closest(".touch-controls") ||
+        e.target === shadow.getElementById("canvas")
+      ) {
         e.preventDefault();
       }
     },
     { passive: false },
   );
 
-  doc.addEventListener(
+  shadow.addEventListener(
     "touchend",
     (e) => {
-      if (e.target.closest("#touchControls") || e.target === canvas) {
+      if (
+        e.target.closest(".touch-controls") ||
+        e.target === shadow.getElementById("canvas")
+      ) {
         e.preventDefault();
       }
     },
@@ -193,15 +202,21 @@ export function initTouchControls(doc) {
   );
 
   // Prevent context menu on long press
-  doc.addEventListener("contextmenu", (e) => {
-    if (e.target.closest("#touchControls") || e.target === canvas) {
+  shadow.addEventListener("contextmenu", (e) => {
+    if (
+      e.target.closest(".touch-controls") ||
+      e.target === shadow.getElementById("canvas")
+    ) {
       e.preventDefault();
     }
   });
 
   // Prevent zoom on double tap
-  doc.addEventListener("dblclick", (e) => {
-    if (e.target.closest("#touchControls") || e.target === canvas) {
+  shadow.addEventListener("dblclick", (e) => {
+    if (
+      e.target.closest(".touch-controls") ||
+      e.target === shadow.getElementById("canvas")
+    ) {
       e.preventDefault();
     }
   });

@@ -9,9 +9,10 @@ const STORAGE_KEY_PREFIX = "sprite-garden-save-";
 
 // Create and manage the storage dialog
 export class StorageDialog {
-  constructor(gThis) {
+  constructor(gThis, doc, shadow) {
     this.gThis = gThis;
-    this.doc = gThis.document;
+    this.doc = doc;
+    this.shadow = shadow;
     this.dialog = null;
     this.savedGames = [];
 
@@ -29,7 +30,6 @@ export class StorageDialog {
     }
 
     const dialog = this.doc.createElement("dialog");
-    dialog.setAttribute("class", "sprite-garden");
     dialog.setAttribute("id", "storageDialog");
     dialog.style.cssText = `
       background: var(--sg-color-gray-50);
@@ -152,7 +152,7 @@ export class StorageDialog {
       </div>
     `;
 
-    this.doc.body.appendChild(dialog);
+    this.shadow.append(dialog);
     this.dialog = dialog;
 
     await this.loadSavedGamesList();
@@ -440,8 +440,8 @@ export class StorageDialog {
 }
 
 // Export function to create and show dialog
-export async function showStorageDialog(gThis) {
-  const storageDialog = new StorageDialog(gThis);
+export async function showStorageDialog(gThis, doc, shadow) {
+  const storageDialog = new StorageDialog(gThis, doc, shadow);
 
   await storageDialog.createDialog();
 

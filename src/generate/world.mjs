@@ -216,14 +216,14 @@ export function generateWorld({
       set: (v) => initialQueue.clear() || v.forEach((k) => initialQueue.add(k)),
     };
 
-    updateWaterPhysics({
-      world: new Signal.State(currentWorld),
+    updateWaterPhysics(
+      tiles,
+      { frameCounter: 999 }, // Force immediate update
+      tempQueue,
+      new Signal.State(currentWorld),
       worldWidth,
       worldHeight,
-      tiles,
-      waterPhysicsQueue: tempQueue,
-      waterPhysicsConfig: { frameCounter: 999 }, // Force immediate update
-    });
+    );
 
     // Water settled
     if (initialQueue.size === 0) {

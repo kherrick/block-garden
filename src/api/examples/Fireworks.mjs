@@ -73,13 +73,15 @@ export class Fireworks extends SpriteGarden {
   }
 
   createFireworksShow(config = {}) {
+    const surfaceLevel = this.config.SURFACE_LEVEL.get();
+
     const {
       count = 20,
       duration = 8000,
       xMin = 165,
       xMax = 300,
-      yMin = 10,
-      yMax = this.config.SURFACE_LEVEL.get() - 20,
+      yMin = surfaceLevel - 5,
+      yMax = surfaceLevel - 20,
       delay = 0,
     } = config;
 

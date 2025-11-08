@@ -1,7 +1,7 @@
 export class PrivacyDialog {
-  constructor(gThis) {
-    this.gThis = gThis;
-    this.doc = gThis.document;
+  constructor(doc, shadow) {
+    this.doc = doc;
+    this.shadow = shadow;
     this.dialog = null;
 
     this.close = this.close.bind(this);
@@ -14,11 +14,11 @@ export class PrivacyDialog {
     }
 
     const dialogClass = `${part}-content`;
-    let dialog = this.doc.querySelector(`.${dialogClass}`);
+    let dialog = this.shadow.querySelector(`.${dialogClass}`);
 
     if (!dialog) {
       dialog = this.doc.createElement("dialog");
-      dialog.setAttribute("class", `${dialogClass} sprite-garden`);
+      dialog.setAttribute("class", dialogClass);
 
       const parser = new DOMParser();
       const documentText = await (await fetch(part)).text();
@@ -27,8 +27,8 @@ export class PrivacyDialog {
 
       dialog.innerHTML = content.innerHTML;
 
-      this.doc.body.appendChild(dialog);
-      this.doc
+      this.shadow.append(dialog);
+      this.shadow
         .querySelector(`.${part}-content_close-btn`)
         .removeAttribute("hidden");
     }
@@ -68,8 +68,8 @@ export class PrivacyDialog {
   }
 }
 
-async function showPrivacyDialog(gThis) {
-  const privacyDialog = new PrivacyDialog(gThis);
+async function showPrivacyDialog(doc, shadow) {
+  const privacyDialog = new PrivacyDialog(doc, shadow);
 
   await privacyDialog.createDialog("privacy");
   privacyDialog.show();

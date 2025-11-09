@@ -327,14 +327,12 @@ export class ColorCustomizationDialog {
 
   close() {
     if (this.dirty) {
-      console.log("not saved...");
       if (confirm("Close without saving?")) {
         // Revert to original colors if not saved
         applyColors(this.shadow, this.originalColors);
 
         this.dialog.close();
       }
-      console.log("returning...");
 
       return;
     }

@@ -23,8 +23,25 @@ import { gameLoop } from "../state/gameLoop.mjs";
 
 // Initialize game
 export async function initGame(gThis, shadow, cnvs) {
+  shadow.dispatchEvent(
+    new CustomEvent("loading", {
+      detail: { isLoading: false, error: null },
+      bubbles: true,
+      composed: true,
+    }),
+  );
+
   if (!cnvs) {
-    console.error("HTML canvas is required to init Sprite Garden.");
+    const missingCanvasError = "HTML canvas is required to init Sprite Garden.";
+    console.error(missingCanvasError);
+
+    shadow.dispatchEvent(
+      new CustomEvent("loading", {
+        detail: { isLoading: false, error: missingCanvasError },
+        bubbles: true,
+        composed: true,
+      }),
+    );
 
     return;
   }
@@ -148,4 +165,11 @@ export async function initGame(gThis, shadow, cnvs) {
 
   // hide loading animation
   shadow.getElementById("loading").setAttribute("hidden", "hidden");
+  shadow.dispatchEvent(
+    new CustomEvent("loading", {
+      detail: { isLoading: false, error: null },
+      bubbles: true,
+      composed: true,
+    }),
+  );
 }

@@ -11,10 +11,33 @@ export class SpriteGarden {
   constructor() {
     this.gThis = globalThis;
     this.doc = this.gThis.document;
-    this.shadow = this.doc.querySelector("sprite-garden").shadowRoot;
+
     this.config = this.gThis.spriteGarden.config;
     this.state = this.gThis.spriteGarden.state;
     this.tiles = this.config.TILES;
+  }
+
+  get shadow() {
+    const findElement = (e, n) => {
+      if (!e) {
+        return null;
+      }
+
+      if (e.tagName === n.toUpperCase() && e.shadowRoot) {
+        return e;
+      }
+
+      const children = [...(e.children || [])];
+
+      if (e.shadowRoot) {
+        children.push(e.shadowRoot);
+      }
+
+      return children.map((c) => findElement(c, n)).find(Boolean) || null;
+    };
+
+    const element = findElement(this.doc, "sprite-garden");
+    return element ? element.shadowRoot : null;
   }
 
   getWorld() {
@@ -53,18 +76,18 @@ export class SpriteGarden {
     this.state.materialsInventory.set(inventory);
   }
 
+  getTile(x, y) {
+    const world = this.getWorld();
+
+    return world.getTile(x, y);
+  }
+
   setTile(x, y, tileType) {
     const world = this.getWorld();
 
     world.setTile(x, y, tileType);
 
     this.setWorld(world);
-  }
-
-  getTile(x, y) {
-    const world = this.getWorld();
-
-    return world.getTile(x, y);
   }
 
   batchSetTiles(updates) {
@@ -115,7 +138,43 @@ export class SpriteGarden {
         updates.push({ x: x + col, y: y + row, tile });
       }
     }
+
     this.batchSetTiles(updates);
+  }
+
+  drawSparseBitmapBottomCenter(
+    bitmap,
+    bottomCenterX,
+    bottomCenterY,
+    tile = this.tiles.LAVA,
+  ) {
+    const width = bitmap[0].length;
+    const height = bitmap.length;
+    const leftX = bottomCenterX - Math.floor(width / 2);
+
+    // Use drawBitmap but need to flip Y coordinate
+    const updates = [];
+
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        if (bitmap[y][x] === 1) {
+          // Y index runs bottom up
+          let tileX = leftX + x;
+          let tileY = bottomCenterY - (height - 1 - y);
+
+          updates.push({ x: tileX, y: tileY, tile });
+        }
+      }
+    }
+
+    this.batchSetTiles(updates);
+
+    return {
+      x: leftX,
+      y: bottomCenterY - height,
+      width,
+      height,
+    };
   }
 
   getTextWidth(text, characters) {
@@ -261,6 +320,35 @@ export class SpriteGarden {
     processNextBatch();
   }
 
+  async drawQRCode(
+    text,
+    x,
+    y,
+    onTile = this.tiles.ICE,
+    offTile = this.tiles.COAL,
+  ) {
+    const qr = qrcode(0, "L");
+
+    qr.addData(text);
+    qr.make();
+
+    const size = qr.getModuleCount();
+    const updates = [];
+
+    for (let row = 0; row < size; row++) {
+      for (let col = 0; col < size; col++) {
+        const isDark = qr.isDark(row, col);
+        const tile = isDark ? onTile : offTile;
+
+        updates.push({ x: x + col, y: y + row, tile });
+      }
+    }
+
+    this.batchSetTiles(updates);
+
+    return { x, y, width: size, height: size };
+  }
+
   createKeyEvent(type, keyCode, codeMap = CodeMap, keyMap = KeyMap) {
     return new KeyboardEvent(type, {
       key: keyMap[keyCode] || "",
@@ -338,34 +426,5 @@ export class SpriteGarden {
 
       moved += steps;
     }
-  }
-
-  async drawQRCode(
-    text,
-    x,
-    y,
-    onTile = this.tiles.ICE,
-    offTile = this.tiles.COAL,
-  ) {
-    const qr = qrcode(0, "L");
-
-    qr.addData(text);
-    qr.make();
-
-    const size = qr.getModuleCount();
-    const updates = [];
-
-    for (let row = 0; row < size; row++) {
-      for (let col = 0; col < size; col++) {
-        const isDark = qr.isDark(row, col);
-        const tile = isDark ? onTile : offTile;
-
-        updates.push({ x: x + col, y: y + row, tile });
-      }
-    }
-
-    this.batchSetTiles(updates);
-
-    return { x, y, width: size, height: size };
   }
 }

@@ -1,12 +1,18 @@
 {
   "name": "sprite-garden",
-  "version": "1.12.0",
+  "version": "1.13.0",
   "description": "Sprite Garden - Grow Sprites",
   "homepage": "https://github.com/kherrick/sprite-garden/#sprite-garden",
   "license": "AGPL-3.0",
   "author": "Karl Herrick <me@karlherrick.com>",
   "type": "module",
   "main": "bin/serve.mjs",
+  "module": "index.mjs",
+  "exports": {
+    ".": {
+      "import": "./sprite-garden-bundle-min.mjs"
+    }
+  },
   "scripts": {
     "build:base:about": "bin/build-html.mjs dist/about/index.html base href /sprite-garden/",
     "build:base:index:unbundled": "bin/build-html.mjs dist/index_unbundled.html base href /sprite-garden/",
@@ -32,6 +38,7 @@
     "copy:index:manifest": "node bin/ncp.mjs manifest.json dist/manifest.json",
     "copy:index:readme": "node bin/ncp.mjs README.md dist/README.md",
     "copy:index:robots": "node bin/ncp.mjs robots.txt dist/robots.txt",
+    "copy:index:llms": "node bin/ncp.mjs llms.txt dist/llms.txt",
     "copy:index:sitemap": "node bin/ncp.mjs sitemap.txt dist/sitemap.txt",
     "copy:index:unbundled": "node bin/ncp.mjs index.html dist/index_unbundled.html",
     "copy:index": "node bin/ncp.mjs index.html dist/index.html",

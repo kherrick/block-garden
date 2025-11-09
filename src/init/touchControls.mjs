@@ -67,7 +67,7 @@ export function initTouchControls(shadow) {
     function stopHeldAction() {
       isPressed = false;
       shadow.host.touchKeys[key] = false;
-      btn.style.background = "rgba(0, 0, 0, 0.6)";
+      btn.style.background = "var(--sg-color-black-alpha-60)";
 
       if (intervalId) {
         clearInterval(intervalId);

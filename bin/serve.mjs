@@ -7,7 +7,7 @@ import express from "express";
 import expressUrlrewrite from "express-urlrewrite";
 import fs from "node:fs";
 import path from "node:path";
-import process, { argv, exit } from "node:process";
+import { argv, exit } from "node:process";
 import { fileURLToPath } from "node:url";
 
 import tcpPortUsed from "tcp-port-used";

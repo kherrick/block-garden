@@ -16,6 +16,7 @@ npm run clean \
   && npm run copy:index:manifest \
   && npm run copy:index:readme \
   && npm run copy:index:robots \
+  && npm run copy:index:llms \
   && npm run copy:index:sitemap \
   && npm run copy:index:unbundled \
   && npm run copy:pkg \

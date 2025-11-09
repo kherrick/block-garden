@@ -401,16 +401,6 @@ export const TILES = {
   [TileName.WOOD]: getT({ id: 73, solid: false, crop: true, drops: "WOOD" }),
 };
 
-export function getTileNameById(tiles, id) {
-  for (const key in tiles) {
-    if (tiles[key].id === id) {
-      return key;
-    }
-  }
-
-  return null;
-}
-
 export function buildTileColorMap(gameContainer, getStyles) {
   const styles = getStyles(gameContainer);
 
@@ -432,4 +422,18 @@ export function buildTileColorMap(gameContainer, getStyles) {
   }
 
   return tileColorMap;
+}
+
+export function getTileNameById(tiles, id) {
+  for (const key in tiles) {
+    if (tiles[key].id === id) {
+      return key;
+    }
+  }
+
+  return null;
+}
+
+export function normalizeTileName(name) {
+  return name.toUpperCase().replace(/-/g, "_");
 }

@@ -142,6 +142,45 @@ export class SpriteGarden {
     this.batchSetTiles(updates);
   }
 
+  drawSparseBitmapBottomCenterMultiTiles(
+    bitmapTileNames,
+    bottomCenterX,
+    bottomCenterY,
+  ) {
+    const width = bitmapTileNames[0].length;
+    const height = bitmapTileNames.length;
+    const leftX = bottomCenterX - Math.floor(width / 2);
+    const updates = [];
+
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const tileName = bitmapTileNames[y][x];
+        if (tileName) {
+          const tileX = leftX + x;
+          const tileY = bottomCenterY - (height - 1 - y);
+
+          let tile = this.tiles[tileName];
+          if (!tile) {
+            console.warn(`Tile not found for ${tileName}, falling back to AIR`);
+
+            tile = this.tiles.AIR;
+          }
+
+          updates.push({ x: tileX, y: tileY, tile });
+        }
+      }
+    }
+
+    this.batchSetTiles(updates);
+
+    return {
+      x: leftX,
+      y: bottomCenterY - height,
+      width,
+      height,
+    };
+  }
+
   drawSparseBitmapBottomCenter(
     bitmap,
     bottomCenterX,

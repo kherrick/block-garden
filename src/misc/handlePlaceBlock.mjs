@@ -1,5 +1,6 @@
 import localForage from "../../deps/localForage.mjs";
 
+import { getShadowRoot } from "../util/getShadowRoot.mjs";
 import { getTileFromMaterial } from "./getTileFromMaterial.mjs";
 import { updateRangeValue } from "../update/ui/range.mjs";
 import { updateState } from "../state/state.mjs";
@@ -25,7 +26,9 @@ export async function handlePlaceBlock({
   // Determine placement position based on key pressed
   switch (key.toLowerCase()) {
     case "k": // Middle button
-      await updateRangeValue(globalThis.document);
+      await updateRangeValue(
+        getShadowRoot(globalThis.document, "sprite-garden"),
+      );
 
       return;
     case "u": // Top left

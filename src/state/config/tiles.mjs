@@ -401,12 +401,8 @@ export const TILES = {
   [TileName.WOOD]: getT({ id: 73, solid: false, crop: true, drops: "WOOD" }),
 };
 
-export function buildTileColorMap(gameContainer, getStyles) {
-  const styles = getStyles(gameContainer);
-
-  // buildTileColorMap
-  const tileColorMap = {};
-  const prefix = "--sg-tile-color-";
+export function buildColorMap(styles, prefix = "--sg-") {
+  const colorMap = {};
 
   for (const propName of styles) {
     if (propName.startsWith(prefix)) {
@@ -417,11 +413,11 @@ export function buildTileColorMap(gameContainer, getStyles) {
         .getPropertyValue(propName)
         .trim()
         .replace(/^['"]|['"]$/g, "");
-      tileColorMap[tileName] = rawValue;
+      colorMap[tileName] = rawValue;
     }
   }
 
-  return tileColorMap;
+  return colorMap;
 }
 
 export function getTileNameById(tiles, id) {

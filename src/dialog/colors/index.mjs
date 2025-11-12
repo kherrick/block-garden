@@ -8,11 +8,13 @@ import { saveColors } from "./saveColors.mjs";
 export const COLOR_STORAGE_KEY = "sprite-garden-custom-colors";
 
 export async function initColors(gThis, shadow) {
-  applyColors(
-    shadow,
+  const colors =
     (await getSavedColors(shadow, COLOR_STORAGE_KEY)) ??
-      getCustomProperties(gThis, shadow),
-  );
+    getCustomProperties(gThis, shadow);
+
+  applyColors(shadow, colors);
+
+  return colors;
 }
 
 export class ColorCustomizationDialog {

@@ -390,7 +390,7 @@ export class StorageDialog {
 
       // Parse and load save state
       const saveState = JSON.parse(stateJSON);
-      loadSaveState(this.gThis, saveState);
+      loadSaveState(this.gThis, this.shadow, saveState);
 
       // Update UI elements
       const { worldSeed } = saveState.config;

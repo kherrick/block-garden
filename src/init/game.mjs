@@ -67,13 +67,13 @@ export async function initGame(gThis, shadow, cnvs) {
   shadow.host.keys = {};
   shadow.host.touchKeys = {};
 
-  await initColors(gThis, shadow);
+  const colors = await initColors(gThis, shadow);
 
   initMapEditor(doc, shadow, gameConfig.fogMode, gameState.viewMode);
 
   initGlobalEventListeners(gThis, doc, shadow);
   initDocumentEventListeners(gThis, shadow);
-  initElementEventListeners(shadow);
+  initElementEventListeners(gThis, shadow);
   initTouchControls(shadow);
 
   initEffects(
@@ -111,7 +111,12 @@ export async function initGame(gThis, shadow, cnvs) {
   // Set the world in state
   gameState.world.set(currentWorld);
 
-  const currentFog = initFog(gameConfig.isFogScaled, worldHeight, worldWidth);
+  const currentFog = initFog(
+    gameConfig.isFogScaled,
+    worldHeight,
+    worldWidth,
+    colors,
+  );
 
   // Set the fog in state
   gameState.exploredMap.set(currentFog);

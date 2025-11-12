@@ -3,6 +3,7 @@ import extrasHandler from "../../deps/konami-code-js.mjs";
 import { copyToClipboard } from "../util/copyToClipboard.mjs";
 import { createSaveState } from "../state/createSave.mjs";
 import { gameConfig, gameState } from "../state/state.mjs";
+import { getCustomProperties } from "../dialog/colors/getCustomProperties.mjs";
 import { getRandomSeed } from "../misc/getRandomSeed.mjs";
 import { handleBreakBlockWithWaterPhysics } from "../misc/handleBreakBlock.mjs";
 import { handleFarmAction } from "../misc/handleFarmAction.mjs";
@@ -316,7 +317,13 @@ export function initDocumentEventListeners(gThis, shadow) {
 
     gameState.world.set(currentWorld);
 
-    const currentFog = initFog(gameConfig.isFogScaled, worldHeight, worldWidth);
+    const colors = getCustomProperties(gThis, shadow);
+    const currentFog = initFog(
+      gameConfig.isFogScaled,
+      worldHeight,
+      worldWidth,
+      colors,
+    );
 
     // Set the fog in state
     gameState.exploredMap.set(currentFog);
@@ -351,7 +358,13 @@ export function initDocumentEventListeners(gThis, shadow) {
 
     gameState.world.set(currentWorld);
 
-    const currentFog = initFog(gameConfig.isFogScaled, worldHeight, worldWidth);
+    const colors = getCustomProperties(gThis, shadow);
+    const currentFog = initFog(
+      gameConfig.isFogScaled,
+      worldHeight,
+      worldWidth,
+      colors,
+    );
 
     // Set the fog in state
     gameState.exploredMap.set(currentFog);
@@ -442,7 +455,7 @@ export function initDocumentEventListeners(gThis, shadow) {
 
       const saveState = JSON.parse(stateJSON);
 
-      loadSaveState(gThis, saveState);
+      loadSaveState(gThis, shadow, saveState);
 
       const { worldSeed } = saveState.config;
       seedInput.value = worldSeed;
@@ -477,7 +490,7 @@ export function initDocumentEventListeners(gThis, shadow) {
   });
 }
 
-export function initElementEventListeners(shadow) {
+export function initElementEventListeners(gThis, shadow) {
   shadow.getElementById("controls").addEventListener("click", (e) => {
     e.stopPropagation();
     e.preventDefault();
@@ -522,10 +535,12 @@ export function initElementEventListeners(shadow) {
 
       gameState.world.set(currentWorld);
 
+      const colors = getCustomProperties(gThis, shadow);
       const currentFog = initFog(
         gameConfig.isFogScaled,
         worldHeight,
         worldWidth,
+        colors,
       );
 
       // Set the fog in state

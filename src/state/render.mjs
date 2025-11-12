@@ -29,6 +29,7 @@ export function render(
   previousState,
   interpolation,
   tileColorMap,
+  gameColorMap,
 ) {
   const currentPlayer = player.get();
   const currentCamera = camera.get();
@@ -101,12 +102,12 @@ export function render(
 
   ctx.fillStyle = currentPlayer.color;
   ctx.fillRect(screenX, screenY, currentPlayer.width, currentPlayer.height);
-  ctx.strokeStyle = "#000000";
+  ctx.strokeStyle = gameColorMap["black"];
   ctx.lineWidth = 1;
   ctx.strokeRect(screenX, screenY, currentPlayer.width, currentPlayer.height);
 
   // Player eyes
-  ctx.fillStyle = "#000000";
+  ctx.fillStyle = gameColorMap["black"];
   ctx.fillRect(screenX + 1, screenY + 1, 1, 1);
   ctx.fillRect(screenX + 4, screenY + 1, 1, 1);
 

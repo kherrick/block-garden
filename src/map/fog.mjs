@@ -1,5 +1,6 @@
 export class FogMap {
-  constructor(width, height) {
+  constructor(width, height, colors) {
+    this.colors = colors;
     this.width = width;
     this.height = height;
     this.data = new Uint8Array(width * height);
@@ -58,8 +59,8 @@ export class FogMap {
   }
 
   // Create FogMap from a plain object (for loading saved data)
-  static fromObject(fogObj, width, height) {
-    const fog = new FogMap(width, height);
+  static fromObject(fogObj, width, height, colors) {
+    const fog = new FogMap(width, height, colors);
 
     // Handle old object format: { "x,y": true, ... }
     if (fogObj && typeof fogObj === "object") {
@@ -139,7 +140,7 @@ export class FogMap {
     const cameraOffsetX = currentCamera.x % tileSize;
     const cameraOffsetY = currentCamera.y % tileSize;
 
-    ctx.fillStyle = "#000000";
+    ctx.fillStyle = this.colors["--sg-color-black"];
 
     // Process tiles in the same order as the original
     for (let x = 0; x < tilesX; x++) {
@@ -188,7 +189,7 @@ export class FogMap {
     const cameraOffsetX = currentCamera.x % blockSize;
     const cameraOffsetY = currentCamera.y % blockSize;
 
-    ctx.fillStyle = "#000000";
+    ctx.fillStyle = this.colors["--sg-color-black"];
 
     // Process each fog block
     for (let blockX = 0; blockX < blocksX; blockX++) {

@@ -1,6 +1,6 @@
 import localForage from "../../deps/localForage.mjs";
 
-import { buildTileColorMap } from "./config/tiles.mjs";
+import { buildColorMap } from "./config/tiles.mjs";
 
 import { updateBiomeUI } from "../update/ui/biome.mjs";
 import { updateCrops } from "../update/crops.mjs";
@@ -138,9 +138,10 @@ export async function gameLoop(
   const interpolation = accumulatedTime / FIXED_TIMESTEP;
 
   // Build color map for tiles
-  const tileColorMap = buildTileColorMap(shadow.host, gThis.getComputedStyle);
+  const styles = gThis.getComputedStyle(shadow.host);
+  const tileColorMap = buildColorMap(styles, "--sg-tile-color-");
+  const gameColorMap = buildColorMap(styles, "--sg-color-");
 
-  // Render with interpolation for smooth visuals
   render(
     cnvs,
     player,
@@ -158,6 +159,7 @@ export async function gameLoop(
     previousState,
     interpolation,
     tileColorMap,
+    gameColorMap,
   );
 
   // Continue game loop

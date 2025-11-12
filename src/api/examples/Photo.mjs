@@ -1,8 +1,5 @@
 import { applyColors } from "../../dialog/colors/applyColors.mjs";
-import {
-  buildTileColorMap,
-  normalizeTileName,
-} from "../../state/config/tiles.mjs";
+import { buildColorMap, normalizeTileName } from "../../state/config/tiles.mjs";
 import { cssColorToRGB } from "../../dialog/colors/cssColorToRGB.mjs";
 import { nearestColor } from "../../dialog/colors/nearestColor.mjs";
 import { rgbToHex } from "../../dialog/colors/rgbToHex.mjs";
@@ -59,8 +56,9 @@ export class DrawBitmap extends SpriteGarden {
   ) {
     console.log("🎨 Computing ideal color map for image:", imageUrl);
 
-    const tileColorMap = buildTileColorMap(this.shadow.host, (container) =>
-      getComputedStyle(container),
+    const tileColorMap = buildColorMap(
+      this.gThis.getComputedStyle(this.shadow.host),
+      "--sg-tile-color-",
     );
 
     // Build tile palette arrays and maps
@@ -148,8 +146,9 @@ export class DrawBitmap extends SpriteGarden {
     }
 
     // Get tile colors keyed by tile name
-    const tileColorMap = buildTileColorMap(this.shadow.host, (container) =>
-      getComputedStyle(container),
+    const tileColorMap = buildColorMap(
+      this.gThis.getComputedStyle(this.shadow.host),
+      "--sg-tile-color-",
     );
 
     // List of banned tile names (normalized form to match keys)

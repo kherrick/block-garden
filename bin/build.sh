@@ -19,8 +19,16 @@ npm run clean \
   && npm run copy:index:llms \
   && npm run copy:index:sitemap \
   && npm run copy:index:unbundled \
-  && npm run copy:pkg \
-  && npm run copy:privacy \
+
+if [[ "$isSingle" == "true" ]]; then
+  npm run build:pkg:meta "$(npm run -s build:pkg:get:meta)" \
+    || exit 1
+else
+  npm run copy:pkg \
+    || exit 1
+fi
+
+npm run copy:privacy \
   && npm run copy:service-worker \
   && npm run copy:deps \
   && npm run copy:src \

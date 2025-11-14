@@ -1,6 +1,6 @@
 {
   "name": "sprite-garden",
-  "version": "1.16.0",
+  "version": "1.17.0",
   "description": "Sprite Garden - Grow Sprites",
   "homepage": "https://github.com/kherrick/sprite-garden/#sprite-garden",
   "license": "AGPL-3.0",
@@ -20,6 +20,8 @@
     "build:base:privacy": "bin/build-html.mjs dist/privacy/index.html base href /sprite-garden/",
     "build:ci": "npx concurrently --kill-others --success first \"npm run start:dev\" \"npm run wait:start:dev:build:single\"",
     "build:gh-pages:nojekyll": "node bin/touch-nojekyll.mjs",
+    "build:pkg:meta": "node -e \"import fs from 'node:fs/promises'; import pkg from './package.json' with { type: 'json' }; (async () => { const meta = process.argv[1]; pkg['sprite-garden'] = { meta }; await fs.writeFile('dist/package.json', JSON.stringify(pkg, null, 2)); })()\"",
+    "build:pkg:get:meta": "git rev-parse HEAD",
     "build:script:index": "bin/build-html.mjs dist/index.html script src sprite-garden-bundle-min.mjs",
     "build:service-worker": "cd dist && workbox generateSW service-worker/workbox-config.cjs",
     "build:single:bundle:clean": "git checkout HEAD -- src",

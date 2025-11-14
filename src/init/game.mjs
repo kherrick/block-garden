@@ -52,10 +52,12 @@ export async function initGame(gThis, shadow, cnvs) {
 
   cnvs.focus();
 
+  let pkg = {};
   let version = "1";
 
   try {
-    version = (await (await fetch("package.json")).json()).version;
+    pkg = await (await fetch("package.json")).json();
+    version = pkg.version;
   } catch (error) {
     console.log(`continuing with static version: ${version}`);
   }
@@ -172,7 +174,7 @@ export async function initGame(gThis, shadow, cnvs) {
   shadow.getElementById("loading").setAttribute("hidden", "hidden");
   shadow.dispatchEvent(
     new CustomEvent("loading", {
-      detail: { isLoading: false, error: null },
+      detail: { isLoading: false, pkg, error: null },
       bubbles: true,
       composed: true,
     }),

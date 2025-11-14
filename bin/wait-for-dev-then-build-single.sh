@@ -2,14 +2,16 @@
 
 npm start 8080 &
 
+sleep 1
 echo "Waiting for server on port 8080..."
+sleep 1
 
 start_time=$(date +%s)
 timeout=120
 
 while true; do
-	# Use nc with a 1-second connect timeout (-w 1)
-	if nc -z -w 1 localhost 8080; then
+	# Use nc with a 5-second connect timeout (-w 5)
+	if nc -z -w 5 localhost 8080; then
 		break
 	fi
 

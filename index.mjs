@@ -465,9 +465,9 @@ export class SpriteGarden extends HTMLElement {
           }
 
           .touch-controls {
-            bottom: 6rem;
-            position: absolute;
-            width: 100%;
+            bottom: var(--sg-touch-controls-bottom, 6rem);
+            position: var(--sg-touch-controls-position, absolute);
+            width: var(--sg-touch-controls-width, 100%);
           }
 
           .touch-btn {

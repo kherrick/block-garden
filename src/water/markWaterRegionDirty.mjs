@@ -1,13 +1,25 @@
-// Track water changes during gameplay
-export function markWaterRegionDirty({
+/**
+ * Track water changes during gameplay
+ *
+ * @param {any} x
+ * @param {any} y
+ * @param {any} queue
+ * @param {any} worldWidth
+ * @param {any} worldHeight
+ * @param {number} [radius=5]
+ *
+ * @returns {void}
+ */
+export function markWaterRegionDirty(
   x,
   y,
-  radius = 5,
   queue,
   worldWidth,
   worldHeight,
-}) {
+  radius = 5,
+) {
   const currentQueue = queue.get();
+
   // Add all tiles in radius to the dirty queue
   for (let dx = -radius; dx <= radius; dx++) {
     for (let dy = -radius; dy <= radius; dy++) {

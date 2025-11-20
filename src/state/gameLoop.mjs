@@ -1,11 +1,10 @@
-import localForage from "../../deps/localForage.mjs";
+import localForage from "localforage";
 
 import { updateBiomeUI } from "../update/ui/biome.mjs";
 import { updateCrops } from "../update/crops.mjs";
 import { updateDepthUI } from "../update/ui/depth.mjs";
 import { updatePlayer } from "../update/player.mjs";
 import { updateWaterPhysics } from "../water/updateWaterPhysics.mjs";
-
 import { render } from "./render.mjs";
 
 // Fixed timestep configuration
@@ -27,6 +26,7 @@ let lastFetchTime = 0;
 
 const fetchInterval = 1000; // ms
 
+/** @returns {Promise<any>} */
 async function getScaleThrottled() {
   const now = Date.now();
 
@@ -39,7 +39,44 @@ async function getScaleThrottled() {
   return scaleCache;
 }
 
-// Game loop
+/**
+ * Game loop
+ *
+ * @param {any} cnvs
+ * @param {any} gThis
+ * @param {any} shadow
+ * @param {any} biomeEl
+ * @param {any} depthEl
+ * @param {any} tileNameByIdMap
+ * @param {any} tileColorMap
+ * @param {any} gameColorMap
+ * @param {any} biomes
+ * @param {any} fogMode
+ * @param {any} fogScale
+ * @param {any} friction
+ * @param {any} gravity
+ * @param {any} isFogScaled
+ * @param {any} maxFallSpeed
+ * @param {any} surfaceLevel
+ * @param {any} tileSize
+ * @param {any} tiles
+ * @param {any} waterPhysicsConfig
+ * @param {any} worldHeight
+ * @param {any} worldWidth
+ * @param {any} worldSeed
+ * @param {any} camera
+ * @param {any} exploredMap
+ * @param {any} gameTime
+ * @param {any} growthTimers
+ * @param {any} plantStructures
+ * @param {any} player
+ * @param {any} shouldReset
+ * @param {any} viewMode
+ * @param {any} waterPhysicsQueue
+ * @param {any} world
+ *
+ * @returns {Promise<void>}
+ */
 export async function gameLoop(
   cnvs,
   gThis,
@@ -88,6 +125,7 @@ export async function gameLoop(
 
   // Fixed timestep updates - run physics at consistent rate
   let updates = 0;
+
   while (accumulatedTime >= FIXED_TIMESTEP && updates < MAX_UPDATES_PER_FRAME) {
     // Store previous state before update
     const currentPlayer = player.get();
@@ -109,9 +147,9 @@ export async function gameLoop(
       world,
       camera,
       player,
-      await getScaleThrottled(),
       cnvs,
       shadow,
+      await getScaleThrottled(),
     );
 
     updateCrops(

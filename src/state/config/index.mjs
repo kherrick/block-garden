@@ -1,4 +1,4 @@
-import { Signal } from "../../../deps/signal.mjs";
+import { Signal } from "signal-polyfill";
 
 import { getRandomSeed } from "../../misc/getRandomSeed.mjs";
 
@@ -6,7 +6,9 @@ import { BIOMES } from "./biomes.mjs";
 import { TILES, TileName } from "./tiles.mjs";
 
 let initialWorldSeed;
+
 const params = new URLSearchParams(globalThis.location?.search);
+
 if (params.has("seed")) {
   initialWorldSeed = params.get("seed");
 } else {

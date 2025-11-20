@@ -1,4 +1,4 @@
-import localForage from "../../deps/localForage.mjs";
+import localForage from "localforage";
 
 import { arrayBufferToBase64, base64toBlob } from "../util/conversion.mjs";
 import { compressToBinaryBlob } from "../util/compression.mjs";
@@ -9,13 +9,19 @@ const TIME_SECONDS_ONE = 1000;
 const TIME_MINUTES_ONE = 1 * 60 * TIME_SECONDS_ONE;
 
 export const AUTO_SAVE_INTERVAL = TIME_MINUTES_ONE;
+
 const AUTO_SAVE_THROTTLE = AUTO_SAVE_INTERVAL / 2;
 
 const AUTO_SAVE_KEY = "sprite-garden-autosave";
 const SAVE_MODE_KEY = "sprite-garden-autosave-mode";
+
 const STORAGE_KEY_PREFIX = "sprite-garden-save-";
 
-// Get current save mode
+/**
+ * Get current save mode
+ *
+ * @returns {Promise<any>}
+ * */
 export async function getSaveMode() {
   try {
     const mode = await localForage.getItem(SAVE_MODE_KEY);
@@ -23,11 +29,18 @@ export async function getSaveMode() {
     return mode;
   } catch (error) {
     console.info("Failed to get save mode:", error);
+
     return "manual";
   }
 }
 
-// Set save mode
+/**
+ * Set save mode
+ *
+ * @param {any} mode
+ *
+ * @returns {Promise<void>}
+ */
 export async function setSaveMode(mode) {
   try {
     await localForage.setItem(SAVE_MODE_KEY, mode);
@@ -41,11 +54,18 @@ export async function setSaveMode(mode) {
 // Track last auto-save timestamp
 let lastAutoSaveTime = 0;
 
-// Auto-save functionality
+/**
+ * Auto-save functionality
+ *
+ * @param {any} gThis
+ *
+ * @returns {Promise<void>}
+ */
 export async function autoSaveGame(gThis) {
   try {
     // Check if auto-save is enabled
     const saveMode = await getSaveMode();
+
     if (saveMode !== "auto") {
       return;
     }
@@ -55,13 +75,14 @@ export async function autoSaveGame(gThis) {
     // Check if we saved within the last 30 seconds
     if (now - lastAutoSaveTime < AUTO_SAVE_THROTTLE) {
       console.info("Auto-save skipped (too soon since last save)");
+
       return;
     }
 
     const saveState = createSaveState(gThis);
     const stateJSON = JSON.stringify(saveState);
-
     const compressedBlob = await compressToBinaryBlob(stateJSON);
+
     const arrayBuffer = await compressedBlob.arrayBuffer();
     const base64Data = arrayBufferToBase64(gThis, arrayBuffer);
 
@@ -73,18 +94,30 @@ export async function autoSaveGame(gThis) {
     };
 
     await localForage.setItem(AUTO_SAVE_KEY, gameData);
+
     lastAutoSaveTime = now; // Update last save time
+
     console.info("Game auto-saved successfully");
   } catch (error) {
     console.error("Failed to auto-save game:", error);
   }
 }
 
-// Check for auto-save on load
+/**
+ * Check for auto-save on load
+ *
+ * @param {any} gThis
+ * @param {any} shadow
+ *
+ * @returns {Promise<any>}
+ */
 export async function checkAutoSave(gThis, shadow) {
   try {
     const autoSave = await localForage.getItem(AUTO_SAVE_KEY);
-    if (!autoSave) {
+    const isAutoSaveEnabled =
+      (await localForage.getItem(SAVE_MODE_KEY)) === "auto";
+
+    if (!autoSave || !isAutoSaveEnabled) {
       return false;
     }
 
@@ -128,6 +161,7 @@ export async function checkAutoSave(gThis, shadow) {
     `;
 
     shadow.append(dialog);
+
     dialog.showModal();
 
     return new Promise((resolve) => {
@@ -140,7 +174,9 @@ export async function checkAutoSave(gThis, shadow) {
               autoSave.data,
               "application/gzip",
             );
+
             let stateJSON;
+
             if ("DecompressionStream" in gThis) {
               const decompressedStream = compressedBlob
                 .stream()
@@ -148,18 +184,22 @@ export async function checkAutoSave(gThis, shadow) {
               const decompressedBlob = await new Response(
                 decompressedStream,
               ).blob();
+
               stateJSON = await decompressedBlob.text();
             } else {
               throw new Error("DecompressionStream not supported");
             }
 
             const saveState = JSON.parse(stateJSON);
+
             loadSaveState(gThis, shadow, saveState);
 
             const { worldSeed } = saveState.config;
             const seedInput = shadow.getElementById("worldSeedInput");
             const currentSeedDisplay = shadow.getElementById("currentSeed");
+
             if (seedInput) seedInput.value = worldSeed;
+
             if (currentSeedDisplay) currentSeedDisplay.textContent = worldSeed;
 
             console.log("Auto-save loaded successfully");
@@ -186,20 +226,28 @@ export async function checkAutoSave(gThis, shadow) {
     });
   } catch (error) {
     console.error("Failed to check for auto-save:", error);
+
     return false;
   }
 }
 
-// Create and manage the storage dialog
+/**
+ * Create and manage the storage dialog
+ */
 export class StorageDialog {
+  /**
+   * @param {any} gThis
+   * @param {any} doc
+   * @param {any} shadow
+   */
   constructor(gThis, doc, shadow) {
     this.gThis = gThis;
     this.doc = doc;
     this.shadow = shadow;
     this.dialog = null;
     this.savedGames = [];
-
     this.close = this.close.bind(this);
+
     this.deleteSelectedGame = this.deleteSelectedGame.bind(this);
     this.loadSelectedGame = this.loadSelectedGame.bind(this);
     this.saveCurrentGame = this.saveCurrentGame.bind(this);
@@ -207,6 +255,7 @@ export class StorageDialog {
     this.handleWorldNameInput = this.handleWorldNameInput.bind(this);
   }
 
+  /** @returns {Promise<any>} */
   async createDialog() {
     if (this.dialog) {
       this.dialog.remove();
@@ -339,17 +388,21 @@ export class StorageDialog {
     this.dialog = dialog;
 
     await this.loadSavedGamesList();
+
     this.initEventListeners();
 
     return dialog;
   }
 
+  /** @returns {Promise<void>} */
   async loadSavedGamesList() {
     this.savedGames = [];
+
     const keys = await localForage.keys();
 
     // Load auto-save first
     const autoSave = await localForage.getItem(AUTO_SAVE_KEY);
+
     if (autoSave) {
       this.savedGames.push({
         key: AUTO_SAVE_KEY,
@@ -364,6 +417,7 @@ export class StorageDialog {
     for (const key of keys) {
       if (key.startsWith(STORAGE_KEY_PREFIX)) {
         const gameData = await localForage.getItem(key);
+
         if (gameData) {
           this.savedGames.push({
             key,
@@ -382,6 +436,7 @@ export class StorageDialog {
     this.renderSavedGamesList();
   }
 
+  /** @returns {void} */
   renderSavedGamesList() {
     const listContainer = this.dialog.querySelector("#savedGamesList");
 
@@ -444,22 +499,32 @@ export class StorageDialog {
     });
   }
 
+  /** @returns {void} */
   updateButtonStates() {
     const selected = this.dialog.querySelector(
       'input[name="selectedGame"]:checked',
     );
+
     const loadBtn = this.dialog.querySelector("#loadSelectedBtn");
     const deleteBtn = this.dialog.querySelector("#deleteSelectedBtn");
 
     const isSelected = !!selected;
+
     loadBtn.disabled = !isSelected;
     deleteBtn.disabled = !isSelected;
+
     loadBtn.style.opacity = isSelected ? "1" : "0.5";
     deleteBtn.style.opacity = isSelected ? "1" : "0.5";
+
     loadBtn.style.cursor = isSelected ? "pointer" : "not-allowed";
     deleteBtn.style.cursor = isSelected ? "pointer" : "not-allowed";
   }
 
+  /**
+   * @param {any} e
+   *
+   * @returns {void}
+   */
   handleWorldNameInput(e) {
     const regex = /^[\p{L}\p{N}\p{P}\s]+$/u;
 
@@ -473,12 +538,18 @@ export class StorageDialog {
     }
   }
 
+  /**
+   * @param {any} e
+   *
+   * @returns {void}
+   */
   handleDialogClick(e) {
     if (e.target === this.dialog) {
       this.close();
     }
   }
 
+  /** @returns {void} */
   initEventListeners() {
     const closeBtn = this.dialog.querySelector("#closeStorageDialog");
     const saveBtn = this.dialog.querySelector("#saveToStorageBtn");
@@ -496,6 +567,7 @@ export class StorageDialog {
     this.dialog.addEventListener("click", this.handleDialogClick);
   }
 
+  /** @returns {void} */
   removeEventListeners() {
     const closeBtn = this.dialog.querySelector("#closeStorageDialog");
     const saveBtn = this.dialog.querySelector("#saveToStorageBtn");
@@ -513,6 +585,7 @@ export class StorageDialog {
     this.dialog.removeEventListener("click", this.handleDialogClick);
   }
 
+  /** @returns {Promise<void>} */
   async saveCurrentGame() {
     const worldNameInput = this.dialog.querySelector("#worldNameInput");
     const worldName = worldNameInput.value.trim();
@@ -556,10 +629,12 @@ export class StorageDialog {
     }
   }
 
+  /** @returns {Promise<void>} */
   async loadSelectedGame() {
     const selected = this.dialog.querySelector(
       'input[name="selectedGame"]:checked',
     );
+
     if (!selected) return;
 
     const gameIndex = parseInt(selected.value);
@@ -575,12 +650,14 @@ export class StorageDialog {
 
       // Decompress
       let stateJSON;
+
       if ("DecompressionStream" in this.gThis) {
         const decompressedStream = compressedBlob
           .stream()
           .pipeThrough(new DecompressionStream("gzip"));
 
         const decompressedBlob = await new Response(decompressedStream).blob();
+
         stateJSON = await decompressedBlob.text();
       } else {
         throw new Error("DecompressionStream not supported");
@@ -596,20 +673,25 @@ export class StorageDialog {
       const currentSeedDisplay = this.doc.getElementById("currentSeed");
 
       if (seedInput) seedInput.value = worldSeed;
+
       if (currentSeedDisplay) currentSeedDisplay.textContent = worldSeed;
 
       console.log("Game loaded from storage:", game.name);
+
       this.close();
     } catch (error) {
       console.error("Failed to load game from storage:", error);
+
       alert("Failed to load game. Check console for details.");
     }
   }
 
+  /** @returns {Promise<void>} */
   async deleteSelectedGame() {
     const selected = this.dialog.querySelector(
       'input[name="selectedGame"]:checked',
     );
+
     if (!selected) return;
 
     const gameIndex = parseInt(selected.value);
@@ -618,26 +700,40 @@ export class StorageDialog {
     if (confirm(`Are you sure you want to delete "${game.name}"?`)) {
       try {
         await localForage.removeItem(game.key);
+
         console.log("Game deleted from storage:", game.name);
+
         await this.loadSavedGamesList();
       } catch (error) {
         console.error("Failed to delete game from storage:", error);
+
         alert("Failed to delete game. Check console for details.");
       }
     }
   }
 
+  /** @returns {void} */
   show() {
     this.dialog.showModal();
   }
 
+  /** @returns {void} */
   close() {
     this.removeEventListeners();
+
     this.dialog.close();
   }
 }
 
-// Export function to create and show dialog
+/**
+ * Export function to create and show dialog
+ *
+ * @param {any} gThis
+ * @param {any} doc
+ * @param {any} shadow
+ *
+ * @returns {Promise<StorageDialog>}
+ */
 export async function showStorageDialog(gThis, doc, shadow) {
   const storageDialog = new StorageDialog(gThis, doc, shadow);
 

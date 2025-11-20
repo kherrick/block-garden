@@ -1,19 +1,28 @@
 export class AboutDialog {
+  /**
+   * @param {any} doc
+   * @param {any} shadow
+   */
   constructor(doc, shadow) {
     this.doc = doc;
     this.shadow = shadow;
     this.dialog = null;
-
     this.close = this.close.bind(this);
     this.handleDialogClick = this.handleDialogClick.bind(this);
   }
 
+  /**
+   * @param {any} part
+   *
+   * @returns {Promise<any>}
+   */
   async createDialog(part) {
     if (this.dialog) {
       this.dialog.remove();
     }
 
     const dialogClass = `${part}-content`;
+
     let dialog = this.shadow.querySelector(`.${dialogClass}`);
 
     if (!dialog) {
@@ -39,40 +48,59 @@ export class AboutDialog {
     return dialog;
   }
 
+  /**
+   * @param {any} e
+   *
+   * @returns {void}
+   */
   handleDialogClick(e) {
     if (e.target === this.dialog) {
       this.close();
     }
   }
 
+  /** @returns {void} */
   initEventListeners() {
     const closeBtn = this.dialog.querySelector(".about-content_close-btn");
+
     closeBtn.addEventListener("click", this.close);
 
     this.dialog.addEventListener("click", this.handleDialogClick);
   }
 
+  /** @returns {void} */
   removeEventListeners() {
     const closeBtn = this.dialog.querySelector(".about-content_close-btn");
+
     closeBtn.removeEventListener("click", this.close);
 
     this.dialog.removeEventListener("click", this.handleDialogClick);
   }
 
+  /** @returns {void} */
   show() {
     this.dialog.showModal();
   }
 
+  /** @returns {void} */
   close() {
     this.removeEventListeners();
+
     this.dialog.close();
   }
 }
 
+/**
+ * @param {any} doc
+ * @param {any} shadow
+ *
+ * @returns {Promise<AboutDialog>}
+ */
 async function showAboutDialog(doc, shadow) {
   const aboutDialog = new AboutDialog(doc, shadow);
 
   await aboutDialog.createDialog("about");
+
   aboutDialog.show();
 
   return aboutDialog;

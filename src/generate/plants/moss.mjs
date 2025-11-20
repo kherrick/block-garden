@@ -1,7 +1,16 @@
 import { gameConfig } from "../../state/state.mjs";
 
-// Add moss to cave surfaces
-export function addMossToCaves({ world, worldWidth, worldHeight, tiles }) {
+/**
+ * Add moss to cave surfaces
+ *
+ * @param {any} world
+ * @param {any} worldWidth
+ * @param {any} worldHeight
+ * @param {any} tiles
+ *
+ * @returns {void}
+ */
+export function addMossToCaves(world, worldWidth, worldHeight, tiles) {
   for (let x = 1; x < worldWidth - 1; x++) {
     for (let y = 1; y < worldHeight - 1; y++) {
       // Only add moss to air tiles that are adjacent to stone/dirt walls

@@ -1,7 +1,15 @@
-import localForage from "../../../deps/localForage.mjs";
+import localForage from "localforage";
 import { getCustomProperties } from "./getCustomProperties.mjs";
 
-// Reset to default colors
+/**
+ * Reset to default colors
+ *
+ * @param {any} gThis
+ * @param {any} shadow
+ * @param {any} key
+ *
+ * @returns {Promise<void>}
+ */
 export async function resetColors(gThis, shadow, key) {
   try {
     await localForage.removeItem(key);

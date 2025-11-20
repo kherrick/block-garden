@@ -1,4 +1,11 @@
-// Resize canvas based on resolution setting
+/**
+ * Resize canvas based on resolution setting
+ *
+ * @param {any} doc
+ * @param {any} gameConfig
+ *
+ * @returns {void}
+ */
 export function resizeCanvas(doc, gameConfig) {
   const cnvs = doc?.getElementById("canvas");
   if (cnvs) {

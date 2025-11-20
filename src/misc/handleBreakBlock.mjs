@@ -4,7 +4,15 @@ import { mapEditorState } from "../map/editor.mjs";
 import { markWaterRegionDirty } from "../water/markWaterRegionDirty.mjs";
 import { updateState } from "../state/state.mjs";
 
-// Helper function to check if a tile position is part of a mature plant structure
+/**
+ * Helper function to check if a tile position is part of a mature plant structure
+ *
+ * @param {any} x
+ * @param {any} y
+ * @param {any} plantStructures
+ *
+ * @returns {boolean}
+ */
 function isMaturePlantPart(x, y, plantStructures) {
   for (const [key, structure] of Object.entries(plantStructures.get())) {
     if (structure.mature && structure.blocks) {
@@ -17,11 +25,30 @@ function isMaturePlantPart(x, y, plantStructures) {
   return false;
 }
 
+/**
+ * @param {any} tile
+ * @param {any} tiles
+ *
+ * @returns {boolean}
+ */
 function isTreePart(tile, tiles) {
   return tile === tiles.TREE_TRUNK || tile === tiles.TREE_LEAVES;
 }
 
-function handleBreakBlock({
+/**
+ * @param {any} growthTimers
+ * @param {any} plantStructures
+ * @param {any} player
+ * @param {any} tiles
+ * @param {any} tileSize
+ * @param {any} world
+ * @param {any} worldHeight
+ * @param {any} worldWidth
+ * @param {string} [mode="regular"]
+ *
+ * @returns {void}
+ */
+function handleBreakBlock(
   growthTimers,
   plantStructures,
   player,
@@ -31,7 +58,7 @@ function handleBreakBlock({
   worldHeight,
   worldWidth,
   mode = "regular",
-}) {
+) {
   if (mapEditorState.isEnabled) {
     console.log("Breaking disabled in map editor mode");
 
@@ -52,16 +79,17 @@ function handleBreakBlock({
       for (let dy = 0; dy < 3; dy++) {
         const targetX = playerTileX + dx; // one tile forward
         const targetY = playerTileY - dy; // player's tile (dy=0), +1 above, +2 above
-
         if (
           targetX < 0 ||
           targetX >= worldWidth ||
           targetY < 0 ||
           targetY >= worldHeight
-        )
+        ) {
           continue;
+        }
 
         const tile = world.getTile(targetX, targetY);
+
         if (
           tile &&
           tile !== tiles.AIR &&
@@ -85,6 +113,7 @@ function handleBreakBlock({
         targetY < worldHeight
       ) {
         const tile = world.getTile(targetX, targetY);
+
         if (
           tile &&
           tile !== tiles.AIR &&
@@ -133,6 +162,7 @@ function handleBreakBlock({
             // Prioritize blocks in the direction player is facing
             const priority =
               Math.abs(dx) === 0 ? 1 : 2 - Math.abs(dx) / breakRadius;
+
             blocksToBreak.push({
               x: targetX,
               y: targetY,
@@ -205,6 +235,7 @@ function handleBreakBlock({
             if (plantBlock.x === block.x && plantBlock.y === block.y) {
               isImmaturePlantPart = true;
               plantKey = key;
+
               break;
             }
           }
@@ -253,6 +284,7 @@ function handleBreakBlock({
         // Give small chance to drop seeds from broken natural crops
         if (block.tile.crop && Math.random() < 0.3) {
           const seedType = getHarvestMap(tiles)[block.tile.id];
+
           if (seedType) {
             seedUpdates[seedType] = (seedUpdates[seedType] || 0) + 1;
           }
@@ -260,6 +292,7 @@ function handleBreakBlock({
 
         // Collect materials from broken blocks
         const materialType = getMaterialFromTile(block.tile, tiles);
+
         if (materialType) {
           // Special handling for leaves - only sometimes drop wood
           if (block.tile === tiles.TREE_LEAVES && Math.random() < 0.3) {
@@ -305,7 +338,21 @@ function handleBreakBlock({
   }
 }
 
-export function handleBreakBlockWithWaterPhysics({
+/**
+ * @param {any} growthTimers
+ * @param {any} plantStructures
+ * @param {any} player
+ * @param {any} tiles
+ * @param {any} tileSize
+ * @param {any} world
+ * @param {any} worldHeight
+ * @param {any} worldWidth
+ * @param {any} queue
+ * @param {string} [mode="regular"]
+ *
+ * @returns {void}
+ */
+export function handleBreakBlockWithWaterPhysics(
   growthTimers,
   plantStructures,
   player,
@@ -314,9 +361,9 @@ export function handleBreakBlockWithWaterPhysics({
   world,
   worldHeight,
   worldWidth,
-  mode = "regular",
   queue,
-}) {
+  mode = "regular",
+) {
   const currentPlayer = player.get();
   const currentWorld = world.get();
 
@@ -329,20 +376,21 @@ export function handleBreakBlockWithWaterPhysics({
   );
 
   // Store original function result
-  const originalResult = handleBreakBlock({
+  const originalResult = handleBreakBlock(
     growthTimers,
     plantStructures,
-    player: currentPlayer,
+    currentPlayer,
     tiles,
     tileSize,
-    world: currentWorld,
+    currentWorld,
     worldHeight,
     worldWidth,
     mode,
-  });
+  );
 
   // Check if we broke any blocks near water
   const checkRadius = 3;
+
   let foundWater = false;
 
   for (let dx = -checkRadius; dx <= checkRadius; dx++) {
@@ -358,14 +406,15 @@ export function handleBreakBlockWithWaterPhysics({
       ) {
         if (currentWorld.getTile(checkX, checkY) === tiles.WATER) {
           foundWater = true;
-          markWaterRegionDirty({
-            x: checkX,
-            y: checkY,
-            radius: 10,
+
+          markWaterRegionDirty(
+            checkX,
+            checkY,
             queue,
             worldWidth,
             worldHeight,
-          });
+            10,
+          );
         }
       }
     }

@@ -1,4 +1,9 @@
 export class FogMap {
+  /**
+   * @param {any} width
+   * @param {any} height
+   * @param {any} colors
+   */
   constructor(width, height, colors) {
     this.colors = colors;
     this.width = width;
@@ -14,7 +19,14 @@ export class FogMap {
     };
   }
 
-  // Check if a tile is explored
+  /**
+   * Check if a tile is explored
+   *
+   * @param {any} x
+   * @param {any} y
+   *
+   * @returns {boolean}
+   */
   isExplored(x, y) {
     if (x < 0 || x >= this.width || y < 0 || y >= this.height) {
       return false;
@@ -25,7 +37,14 @@ export class FogMap {
     return this.data[index] === 1;
   }
 
-  // Mark a single tile as explored
+  /**
+   * Mark a single tile as explored
+   *
+   * @param {any} x
+   * @param {any} y
+   *
+   * @returns {boolean}
+   */
   setExplored(x, y) {
     if (x < 0 || x >= this.width || y < 0 || y >= this.height) {
       return false;
@@ -33,13 +52,18 @@ export class FogMap {
 
     const index = y * this.width + x;
     const wasExplored = this.data[index] === 1;
-
     this.data[index] = 1;
 
     return !wasExplored; // Return true if this was a new exploration
   }
 
-  // Mark multiple tiles as explored (returns true if any were newly explored)
+  /**
+   * Mark multiple tiles as explored (returns true if any were newly explored)
+   *
+   * @param {any} tiles
+   *
+   * @returns {boolean}
+   */
   setExploredBatch(tiles) {
     let anyUpdated = false;
 
@@ -52,13 +76,29 @@ export class FogMap {
     return anyUpdated;
   }
 
-  // reset fog
+  /**
+   * reset fog
+   *
+   * @returns {void}
+   */
   reset() {
     this.data.fill(0);
+
     this.cache.needsUpdate = true;
   }
 
-  // Create FogMap from a plain object (for loading saved data)
+  /**
+   * Create FogMap from a plain object (for loading saved data)
+   *
+   * @static
+   *
+   * @param {any} fogObj
+   * @param {any} width
+   * @param {any} height
+   * @param {any} colors
+   *
+   * @returns {FogMap}
+   */
   static fromObject(fogObj, width, height, colors) {
     const fog = new FogMap(width, height, colors);
 
@@ -76,7 +116,11 @@ export class FogMap {
     return fog;
   }
 
-  // Convert to plain object for saving (returns sparse object for compatibility)
+  /**
+   * Convert to plain object for saving (returns sparse object for compatibility)
+   *
+   * @returns {{}}
+   */
   toObject() {
     const obj = {};
 
@@ -91,7 +135,15 @@ export class FogMap {
     return obj;
   }
 
-  // Update explored map based on player position
+  /**
+   * Update explored map based on player position
+   *
+   * @param {any} player
+   * @param {any} tileSize
+   * @param {number} [fogRevealRadius=15]
+   *
+   * @returns {boolean}
+   */
   updateFromPlayer(player, tileSize, fogRevealRadius = 15) {
     const currentPlayer = player.get();
 
@@ -110,10 +162,12 @@ export class FogMap {
     for (let dx = -fogRevealRadius; dx <= fogRevealRadius; dx++) {
       for (let dy = -fogRevealRadius; dy <= fogRevealRadius; dy++) {
         const tileX = playerTileX + dx;
+
         const tileY = playerTileY + dy;
 
         // Check if within circular radius
         const distance = Math.sqrt(dx * dx + dy * dy);
+
         if (distance <= fogRevealRadius) {
           if (this.setExplored(tileX, tileY)) {
             mapUpdated = true;
@@ -125,7 +179,16 @@ export class FogMap {
     return mapUpdated;
   }
 
-  // Render map fog overlay
+  /**
+   * Render map fog overlay
+   *
+   * @param {any} ctx
+   * @param {any} canvas
+   * @param {any} tileSize
+   * @param {any} camera
+   *
+   * @returns {void}
+   */
   render(ctx, canvas, tileSize, camera) {
     if (!ctx || !canvas) {
       return;
@@ -145,6 +208,7 @@ export class FogMap {
     // Process tiles in the same order as the original
     for (let x = 0; x < tilesX; x++) {
       const worldX = startX + x;
+
       if (worldX < 0 || worldX >= this.width) {
         continue;
       }
@@ -153,6 +217,7 @@ export class FogMap {
 
       for (let y = 0; y < tilesY; y++) {
         const worldY = startY + y;
+
         if (worldY < 0 || worldY >= this.height) {
           continue;
         }
@@ -167,7 +232,17 @@ export class FogMap {
     }
   }
 
-  // Scaled fog for performance
+  /**
+   * Scaled fog for performance
+   *
+   * @param {any} ctx
+   * @param {any} canvas
+   * @param {any} tileSize
+   * @param {any} camera
+   * @param {number} [fogScale=2]
+   *
+   * @returns {void}
+   */
   renderScaled(ctx, canvas, tileSize, camera, fogScale = 2) {
     if (!ctx || !canvas) return;
 
@@ -198,6 +273,7 @@ export class FogMap {
 
       for (let blockY = 0; blockY < blocksY; blockY++) {
         const worldBlockY = startBlockY + blockY;
+
         const screenY = Math.round(blockY * blockSize - cameraOffsetY);
 
         // Check if this entire block should be fogged

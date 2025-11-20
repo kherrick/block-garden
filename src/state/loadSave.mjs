@@ -4,6 +4,13 @@ import { resizeCanvas } from "../util/resizeCanvas.mjs";
 import { FogMap } from "../map/fog.mjs";
 import { WorldMap } from "../map/world.mjs";
 
+/**
+ * @param {any} gThis
+ * @param {any} shadow
+ * @param {any} saveState
+ *
+ * @returns {void}
+ */
 export function loadSaveState(gThis, shadow, saveState) {
   const gameConfig = gThis.spriteGarden.config;
   const gameState = gThis.spriteGarden.state;
@@ -48,6 +55,7 @@ export function loadSaveState(gThis, shadow, saveState) {
       const existingMap = saveState.state.exploredMap;
       if (existingMap && Object.keys(existingMap).length > 0) {
         const colors = getCustomProperties(gThis, shadow);
+
         fogMap = FogMap.fromObject(
           existingMap,
           worldWidth,

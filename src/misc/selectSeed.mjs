@@ -1,4 +1,10 @@
-// Farming functions
+/**
+ * Farming functions
+ *
+ * @param {any} tiles
+ *
+ * @returns {any}
+ */
 export function extractSeeds(tiles) {
   return Object.fromEntries(
     Object.entries(tiles)
@@ -7,12 +13,25 @@ export function extractSeeds(tiles) {
   );
 }
 
+/**
+ * @param {any} obj
+ * @param {number} [provided=1]
+ *
+ * @returns {any}
+ */
 export function mapValuesToProvided(obj, provided = 1) {
   return Object.fromEntries(Object.values(obj).map((v) => [v, provided]));
 }
 
+/**
+ * @param {any} state
+ * @param {any} event
+ *
+ * @returns {void}
+ */
 export function selectSeed(state, event) {
   const [seedType] = Object.keys(event.currentTarget.dataset);
+
   for (const element of event.currentTarget.parentElement.children) {
     element.classList.remove("selected");
   }
@@ -22,6 +41,7 @@ export function selectSeed(state, event) {
   console.log(`Selecting seed: ${seedType}`);
 
   const currentSelected = state.selectedSeedType.get();
+
   console.log(`Current selected: ${currentSelected}`);
 
   const newSelected =

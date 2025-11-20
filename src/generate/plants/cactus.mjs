@@ -1,9 +1,18 @@
+/**
+ * @param {any} x
+ * @param {any} y
+ * @param {any} progress
+ * @param {any} tiles
+ *
+ * @returns {{ x: any; y: any; tile: any; }[]}
+ */
 export function generateCactusStructure(x, y, progress, tiles) {
   const blocks = [];
 
   // Early stage
   if (progress < 0.1) {
     blocks.push({ x, y, tile: tiles.CACTUS_GROWING });
+
     return blocks;
   }
 

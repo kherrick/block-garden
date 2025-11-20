@@ -1,6 +1,29 @@
-import { Signal } from "../../deps/signal.mjs";
+import { Signal } from "signal-polyfill";
 
-// Render world
+/**
+ * Render world
+ *
+ * @param {any} canvas
+ * @param {any} player
+ * @param {any} camera
+ * @param {any} tiles
+ * @param {any} tileSize
+ * @param {any} viewMode
+ * @param {any} world
+ * @param {any} worldHeight
+ * @param {any} worldWidth
+ * @param {any} fogMode
+ * @param {any} isFogScaled
+ * @param {any} fogScale
+ * @param {any} exploredMap
+ * @param {any} previousState
+ * @param {any} interpolation
+ * @param {any} tileColorMap
+ * @param {any} gameColorMap
+ * @param {any} tileNameByIdMap
+ *
+ * @returns {void}
+ */
 export function render(
   canvas,
   player,
@@ -79,9 +102,7 @@ export function render(
         );
 
         const tileName = shouldXray.get() ? "xray" : tileNameByIdMap[tile.id];
-
         ctx.fillStyle = tileColorMap[tileName];
-
         ctx.fillRect(
           Math.round(x * tileSize - (interpolatedCameraX % tileSize)),
           Math.round(y * tileSize - (interpolatedCameraY % tileSize)),

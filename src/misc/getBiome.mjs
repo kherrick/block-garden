@@ -1,5 +1,12 @@
 import { biomeNoise, initNoise } from "../util/noise.mjs";
 
+/**
+ * @param {any} x
+ * @param {any} biomes
+ * @param {any} seed
+ *
+ * @returns {any}
+ */
 export function getBiome(x, biomes, seed) {
   // Initialize noise with seed
   initNoise(seed);
@@ -10,6 +17,7 @@ export function getBiome(x, biomes, seed) {
   // Create more interesting biome distribution
   // Temperature: -1 (cold) to 1 (hot)
   const temperature = temperatureNoise;
+
   // Humidity: -1 (dry) to 1 (wet)
   const humidity = humidityNoise;
 

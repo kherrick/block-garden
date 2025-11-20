@@ -1,3 +1,14 @@
+/**
+ * @param {any} world
+ * @param {any} centerX
+ * @param {any} surfaceY
+ * @param {any} size
+ * @param {any} worldWidth
+ * @param {any} worldHeight
+ * @param {any} tiles
+ *
+ * @returns {void}
+ */
 export function createLake(
   world,
   centerX,

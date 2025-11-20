@@ -1,4 +1,4 @@
-import { Signal } from "../../deps/signal.mjs";
+import { Signal } from "signal-polyfill";
 
 import { addMossToCaves } from "../generate/plants/moss.mjs";
 import { generateCaves } from "./caves.mjs";
@@ -12,16 +12,26 @@ import { updateState } from "../state/state.mjs";
 import { updateWaterPhysics } from "../water/updateWaterPhysics.mjs";
 import { WorldMap } from "../map/world.mjs";
 
-// Generate world
-export function generateWorld({
+/**
+ * Generate world
+ *
+ * @param {any} biomes
+ * @param {any} surfaceLevel
+ * @param {any} tiles
+ * @param {any} worldSeed
+ * @param {any} worldHeight
+ * @param {any} worldWidth
+ *
+ * @returns {WorldMap}
+ */
+export function generateWorld(
   biomes,
   surfaceLevel,
   tiles,
-  tileSize,
   worldSeed,
   worldHeight,
   worldWidth,
-}) {
+) {
   console.log(`Generating world with seed: ${worldSeed}`);
 
   // Initialize world
@@ -85,20 +95,21 @@ export function generateWorld({
     // Generate trees
     if (biome.trees && Math.random() < 0.025) {
       const treeHeight = getRandomSeed(3, 5);
+
       const baseY = surfaceHeight;
       const plantX = x;
+
       // Base of the tree (where it would be planted)
       const plantY = baseY - 1;
-
       // Collect all tree blocks
       const treeBlocks = [];
 
       // Build trunk
       for (let i = 0; i < treeHeight; i++) {
         const y = baseY - i - 1;
+
         if (y >= 0) {
           currentWorld.setTile(x, y, tiles.TREE_TRUNK);
-
           treeBlocks.push({ x, y, tile: tiles.TREE_TRUNK });
         }
       }
@@ -124,6 +135,7 @@ export function generateWorld({
               // Check if it's not a trunk position
               const isTrunkPosition =
                 leafX === x && leafY >= topY && leafY < baseY;
+
               if (
                 !isTrunkPosition &&
                 currentWorld.getTile(leafX, leafY) === tiles.AIR
@@ -151,6 +163,7 @@ export function generateWorld({
 
         // Add to inventory when found
         const seedType = getHarvestMap(tiles)[crop.id];
+
         if (seedType) {
           updateState("seedInventory", (inv) => ({
             ...inv,
@@ -162,42 +175,24 @@ export function generateWorld({
   }
 
   // Generate caves with seeded randomization
-  generateCaves({
-    surfaceLevel,
-    tiles,
-    world: currentWorld,
-    worldHeight,
-    worldWidth,
-  });
+  generateCaves(surfaceLevel, tiles, currentWorld, worldHeight, worldWidth);
 
   // Add moss to cave surfaces after cave generation
-  addMossToCaves({
-    world: currentWorld,
-    worldWidth,
-    worldHeight,
-    tiles,
-  });
+  addMossToCaves(currentWorld, worldWidth, worldHeight, tiles);
 
   // Generate clouds in the sky
-  generateClouds({
-    world: currentWorld,
-    worldWidth,
-    surfaceLevel,
-    tiles,
-    seed: worldSeed,
-  });
+  generateClouds(currentWorld, worldWidth, surfaceLevel, tiles, worldSeed);
 
   // Generate water sources using seeded noise
-  generateWaterSources({
-    world: currentWorld,
+  generateWaterSources(
+    currentWorld,
     heights,
     worldWidth,
     worldHeight,
     surfaceLevel,
     tiles,
-    seed: worldSeed,
-    tileSize,
-  });
+    worldSeed,
+  );
 
   // Simulate water physics to make water settle naturally
   const initialQueue = new Set();
@@ -213,7 +208,10 @@ export function generateWorld({
   for (let i = 0; i < 100; i++) {
     const tempQueue = {
       get: () => initialQueue,
-      set: (v) => initialQueue.clear() || v.forEach((k) => initialQueue.add(k)),
+      set: (v) => {
+        initialQueue.clear();
+        v.forEach((k) => initialQueue.add(k));
+      },
     };
 
     updateWaterPhysics(

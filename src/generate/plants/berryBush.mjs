@@ -1,9 +1,18 @@
+/**
+ * @param {any} x
+ * @param {any} y
+ * @param {any} progress
+ * @param {any} tiles
+ *
+ * @returns {{ x: any; y: any; tile: any; }[]}
+ */
 export function generateBerryBushStructure(x, y, progress, tiles) {
   const blocks = [];
 
   // Early stage
   if (progress < 0.1) {
     blocks.push({ x, y, tile: tiles.BERRY_BUSH_GROWING });
+
     return blocks;
   }
 
@@ -23,7 +32,9 @@ export function generateBerryBushStructure(x, y, progress, tiles) {
     for (let dx = -leafRadius; dx <= leafRadius; dx++) {
       for (let dy = 0; dy <= leafRadius; dy++) {
         const leafX = x + dx;
+
         const leafY = topY + dy;
+
         const distance = Math.abs(dx) + Math.abs(dy);
 
         if (distance <= leafRadius && distance > 0) {
@@ -36,12 +47,16 @@ export function generateBerryBushStructure(x, y, progress, tiles) {
   // Add berries when mature
   if (progress > 0.8) {
     const topY = y - currentHeight;
+
     if (Math.random() < 0.6)
       blocks.push({ x: x - 1, y: topY + 1, tile: tiles.BERRY_BUSH_BERRIES });
+
     if (Math.random() < 0.6)
       blocks.push({ x: x + 1, y: topY + 1, tile: tiles.BERRY_BUSH_BERRIES });
+
     if (Math.random() < 0.6)
       blocks.push({ x: x - 1, y: topY, tile: tiles.BERRY_BUSH_BERRIES });
+
     if (Math.random() < 0.6)
       blocks.push({ x: x + 1, y: topY, tile: tiles.BERRY_BUSH_BERRIES });
   }

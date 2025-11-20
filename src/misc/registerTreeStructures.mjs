@@ -1,3 +1,11 @@
+/**
+ * @param {any} world
+ * @param {any} worldWidth
+ * @param {any} worldHeight
+ * @param {any} tiles
+ *
+ * @returns {{}}
+ */
 export function registerTreeStructures(world, worldWidth, worldHeight, tiles) {
   const structures = {};
 
@@ -9,8 +17,8 @@ export function registerTreeStructures(world, worldWidth, worldHeight, tiles) {
       // Look for tree trunks that have ground below and aren't already part of a structure
       if (tile === tiles.TREE_TRUNK) {
         const belowTile = world.getTile(x, y + 1);
-        const aboveTile = world.getTile(x, y - 1);
 
+        const aboveTile = world.getTile(x, y - 1);
         // This is the base of a tree if it has solid ground below and trunk/air above
         if (belowTile && belowTile.solid && belowTile !== tiles.TREE_TRUNK) {
           const plantKey = `${x},${y}`;
@@ -20,8 +28,10 @@ export function registerTreeStructures(world, worldWidth, worldHeight, tiles) {
 
           // Collect trunk blocks going up
           let checkY = y;
+
           while (checkY >= 0 && world.getTile(x, checkY) === tiles.TREE_TRUNK) {
             treeBlocks.push({ x, y: checkY, tile: tiles.TREE_TRUNK });
+
             checkY--;
           }
 

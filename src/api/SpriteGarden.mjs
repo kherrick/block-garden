@@ -1,5 +1,3 @@
-import qrcode from "../../deps/qrcode.mjs";
-
 import { markWaterRegionDirty } from "../water/markWaterRegionDirty.mjs";
 import { resizeCanvas } from "../util/resizeCanvas.mjs";
 import { sleep } from "../util/sleep.mjs";
@@ -115,6 +113,7 @@ export class SpriteGarden {
     for (let row = 0; row < bitmap.length; row++) {
       for (let col = 0; col < bitmap[row].length; col++) {
         const pixel = bitmap[row][col];
+
         const tile = pixel === 1 ? onTile : offTile;
 
         updates.push({ x: x + col, y: y + row, tile });
@@ -137,6 +136,7 @@ export class SpriteGarden {
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         const tileName = bitmapTileNames[y][x];
+
         if (tileName) {
           const tileX = leftX + x;
           const tileY = bottomCenterY - (height - 1 - y);
@@ -200,6 +200,7 @@ export class SpriteGarden {
 
   getTextWidth(text, characters) {
     let width = 0;
+
     for (const c of text) {
       const bmp = characters[c.toUpperCase()];
 
@@ -341,6 +342,13 @@ export class SpriteGarden {
     processNextBatch();
   }
 
+  async getQRCodeModule() {
+    const mod = "https://kherrick.github.io/sprite-garden/deps/qrcode.mjs";
+    const qrcode = await import(mod);
+
+    return qrcode;
+  }
+
   async drawQRCode(
     text,
     x,
@@ -348,6 +356,7 @@ export class SpriteGarden {
     onTile = this.tiles.ICE,
     offTile = this.tiles.COAL,
   ) {
+    const qrcode = await this.getQRCodeModule();
     const qr = qrcode(0, "L");
 
     qr.addData(text);
@@ -359,6 +368,7 @@ export class SpriteGarden {
     for (let row = 0; row < size; row++) {
       for (let col = 0; col < size; col++) {
         const isDark = qr.isDark(row, col);
+
         const tile = isDark ? onTile : offTile;
 
         updates.push({ x: x + col, y: y + row, tile });

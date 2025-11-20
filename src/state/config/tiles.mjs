@@ -1,3 +1,8 @@
+/**
+ * @param {any} v
+ *
+ * @returns {any}
+ */
 const getT = (v) => ({
   crop: false,
   farmable: false,
@@ -401,14 +406,31 @@ export const TILES = {
   [TileName.WOOD]: getT({ id: 73, solid: false, crop: true, drops: "WOOD" }),
 };
 
+/**
+ * @param {any} name
+ *
+ * @returns {any}
+ */
 export function normalizeTileName(name) {
   return name.toUpperCase().replace(/-/g, "_");
 }
 
+/**
+ * @param {any} name
+ *
+ * @returns {any}
+ */
 export function denormalizeTileName(name) {
   return name.toLowerCase().replace(/_/g, "-");
 }
 
+/**
+ * @param {any} cssStyleDeclaration
+ * @param {string} [prefix="--sg-"]
+ * @param {(key: any) => any} [keyTransform=(key) => key]
+ *
+ * @returns {{}}
+ */
 export function buildColorMapByStyleDeclaration(
   cssStyleDeclaration,
   prefix = "--sg-",
@@ -433,6 +455,13 @@ export function buildColorMapByStyleDeclaration(
   return colorMap;
 }
 
+/**
+ * @param {{}} [styleMap={}]
+ * @param {string} [prefix="--sg-"]
+ * @param {(key: any) => any} [keyTransform=(key) => key]
+ *
+ * @returns {{}}
+ */
 export function buildColorMapByStyleMap(
   styleMap = {},
   prefix = "--sg-",
@@ -443,6 +472,7 @@ export function buildColorMapByStyleMap(
   for (const [key, value] of Object.entries(styleMap)) {
     if (key.startsWith(prefix)) {
       const tileKey = keyTransform(key.slice(prefix.length));
+
       colorMap[tileKey] = value.trim().replace(/^['"]|['"]$/g, "");
     }
   }
@@ -450,6 +480,12 @@ export function buildColorMapByStyleMap(
   return colorMap;
 }
 
+/**
+ * @param {any} currentTiles
+ * @param {any} id
+ *
+ * @returns {string}
+ */
 export function getTileNameById(currentTiles, id) {
   for (const key in currentTiles) {
     if (currentTiles[key].id === id) {
@@ -460,6 +496,11 @@ export function getTileNameById(currentTiles, id) {
   return null;
 }
 
+/**
+ * @param {any} currentTiles
+ *
+ * @returns {any}
+ */
 export function getTileNameByIdMap(currentTiles) {
   return Object.fromEntries(
     Object.entries(currentTiles).map(([k, v]) => [

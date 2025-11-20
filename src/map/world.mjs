@@ -1,29 +1,40 @@
 import { gameConfig } from "../state/state.mjs";
 
 export class WorldMap {
+  /**
+   * @param {any} width
+   * @param {any} height
+   */
   constructor(width, height) {
     this.width = width;
     this.height = height;
     this.data = new Uint8Array(width * height);
-
     this.initializeTileMapping();
   }
 
+  /** @returns {void} */
   initializeTileMapping() {
     // Get tiles
     const tiles = gameConfig.TILES;
-
     this.tileIdMap = new Map();
     this.reverseTileMap = new Map();
 
     let id = 0;
+
     for (const [name, tile] of Object.entries(tiles)) {
       this.tileIdMap.set(tile, id);
       this.reverseTileMap.set(id, tile);
+
       id++;
     }
   }
 
+  /**
+   * @param {any} x
+   * @param {any} y
+   *
+   * @returns {any}
+   */
   getTile(x, y) {
     if (x < 0 || x >= this.width || y < 0 || y >= this.height) {
       return gameConfig.TILES.AIR;
@@ -34,6 +45,13 @@ export class WorldMap {
     return this.reverseTileMap.get(tileId) || gameConfig.TILES.AIR;
   }
 
+  /**
+   * @param {any} x
+   * @param {any} y
+   * @param {any} tile
+   *
+   * @returns {void}
+   */
   setTile(x, y, tile) {
     if (x < 0 || x >= this.width || y < 0 || y >= this.height) return;
 
@@ -44,13 +62,25 @@ export class WorldMap {
     }
   }
 
-  // Convert from array format
+  /**
+   * Convert from array format
+   *
+   * @static
+   * @static
+   * @static
+   * @param {any} worldData
+   * @param {any} width
+   * @param {any} height
+   *
+   * @returns {WorldMap}
+   */
   static fromArray(worldData, width, height) {
     const worldMap = new WorldMap(width, height);
     const tiles = gameConfig.TILES;
 
     // Create a map of tile IDs to tile objects for faster lookup
     const tileIdMap = new Map();
+
     for (const [_, tile] of Object.entries(tiles)) {
       if (tile && typeof tile.id === "number") {
         tileIdMap.set(tile.id, tile);
@@ -89,7 +119,11 @@ export class WorldMap {
     return worldMap;
   }
 
-  // Convert to array format for saving
+  /**
+   * Convert to array format for saving
+   *
+   * @returns {any[][]}
+   */
   toArray() {
     const arrayWorld = [];
 

@@ -1,4 +1,15 @@
-// Runtime water physics update
+/**
+ * Runtime water physics update
+ *
+ * @param {any} tiles
+ * @param {any} waterPhysicsConfig
+ * @param {any} waterPhysicsQueue
+ * @param {any} world
+ * @param {any} worldHeight
+ * @param {any} worldWidth
+ *
+ * @returns {void}
+ */
 export function updateWaterPhysics(
   tiles,
   waterPhysicsConfig,
@@ -20,6 +31,7 @@ export function updateWaterPhysics(
   }
 
   waterPhysicsConfig.frameCounter = 0;
+
   const newQueue = new Set();
 
   // Process ALL tiles to ensure water settles completely
@@ -74,6 +86,7 @@ export function updateWaterPhysics(
             newQueue.add(`${neighbor.x},${neighbor.y}`);
           }
         }
+
         anyWaterMoved = true;
 
         continue;
@@ -98,6 +111,7 @@ export function updateWaterPhysics(
           if (x < worldWidth - 1) {
             newQueue.add(`${x + 1},${y + 1}`);
           }
+
           if (y + 2 < worldHeight) {
             newQueue.add(`${x},${y + 2}`);
           }
@@ -145,6 +159,7 @@ export function updateWaterPhysics(
             }
 
             const newX = x + flowDirection;
+
             currentWorld.setTile(x, y, tiles.AIR);
             currentWorld.setTile(newX, y, tiles.WATER);
 

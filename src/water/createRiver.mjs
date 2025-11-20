@@ -1,3 +1,13 @@
+/**
+ * @param {any} world
+ * @param {any} x
+ * @param {any} surfaceY
+ * @param {any} worldWidth
+ * @param {any} worldHeight
+ * @param {any} tiles
+ *
+ * @returns {void}
+ */
 export function createRiver(
   world,
   x,

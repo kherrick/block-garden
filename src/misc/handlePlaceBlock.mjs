@@ -1,11 +1,24 @@
-import localForage from "../../deps/localForage.mjs";
+import localForage from "localforage";
 
 import { getShadowRoot } from "../util/getShadowRoot.mjs";
 import { getTileFromMaterial } from "./getTileFromMaterial.mjs";
 import { updateRangeValue } from "../update/ui/range.mjs";
 import { updateState } from "../state/state.mjs";
 
-export async function handlePlaceBlock({
+/**
+ * @param {any} key
+ * @param {any} materialsInventory
+ * @param {any} player
+ * @param {any} selectedMaterialType
+ * @param {any} tiles
+ * @param {any} tileSize
+ * @param {any} world
+ * @param {any} worldHeight
+ * @param {any} worldWidth
+ *
+ * @returns {Promise<void>}
+ */
+export async function handlePlaceBlock(
   key,
   materialsInventory,
   player,
@@ -15,12 +28,11 @@ export async function handlePlaceBlock({
   world,
   worldHeight,
   worldWidth,
-}) {
+) {
   const playerTileX = Math.floor((player.x + player.width / 2) / tileSize);
   const playerTileY = Math.floor((player.y + player.height / 2) / tileSize);
 
   let targetX, targetY;
-
   let rangeValue = (await localForage.getItem("sprite-garden-range")) || 1;
 
   // Determine placement position based on key pressed
@@ -36,24 +48,29 @@ export async function handlePlaceBlock({
         targetX = playerTileX - rangeValue;
         targetY = playerTileY - rangeValue;
       }
+
       if (rangeValue === 2) {
         targetX = playerTileX - 1;
         targetY = playerTileY - rangeValue;
       }
+
       if (rangeValue === 3) {
         targetX = playerTileX - 1;
         targetY = playerTileY - rangeValue;
       }
+
       break;
     case "i": // Top
       if (rangeValue === 1) {
         targetX = playerTileX;
         targetY = playerTileY - rangeValue;
       }
+
       if (rangeValue === 2) {
         targetX = playerTileX;
         targetY = playerTileY - rangeValue;
       }
+
       if (rangeValue === 3) {
         targetX = playerTileX;
         targetY = playerTileY - rangeValue;
@@ -64,10 +81,12 @@ export async function handlePlaceBlock({
         targetX = playerTileX + rangeValue;
         targetY = playerTileY - rangeValue;
       }
+
       if (rangeValue === 2) {
         targetX = playerTileX + 1;
         targetY = playerTileY - rangeValue;
       }
+
       if (rangeValue === 3) {
         targetX = playerTileX + 1;
         targetY = playerTileY - rangeValue;
@@ -78,10 +97,12 @@ export async function handlePlaceBlock({
         targetX = playerTileX - rangeValue;
         targetY = playerTileY;
       }
+
       if (rangeValue === 2) {
         targetX = playerTileX - rangeValue;
         targetY = playerTileY;
       }
+
       if (rangeValue === 3) {
         targetX = playerTileX - rangeValue;
         targetY = playerTileY;
@@ -92,10 +113,12 @@ export async function handlePlaceBlock({
         targetX = playerTileX + rangeValue;
         targetY = playerTileY;
       }
+
       if (rangeValue === 2) {
         targetX = playerTileX + rangeValue;
         targetY = playerTileY;
       }
+
       if (rangeValue === 3) {
         targetX = playerTileX + rangeValue;
         targetY = playerTileY;
@@ -106,10 +129,12 @@ export async function handlePlaceBlock({
         targetX = playerTileX - rangeValue;
         targetY = playerTileY + rangeValue;
       }
+
       if (rangeValue === 2) {
         targetX = playerTileX - 1;
         targetY = playerTileY + rangeValue;
       }
+
       if (rangeValue === 3) {
         targetX = playerTileX - 1;
         targetY = playerTileY + rangeValue;
@@ -120,10 +145,12 @@ export async function handlePlaceBlock({
         targetX = playerTileX;
         targetY = playerTileY + rangeValue;
       }
+
       if (rangeValue === 2) {
         targetX = playerTileX;
         targetY = playerTileY + rangeValue;
       }
+
       if (rangeValue === 3) {
         targetX = playerTileX;
         targetY = playerTileY + rangeValue;
@@ -134,10 +161,12 @@ export async function handlePlaceBlock({
         targetX = playerTileX + rangeValue;
         targetY = playerTileY + rangeValue;
       }
+
       if (rangeValue === 2) {
         targetX = playerTileX + 1;
         targetY = playerTileY + rangeValue;
       }
+
       if (rangeValue === 3) {
         targetX = playerTileX + 1;
         targetY = playerTileY + rangeValue;
@@ -170,22 +199,27 @@ export async function handlePlaceBlock({
     console.log(
       `Cannot place block outside world bounds at (${targetX}, ${targetY})`,
     );
+
     return;
   }
 
   // Check if the target position is already occupied by a solid block
   const currentTile = world.getTile(targetX, targetY);
+
   if (currentTile && currentTile !== tiles.AIR && currentTile.solid) {
     console.log(
       `Cannot place block at (${targetX}, ${targetY}) - position occupied`,
     );
+
     return;
   }
 
   // Get the tile to place
   const tileToPlace = getTileFromMaterial(selectedMaterialType, tiles);
+
   if (!tileToPlace) {
     console.log(`Invalid material type: ${selectedMaterialType}`);
+
     return;
   }
 
@@ -199,8 +233,6 @@ export async function handlePlaceBlock({
   }));
 
   console.log(
-    `Placed ${selectedMaterialType} at (${targetX}, ${targetY}), ${
-      materialsInventory[selectedMaterialType] - 1
-    } remaining`,
+    `Placed ${selectedMaterialType} at (${targetX}, ${targetY}), ${materialsInventory[selectedMaterialType] - 1} remaining`,
   );
 }

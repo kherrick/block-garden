@@ -1,4 +1,4 @@
-import localForage from "../../deps/localForage.mjs";
+import localForage from "localforage";
 
 import { initEffects } from "./effects.mjs";
 import { initFog } from "./fog.mjs";
@@ -20,6 +20,7 @@ import {
   checkAutoSave,
   getSaveMode,
 } from "../dialog/storage.mjs";
+
 import { applyColors } from "../dialog/colors/applyColors.mjs";
 import { COLOR_STORAGE_KEY } from "../dialog/colors/index.mjs";
 import { getCustomProperties } from "../dialog/colors/getCustomProperties.mjs";
@@ -31,10 +32,19 @@ import {
   buildColorMapByStyleMap,
   getTileNameByIdMap,
 } from "../state/config/tiles.mjs";
+
 import { computedSignals, initState } from "../state/state.mjs";
 import { gameLoop } from "../state/gameLoop.mjs";
 
-// Initialize game
+/**
+ * Initialize game
+ *
+ * @param {any} gThis
+ * @param {any} shadow
+ * @param {any} cnvs
+ *
+ * @returns {Promise<void>}
+ */
 export async function initGame(gThis, shadow, cnvs) {
   shadow.dispatchEvent(
     new CustomEvent("sprite-garden-load", {
@@ -46,6 +56,7 @@ export async function initGame(gThis, shadow, cnvs) {
 
   if (!cnvs) {
     const missingCanvasError = "HTML canvas is required to init Sprite Garden.";
+
     console.error(missingCanvasError);
 
     shadow.dispatchEvent(
@@ -86,14 +97,14 @@ export async function initGame(gThis, shadow, cnvs) {
   const savedColors = await getSavedColors(shadow, COLOR_STORAGE_KEY);
   const initialColors = getCustomProperties(gThis, shadow);
   const colors = savedColors ?? initialColors;
+
   applyColors(shadow, colors);
 
-  initMapEditor(doc, shadow, gameConfig.fogMode, gameState.viewMode);
+  initMapEditor(shadow, gameConfig.fogMode, gameState.viewMode);
   initGlobalEventListeners(gThis, doc, shadow);
   initDocumentEventListeners(gThis, shadow);
   initElementEventListeners(gThis, shadow);
   initTouchControls(shadow);
-
   initEffects(
     shadow,
     computedSignals.totalSeeds,
@@ -113,7 +124,6 @@ export async function initGame(gThis, shadow, cnvs) {
 
   // Check for auto-save before generating new world
   const autoSaveLoaded = await checkAutoSave(gThis, shadow);
-
   if (!autoSaveLoaded) {
     const currentWorld = initNewWorld(
       gameConfig.BIOMES,
@@ -153,20 +163,21 @@ export async function initGame(gThis, shadow, cnvs) {
     }
   }, AUTO_SAVE_INTERVAL);
 
-  initTileInspection({
+  initTileInspection(
     cnvs,
-    camera: gameState.camera,
-    scale: gameConfig.canvasScale.get(),
-    tiles: gameConfig.TILES,
-    tileSize: gameConfig.TILE_SIZE.get(),
-    worldHeight: gameConfig.WORLD_HEIGHT.get(),
-    worldWidth: gameConfig.WORLD_WIDTH.get(),
-    world: gameState.world,
-  });
+    gameState.camera,
+    gameConfig.canvasScale.get(),
+    gameConfig.TILES,
+    gameConfig.TILE_SIZE.get(),
+    gameConfig.WORLD_HEIGHT.get(),
+    gameConfig.WORLD_WIDTH.get(),
+    gameState.world,
+  );
 
   resizeCanvas(shadow, gameConfig);
 
   const ver = await localForage.setItem(`sprite-garden-version`, version);
+
   console.log(`Sprite Garden version: ${ver}`);
 
   shadow.addEventListener("sprite-garden-reset", async (e) => {
@@ -175,6 +186,7 @@ export async function initGame(gThis, shadow, cnvs) {
     // Build color map for tiles
     let gameColorMap;
     let tileColorMap;
+
     if (Object.keys(colors).length && colors.constructor === Object) {
       gameColorMap = buildColorMapByStyleMap(colors, "--sg-color-");
       tileColorMap = buildColorMapByStyleMap(colors, "--sg-tile-color-");

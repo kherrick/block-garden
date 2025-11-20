@@ -1,5 +1,16 @@
-// Check if a position is solid
-export function isSolid({ tileSize, world, worldHeight, worldWidth, x, y }) {
+/**
+ * Check if a position is solid
+ *
+ * @param {any} tileSize
+ * @param {any} world
+ * @param {any} worldHeight
+ * @param {any} worldWidth
+ * @param {any} x
+ * @param {any} y
+ *
+ * @returns {any}
+ */
+export function isSolid(tileSize, world, worldHeight, worldWidth, x, y) {
   // Defensive logging for debugging
   if (!world || typeof world.getTile !== "function") {
     console.error("isSolid: Invalid world object", {

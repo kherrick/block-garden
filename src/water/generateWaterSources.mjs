@@ -4,7 +4,18 @@ import { createSpring } from "./createSpring.mjs";
 
 import { initNoise, waterNoise } from "../util/noise.mjs";
 
-export function generateWaterSources({
+/**
+ * @param {any} world
+ * @param {any} heights
+ * @param {any} worldWidth
+ * @param {any} worldHeight
+ * @param {any} surfaceLevel
+ * @param {any} tiles
+ * @param {any} seed
+ *
+ * @returns {void}
+ */
+export function generateWaterSources(
   world,
   heights,
   worldWidth,
@@ -12,8 +23,7 @@ export function generateWaterSources({
   surfaceLevel,
   tiles,
   seed,
-  tileSize,
-}) {
+) {
   if (!world || typeof world.getTile !== "function") {
     console.error("generateWaterSources: Invalid world object at entry", {
       hasWorld: !!world,

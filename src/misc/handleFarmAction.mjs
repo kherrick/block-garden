@@ -1,19 +1,29 @@
 import { updateState } from "../state/state.mjs";
-
 import { harvestCrop } from "./harvestCrop.mjs";
 import { plantSeed } from "./plantSeed.mjs";
 
-function harvestMaturePlant({
+/**
+ * @param {any} growthTimers
+ * @param {any} plantStructures
+ * @param {any} structure
+ * @param {any} structureKey
+ * @param {any} tiles
+ * @param {any} world
+ * @param {any} worldHeight
+ * @param {any} worldWidth
+ *
+ * @returns {void}
+ */
+function harvestMaturePlant(
   growthTimers,
   plantStructures,
   structure,
   structureKey,
-  tileName,
   tiles,
   world,
   worldHeight,
   worldWidth,
-}) {
+) {
   if (structure.blocks) {
     structure.blocks.forEach((block) => {
       if (
@@ -73,7 +83,22 @@ function harvestMaturePlant({
   growthTimers.set(updatedTimers);
 }
 
-export function handleFarmAction({
+/**
+ * @param {any} growthTimers
+ * @param {any} plantStructures
+ * @param {any} player
+ * @param {any} seedInventory
+ * @param {any} selectedSeedType
+ * @param {any} tileName
+ * @param {any} tiles
+ * @param {any} tileSize
+ * @param {any} world
+ * @param {any} worldHeight
+ * @param {any} worldWidth
+ *
+ * @returns {void}
+ */
+export function handleFarmAction(
   growthTimers,
   plantStructures,
   player,
@@ -85,7 +110,7 @@ export function handleFarmAction({
   world,
   worldHeight,
   worldWidth,
-}) {
+) {
   const playerTileX = Math.floor((player.x + player.width / 2) / tileSize);
   const playerTileY = Math.floor((player.y + player.height / 2) / tileSize);
 
@@ -139,6 +164,7 @@ export function handleFarmAction({
     let structureKey = null;
 
     const currentStructures = plantStructures.get();
+
     // Look for mature plant structures that contain this tile
     for (const [key, structure] of Object.entries(currentStructures)) {
       if (structure.mature && structure.blocks) {
@@ -158,30 +184,23 @@ export function handleFarmAction({
 
     // If we found a mature plant structure, harvest it
     if (harvestableStructure && structureKey) {
-      harvestMaturePlant({
+      harvestMaturePlant(
         growthTimers,
         plantStructures,
-        structure: harvestableStructure,
+        harvestableStructure,
         structureKey,
-        tileName,
         tiles,
         world,
         worldHeight,
         worldWidth,
-      });
+      );
 
       // Exit after successful harvest
       return;
     }
     // Check for simple crops (fallback for any remaining simple crop tiles)
     else if (currentTile && currentTile.crop) {
-      harvestCrop({
-        cropTile: currentTile,
-        tiles,
-        world,
-        x: targetX,
-        y: targetY,
-      });
+      harvestCrop(currentTile, tiles, world, targetX, targetY);
 
       // Exit after successful harvest
       return;
@@ -192,16 +211,16 @@ export function handleFarmAction({
       selectedSeedType &&
       seedInventory[selectedSeedType] > 0
     ) {
-      plantSeed({
+      plantSeed(
         growthTimers,
         plantStructures,
         seedInventory,
-        seedType: selectedSeedType,
+        selectedSeedType,
         tiles,
         world,
-        x: targetX,
-        y: targetY,
-      });
+        targetX,
+        targetY,
+      );
 
       // Exit after successful planting
       return;

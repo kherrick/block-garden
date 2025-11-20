@@ -1,3 +1,9 @@
+/**
+ * @param {any} doc
+ * @param {any} tagName
+ *
+ * @returns {any}
+ */
 export function getShadowRoot(doc, tagName) {
   const findElement = (e, n) => {
     if (!e) {
@@ -18,5 +24,6 @@ export function getShadowRoot(doc, tagName) {
   };
 
   const element = findElement(doc, tagName);
+
   return element ? element.shadowRoot : null;
 }

@@ -1,8 +1,7 @@
-import { Signal } from "../../deps/signal.mjs";
-
 import { createSaveState } from "../state/createSave.mjs";
 import { gameConfig, gameState } from "../state/state.mjs";
 import { initNewWorld } from "../init/newWorld.mjs";
+import { WorldMap } from "./world.mjs";
 
 export const mapEditorState = {
   isEnabled: false,
@@ -12,30 +11,37 @@ export const mapEditorState = {
   lastPaintedTile: null,
 };
 
-// Initialize map editor mode
-export function initMapEditor(doc, shadow, fogMode, viewMode) {
+/**
+ * Initialize map editor mode
+ *
+ * @param {any} shadow
+ * @param {any} fogMode
+ * @param {any} viewMode
+ *
+ * @returns {void}
+ */
+export function initMapEditor(shadow, fogMode, viewMode) {
   // Add map editor UI to the existing UI
-  setupMapEditorControls({
-    doc,
-    shadow,
-    fogMode,
-    viewMode,
-  });
+  setupMapEditorControls(shadow, fogMode, viewMode);
 }
 
-// Setup map editor controls
-function setupMapEditorControls({ doc, shadow, fogMode, viewMode }) {
+/**
+ * Setup map editor controls
+ *
+ * @param {any} shadow
+ * @param {any} fogMode
+ * @param {any} viewMode
+ *
+ * @returns {void}
+ */
+function setupMapEditorControls(shadow, fogMode, viewMode) {
   // Toggle map editor mode
   const toggleBtn = shadow.getElementById("toggleMapEditor");
+
   if (toggleBtn) {
     toggleBtn.addEventListener("click", () => {
       mapEditorState.isEnabled = !mapEditorState.isEnabled;
-
-      updateMapEditorUI({
-        shadow,
-        fogMode,
-        viewMode,
-      });
+      updateMapEditorUI(shadow, fogMode, viewMode);
     });
   }
 
@@ -113,8 +119,16 @@ function setupMapEditorControls({ doc, shadow, fogMode, viewMode }) {
   }
 }
 
-// Update map editor UI state
-function updateMapEditorUI({ shadow, fogMode, viewMode }) {
+/**
+ * Update map editor UI state
+ *
+ * @param {any} shadow
+ * @param {any} fogMode
+ * @param {any} viewMode
+ *
+ * @returns {void}
+ */
+function updateMapEditorUI(shadow, fogMode, viewMode) {
   const mapEditorText = shadow.getElementById("mapEditorText");
   const mapEditorControls = shadow.getElementById("mapEditorControls");
 
@@ -137,7 +151,14 @@ function updateMapEditorUI({ shadow, fogMode, viewMode }) {
   }
 }
 
-// Select a tile type for painting
+/**
+ * Select a tile type for painting
+ *
+ * @param {any} shadow
+ * @param {any} tileType
+ *
+ * @returns {void}
+ */
 function selectTile(shadow, tileType) {
   mapEditorState.selectedTile = tileType;
 
@@ -159,8 +180,21 @@ function selectTile(shadow, tileType) {
   }
 }
 
-// Handle canvas clicks for tile placement
-export function handleMapEditorClick({
+/**
+ * Handle canvas clicks for tile placement
+ *
+ * @param {any} x
+ * @param {any} y
+ * @param {any} camera
+ * @param {any} tiles
+ * @param {any} tileSize
+ * @param {any} worldHeight
+ * @param {any} worldWidth
+ * @param {any} world
+ *
+ * @returns {boolean}
+ */
+export function handleMapEditorClick(
   x,
   y,
   camera,
@@ -169,7 +203,7 @@ export function handleMapEditorClick({
   worldHeight,
   worldWidth,
   world,
-}) {
+) {
   if (
     !mapEditorState.isEnabled ||
     !mapEditorState.selectedTile ||
@@ -184,31 +218,38 @@ export function handleMapEditorClick({
   const worldX = Math.floor((x + currentCamera.x) / tileSize);
   const worldY = Math.floor((y + currentCamera.y) / tileSize);
 
-  paintTiles({
-    centerX: worldX,
-    centerY: worldY,
-    tiles,
-    worldHeight,
-    worldWidth,
-    world,
-  });
+  paintTiles(worldX, worldY, tiles, worldHeight, worldWidth, world);
 
   // Handled by map editor
   return true;
 }
 
-// Handle dragging for continuous painting
-export function handleMapEditorDrag({
+/**
+ * Handle dragging for continuous painting
+ *
+ * @param {any} x
+ * @param {any} y
+ * @param {any} camera
+ * @param {any} tiles
+ * @param {any} tileSize
+ * @param {any} worldHeight
+ * @param {any} worldWidth
+ * @param {any} world
+ * @param {boolean} [isStart=false]
+ *
+ * @returns {boolean}
+ */
+export function handleMapEditorDrag(
   x,
   y,
-  isStart = false,
   camera,
   tiles,
   tileSize,
   worldHeight,
   worldWidth,
   world,
-}) {
+  isStart = false,
+) {
   if (!mapEditorState.isEnabled || !mapEditorState.selectedTile) {
     return false;
   }
@@ -224,15 +265,9 @@ export function handleMapEditorDrag({
 
   // Only paint if we've moved to a different tile
   const currentTileKey = `${worldX},${worldY}`;
+
   if (mapEditorState.lastPaintedTile !== currentTileKey) {
-    paintTiles({
-      centerX: worldX,
-      centerY: worldY,
-      tiles,
-      worldHeight,
-      worldWidth,
-      world,
-    });
+    paintTiles(worldX, worldY, tiles, worldHeight, worldWidth, world);
 
     mapEditorState.lastPaintedTile = currentTileKey;
   }
@@ -240,22 +275,26 @@ export function handleMapEditorDrag({
   return true;
 }
 
+/** @returns {void} */
 export function handleMapEditorDragEnd() {
   mapEditorState.isDragging = false;
   mapEditorState.lastPaintedTile = null;
 }
 
-// Paint tiles at the specified location with current brush size
-function paintTiles({
-  centerX,
-  centerY,
-  tiles,
-  worldHeight,
-  worldWidth,
-  world,
-}) {
+/**
+ * Paint tiles at the specified location with current brush size
+ *
+ * @param {any} centerX
+ * @param {any} centerY
+ * @param {any} tiles
+ * @param {any} worldHeight
+ * @param {any} worldWidth
+ * @param {any} world
+ *
+ * @returns {void}
+ */
+function paintTiles(centerX, centerY, tiles, worldHeight, worldWidth, world) {
   const selectedTileType = tiles[mapEditorState.selectedTile];
-
   if (!selectedTileType) {
     return;
   }
@@ -299,27 +338,37 @@ function paintTiles({
   }
 }
 
-// Clear the entire map
+/**
+ * Clear the entire map
+ *
+ * @returns {void}
+ * */
 function clearMap() {
-  const currentWorld = gameState.world.get();
   const tiles = gameConfig.TILES;
   const worldWidth = gameConfig.WORLD_WIDTH.get();
   const worldHeight = gameConfig.WORLD_HEIGHT.get();
+  const newWorld = new WorldMap(worldWidth, worldHeight);
 
   for (let x = 0; x < worldWidth; x++) {
     for (let y = 0; y < worldHeight; y++) {
-      currentWorld.setTile(x, y, tiles.AIR);
+      newWorld.setTile(x, y, tiles.AIR);
     }
   }
 
-  gameState.world.set(currentWorld);
+  gameState.world.set(newWorld);
 
   // Clear plant structures and timers
   gameState.plantStructures.set({});
   gameState.growthTimers.set({});
 }
 
-// Fill current visible layer with selected tile
+/**
+ * Fill current visible layer with selected tile
+ *
+ * @param {any} canvas
+ *
+ * @returns {void}
+ */
 function fillCurrentLayer(canvas) {
   if (!mapEditorState.selectedTile) {
     return;
@@ -355,14 +404,18 @@ function fillCurrentLayer(canvas) {
   gameState.world.set(currentWorld);
 }
 
-// Save the current map as a game state file
+/**
+ * Save the current map as a game state file
+ *
+ * @returns {Promise<void>}
+ */
 async function saveMapAsState() {
   try {
     // Create a save state with current world and reset fog
     const saveState = createSaveState(globalThis);
 
     // Reset explored map for fresh fog
-    saveState.state.exploredMap = new Signal.State({});
+    saveState.state.exploredMap = gameState.exploredMap.get().toObject();
 
     // Set player to a safe spawn location
     const worldWidth = gameConfig.WORLD_WIDTH.get();
@@ -393,17 +446,21 @@ async function saveMapAsState() {
     // Create and download the file
     const blob = new Blob([stateJSON], { type: "application/json" });
     const url = URL.createObjectURL(blob);
-
     const a = document.createElement("a");
+
     a.href = url;
     a.download = `sprite-garden-map-${Date.now()}.json`;
+
     document.body.append(a);
+
     a.click();
+
     document.body.removeChild(a);
 
     URL.revokeObjectURL(url);
 
     console.log("Map saved as game state file");
+
     alert(
       'Map saved successfully! You can load this file using the "Load Game File" button.',
     );

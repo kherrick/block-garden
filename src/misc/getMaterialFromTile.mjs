@@ -1,3 +1,9 @@
+/**
+ * @param {any} tile
+ * @param {any} tiles
+ *
+ * @returns {any}
+ */
 export function getMaterialFromTile(tile, tiles) {
   return (
     tile?.drops ??

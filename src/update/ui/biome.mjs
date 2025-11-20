@@ -1,5 +1,15 @@
 import { getBiome } from "../../misc/getBiome.mjs";
 
+/**
+ * @param {any} biomeEl
+ * @param {any} player
+ * @param {any} biomes
+ * @param {any} tileSize
+ * @param {any} worldWidth
+ * @param {any} worldSeed
+ *
+ * @returns {void}
+ */
 export function updateBiomeUI(
   biomeEl,
   player,

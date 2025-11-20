@@ -1,4 +1,12 @@
-// Update inventory display
+/**
+ * Update inventory display
+ *
+ * @param {any} shadow
+ * @param {any} materialsInventory
+ * @param {any} seedInventory
+ *
+ * @returns {void}
+ */
 export function updateInventoryUI(shadow, materialsInventory, seedInventory) {
   // Update seed counts
   Object.keys(seedInventory).forEach((seedKey) => {

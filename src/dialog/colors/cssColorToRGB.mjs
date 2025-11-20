@@ -1,3 +1,13 @@
+/**
+ * Converts a CSS color string to an RGB array.
+ *
+ * Supports hex colors (#rgb, #rgba, #rrggbb, #rrggbbaa) and rgb(a) strings.
+ * Alpha channel is ignored, and fallback is black ([0,0,0]) if the input color is invalid.
+ *
+ * @param {Document} doc - The document object used to create a canvas context for parsing.
+ * @param {string} cssColor - The CSS color string to convert (e.g., "#ff0000", "rgb(255, 0, 0)", "red").
+ * @returns {number[]} An array of three integers [red, green, blue], each in the range 0–255.
+ */
 export function cssColorToRGB(doc, cssColor) {
   const ctx = doc.createElement("canvas").getContext("2d");
   ctx.fillStyle = cssColor;
@@ -37,6 +47,6 @@ export function cssColorToRGB(doc, cssColor) {
       parseInt(rgbMatch[3]),
     ];
 
-  // Fallback black
+  // Fallback black if parsing fails
   return [0, 0, 0];
 }

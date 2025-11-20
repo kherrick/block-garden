@@ -5,8 +5,16 @@ import {
   mapEditorState,
 } from "../map/editor.mjs";
 
-function getPointerPosition({ e, el, scale }) {
+/**
+ * @param {any} e
+ * @param {any} el
+ * @param {any} scale
+ *
+ * @returns {{ x: number; y: number; }}
+ */
+function getPointerPosition(e, el, scale) {
   const rect = el.getBoundingClientRect();
+
   let clientX, clientY;
 
   if (e.touches && e.touches.length > 0) {
@@ -26,7 +34,20 @@ function getPointerPosition({ e, el, scale }) {
   };
 }
 
-function inspectTile({
+/**
+ * @param {any} e
+ * @param {any} el
+ * @param {any} camera
+ * @param {any} scale
+ * @param {any} tiles
+ * @param {any} tileSize
+ * @param {any} world
+ * @param {any} worldHeight
+ * @param {any} worldWidth
+ *
+ * @returns {void}
+ */
+function inspectTile(
   e,
   el,
   camera,
@@ -36,8 +57,8 @@ function inspectTile({
   world,
   worldHeight,
   worldWidth,
-}) {
-  const pos = getPointerPosition({ e, el, scale });
+) {
+  const pos = getPointerPosition(e, el, scale);
   const currentCamera = camera.get();
   const worldX = Math.floor((pos.x + currentCamera.x) / tileSize);
   const worldY = Math.floor((pos.y + currentCamera.y) / tileSize);
@@ -58,20 +79,31 @@ function inspectTile({
 
     const tileName =
       Object.keys(tiles).find((key) => tiles[key] === tile) || "Custom";
+
     el.title = `Tile: ${tileName} (${worldX}, ${worldY})`;
   }
 }
 
-export function handleMouseDown({
+/**
+ * @param {any} e
+ * @param {any} camera
+ * @param {any} tiles
+ * @param {any} tileSize
+ * @param {any} worldHeight
+ * @param {any} worldWidth
+ * @param {any} world
+ *
+ * @returns {void}
+ */
+export function handleMouseDown(
   e,
   camera,
-  scale,
   tiles,
   tileSize,
   worldHeight,
   worldWidth,
   world,
-}) {
+) {
   const el = e.target;
   const rect = el.getBoundingClientRect();
   const x = e.clientX - rect.left;
@@ -79,7 +111,7 @@ export function handleMouseDown({
 
   // Check if map editor should handle this click
   if (
-    handleMapEditorClick({
+    handleMapEditorClick(
       x,
       y,
       camera,
@@ -88,22 +120,20 @@ export function handleMouseDown({
       worldHeight,
       worldWidth,
       world,
-    })
+    )
   ) {
     // Start drag for continuous painting
-    handleMapEditorDrag({
+    handleMapEditorDrag(
       x,
       y,
-      isStart: true,
       camera,
-      scale,
       tiles,
       tileSize,
       worldHeight,
       worldWidth,
       world,
-    });
-
+      true,
+    );
     e.preventDefault();
 
     // Don't process tile inspection
@@ -111,23 +141,25 @@ export function handleMouseDown({
   }
 }
 
-function handleMouseUp({
-  e,
-  camera,
-  scale,
-  tiles,
-  tileSize,
-  worldHeight,
-  worldWidth,
-  world,
-}) {
-  const el = e.target;
-
+/** @returns {void} */
+function handleMouseUp() {
   // Always call this to clean up map editor state
   handleMapEditorDragEnd();
 }
 
-function handleMouseMove({
+/**
+ * @param {any} e
+ * @param {any} camera
+ * @param {any} scale
+ * @param {any} tiles
+ * @param {any} tileSize
+ * @param {any} worldHeight
+ * @param {any} worldWidth
+ * @param {any} world
+ *
+ * @returns {void}
+ */
+function handleMouseMove(
   e,
   camera,
   scale,
@@ -136,9 +168,8 @@ function handleMouseMove({
   worldHeight,
   worldWidth,
   world,
-}) {
+) {
   const el = e.target;
-
   const rect = el.getBoundingClientRect();
   const x = e.clientX - rect.left;
   const y = e.clientY - rect.top;
@@ -147,18 +178,17 @@ function handleMouseMove({
   if (e.buttons === 1 && mapEditorState.isEnabled) {
     // Left mouse button down
     if (
-      handleMapEditorDrag({
+      handleMapEditorDrag(
         x,
         y,
-        isStart: false,
         camera,
-        scale,
         tiles,
         tileSize,
         worldHeight,
         worldWidth,
         world,
-      })
+        false,
+      )
     ) {
       e.preventDefault();
 
@@ -166,21 +196,32 @@ function handleMouseMove({
       return;
     }
   }
-
-  inspectTile({
+  inspectTile(
     e,
     el,
     camera,
     scale,
     tiles,
     tileSize,
-    world: world.get(),
+    world.get(),
     worldHeight,
     worldWidth,
-  });
+  );
 }
 
-function handleTouchStart({
+/**
+ * @param {any} e
+ * @param {any} camera
+ * @param {any} scale
+ * @param {any} tiles
+ * @param {any} tileSize
+ * @param {any} worldHeight
+ * @param {any} worldWidth
+ * @param {any} world
+ *
+ * @returns {void}
+ */
+function handleTouchStart(
   e,
   camera,
   scale,
@@ -189,58 +230,7 @@ function handleTouchStart({
   worldHeight,
   worldWidth,
   world,
-}) {
-  const el = e.target;
-
-  if (e.touches.length === 1) {
-    const rect = el.getBoundingClientRect();
-    const touch = e.touches[0];
-    const x = touch.clientX - rect.left;
-    const y = touch.clientY - rect.top;
-
-    if (handleMapEditorClick(x, y)) {
-      handleMapEditorDrag({
-        x,
-        y,
-        isStart: true,
-        camera,
-        scale,
-        tiles,
-        tileSize,
-        worldHeight,
-        worldWidth,
-        world,
-      });
-
-      e.preventDefault();
-
-      return;
-    }
-  }
-
-  inspectTile({
-    e,
-    el,
-    camera,
-    scale,
-    tiles,
-    tileSize,
-    world: world.get(),
-    worldHeight,
-    worldWidth,
-  });
-}
-
-function handleTouchMove({
-  e,
-  camera,
-  scale,
-  tiles,
-  tileSize,
-  worldHeight,
-  worldWidth,
-  world,
-}) {
+) {
   const el = e.target;
 
   if (e.touches.length === 1) {
@@ -250,40 +240,123 @@ function handleTouchMove({
     const y = touch.clientY - rect.top;
 
     if (
-      handleMapEditorDrag({
+      handleMapEditorClick(
         x,
         y,
-        isStart: false,
         camera,
-        scale,
         tiles,
         tileSize,
         worldHeight,
         worldWidth,
         world,
-      })
+      )
     ) {
+      handleMapEditorDrag(
+        x,
+        y,
+        camera,
+        tiles,
+        tileSize,
+        worldHeight,
+        worldWidth,
+        world,
+        true,
+      );
       e.preventDefault();
 
       return;
     }
   }
-
-  inspectTile({
+  inspectTile(
     e,
     el,
     camera,
     scale,
     tiles,
     tileSize,
-    world: world.get(),
+    world.get(),
     worldHeight,
     worldWidth,
-  });
+  );
 }
 
-// Mouse/touch handling for tile inspection
-export function initTileInspection({
+/**
+ * @param {any} e
+ * @param {any} camera
+ * @param {any} scale
+ * @param {any} tiles
+ * @param {any} tileSize
+ * @param {any} worldHeight
+ * @param {any} worldWidth
+ * @param {any} world
+ *
+ * @returns {void}
+ */
+function handleTouchMove(
+  e,
+  camera,
+  scale,
+  tiles,
+  tileSize,
+  worldHeight,
+  worldWidth,
+  world,
+) {
+  const el = e.target;
+
+  if (e.touches.length === 1) {
+    const rect = el.getBoundingClientRect();
+    const touch = e.touches[0];
+
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
+
+    if (
+      handleMapEditorDrag(
+        x,
+        y,
+        camera,
+        tiles,
+        tileSize,
+        worldHeight,
+        worldWidth,
+        world,
+        false,
+      )
+    ) {
+      e.preventDefault();
+
+      return;
+    }
+  }
+  inspectTile(
+    e,
+    el,
+    camera,
+    scale,
+    tiles,
+    tileSize,
+    world.get(),
+    worldHeight,
+    worldWidth,
+  );
+}
+
+/**
+ * Mouse/touch handling for tile inspection
+ *
+ * @param {any} cnvs
+ * @param {any} camera
+ * @param {any} scale
+ * @param {any} tiles
+ * @param {any} tileSize
+ * @param {any} worldHeight
+ * @param {any} worldWidth
+ * @param {any} world
+ *
+ * @returns {void}
+ */
+export function initTileInspection(
   cnvs,
   camera,
   scale,
@@ -292,21 +365,48 @@ export function initTileInspection({
   worldHeight,
   worldWidth,
   world,
-}) {
-  const v = {
-    cnvs,
-    camera,
-    scale,
-    tiles,
-    tileSize,
-    worldHeight,
-    worldWidth,
-    world,
-  };
+) {
+  cnvs.addEventListener("mousedown", (e) =>
+    handleMouseDown(e, camera, tiles, tileSize, worldHeight, worldWidth, world),
+  );
 
-  cnvs.addEventListener("mousedown", (e) => handleMouseDown({ e, ...v }));
-  cnvs.addEventListener("mousemove", (e) => handleMouseMove({ e, ...v }));
-  cnvs.addEventListener("mouseup", (e) => handleMouseUp({ e, ...v }));
-  cnvs.addEventListener("touchmove", (e) => handleTouchMove({ e, ...v }));
-  cnvs.addEventListener("touchstart", (e) => handleTouchStart({ e, ...v }));
+  cnvs.addEventListener("mousemove", (e) =>
+    handleMouseMove(
+      e,
+      camera,
+      scale,
+      tiles,
+      tileSize,
+      worldHeight,
+      worldWidth,
+      world,
+    ),
+  );
+
+  cnvs.addEventListener("mouseup", () => handleMouseUp());
+  cnvs.addEventListener("touchmove", (e) =>
+    handleTouchMove(
+      e,
+      camera,
+      scale,
+      tiles,
+      tileSize,
+      worldHeight,
+      worldWidth,
+      world,
+    ),
+  );
+
+  cnvs.addEventListener("touchstart", (e) =>
+    handleTouchStart(
+      e,
+      camera,
+      scale,
+      tiles,
+      tileSize,
+      worldHeight,
+      worldWidth,
+      world,
+    ),
+  );
 }

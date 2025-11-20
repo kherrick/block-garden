@@ -1,5 +1,12 @@
 import { terrainNoise, initNoise } from "../util/noise.mjs";
 
+/**
+ * @param {any} worldWidth
+ * @param {any} surfaceLevel
+ * @param {any} seed
+ *
+ * @returns {any}
+ */
 export function generateHeightMap(worldWidth, surfaceLevel, seed) {
   // Initialize the seeded noise generator
   initNoise(seed);
@@ -20,6 +27,7 @@ export function generateHeightMap(worldWidth, surfaceLevel, seed) {
 
     // Add some sharper features occasionally
     const sharpNoise = terrainNoise(x, parseInt(seed) + 300);
+
     if (sharpNoise > 0.6) {
       height += (sharpNoise - 0.6) * 20; // Create occasional peaks
     }
@@ -34,7 +42,14 @@ export function generateHeightMap(worldWidth, surfaceLevel, seed) {
   return smoothHeights(heights, 2);
 }
 
-// Smooth the height map to prevent overly jagged terrain
+/**
+ * Smooth the height map to prevent overly jagged terrain
+ *
+ * @param {any} heights
+ * @param {number} [passes=1]
+ *
+ * @returns {any}
+ */
 function smoothHeights(heights, passes = 1) {
   const smoothed = [...heights];
 

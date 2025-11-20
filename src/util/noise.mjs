@@ -1,10 +1,15 @@
-import { createNoise2D } from "../../deps/simplex-noise.mjs";
-import alea from "../../deps/alea.mjs";
+import { createNoise2D } from "simplex-noise";
+import alea from "alea";
 
 // Global noise function with seeded generator
 let noise2D = null;
 let currentSeed = null;
 
+/**
+ * @param {any} seed
+ *
+ * @returns {void}
+ */
 export function initNoise(seed) {
   if (seed !== currentSeed) {
     currentSeed = seed;
@@ -12,7 +17,18 @@ export function initNoise(seed) {
   }
 }
 
-// Enhanced noise function that combines multiple octaves for more natural terrain
+/**
+ * Enhanced noise function that combines multiple octaves for more natural terrain
+ *
+ * @param {any} x
+ * @param {any} y
+ * @param {number} [seed=0]
+ * @param {number} [octaves=3]
+ * @param {number} [persistence=0.5]
+ * @param {number} [scale=0.02]
+ *
+ * @returns {number}
+ */
 export function noise(
   x,
   y,
@@ -44,27 +60,64 @@ export function noise(
   return value / maxValue;
 }
 
-// Specialized terrain noise for height maps
+/**
+ * Specialized terrain noise for height maps
+ *
+ * @param {any} x
+ * @param {number} [seed=0]
+ *
+ * @returns {number}
+ */
 export function terrainNoise(x, seed = 0) {
   return noise(x, 0, seed, 4, 0.6, 0.015);
 }
 
-// Biome noise for determining biome types
+/**
+ * Biome noise for determining biome types
+ *
+ * @param {any} x
+ * @param {number} [seed=500]
+ *
+ * @returns {number}
+ */
 export function biomeNoise(x, seed = 500) {
   return noise(x, 0, seed, 2, 0.8, 0.008);
 }
 
-// Cave noise for underground generation
+/**
+ * Cave noise for underground generation
+ *
+ * @param {any} x
+ * @param {any} y
+ * @param {number} [seed=1000]
+ *
+ * @returns {number}
+ */
 export function caveNoise(x, y, seed = 1000) {
   return noise(x, y, seed, 3, 0.7, 0.05);
 }
 
-// Water source noise for placing water bodies
+/**
+ * Water source noise for placing water bodies
+ *
+ * @param {any} x
+ * @param {number} [seed=2000]
+ *
+ * @returns {number}
+ */
 export function waterNoise(x, seed = 2000) {
   return noise(x, 0, seed, 2, 0.5, 0.012);
 }
 
-// Ore distribution noise
+/**
+ * Ore distribution noise
+ *
+ * @param {any} x
+ * @param {any} y
+ * @param {number} [seed=3000]
+ *
+ * @returns {number}
+ */
 export function oreNoise(x, y, seed = 3000) {
   return noise(x, y, seed, 2, 0.4, 0.08);
 }

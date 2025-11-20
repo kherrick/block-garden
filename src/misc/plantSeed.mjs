@@ -1,6 +1,18 @@
 import { updateState } from "../state/state.mjs";
 
-export function plantSeed({
+/**
+ * @param {any} growthTimers
+ * @param {any} plantStructures
+ * @param {any} seedInventory
+ * @param {any} seedType
+ * @param {any} tiles
+ * @param {any} world
+ * @param {any} x
+ * @param {any} y
+ *
+ * @returns {void}
+ */
+export function plantSeed(
   growthTimers,
   plantStructures,
   seedInventory,
@@ -9,7 +21,7 @@ export function plantSeed({
   world,
   x,
   y,
-}) {
+) {
   // Check if there's farmable ground below
   const belowTile = world.getTile(x, y + 1);
   if (!belowTile || !belowTile.farmable) {
@@ -76,9 +88,7 @@ export function plantSeed({
     });
 
     console.log(
-      `Planted ${seedType} at (${x}, ${y}), ${
-        seedInventory[seedType] - 1
-      } seeds remaining`,
+      `Planted ${seedType} at (${x}, ${y}), ${seedInventory[seedType] - 1} seeds remaining`,
     );
   } else {
     console.log(

@@ -1,3 +1,11 @@
+/**
+ * @param {any} x
+ * @param {any} y
+ * @param {any} progress
+ * @param {any} tiles
+ *
+ * @returns {{ x: any; y: any; tile: any; }[]}
+ */
 export function generatePineTreeStructure(x, y, progress, tiles) {
   const blocks = [];
 
@@ -39,6 +47,7 @@ export function generatePineTreeStructure(x, y, progress, tiles) {
 
     if (Math.random() < 0.5)
       blocks.push({ x: x - 1, y: midY, tile: tiles.PINE_CONE });
+
     if (Math.random() < 0.5)
       blocks.push({ x: x + 1, y: midY, tile: tiles.PINE_CONE });
   }

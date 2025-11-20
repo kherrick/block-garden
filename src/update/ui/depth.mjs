@@ -1,3 +1,11 @@
+/**
+ * @param {any} depthEl
+ * @param {any} player
+ * @param {any} surfaceLevel
+ * @param {any} tileSize
+ *
+ * @returns {void}
+ */
 export function updateDepthUI(depthEl, player, surfaceLevel, tileSize) {
   const playerTileY = Math.floor(player.get().y / tileSize);
 

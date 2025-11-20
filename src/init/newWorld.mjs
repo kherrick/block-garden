@@ -1,7 +1,25 @@
 import { extractSeeds, mapValuesToProvided } from "../misc/selectSeed.mjs";
 import { generateWorld } from "../generate/world.mjs";
 import { registerTreeStructures } from "../misc/registerTreeStructures.mjs";
+import { WorldMap } from "../map/world.mjs";
 
+/**
+ * @param {any} biomes
+ * @param {any} surfaceLevel
+ * @param {any} tileSize
+ * @param {any} tiles
+ * @param {any} worldHeight
+ * @param {any} worldWidth
+ * @param {any} worldSeed
+ * @param {any} gameTime
+ * @param {any} growthTimers
+ * @param {any} plantStructures
+ * @param {any} player
+ * @param {any} seedInventory
+ * @param {any} [newSeed=null]
+ *
+ * @returns {WorldMap}
+ */
 export function initNewWorld(
   biomes,
   surfaceLevel,
@@ -21,20 +39,20 @@ export function initNewWorld(
 
   if (newSeed !== null) {
     worldSeed.set(newSeed.toString());
+
     currentWorldSeed = newSeed;
   } else {
     currentWorldSeed = worldSeed?.get();
   }
 
-  const currentWorld = generateWorld({
+  const currentWorld = generateWorld(
     biomes,
     surfaceLevel,
     tiles,
-    tileSize,
-    worldSeed: currentWorldSeed,
+    currentWorldSeed,
     worldHeight,
     worldWidth,
-  });
+  );
 
   // Reset game state
   growthTimers.set({});
@@ -49,6 +67,7 @@ export function initNewWorld(
     extractSeeds(tiles),
     defaultNumberOfInitialSeeds,
   );
+
   seedInventory.set(initialSeedInventory);
 
   // Find a good spawn location

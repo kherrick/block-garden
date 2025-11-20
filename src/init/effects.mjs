@@ -1,7 +1,23 @@
-import { effect } from "../../deps/signal.mjs";
+import { effect } from "../util/effect.mjs";
 
 import { updateInventoryUI } from "../update/ui/inventory.mjs";
+import { getRandomSeed } from "../misc/getRandomSeed.mjs";
 
+/**
+ * @param {any} shadow
+ * @param {any} totalSeeds
+ * @param {any} breakMode
+ * @param {any} fogMode
+ * @param {any} worldSeed
+ * @param {any} gameTime
+ * @param {any} materialsInventory
+ * @param {any} seedInventory
+ * @param {any} selectedMaterialType
+ * @param {any} selectedSeedType
+ * @param {any} viewMode
+ *
+ * @returns {void}
+ */
 export function initEffects(
   shadow,
   totalSeeds,
@@ -38,6 +54,7 @@ export function initEffects(
       const randomSeed = getRandomSeed();
 
       seedInput.value = randomSeed;
+
       currentSeedDisplay.textContent = randomSeed;
     }
   });
@@ -45,8 +62,8 @@ export function initEffects(
   effect(() => {
     // Auto-update gameState
     const currentGameTime = gameTime.get();
-    const gameTimeEl = shadow.getElementById("gameTime");
 
+    const gameTimeEl = shadow.getElementById("gameTime");
     if (gameTimeEl) {
       gameTimeEl.textContent = Math.floor(currentGameTime);
     }
@@ -55,8 +72,8 @@ export function initEffects(
   effect(() => {
     // Auto-update viewMode
     const currentViewMode = viewMode.get();
-    const viewModeTextEl = shadow.getElementById("viewModeText");
 
+    const viewModeTextEl = shadow.getElementById("viewModeText");
     if (viewModeTextEl) {
       viewModeTextEl.textContent =
         currentViewMode === "normal" ? "View Normal" : "View X-Ray";

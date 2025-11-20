@@ -1,7 +1,24 @@
 import { checkCollision } from "../util/checkCollision.mjs";
 import { isKeyPressed } from "../util/isKeyPressed.mjs";
 
-// Update player physics
+/**
+ * Update player physics
+ *
+ * @param {any} friction
+ * @param {any} gravity
+ * @param {any} maxFallSpeed
+ * @param {any} tileSize
+ * @param {any} worldHeight
+ * @param {any} worldWidth
+ * @param {any} world
+ * @param {any} camera
+ * @param {any} player
+ * @param {any} cnvs
+ * @param {any} shadow
+ * @param {number} [movementScale=1]
+ *
+ * @returns {void}
+ */
 export function updatePlayer(
   friction,
   gravity,
@@ -12,15 +29,16 @@ export function updatePlayer(
   world,
   camera,
   player,
-  movementScale = 1,
   cnvs,
   shadow,
+  movementScale = 1,
 ) {
   const currentPlayer = player.get();
   const currentCamera = camera.get();
   const currentWorld = world.get();
 
   currentPlayer.velocityY += gravity;
+
   if (currentPlayer.velocityY > maxFallSpeed) {
     currentPlayer.velocityY = maxFallSpeed;
   }
@@ -33,29 +51,35 @@ export function updatePlayer(
   if (isKeyPressed(shadow, "upleft")) {
     horizontalInput = -1;
     verticalInput = -1;
+
     currentPlayer.lastDirection = -1;
   } else if (isKeyPressed(shadow, "upright")) {
     horizontalInput = 1;
     verticalInput = -1;
+
     currentPlayer.lastDirection = 1;
   } else if (isKeyPressed(shadow, "downleft")) {
     horizontalInput = -1;
     verticalInput = 1;
+
     currentPlayer.lastDirection = -1;
   } else if (isKeyPressed(shadow, "downright")) {
     horizontalInput = 1;
     verticalInput = 1;
+
     currentPlayer.lastDirection = 1;
   } else {
     // Check for individual directional inputs
     if (isKeyPressed(shadow, "a") || isKeyPressed(shadow, "arrowleft")) {
       horizontalInput = -1;
+
       currentPlayer.lastDirection = -1;
     } else if (
       isKeyPressed(shadow, "d") ||
       isKeyPressed(shadow, "arrowright")
     ) {
       horizontalInput = 1;
+
       currentPlayer.lastDirection = 1;
     }
 
@@ -100,22 +124,23 @@ export function updatePlayer(
   // For diagonal movement, apply a slight speed reduction to maintain balance
   if (horizontalInput !== 0 && verticalInput !== 0) {
     const diagonalSpeedMultiplier = 0.707; // 1/√2 for proper diagonal speed
+
     currentPlayer.velocityX *= diagonalSpeedMultiplier;
   }
 
   // Move horizontally
   const newX = currentPlayer.x + currentPlayer.velocityX;
   if (
-    !checkCollision({
-      height: currentPlayer.height,
+    !checkCollision(
+      currentPlayer.height,
       tileSize,
-      width: currentPlayer.width,
-      world: currentWorld,
+      currentPlayer.width,
+      currentWorld,
       worldHeight,
       worldWidth,
-      x: newX,
-      y: currentPlayer.y,
-    })
+      newX,
+      currentPlayer.y,
+    )
   ) {
     currentPlayer.x = newX;
   } else {
@@ -125,16 +150,16 @@ export function updatePlayer(
   // Move vertically
   const newY = currentPlayer.y + currentPlayer.velocityY;
   if (
-    !checkCollision({
-      height: currentPlayer.height,
+    !checkCollision(
+      currentPlayer.height,
       tileSize,
-      width: currentPlayer.width,
-      world: currentWorld,
+      currentPlayer.width,
+      currentWorld,
       worldHeight,
       worldWidth,
-      x: currentPlayer.x,
-      y: newY,
-    })
+      currentPlayer.x,
+      newY,
+    )
   ) {
     currentPlayer.y = newY;
     currentPlayer.onGround = false;
@@ -142,6 +167,7 @@ export function updatePlayer(
     if (currentPlayer.velocityY > 0) {
       currentPlayer.onGround = true;
     }
+
     currentPlayer.velocityY = 0;
   }
 
@@ -150,6 +176,7 @@ export function updatePlayer(
     0,
     Math.min(currentPlayer.x, worldWidth * tileSize - currentPlayer.width),
   );
+
   currentPlayer.y = Math.max(
     0,
     Math.min(currentPlayer.y, worldHeight * tileSize - currentPlayer.height),
@@ -169,6 +196,7 @@ export function updatePlayer(
     0,
     Math.min(currentCamera.x, worldWidth * tileSize - cnvs.width),
   );
+
   currentCamera.y = Math.max(
     0,
     Math.min(currentCamera.y, worldHeight * tileSize - cnvs.height),

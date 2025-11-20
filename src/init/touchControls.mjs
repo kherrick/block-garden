@@ -3,12 +3,19 @@ import { handleBreakBlockWithWaterPhysics } from "../misc/handleBreakBlock.mjs";
 import { handleFarmAction } from "../misc/handleFarmAction.mjs";
 import { handlePlaceBlock } from "../misc/handlePlaceBlock.mjs";
 
-// Touch controls
+/**
+ * Touch controls
+ *
+ * @param {any} shadow
+ *
+ * @returns {void}
+ */
 export function initTouchControls(shadow) {
   const touchButtons = shadow.querySelectorAll(".touch-btn");
 
   touchButtons.forEach((btn) => {
     const key = btn.getAttribute("data-key");
+
     let isPressed = false;
     let intervalId = null;
 
@@ -17,34 +24,34 @@ export function initTouchControls(shadow) {
       btn.style.background = "var(--sg-color-gray-alpha-30)";
 
       if (key === "f") {
-        handleFarmAction({
-          growthTimers: gameState.growthTimers,
-          plantStructures: gameState.plantStructures,
-          player: gameState.player.get(),
-          seedInventory: gameState.seedInventory.get(),
-          selectedSeedType: gameState.selectedSeedType.get(),
-          tileName: gameConfig.TileName,
-          tiles: gameConfig.TILES,
-          tileSize: gameConfig.TILE_SIZE.get(),
-          world: gameState.world.get(),
-          worldHeight: gameConfig.WORLD_HEIGHT.get(),
-          worldWidth: gameConfig.WORLD_WIDTH.get(),
-        });
+        handleFarmAction(
+          gameState.growthTimers,
+          gameState.plantStructures,
+          gameState.player.get(),
+          gameState.seedInventory.get(),
+          gameState.selectedSeedType.get(),
+          gameConfig.TileName,
+          gameConfig.TILES,
+          gameConfig.TILE_SIZE.get(),
+          gameState.world.get(),
+          gameConfig.WORLD_HEIGHT.get(),
+          gameConfig.WORLD_WIDTH.get(),
+        );
       }
 
       if (key === "r") {
-        handleBreakBlockWithWaterPhysics({
-          growthTimers: gameState.growthTimers,
-          plantStructures: gameState.plantStructures,
-          player: gameState.player,
-          tiles: gameConfig.TILES,
-          tileSize: gameConfig.TILE_SIZE.get(),
-          world: gameState.world,
-          worldHeight: gameConfig.WORLD_HEIGHT.get(),
-          worldWidth: gameConfig.WORLD_WIDTH.get(),
-          mode: gameConfig.breakMode.get(),
-          queue: gameState.waterPhysicsQueue,
-        });
+        handleBreakBlockWithWaterPhysics(
+          gameState.growthTimers,
+          gameState.plantStructures,
+          gameState.player,
+          gameConfig.TILES,
+          gameConfig.TILE_SIZE.get(),
+          gameState.world,
+          gameConfig.WORLD_HEIGHT.get(),
+          gameConfig.WORLD_WIDTH.get(),
+          gameState.waterPhysicsQueue,
+          gameConfig.breakMode.get(),
+        );
       }
     }
 
@@ -125,33 +132,33 @@ export function initTouchControls(shadow) {
     pb.addEventListener(
       "touchstart",
       async () =>
-        await handlePlaceBlock({
-          key: pb.dataset.key,
-          materialsInventory: gameState.materialsInventory.get(),
-          player: gameState.player.get(),
-          selectedMaterialType: gameState.selectedMaterialType.get(),
-          tiles: gameConfig.TILES,
-          tileSize: gameConfig.TILE_SIZE.get(),
-          world: gameState.world.get(),
-          worldHeight: gameConfig.WORLD_HEIGHT.get(),
-          worldWidth: gameConfig.WORLD_WIDTH.get(),
-        }),
+        await handlePlaceBlock(
+          pb.dataset.key,
+          gameState.materialsInventory.get(),
+          gameState.player.get(),
+          gameState.selectedMaterialType.get(),
+          gameConfig.TILES,
+          gameConfig.TILE_SIZE.get(),
+          gameState.world.get(),
+          gameConfig.WORLD_HEIGHT.get(),
+          gameConfig.WORLD_WIDTH.get(),
+        ),
     );
 
     pb.addEventListener(
       "click",
       async () =>
-        await handlePlaceBlock({
-          key: pb.dataset.key,
-          materialsInventory: gameState.materialsInventory.get(),
-          player: gameState.player.get(),
-          selectedMaterialType: gameState.selectedMaterialType.get(),
-          tiles: gameConfig.TILES,
-          tileSize: gameConfig.TILE_SIZE.get(),
-          world: gameState.world.get(),
-          worldHeight: gameConfig.WORLD_HEIGHT.get(),
-          worldWidth: gameConfig.WORLD_WIDTH.get(),
-        }),
+        await handlePlaceBlock(
+          pb.dataset.key,
+          gameState.materialsInventory.get(),
+          gameState.player.get(),
+          gameState.selectedMaterialType.get(),
+          gameConfig.TILES,
+          gameConfig.TILE_SIZE.get(),
+          gameState.world.get(),
+          gameConfig.WORLD_HEIGHT.get(),
+          gameConfig.WORLD_WIDTH.get(),
+        ),
     );
   });
 

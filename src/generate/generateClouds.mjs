@@ -1,12 +1,15 @@
 import { initNoise, noise } from "../util/noise.mjs";
 
-export function generateClouds({
-  world,
-  worldWidth,
-  surfaceLevel,
-  tiles,
-  seed,
-}) {
+/**
+ * @param {any} world
+ * @param {any} worldWidth
+ * @param {any} surfaceLevel
+ * @param {any} tiles
+ * @param {any} seed
+ *
+ * @returns {void}
+ */
+export function generateClouds(world, worldWidth, surfaceLevel, tiles, seed) {
   initNoise(seed);
 
   const cloudSeed = parseInt(seed);
@@ -32,7 +35,6 @@ export function generateClouds({
 
           // Skip if out of bounds
           if (cloudX >= worldWidth || cloudY + dy >= surfaceLevel) continue;
-
           // Create rounded cloud edges
           const isEdge =
             dx === 0 ||

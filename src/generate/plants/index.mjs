@@ -19,6 +19,15 @@ import { generateTulipStructure } from "./tulip.mjs";
 import { generateWheatStructure } from "./wheat.mjs";
 import { generateWillowTreeStructure } from "./willowTree.mjs";
 
+/**
+ * @param {any} x
+ * @param {any} y
+ * @param {any} seedType
+ * @param {any} progress
+ * @param {any} tiles
+ *
+ * @returns {{ x: any; y: any; tile: any; }[]}
+ */
 export function generatePlantStructure(x, y, seedType, progress, tiles) {
   // Ensure progress is between 0 and 1
   progress = Math.max(0, Math.min(1, progress));

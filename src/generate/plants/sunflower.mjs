@@ -1,3 +1,11 @@
+/**
+ * @param {any} x
+ * @param {any} y
+ * @param {any} progress
+ * @param {any} tiles
+ *
+ * @returns {{ x: any; y: any; tile: any; }[]}
+ */
 export function generateSunflowerStructure(x, y, progress, tiles) {
   const blocks = [];
 

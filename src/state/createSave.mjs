@@ -1,3 +1,8 @@
+/**
+ * @param {any} gThis
+ *
+ * @returns {{ config: { breakMode: any; canvasScale: any; currentResolution: any; fogMode: any; fogScale: any; FRICTION: any; GRAVITY: any; isFogScaled: any; MAX_FALL_SPEED: any; SURFACE_LEVEL: any; TILE_SIZE: any; version: any; WORLD_HEIGHT: any; WORLD_WIDTH: any; worldSeed: any; }; state: { camera: any; exploredMap: any; gameTime: any; growthTimers: any; materialsInventory: any; plantStructures: any; player: any; seedInventory: any; seeds: any; selectedMaterialType: any; selectedSeedType: any; viewMode: any; world: any;  }; }}
+ */
 export function createSaveState(gThis) {
   const state = gThis.spriteGarden.state;
   const config = gThis.spriteGarden.config;

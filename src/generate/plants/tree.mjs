@@ -1,5 +1,13 @@
 import { getRandomSeed } from "../../misc/getRandomSeed.mjs";
 
+/**
+ * @param {any} x
+ * @param {any} y
+ * @param {any} progress
+ * @param {any} tiles
+ *
+ * @returns {{ x: any; y: any; tile: any; }[]}
+ */
 export function generateTreeStructure(x, y, progress, tiles) {
   const blocks = [];
 
@@ -33,6 +41,7 @@ export function generateTreeStructure(x, y, progress, tiles) {
 
         // Create circular canopy shape
         const distance = Math.sqrt(dx * dx + dy * dy);
+
         if (distance <= leafRadius && dy <= 0) {
           // Don't replace trunk blocks
           const isTrunk = blocks.find(

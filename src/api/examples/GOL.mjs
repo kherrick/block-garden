@@ -1,6 +1,8 @@
 import { SpriteGarden } from "../SpriteGarden.mjs";
 
 export class GOL extends SpriteGarden {
+  game;
+
   createGameOfLife(config = {}) {
     const gameHeight = 60;
 
@@ -36,6 +38,7 @@ export class GOL extends SpriteGarden {
         [0, 0, 1],
         [1, 1, 1],
       ];
+
       for (let r = 0; r < glider.length; r++) {
         for (let c = 0; c < glider[0].length; c++) {
           if (r < height && c < width) {
@@ -81,6 +84,7 @@ export class GOL extends SpriteGarden {
     // Conway's Game of Life rules
     const countNeighbors = (row, col) => {
       let count = 0;
+
       for (let dr = -1; dr <= 1; dr++) {
         for (let dc = -1; dc <= 1; dc++) {
           if (dr === 0 && dc === 0) continue;

@@ -1,8 +1,18 @@
 import { updateState } from "../state/state.mjs";
 import { getHarvestMap } from "./getHarvestMap.mjs";
 
-export function harvestCrop({ cropTile, tiles, world, x, y }) {
+/**
+ * @param {any} cropTile
+ * @param {any} tiles
+ * @param {any} world
+ * @param {any} x
+ * @param {any} y
+ *
+ * @returns {void}
+ */
+export function harvestCrop(cropTile, tiles, world, x, y) {
   const seedType = getHarvestMap(tiles)[cropTile.id];
+
   if (seedType) {
     // Give player 2-4 seeds when harvesting simple crops
     const seedsGained = 2 + Math.floor(Math.random() * 3);

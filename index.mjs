@@ -2,12 +2,17 @@ import { autoSaveGame } from "./src/dialog/storage.mjs";
 import { initGame } from "./src/init/game.mjs";
 
 export const tagName = "sprite-garden";
+
+/**
+ * @extends HTMLElement
+ */
 export class SpriteGarden extends HTMLElement {
   constructor() {
     super();
 
     if (!this.shadowRoot) {
       const template = globalThis.document.createElement("template");
+
       template.innerHTML = `
         <style>
           [hidden] {
@@ -1832,11 +1837,13 @@ export class SpriteGarden extends HTMLElement {
 
       // Attach open shadow root
       const shadow = this.attachShadow({ mode: "open" });
+
       // Clone the template content and append to shadow root
       shadow.appendChild(template.content.cloneNode(true));
     }
   }
 
+  /** @returns {Promise<void>} */
   async connectedCallback() {
     const shadow = this.shadowRoot;
     const canvas = shadow.querySelector("canvas");
@@ -1844,6 +1851,7 @@ export class SpriteGarden extends HTMLElement {
     await initGame(globalThis, shadow, canvas);
   }
 
+  /** @returns {Promise<void>} */
   async disconnectedCallback() {
     await autoSaveGame(globalThis);
   }

@@ -1,4 +1,4 @@
-import { Workbox } from "https://esm.run/workbox-window";
+import { Workbox } from "workbox-window";
 
 globalThis.isLocalhost = globalThis.location.host === "localhost:3000";
 

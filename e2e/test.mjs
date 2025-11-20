@@ -19,13 +19,16 @@ async function waitForSpriteGarden(page) {
   await page.evaluate(() => {
     return new Promise((resolve, reject) => {
       const sprite = document.querySelector("sprite-garden");
+
       if (!sprite) {
         reject(new Error("<sprite-garden> element not found"));
+
         return;
       }
 
       const timeoutId = setTimeout(() => {
         sprite.removeEventListener("sprite-garden-load", onLoading);
+
         reject(
           new Error(
             'Timed out waiting for "sprite-garden-load" event with expected details from <sprite-garden>',
@@ -35,6 +38,7 @@ async function waitForSpriteGarden(page) {
 
       function onLoading(event) {
         const detail = event.detail;
+
         if (
           detail &&
           detail.isLoading === false &&
@@ -42,7 +46,9 @@ async function waitForSpriteGarden(page) {
           detail.error === null
         ) {
           clearTimeout(timeoutId);
+
           sprite.removeEventListener("sprite-garden-load", onLoading);
+
           resolve();
         }
       }

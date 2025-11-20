@@ -1,5 +1,15 @@
 import { generatePlantStructure } from "../generate/plants/index.mjs";
 
+/**
+ * @param {any} growthTimers
+ * @param {any} plantStructures
+ * @param {any} tiles
+ * @param {any} world
+ * @param {any} worldHeight
+ * @param {any} worldWidth
+ *
+ * @returns {void}
+ */
 export function updateCrops(
   growthTimers,
   plantStructures,
@@ -12,7 +22,6 @@ export function updateCrops(
   let structuresChanged = false;
 
   const currentWorld = world.get();
-
   const updatedTimers = { ...growthTimers.get() };
   const updatedStructures = { ...plantStructures.get() };
 
@@ -51,8 +60,6 @@ export function updateCrops(
         timer.seedType,
         growthProgress,
         tiles,
-        worldWidth,
-        worldHeight,
       );
 
       // Place the new plant blocks in the world
@@ -78,6 +85,7 @@ export function updateCrops(
       }
 
       delete updatedTimers[key];
+
       timersChanged = true;
     }
   }

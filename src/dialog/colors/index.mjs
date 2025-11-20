@@ -7,6 +7,11 @@ import { saveColors } from "./saveColors.mjs";
 export const COLOR_STORAGE_KEY = "sprite-garden-custom-colors";
 
 export class ColorCustomizationDialog {
+  /**
+   * @param {any} gThis
+   * @param {any} doc
+   * @param {any} shadow
+   */
   constructor(gThis, doc, shadow) {
     this.gThis = gThis;
     this.doc = doc;
@@ -21,10 +26,10 @@ export class ColorCustomizationDialog {
     this.handleDialogKeydown = this.handleDialogKeydown.bind(this);
     this.handleReset = this.handleReset.bind(this);
     this.handleSave = this.handleSave.bind(this);
-
     this.dirty = false;
   }
 
+  /** @returns {Promise<any>} */
   async createDialog() {
     if (this.dialog) {
       this.dialog.remove();
@@ -35,6 +40,7 @@ export class ColorCustomizationDialog {
     this.colors = { ...this.originalColors };
 
     const dialog = this.doc.createElement("dialog");
+
     dialog.addEventListener("close", this.handleDialogClose);
     dialog.addEventListener("keydown", this.handleDialogKeydown);
 
@@ -129,6 +135,7 @@ export class ColorCustomizationDialog {
     return dialog;
   }
 
+  /** @returns {Promise<void>} */
   async handleSave() {
     await saveColors(this.colors, COLOR_STORAGE_KEY);
     await applyColors(this.shadow, this.colors);
@@ -142,9 +149,11 @@ export class ColorCustomizationDialog {
     );
 
     this.dirty = false;
+
     this.close();
   }
 
+  /** @returns {Promise<void>} */
   async handleReset() {
     if (
       confirm("Reset all colors to defaults and close? This cannot be undone.")
@@ -160,10 +169,12 @@ export class ColorCustomizationDialog {
       );
 
       this.dirty = false;
+
       this.close();
     }
   }
 
+  /** @returns {void} */
   renderColorInputs() {
     const container = this.dialog.querySelector("#colorInputsContainer");
 
@@ -174,6 +185,7 @@ export class ColorCustomizationDialog {
       // Extract category from property name (e.g., --sg-color-air, --sg-color-gray-50)
       const match = property.match(/--sg-(?:color-)?([a-z]+)-/);
       const category = match ? match[1] : "other";
+
       if (["host", "touch", "ui"].includes(category)) {
         continue;
       }
@@ -206,7 +218,6 @@ export class ColorCustomizationDialog {
         margin: 0 0 0.5rem 0;
         padding-bottom: 0.25rem;
       `;
-
       categoryDiv.append(categoryTitle);
       container.append(categoryDiv);
 
@@ -277,13 +288,20 @@ export class ColorCustomizationDialog {
 
         inputWrapper.append(colorInput);
         inputWrapper.append(textInput);
+
         inputGroup.append(label);
         inputGroup.append(inputWrapper);
+
         container.append(inputGroup);
       }
     }
   }
 
+  /**
+   * @param {any} color
+   *
+   * @returns {any}
+   */
   normalizeColor(color) {
     // Try to convert color to hex format for color input
     if (!color) return "#000000";
@@ -301,6 +319,12 @@ export class ColorCustomizationDialog {
     return ctx.fillStyle;
   }
 
+  /**
+   * @param {any} property
+   * @param {any} value
+   *
+   * @returns {void}
+   */
   handleColorChange(property, value) {
     this.colors[property] = value;
     this.dirty = true;
@@ -310,6 +334,7 @@ export class ColorCustomizationDialog {
     root.style.setProperty(property, value);
   }
 
+  /** @returns {void} */
   initEventListeners() {
     const closeBtn = this.dialog.querySelector("#closeColorDialog");
     const saveBtn = this.dialog.querySelector("#saveColorsBtn");
@@ -320,10 +345,16 @@ export class ColorCustomizationDialog {
     resetBtn.addEventListener("click", this.handleReset);
   }
 
+  /** @returns {void} */
   show() {
     this.dialog.showModal();
   }
 
+  /**
+   * @param {any} e
+   *
+   * @returns {void}
+   */
   handleDialogKeydown(e) {
     if (e.key === "Escape") {
       e.preventDefault();
@@ -332,6 +363,7 @@ export class ColorCustomizationDialog {
     }
   }
 
+  /** @returns {void} */
   close() {
     if (this.dirty) {
       if (confirm("Close without saving?")) {
@@ -347,10 +379,12 @@ export class ColorCustomizationDialog {
     this.dialog.close();
   }
 
+  /** @returns {void} */
   handleDialogClose() {
     this.removeEventListeners();
   }
 
+  /** @returns {void} */
   removeEventListeners() {
     const closeBtn = this.dialog.querySelector("#closeColorDialog");
     const saveBtn = this.dialog.querySelector("#saveColorsBtn");

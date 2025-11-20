@@ -1,9 +1,18 @@
+/**
+ * @param {any} x
+ * @param {any} y
+ * @param {any} progress
+ * @param {any} tiles
+ *
+ * @returns {{ x: any; y: any; tile: any; }[]}
+ */
 export function generateWheatStructure(x, y, progress, tiles) {
   const blocks = [];
 
   // Early stage - just the growing seed
   if (progress < 0.1) {
     blocks.push({ x, y, tile: tiles.WHEAT_GROWING });
+
     return blocks;
   }
 
@@ -26,6 +35,7 @@ export function generateWheatStructure(x, y, progress, tiles) {
       if (Math.random() < 0.4) {
         blocks.push({ x: x - 1, y: tileY, tile: tiles.WHEAT_STALK });
       }
+
       if (Math.random() < 0.4) {
         blocks.push({ x: x + 1, y: tileY, tile: tiles.WHEAT_STALK });
       }
@@ -35,6 +45,7 @@ export function generateWheatStructure(x, y, progress, tiles) {
   // Add grain clusters when fully mature
   if (progress > 0.9) {
     const topY = y - currentHeight + 1;
+
     blocks.push({ x: x - 1, y: topY, tile: tiles.WHEAT_GRAIN });
     blocks.push({ x: x + 1, y: topY, tile: tiles.WHEAT_GRAIN });
   }

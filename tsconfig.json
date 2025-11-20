@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "esModuleInterop": true,
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "outDir": "dist",
+    "lib": [
+      "esnext",
+      "esnext.disposable",
+      "dom"
+    ],
+    "skipLibCheck": true
+  },
+  "exclude": [
+    "deps"
+  ],
+  "files": [
+    "index.mjs",
+    "service-worker/init.mjs",
+    "src/api/index.mjs",
+    "src/api/examples/index.mjs"
+  ]
+}

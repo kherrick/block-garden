@@ -1,5 +1,10 @@
-import localForage from "../../../deps/localForage.mjs";
+import localForage from "localforage";
 
+/**
+ * @param {any} doc
+ *
+ * @returns {Promise<void>}
+ */
 export async function updateMovementScaleUI(doc) {
   let movementScaleValue = await localForage.getItem(
     `sprite-garden-movement-scale`,
@@ -18,6 +23,11 @@ export async function updateMovementScaleUI(doc) {
     `&times;${Number(movementScaleValue)}`;
 }
 
+/**
+ * @param {any} doc
+ *
+ * @returns {Promise<void>}
+ */
 export async function updateMovementScaleValue(doc) {
   const movementScaleValue = Number(
     Number(await localForage.getItem("sprite-garden-movement-scale")) || 1,

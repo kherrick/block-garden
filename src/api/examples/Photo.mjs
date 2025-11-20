@@ -30,6 +30,7 @@ export class DrawBitmap extends SpriteGarden {
 
     // Compute new size preserving aspect ratio
     let targetWidth, targetHeight;
+
     if (image.width >= image.height) {
       targetWidth = maxSize;
       targetHeight = Math.round((image.height / image.width) * maxSize);
@@ -117,11 +118,13 @@ export class DrawBitmap extends SpriteGarden {
 
     // Calculate average colors as ideal colors
     const idealColorMap = {};
+
     for (const tileName of tileNamesList) {
       const count = tileColorCount[tileName];
 
       if (count > 0) {
         const avg = tileColorAccum[tileName].map((c) => Math.round(c / count));
+
         const [r, g, b] = avg;
 
         idealColorMap[
@@ -183,13 +186,17 @@ export class DrawBitmap extends SpriteGarden {
 
     // Build bitmap as 2D array of tileNames
     const bitmapTileNames = [];
+
     for (let y = 0; y < targetHeight; y++) {
       const row = [];
 
       for (let x = 0; x < targetWidth; x++) {
         const i = (y * targetWidth + x) * 4;
+
         const [r, g, b] = [pixels[i], pixels[i + 1], pixels[i + 2]];
+
         const nearest = nearestColor(paletteRGB, r, g, b);
+
         const tileName = rgbToTileName[nearest.join(",")] || "LAVA"; // fallback
 
         row.push(tileName);
@@ -199,11 +206,13 @@ export class DrawBitmap extends SpriteGarden {
     }
 
     let bottomCenterX = x;
+
     if (bottomCenterX === null) {
       bottomCenterX = this.config.WORLD_WIDTH.get() / 2;
     }
 
     let bottomCenterY = y;
+
     if (bottomCenterY === null) {
       bottomCenterY = this.config.SURFACE_LEVEL.get() - 10;
     }

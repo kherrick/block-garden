@@ -1,14 +1,16 @@
-import { Signal } from "../../deps/signal.mjs";
-
+import { Signal } from "signal-polyfill";
 import { gameConfig } from "./config/index.mjs";
+import { FogMap } from "../map/fog.mjs";
 
 const { TileName } = gameConfig;
 
 export const gameState = {
   // World data
-  world: new Signal.State([]),
+  world: new Signal.State({
+    setTile: (...deps) => {},
+  }),
   // Tracks which tiles have been explored for map fog
-  exploredMap: new Signal.State({}),
+  exploredMap: new Signal.State(new FogMap()),
   // Store plant growth data
   plantStructures: new Signal.State({}),
   gameTime: new Signal.State(0),
@@ -87,6 +89,12 @@ export const computedSignals = {
   }),
 };
 
+/**
+ * @param {any} key
+ * @param {any} updater
+ *
+ * @returns {void}
+ */
 export function updateState(key, updater) {
   const current = gameState[key]?.get();
 
@@ -95,6 +103,12 @@ export function updateState(key, updater) {
   }
 }
 
+/**
+ * @param {any} key
+ * @param {any} updater
+ *
+ * @returns {void}
+ */
 export function updateConfig(key, updater) {
   const current = gameConfig[key]?.get();
 
@@ -103,22 +117,50 @@ export function updateConfig(key, updater) {
   }
 }
 
+/**
+ * @param {any} key
+ * @param {any} value
+ *
+ * @returns {any}
+ */
 export function setConfig(key, value) {
   return gameConfig[key]?.set(value);
 }
 
+/**
+ * @param {any} key
+ *
+ * @returns {any}
+ */
 export function getConfig(key) {
   return gameConfig[key]?.get();
 }
 
+/**
+ * @param {any} key
+ * @param {any} value
+ *
+ * @returns {any}
+ */
 export function setState(key, value) {
   return gameState[key]?.set(value);
 }
 
+/**
+ * @param {any} key
+ *
+ * @returns {any}
+ */
 export function getState(key) {
   return gameState[key]?.get();
 }
 
+/**
+ * @param {any} gThis
+ * @param {any} version
+ *
+ * @returns {{ gameConfig: any; gameState: any; }}
+ */
 export function initState(gThis, version) {
   gameConfig.version.set(version);
 

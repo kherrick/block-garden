@@ -1,6 +1,13 @@
-import localForage from "../../../deps/localForage.mjs";
+import localForage from "localforage";
 
-// Load saved colors from localForage
+/**
+ * Load saved colors from localForage
+ *
+ * @param {any} doc
+ * @param {any} key
+ *
+ * @returns {Promise<any>}
+ */
 export async function getSavedColors(doc, key) {
   try {
     const savedColors = await localForage.getItem(key);

@@ -1,6 +1,6 @@
 {
   "name": "sprite-garden",
-  "version": "1.19.1",
+  "version": "1.20.0",
   "description": "Sprite Garden - Grow Sprites",
   "homepage": "https://github.com/kherrick/sprite-garden/#sprite-garden",
   "license": "AGPL-3.0",
@@ -19,6 +19,7 @@
     "build:base:index": "bin/build-html.mjs dist/index.html base href /sprite-garden/",
     "build:base:privacy": "bin/build-html.mjs dist/privacy/index.html base href /sprite-garden/",
     "build:ci": "npx concurrently --kill-others --success first \"npm run build single\" \"npm run start:dev\"",
+    "build:docs": "npx ts-to-jsdoc -p ./tsconfig.json",
     "build:gh-pages:nojekyll": "node bin/touch-nojekyll.mjs",
     "build:pkg:get:meta": "git rev-parse HEAD",
     "build:pkg:meta": "node -e \"import fs from 'node:fs/promises'; import pkg from './package.json' with { type: 'json' }; (async () => { const meta = process.argv[1]; pkg['sprite-garden'] = { meta }; await fs.writeFile('dist/package.json', JSON.stringify(pkg, null, 2)); })()\"",
@@ -47,7 +48,7 @@
     "copy:index": "node bin/ncp.mjs index.html dist/index.html",
     "copy:pkg": "node bin/ncp.mjs package.json dist/package.json",
     "copy:privacy": "node bin/ncp.mjs privacy/index.html dist/privacy/index.html",
-    "copy:service-worker": "node bin/ncp.mjs service-worker dist/service-worker",
+    "copy:service-worker": "node bin/ncp.mjs service-worker/workbox-config.cjs dist/service-worker/workbox-config.cjs",
     "copy:src:index": "node bin/ncp.mjs index.mjs dist/index.mjs",
     "copy:src": "node bin/ncp.mjs src dist/src",
     "deploy:gh-pages": "gh-pages --no-history --dotfiles --dist dist --repo git@github.com:kherrick/sprite-garden.git --remote upstream",
@@ -63,7 +64,10 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1",
+    "@rollup/plugin-commonjs": "^29.0.0",
+    "@rollup/plugin-node-resolve": "^16.0.3",
     "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-typescript": "^12.3.0",
     "@xmldom/xmldom": "^0.8.11",
     "compression": "^1.8.1",
     "concurrently": "^9.2.1",
@@ -81,6 +85,15 @@
     "prettier": "^3.6.2",
     "rollup": "^2.79.2",
     "tcp-port-used": "^1.0.2",
+    "typescript": "^5.9.3",
     "workbox-cli": "^7.3.0"
+  },
+  "dependencies": {
+    "alea": "^1.0.1",
+    "konami-code-js": "^0.8.3",
+    "localforage": "^1.10.0",
+    "signal-polyfill": "^0.2.2",
+    "simplex-noise": "^4.0.3",
+    "workbox-window": "^7.4.0"
   }
 }

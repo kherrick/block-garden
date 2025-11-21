@@ -406,6 +406,167 @@ export const TILES = {
   [TileName.WOOD]: getT({ id: 73, solid: false, crop: true, drops: "WOOD" }),
 };
 
+export const sgColorPropList = [
+  "--sg-color-amber-500",
+  "--sg-color-amber-800",
+  "--sg-color-amber-900",
+  "--sg-color-black-alpha-80",
+  "--sg-color-black-transparent",
+  "--sg-color-black",
+  "--sg-color-blue-400",
+  "--sg-color-blue-500",
+  "--sg-color-blue-700",
+  "--sg-color-emerald-600",
+  "--sg-color-emerald-700",
+  "--sg-color-gray-100",
+  "--sg-color-gray-200",
+  "--sg-color-gray-300",
+  "--sg-color-gray-400",
+  "--sg-color-gray-50",
+  "--sg-color-gray-500",
+  "--sg-color-gray-600",
+  "--sg-color-gray-700",
+  "--sg-color-gray-800",
+  "--sg-color-gray-900",
+  "--sg-color-gray-alpha-30",
+  "--sg-color-gray-alpha-50",
+  "--sg-color-gray-alpha-70",
+  "--sg-color-green-500",
+  "--sg-color-neutral-950",
+  "--sg-color-orange-500",
+  "--sg-color-red-500",
+  "--sg-color-sky-50",
+  "--sg-color-stone-100",
+  "--sg-color-stone-50",
+  "--sg-color-white",
+];
+
+export const sgTileColorPropList = [
+  "--sg-tile-color-agave-base",
+  "--sg-tile-color-agave-flower-stalk",
+  "--sg-tile-color-agave-flower",
+  "--sg-tile-color-agave-growing",
+  "--sg-tile-color-agave-spike",
+  "--sg-tile-color-agave",
+  "--sg-tile-color-air",
+  "--sg-tile-color-bamboo-growing",
+  "--sg-tile-color-bamboo-joint",
+  "--sg-tile-color-bamboo-leaves",
+  "--sg-tile-color-bamboo-stalk",
+  "--sg-tile-color-bamboo",
+  "--sg-tile-color-bedrock",
+  "--sg-tile-color-berry-bush-berries",
+  "--sg-tile-color-berry-bush-branch",
+  "--sg-tile-color-berry-bush-growing",
+  "--sg-tile-color-berry-bush-leaves",
+  "--sg-tile-color-berry-bush",
+  "--sg-tile-color-birch-bark",
+  "--sg-tile-color-birch-branches",
+  "--sg-tile-color-birch-catkins",
+  "--sg-tile-color-birch-growing",
+  "--sg-tile-color-birch-leaves",
+  "--sg-tile-color-birch-trunk",
+  "--sg-tile-color-birch",
+  "--sg-tile-color-cactus-body",
+  "--sg-tile-color-cactus-flower",
+  "--sg-tile-color-cactus-growing",
+  "--sg-tile-color-cactus",
+  "--sg-tile-color-carrot-growing",
+  "--sg-tile-color-carrot-leaves",
+  "--sg-tile-color-carrot-root",
+  "--sg-tile-color-carrot",
+  "--sg-tile-color-clay",
+  "--sg-tile-color-cloud",
+  "--sg-tile-color-coal",
+  "--sg-tile-color-corn-ear",
+  "--sg-tile-color-corn-growing",
+  "--sg-tile-color-corn-leaves",
+  "--sg-tile-color-corn-silk",
+  "--sg-tile-color-corn-stalk",
+  "--sg-tile-color-corn",
+  "--sg-tile-color-dirt",
+  "--sg-tile-color-fern-frond",
+  "--sg-tile-color-fern-growing",
+  "--sg-tile-color-fern-stem",
+  "--sg-tile-color-fern",
+  "--sg-tile-color-gold",
+  "--sg-tile-color-grass",
+  "--sg-tile-color-ice",
+  "--sg-tile-color-iron",
+  "--sg-tile-color-kelp-blade",
+  "--sg-tile-color-kelp-bulb",
+  "--sg-tile-color-kelp-growing",
+  "--sg-tile-color-kelp",
+  "--sg-tile-color-lava",
+  "--sg-tile-color-lavender-bush",
+  "--sg-tile-color-lavender-flowers",
+  "--sg-tile-color-lavender-growing",
+  "--sg-tile-color-lavender-stem",
+  "--sg-tile-color-lavender",
+  "--sg-tile-color-loading-pixel",
+  "--sg-tile-color-lotus-bud",
+  "--sg-tile-color-lotus-flower",
+  "--sg-tile-color-lotus-growing",
+  "--sg-tile-color-lotus-pad",
+  "--sg-tile-color-lotus-stem",
+  "--sg-tile-color-lotus",
+  "--sg-tile-color-moss",
+  "--sg-tile-color-mushroom-cap",
+  "--sg-tile-color-mushroom-growing",
+  "--sg-tile-color-mushroom-stem",
+  "--sg-tile-color-mushroom",
+  "--sg-tile-color-pine-cone",
+  "--sg-tile-color-pine-needles",
+  "--sg-tile-color-pine-tree-growing",
+  "--sg-tile-color-pine-tree",
+  "--sg-tile-color-pine-trunk",
+  "--sg-tile-color-pumice",
+  "--sg-tile-color-pumpkin-fruit",
+  "--sg-tile-color-pumpkin-growing",
+  "--sg-tile-color-pumpkin-leaves",
+  "--sg-tile-color-pumpkin-stem",
+  "--sg-tile-color-pumpkin-vine",
+  "--sg-tile-color-pumpkin",
+  "--sg-tile-color-rose-bloom",
+  "--sg-tile-color-rose-bud",
+  "--sg-tile-color-rose-growing",
+  "--sg-tile-color-rose-leaves",
+  "--sg-tile-color-rose-stem",
+  "--sg-tile-color-rose-thorns",
+  "--sg-tile-color-rose",
+  "--sg-tile-color-sand",
+  "--sg-tile-color-snow",
+  "--sg-tile-color-stone",
+  "--sg-tile-color-sunflower-center",
+  "--sg-tile-color-sunflower-growing",
+  "--sg-tile-color-sunflower-leaves",
+  "--sg-tile-color-sunflower-petals",
+  "--sg-tile-color-sunflower-stem",
+  "--sg-tile-color-sunflower",
+  "--sg-tile-color-tree-growing",
+  "--sg-tile-color-tree-leaves",
+  "--sg-tile-color-tree-trunk",
+  "--sg-tile-color-tulip-bulb",
+  "--sg-tile-color-tulip-growing",
+  "--sg-tile-color-tulip-leaves",
+  "--sg-tile-color-tulip-petals",
+  "--sg-tile-color-tulip-stem",
+  "--sg-tile-color-tulip",
+  "--sg-tile-color-walnut",
+  "--sg-tile-color-water",
+  "--sg-tile-color-wheat-grain",
+  "--sg-tile-color-wheat-growing",
+  "--sg-tile-color-wheat-stalk",
+  "--sg-tile-color-wheat",
+  "--sg-tile-color-willow-branches",
+  "--sg-tile-color-willow-leaves",
+  "--sg-tile-color-willow-tree-growing",
+  "--sg-tile-color-willow-tree",
+  "--sg-tile-color-willow-trunk",
+  "--sg-tile-color-wood",
+  "--sg-tile-color-xray",
+];
+
 /**
  * @param {any} name
  *
@@ -422,6 +583,48 @@ export function normalizeTileName(name) {
  */
 export function denormalizeTileName(name) {
   return name.toLowerCase().replace(/_/g, "-");
+}
+
+/**
+ *
+ * @param {*} cssStyleDeclaration
+ * @param {*} propNames
+ *
+ * @returns {{}}
+ */
+export function buildColorMapByPropNames(cssStyleDeclaration, propNames) {
+  const colorMap = {};
+
+  for (const propName of propNames) {
+    // Extract tile name from custom property name
+    colorMap[propName] = cssStyleDeclaration.getPropertyValue(propName);
+  }
+
+  return colorMap;
+}
+
+/**
+ *
+ * @param {*} cssStyleDeclaration
+ * @param {*} propNames
+ * @param {string} prefix
+ *
+ * @returns {{}}
+ */
+export function buildColorMapWithoutPrefixesByPropNames(
+  cssStyleDeclaration,
+  propNames,
+  prefix,
+) {
+  const colorMap = {};
+
+  for (const propName of propNames) {
+    // Extract tile name from custom property name
+    colorMap[propName.slice(prefix.length)] =
+      cssStyleDeclaration.getPropertyValue(propName);
+  }
+
+  return colorMap;
 }
 
 /**

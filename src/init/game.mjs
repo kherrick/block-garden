@@ -30,7 +30,10 @@ import { resizeCanvas } from "../util/resizeCanvas.mjs";
 import {
   buildColorMapByStyleDeclaration,
   buildColorMapByStyleMap,
+  buildColorMapWithoutPrefixesByPropNames,
   getTileNameByIdMap,
+  sgColorPropList,
+  sgTileColorPropList,
 } from "../state/config/tiles.mjs";
 
 import { computedSignals, initState } from "../state/state.mjs";
@@ -235,9 +238,15 @@ export async function initGame(gThis, shadow, cnvs) {
 
   // Build color map for tiles
   const styles = gThis.getComputedStyle(shadow.host);
-  const gameColorMap = buildColorMapByStyleDeclaration(styles, "--sg-color-");
-  const tileColorMap = buildColorMapByStyleDeclaration(
+  const gameColorMap = buildColorMapWithoutPrefixesByPropNames(
     styles,
+    sgColorPropList,
+    "--sg-color-",
+  );
+
+  const tileColorMap = buildColorMapWithoutPrefixesByPropNames(
+    styles,
+    sgTileColorPropList,
     "--sg-tile-color-",
   );
 

@@ -1,4 +1,6 @@
 import { autoSaveGame } from "./src/dialog/storage.mjs";
+import { gameColors } from "./src/state/config/colors.mjs";
+import { generateColorVars } from "./src/util/colors/generateColorVars.mjs";
 import { initGame } from "./src/init/game.mjs";
 
 export const tagName = "sprite-garden";
@@ -16,7 +18,7 @@ export class SpriteGarden extends HTMLElement {
       template.innerHTML = `
         <style>
           [hidden] {
-            display: none;
+            display: none !important;
           }
 
           :focus {
@@ -34,162 +36,8 @@ export class SpriteGarden extends HTMLElement {
             width: var(--sg-host-width, 100vw);
             width: var(--sg-host-width, 100dvw);
 
-            --sg-color-amber-500: #f39c12;
-            --sg-color-amber-800: #8b4513;
-            --sg-color-amber-900: #654321;
-            --sg-color-black-alpha-80: #00000099;
-            --sg-color-black-transparent: #000000cc;
-            --sg-color-black: #000;
-            --sg-color-blue-400: #4a90e2;
-            --sg-color-blue-500: #2196f3;
-            --sg-color-blue-700: #0066cc;
-            --sg-color-emerald-600: #45a049;
-            --sg-color-emerald-700: #27ae60;
-            --sg-color-gray-100: #eee;
-            --sg-color-gray-200: #e3e3e3;
-            --sg-color-gray-300: #e0e0e0;
-            --sg-color-gray-400: #ddd;
-            --sg-color-gray-50: #f0f0f0;
-            --sg-color-gray-500: #ccc;
-            --sg-color-gray-600: #bbb;
-            --sg-color-gray-700: #888;
-            --sg-color-gray-800: #666666;
-            --sg-color-gray-900: #333;
-            --sg-color-gray-alpha-30: #ffffff4d;
-            --sg-color-gray-alpha-50: #ffffff33;
-            --sg-color-gray-alpha-70: #ffffff1a;
-            --sg-color-green-500: #4caf50;
-            --sg-color-neutral-950: #555;
-            --sg-color-orange-500: #ff6b35;
-            --sg-color-red-500: #ff4444;
-            --sg-color-sky-50: #e6f3ff;
-            --sg-color-stone-100: #f1f1f1;
-            --sg-color-stone-50: #fffafa;
-            --sg-color-white: #fff;
-
-            --sg-tile-color-agave-base: #32cd32;
-            --sg-tile-color-agave-flower-stalk: #9acd32;
-            --sg-tile-color-agave-flower: #ffff00;
-            --sg-tile-color-agave-growing: #adff2f;
-            --sg-tile-color-agave-spike: #7cfc00;
-            --sg-tile-color-agave: #7cfc00;
-            --sg-tile-color-air: #87ceeb;
-            --sg-tile-color-bamboo-growing: #98fb98;
-            --sg-tile-color-bamboo-joint: #6b8e23;
-            --sg-tile-color-bamboo-leaves: #32cd32;
-            --sg-tile-color-bamboo-stalk: #90ee90;
-            --sg-tile-color-bamboo: #90ee90;
-            --sg-tile-color-bedrock: #1c1c1c;
-            --sg-tile-color-berry-bush-berries: #dc143c;
-            --sg-tile-color-berry-bush-branch: #8b4513;
-            --sg-tile-color-berry-bush-growing: #cd5c5c;
-            --sg-tile-color-berry-bush-leaves: #228b22;
-            --sg-tile-color-berry-bush: #dc143c;
-            --sg-tile-color-birch-bark: #ffffff;
-            --sg-tile-color-birch-branches: #8b7355;
-            --sg-tile-color-birch-catkins: #f0e68c;
-            --sg-tile-color-birch-growing: #fffacd;
-            --sg-tile-color-birch-leaves: #98fb98;
-            --sg-tile-color-birch-trunk: #f5f5dc;
-            --sg-tile-color-birch: #f5f5dc;
-            --sg-tile-color-cactus-body: #2e8b57;
-            --sg-tile-color-cactus-flower: #ff69b4;
-            --sg-tile-color-cactus-growing: #228b22;
-            --sg-tile-color-cactus: #32cd32;
-            --sg-tile-color-carrot-growing: #ff7f50;
-            --sg-tile-color-carrot-leaves: #228b22;
-            --sg-tile-color-carrot-root: #ff6347;
-            --sg-tile-color-carrot: #ff8c00;
-            --sg-tile-color-clay: #cd853f;
-            --sg-tile-color-cloud: #c5d1d3ff;
-            --sg-tile-color-coal: #2f4f4f;
-            --sg-tile-color-corn-ear: #f0e68c;
-            --sg-tile-color-corn-growing: #eee8aa;
-            --sg-tile-color-corn-leaves: #6b8e23;
-            --sg-tile-color-corn-silk: #deb887;
-            --sg-tile-color-corn-stalk: #9acd32;
-            --sg-tile-color-corn: #f0e68c;
-            --sg-tile-color-dirt: #8b4513;
-            --sg-tile-color-fern-frond: #3cb371;
-            --sg-tile-color-fern-growing: #90ee90;
-            --sg-tile-color-fern-stem: #556b2f;
-            --sg-tile-color-fern: #3cb371;
-            --sg-tile-color-gold: #ffd700;
-            --sg-tile-color-grass: #90ee90;
-            --sg-tile-color-ice: #b0e0e6;
-            --sg-tile-color-iron: #b87333;
-            --sg-tile-color-kelp-blade: #2e8b57;
-            --sg-tile-color-kelp-bulb: #4f7942;
-            --sg-tile-color-kelp-growing: #8fbc8f;
-            --sg-tile-color-kelp: #2f4f2f;
-            --sg-tile-color-lava: #ff4500;
-            --sg-tile-color-lavender-bush: #8a7fc8;
-            --sg-tile-color-lavender-flowers: #9370db;
-            --sg-tile-color-lavender-growing: #dda0dd;
-            --sg-tile-color-lavender-stem: #556b2f;
-            --sg-tile-color-lavender: #9370db;
-            --sg-tile-color-loading-pixel: #87ceeb;
-            --sg-tile-color-lotus-bud: #ffb6d9;
-            --sg-tile-color-lotus-flower: #ffc0cb;
-            --sg-tile-color-lotus-growing: #ffe4e1;
-            --sg-tile-color-lotus-pad: #3cb371;
-            --sg-tile-color-lotus-stem: #2e8b57;
-            --sg-tile-color-lotus: #ffc0cb;
-            --sg-tile-color-moss: #556b2f;
-            --sg-tile-color-mushroom-cap: #8b0000;
-            --sg-tile-color-mushroom-growing: #cd5c5c;
-            --sg-tile-color-mushroom-stem: #d2691e;
-            --sg-tile-color-mushroom: #8b0000;
-            --sg-tile-color-pine-cone: #8b7355;
-            --sg-tile-color-pine-needles: #2e5930;
-            --sg-tile-color-pine-tree-growing: #556b2f;
-            --sg-tile-color-pine-tree: #2e5930;
-            --sg-tile-color-pine-trunk: #8b4513;
-            --sg-tile-color-pumice: #b8a99a;
-            --sg-tile-color-pumpkin-fruit: #ff8c00;
-            --sg-tile-color-pumpkin-growing: #ffa54f;
-            --sg-tile-color-pumpkin-leaves: #9acd32;
-            --sg-tile-color-pumpkin-stem: #8b4513;
-            --sg-tile-color-pumpkin-vine: #6b8e23;
-            --sg-tile-color-pumpkin: #ff8c00;
-            --sg-tile-color-rose-bloom: #dc143c;
-            --sg-tile-color-rose-bud: #cd5c5c;
-            --sg-tile-color-rose-growing: #f08080;
-            --sg-tile-color-rose-leaves: #2f4f2f;
-            --sg-tile-color-rose-stem: #654321;
-            --sg-tile-color-rose-thorns: #8b4513;
-            --sg-tile-color-rose: #dc143c;
-            --sg-tile-color-sand: #f4a460;
-            --sg-tile-color-snow: #fffafa;
-            --sg-tile-color-stone: #696969;
-            --sg-tile-color-sunflower-center: #8b4513;
-            --sg-tile-color-sunflower-growing: #ffec8b;
-            --sg-tile-color-sunflower-leaves: #228b22;
-            --sg-tile-color-sunflower-petals: #ffd700;
-            --sg-tile-color-sunflower-stem: #8b7355;
-            --sg-tile-color-sunflower: #ffd700;
-            --sg-tile-color-tree-growing: #9acd32;
-            --sg-tile-color-tree-leaves: #228b22;
-            --sg-tile-color-tree-trunk: #59392b;
-            --sg-tile-color-tulip-bulb: #8b4513;
-            --sg-tile-color-tulip-growing: #ffb6c1;
-            --sg-tile-color-tulip-leaves: #228b22;
-            --sg-tile-color-tulip-petals: #ff1493;
-            --sg-tile-color-tulip-stem: #6b8e23;
-            --sg-tile-color-tulip: #ff1493;
-            --sg-tile-color-walnut: #654321;
-            --sg-tile-color-water: #4169e1;
-            --sg-tile-color-wheat-grain: #ffd700;
-            --sg-tile-color-wheat-growing: #9acd32;
-            --sg-tile-color-wheat-stalk: #8b7355;
-            --sg-tile-color-wheat: #daa520;
-            --sg-tile-color-willow-branches: #8fbc8f;
-            --sg-tile-color-willow-leaves: #9acd32;
-            --sg-tile-color-willow-tree-growing: #9bcd9b;
-            --sg-tile-color-willow-tree: #8fbc8f;
-            --sg-tile-color-willow-trunk: #8b7355;
-            --sg-tile-color-wood: #362200;
-            --sg-tile-color-xray: #6464644d;
+            ${generateColorVars("--sg-color-", gameColors["color"])}
+            ${generateColorVars("--sg-tile-color-", gameColors["tile-color"])}
           }
 
           #canvas {
@@ -1258,7 +1106,7 @@ export class SpriteGarden extends HTMLElement {
                 </div>
 
                 <div class="settings-actions">
-                  <div id="customizeColorsBtnContainer" hidden="hidden">
+                  <div id="customizeColorsBtnContainer">
                     <div class="ui-grid__corner--sub-heading">🗺️ Colors</div>
                     <button id="customizeColorsBtn">Customize</button>
                   </div>
@@ -1505,13 +1353,13 @@ export class SpriteGarden extends HTMLElement {
             <div id="controls">
               <div class="ui-grid__corner--heading">⌨️ Controls</div>
               <div class="ui-grid__corner--container" hidden="hidden">
-                <div class="control-instruction">w/↑/Space: Jump</div>
-                <div class="control-instruction">a/d or ←/→: Move</div>
+                <div class="control-instruction">w / ↑ / Space: Jump</div>
+                <div class="control-instruction">a / d or ← / →: Move</div>
                 <div class="control-instruction">f: Plant/Harvest</div>
                 <div class="control-instruction">r: Break Block</div>
-                <div class="control-instruction">e/x/k: Change scale/mode</div>
+                <div class="control-instruction">e / x / k: mode / scale / range</div>
                 <div class="control-instruction">
-                  u/i/o/j/l/m/,/.: Set Block
+                  <span style="font-family: monospace;">u</span> / i / o / j / l / m / , / .: Set Block
                 </div>
                 <div class="control-instruction">ctrl+s: World State</div>
                 <div class="control-instruction">Mouse: Inspect Tiles</div>

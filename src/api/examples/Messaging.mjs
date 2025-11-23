@@ -33,7 +33,7 @@ export class Messaging extends SpriteGarden {
       this.config.fogMode.set("clear");
     }
 
-    resizeCanvas(this.gThis.document, this.config);
+    resizeCanvas(this.shadow, this.config);
 
     console.log(
       `🎮 Waiting ${this.messagingConfig.initialDelay / 1000}s before starting animation...`,

@@ -236,9 +236,9 @@ export async function checkAutoSave(gThis, shadow) {
  */
 export class StorageDialog {
   /**
-   * @param {any} gThis
-   * @param {any} doc
-   * @param {any} shadow
+   * @param {object} gThis - The global context or window object.
+   * @param {Document} doc - The document associated with the app.
+   * @param {ShadowRoot} shadow - The shadow root whose host's computed styles will be inspected.
    */
   constructor(gThis, doc, shadow) {
     this.gThis = gThis;
@@ -486,9 +486,15 @@ export class StorageDialog {
     // Add click handlers for game selection
     listContainer.querySelectorAll(".saved-game-item").forEach((item) => {
       item.addEventListener("click", (e) => {
-        if (e.target.type !== "radio") {
+        if (
+          e.target instanceof HTMLElement &&
+          e.target.getAttribute("type") !== "radio"
+        ) {
           const radio = item.querySelector('input[type="radio"]');
-          radio.checked = true;
+          if (radio instanceof HTMLInputElement) {
+            radio.checked = true;
+          }
+
           this.updateButtonStates();
         }
       });
@@ -505,19 +511,21 @@ export class StorageDialog {
       'input[name="selectedGame"]:checked',
     );
 
-    const loadBtn = this.dialog.querySelector("#loadSelectedBtn");
-    const deleteBtn = this.dialog.querySelector("#deleteSelectedBtn");
-
     const isSelected = !!selected;
 
-    loadBtn.disabled = !isSelected;
-    deleteBtn.disabled = !isSelected;
+    const loadBtn = this.dialog.querySelector("#loadSelectedBtn");
+    if (loadBtn instanceof HTMLInputElement) {
+      loadBtn.disabled = !isSelected;
+      loadBtn.style.opacity = isSelected ? "1" : "0.5";
+      loadBtn.style.cursor = isSelected ? "pointer" : "not-allowed";
+    }
 
-    loadBtn.style.opacity = isSelected ? "1" : "0.5";
-    deleteBtn.style.opacity = isSelected ? "1" : "0.5";
-
-    loadBtn.style.cursor = isSelected ? "pointer" : "not-allowed";
-    deleteBtn.style.cursor = isSelected ? "pointer" : "not-allowed";
+    const deleteBtn = this.dialog.querySelector("#deleteSelectedBtn");
+    if (deleteBtn instanceof HTMLInputElement) {
+      deleteBtn.disabled = !isSelected;
+      deleteBtn.style.opacity = isSelected ? "1" : "0.5";
+      deleteBtn.style.cursor = isSelected ? "pointer" : "not-allowed";
+    }
   }
 
   /**
@@ -588,10 +596,15 @@ export class StorageDialog {
   /** @returns {Promise<void>} */
   async saveCurrentGame() {
     const worldNameInput = this.dialog.querySelector("#worldNameInput");
-    const worldName = worldNameInput.value.trim();
+
+    let worldName;
+    if (worldNameInput instanceof HTMLInputElement) {
+      worldName = worldNameInput.value.trim();
+    }
 
     if (!worldName) {
       alert("Please enter a world name");
+
       return;
     }
 
@@ -621,7 +634,10 @@ export class StorageDialog {
       console.log("Game saved to storage:", worldName);
 
       // Clear input and refresh list
-      worldNameInput.value = "";
+      if (worldNameInput instanceof HTMLInputElement) {
+        worldNameInput.value = "";
+      }
+
       await this.loadSavedGamesList();
     } catch (error) {
       console.error("Failed to save game to storage:", error);
@@ -635,10 +651,16 @@ export class StorageDialog {
       'input[name="selectedGame"]:checked',
     );
 
-    if (!selected) return;
+    if (!selected) {
+      return;
+    }
 
-    const gameIndex = parseInt(selected.value);
-    const game = this.savedGames[gameIndex];
+    let game;
+    if (selected instanceof HTMLInputElement) {
+      const gameIndex = parseInt(selected.value);
+
+      game = this.savedGames[gameIndex];
+    }
 
     try {
       // Convert base64 back to binary
@@ -672,7 +694,9 @@ export class StorageDialog {
       const seedInput = this.doc.getElementById("worldSeedInput");
       const currentSeedDisplay = this.doc.getElementById("currentSeed");
 
-      if (seedInput) seedInput.value = worldSeed;
+      if (seedInput instanceof HTMLInputElement) {
+        seedInput.value = worldSeed;
+      }
 
       if (currentSeedDisplay) currentSeedDisplay.textContent = worldSeed;
 
@@ -692,10 +716,16 @@ export class StorageDialog {
       'input[name="selectedGame"]:checked',
     );
 
-    if (!selected) return;
+    if (!selected) {
+      return;
+    }
 
-    const gameIndex = parseInt(selected.value);
-    const game = this.savedGames[gameIndex];
+    let game;
+    if (selected instanceof HTMLInputElement) {
+      const gameIndex = parseInt(selected.value);
+
+      game = this.savedGames[gameIndex];
+    }
 
     if (confirm(`Are you sure you want to delete "${game.name}"?`)) {
       try {

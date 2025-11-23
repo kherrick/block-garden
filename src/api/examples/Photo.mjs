@@ -1,12 +1,11 @@
-import { applyColors } from "../../dialog/colors/applyColors.mjs";
-import { cssColorToRGB } from "../../dialog/colors/cssColorToRGB.mjs";
-import { nearestColor } from "../../dialog/colors/nearestColor.mjs";
-import { rgbToHex } from "../../dialog/colors/rgbToHex.mjs";
+import { applyColorsToShadowHost } from "../../util/colors/applyColorsToShadowHost.mjs";
+import { cssColorToRGB } from "../../util/colors/cssColorToRGB.mjs";
+import { nearestColor } from "../../util/colors/nearestColor.mjs";
+import { rgbToHex } from "../../util/colors/rgbToHex.mjs";
 
-import {
-  buildColorMapByStyleDeclaration,
-  normalizeTileName,
-} from "../../state/config/tiles.mjs";
+import { transformStyleMapByStyleDeclaration } from "../../util/colors/transformStyleMapByStyleDeclaration.mjs";
+
+import { normalizeTileName } from "../../state/config/tiles.mjs";
 
 import { SpriteGarden } from "../SpriteGarden.mjs";
 
@@ -61,7 +60,7 @@ export class DrawBitmap extends SpriteGarden {
   ) {
     console.log("🎨 Computing ideal color map for image:", imageUrl);
 
-    const tileColorMap = buildColorMapByStyleDeclaration(
+    const tileColorMap = transformStyleMapByStyleDeclaration(
       this.gThis.getComputedStyle(this.shadow.host),
       "--sg-tile-color-",
     );
@@ -146,14 +145,14 @@ export class DrawBitmap extends SpriteGarden {
     console.log("🎨 Loading and quantizing image:", imageUrl);
 
     if (modifyWorldColors === true) {
-      await applyColors(
+      await applyColorsToShadowHost(
         this.shadow,
         await this.getIdealColorMapForImage(imageUrl, maxSize),
       );
     }
 
     // Get tile colors keyed by tile name
-    const tileColorMap = buildColorMapByStyleDeclaration(
+    const tileColorMap = transformStyleMapByStyleDeclaration(
       this.gThis.getComputedStyle(this.shadow.host),
       "--sg-tile-color-",
     );

@@ -21,32 +21,34 @@ import {
   getSaveMode,
 } from "../dialog/storage.mjs";
 
-import { applyColors } from "../dialog/colors/applyColors.mjs";
+import { applyColorsToShadowHost } from "../util/colors/applyColorsToShadowHost.mjs";
 import { COLOR_STORAGE_KEY } from "../dialog/colors/index.mjs";
-import { getCustomProperties } from "../dialog/colors/getCustomProperties.mjs";
 import { getSavedColors } from "../dialog/colors/getSavedColors.mjs";
+
 import { resizeCanvas } from "../util/resizeCanvas.mjs";
 
-import {
-  buildColorMapByStyleDeclaration,
-  buildColorMapByStyleMap,
-  buildColorMapWithoutPrefixesByPropNames,
-  getTileNameByIdMap,
-  sgColorPropList,
-  sgTileColorPropList,
-} from "../state/config/tiles.mjs";
-
 import { computedSignals, initState } from "../state/state.mjs";
+import { gameColors } from "../state/config/colors.mjs";
 import { gameLoop } from "../state/gameLoop.mjs";
+import { getTileNameByIdMap } from "../state/config/tiles.mjs";
+
+import { buildStyleMapByPropNamesWithoutPrefixes } from "../util/colors/buildStyleMapByPropNamesWithoutPrefixes.mjs";
+import { getCustomProperties } from "../util/colors/getCustomProperties.mjs";
+import { transformStyleMap } from "../util/colors/transformStyleMap.mjs";
 
 /**
- * Initialize game
+ * @typedef {Element & { keys: object, touchKeys: object }} CustomShadowHost
+ */
+
+/**
+ * Initializes the environment for the game, including input handling, game state, world generation, colors, and other
+ * functionality like setting up tile inspection.
  *
- * @param {any} gThis
- * @param {any} shadow
- * @param {any} cnvs
+ * @param {typeof globalThis} gThis - The global `this` context (global object), typically `window` in browsers.
+ * @param {ShadowRoot} shadow - The shadow DOM root element where the game components are rendered.
+ * @param {HTMLCanvasElement | null} cnvs - The HTML canvas element used for rendering the game, or null if missing.
  *
- * @returns {Promise<void>}
+ * @returns {Promise<void>} A promise that resolves once the game initialization completes.
  */
 export async function initGame(gThis, shadow, cnvs) {
   shadow.dispatchEvent(
@@ -92,19 +94,19 @@ export async function initGame(gThis, shadow, cnvs) {
   const { gameConfig, gameState } = initState(gThis, version);
   const doc = gThis.document;
 
-  // Input handling
-  shadow.host.keys = {};
-  shadow.host.touchKeys = {};
+  const host = /** @type {CustomShadowHost} */ (shadow.host);
+  host.keys = {};
+  host.touchKeys = {};
 
   // init colors
   const savedColors = await getSavedColors(shadow, COLOR_STORAGE_KEY);
   const initialColors = getCustomProperties(gThis, shadow);
   const colors = savedColors ?? initialColors;
 
-  applyColors(shadow, colors);
+  applyColorsToShadowHost(shadow, colors);
 
   initMapEditor(shadow, gameConfig.fogMode, gameState.viewMode);
-  initGlobalEventListeners(gThis, doc, shadow);
+  initGlobalEventListeners(gThis, shadow);
   initDocumentEventListeners(gThis, shadow);
   initElementEventListeners(gThis, shadow);
   initTouchControls(shadow);
@@ -184,18 +186,22 @@ export async function initGame(gThis, shadow, cnvs) {
   console.log(`Sprite Garden version: ${ver}`);
 
   shadow.addEventListener("sprite-garden-reset", async (e) => {
-    const colors = e?.detail?.colors ?? {};
+    let colors;
+
+    if (e instanceof CustomEvent) {
+      colors = e?.detail?.colors ?? {};
+    }
 
     // Build color map for tiles
     let gameColorMap;
     let tileColorMap;
 
     if (Object.keys(colors).length && colors.constructor === Object) {
-      gameColorMap = buildColorMapByStyleMap(colors, "--sg-color-");
-      tileColorMap = buildColorMapByStyleMap(colors, "--sg-tile-color-");
+      gameColorMap = transformStyleMap(colors, "--sg-color-");
+      tileColorMap = transformStyleMap(colors, "--sg-tile-color-");
     } else {
-      gameColorMap = buildColorMapByStyleMap(initialColors, "--sg-color-");
-      tileColorMap = buildColorMapByStyleMap(initialColors, "--sg-tile-color-");
+      gameColorMap = transformStyleMap(initialColors, "--sg-color-");
+      tileColorMap = transformStyleMap(initialColors, "--sg-tile-color-");
     }
 
     await gameLoop(
@@ -236,17 +242,16 @@ export async function initGame(gThis, shadow, cnvs) {
     gameState.shouldReset.set(true);
   });
 
-  // Build color map for tiles
+  // Build color maps
   const styles = gThis.getComputedStyle(shadow.host);
-  const gameColorMap = buildColorMapWithoutPrefixesByPropNames(
+  const gameColorMap = buildStyleMapByPropNamesWithoutPrefixes(
     styles,
-    sgColorPropList,
+    Object.keys(gameColors["color"]).map((v) => `--sg-color-${v}`),
     "--sg-color-",
   );
-
-  const tileColorMap = buildColorMapWithoutPrefixesByPropNames(
+  const tileColorMap = buildStyleMapByPropNamesWithoutPrefixes(
     styles,
-    sgTileColorPropList,
+    Object.keys(gameColors["tile-color"]).map((v) => `--sg-tile-color-${v}`),
     "--sg-tile-color-",
   );
 

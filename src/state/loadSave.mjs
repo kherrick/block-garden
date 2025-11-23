@@ -1,4 +1,4 @@
-import { getCustomProperties } from "../dialog/colors/getCustomProperties.mjs";
+import { getCustomProperties } from "../util/colors/getCustomProperties.mjs";
 import { resizeCanvas } from "../util/resizeCanvas.mjs";
 
 import { FogMap } from "../map/fog.mjs";
@@ -114,5 +114,5 @@ export function loadSaveState(gThis, shadow, saveState) {
   console.log("Save state loaded successfully");
 
   // Force canvas resize to ensure proper coordinate mapping
-  resizeCanvas(gThis.document, gameConfig);
+  resizeCanvas(shadow, gameConfig);
 }

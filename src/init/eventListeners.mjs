@@ -2,8 +2,9 @@ import extrasHandler from "konami-code-js";
 
 import { copyToClipboard } from "../util/copyToClipboard.mjs";
 import { createSaveState } from "../state/createSave.mjs";
+import { debounce } from "../util/debounce.mjs";
 import { gameConfig, gameState } from "../state/state.mjs";
-import { getCustomProperties } from "../dialog/colors/getCustomProperties.mjs";
+import { getCustomProperties } from "../util/colors/getCustomProperties.mjs";
 import { getRandomSeed } from "../misc/getRandomSeed.mjs";
 import { handleBreakBlockWithWaterPhysics } from "../misc/handleBreakBlock.mjs";
 import { handleFarmAction } from "../misc/handleFarmAction.mjs";
@@ -37,25 +38,14 @@ import { initFog } from "./fog.mjs";
 import { initNewWorld } from "./newWorld.mjs";
 
 /**
- * @param {any} gThis
- * @param {any} doc
- * @param {any} shadow
+ * @param {typeof globalThis} gThis - The global `this` context (global object), typically `window` in browsers.
+ * @param {ShadowRoot} shadow - The shadow DOM root element where the game components are rendered.
  *
  * @returns {void}
  */
-export function initGlobalEventListeners(gThis, doc, shadow) {
-  function debounce(func, delay) {
-    let timeout;
-
-    return function (...args) {
-      clearTimeout(timeout);
-
-      timeout = setTimeout(() => func.apply(this, args), delay);
-    };
-  }
-
+export function initGlobalEventListeners(gThis, shadow) {
   const debouncedResize = debounce(() => {
-    resizeCanvas(doc, gameConfig);
+    resizeCanvas(shadow, gameConfig);
   }, 200);
 
   const resizeObserver = new ResizeObserver((entries) => {
@@ -72,8 +62,25 @@ export function initGlobalEventListeners(gThis, doc, shadow) {
 
   const customizeColors = shadow.getElementById("customizeColorsBtn");
   if (customizeColors) {
-    customizeColors.addEventListener("click", () => {
-      showColorCustomizationDialog(gThis);
+    const config = gThis.spriteGarden.config;
+    customizeColors.addEventListener("click", async () => {
+      const initialResolution = config.currentResolution.get();
+
+      if (initialResolution === "400") {
+        config.currentResolution.set("800");
+        resizeCanvas(shadow, config);
+
+        const colorDialog = await showColorCustomizationDialog(gThis);
+        colorDialog.dialog.addEventListener("close", () => {
+          config.currentResolution.set(initialResolution);
+
+          resizeCanvas(shadow, config);
+        });
+
+        return;
+      }
+
+      await showColorCustomizationDialog(gThis);
     });
   }
 }
@@ -187,6 +194,15 @@ export function initDocumentEventListeners(gThis, shadow) {
     shadow
       .querySelector('option[value="fullscreen"]')
       .removeAttribute("hidden");
+
+    const customizeColorsDialog = shadow.getElementById(
+      "customizeColorsDialog",
+    );
+    if (customizeColorsDialog) {
+      customizeColorsDialog
+        .querySelectorAll("[hidden]")
+        .forEach((node) => node.removeAttribute("hidden"));
+    }
 
     const settingsContainer = shadow.querySelector(
       '#settings > [class="ui-grid__corner--container"]',

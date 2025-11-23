@@ -1,5 +1,7 @@
-import { applyColors } from "./applyColors.mjs";
-import { getCustomProperties } from "./getCustomProperties.mjs";
+import { applyColorsToShadowHost } from "../../util/colors/applyColorsToShadowHost.mjs";
+import { getCustomProperties } from "../../util/colors/getCustomProperties.mjs";
+import { debounce } from "../../util/debounce.mjs";
+
 import { resetColors } from "./resetColors.mjs";
 import { saveColors } from "./saveColors.mjs";
 
@@ -8,9 +10,9 @@ export const COLOR_STORAGE_KEY = "sprite-garden-custom-colors";
 
 export class ColorCustomizationDialog {
   /**
-   * @param {any} gThis
-   * @param {any} doc
-   * @param {any} shadow
+   * @param {object} gThis - The global context or window object.
+   * @param {Document} doc - The document associated with the app.
+   * @param {ShadowRoot} shadow - The shadow root whose host's computed styles will be inspected.
    */
   constructor(gThis, doc, shadow) {
     this.gThis = gThis;
@@ -29,7 +31,7 @@ export class ColorCustomizationDialog {
     this.dirty = false;
   }
 
-  /** @returns {Promise<any>} */
+  /** @returns {Promise<HTMLDialogElement>} */
   async createDialog() {
     if (this.dialog) {
       this.dialog.remove();
@@ -40,7 +42,7 @@ export class ColorCustomizationDialog {
     this.colors = { ...this.originalColors };
 
     const dialog = this.doc.createElement("dialog");
-
+    dialog.setAttribute("id", "customizeColorsDialog");
     dialog.addEventListener("close", this.handleDialogClose);
     dialog.addEventListener("keydown", this.handleDialogKeydown);
 
@@ -51,7 +53,7 @@ export class ColorCustomizationDialog {
       color: var(--sg-color-gray-900);
       font-family: monospace;
       max-height: 80vh;
-      max-width: 50rem;
+      max-width: 30rem;
       overflow-y: auto;
       padding: 1.25rem;
       width: 90%;
@@ -138,7 +140,7 @@ export class ColorCustomizationDialog {
   /** @returns {Promise<void>} */
   async handleSave() {
     await saveColors(this.colors, COLOR_STORAGE_KEY);
-    await applyColors(this.shadow, this.colors);
+    await applyColorsToShadowHost(this.shadow, this.colors);
 
     this.shadow.dispatchEvent(
       new CustomEvent("sprite-garden-reset", {
@@ -209,8 +211,9 @@ export class ColorCustomizationDialog {
       `;
 
       const categoryTitle = this.doc.createElement("h4");
-      categoryTitle.textContent =
-        category.charAt(0).toUpperCase() + category.slice(1);
+      categoryTitle.textContent = (
+        category.charAt(0).toUpperCase() + category.slice(1)
+      ).replace("Tile", "Tiles");
       categoryTitle.style.cssText = `
         border-bottom: 1px solid var(--sg-color-gray-300);
         color: var(--sg-color-gray-800);
@@ -218,7 +221,14 @@ export class ColorCustomizationDialog {
         margin: 0 0 0.5rem 0;
         padding-bottom: 0.25rem;
       `;
+
       categoryDiv.append(categoryTitle);
+
+      const [firstColorInGroup] = grouped[category];
+      if (firstColorInGroup.property.startsWith("--sg-color")) {
+        categoryDiv.setAttribute("hidden", "hidden");
+      }
+
       container.append(categoryDiv);
 
       // Render inputs for this category
@@ -230,8 +240,15 @@ export class ColorCustomizationDialog {
           gap: 0.25rem;
         `;
 
+        if (property.startsWith("--sg-color")) {
+          inputGroup.setAttribute("hidden", "hidden");
+        }
+
         const label = this.doc.createElement("label");
-        label.textContent = property.replace("--sg-", "").replace(/-/g, " ");
+        label.textContent = property
+          .replace("--sg-", "")
+          .replace(/-/g, " ")
+          .replace("tile color ", "");
         label.style.cssText = `
           color: var(--sg-color-gray-700);
           font-size: 0.75rem;
@@ -270,20 +287,44 @@ export class ColorCustomizationDialog {
           padding: 0.25rem;
         `;
 
-        // Sync inputs
-        colorInput.addEventListener("input", (e) => {
-          textInput.value = e.target.value;
+        const debouncedColorChange = debounce(() => {
+          this.handleColorChange(property, textInput.value);
+        }, 500);
 
-          this.handleColorChange(property, e.target.value);
+        /**
+         * Event listener for colorInput input event to synchronize the text input value
+         * and trigger debounced color change handling.
+         *
+         * @param {InputEvent} e - The input event triggered by colorInput element.
+         *
+         * @returns {void}
+         */
+        colorInput.addEventListener("input", (e) => {
+          if (e.target instanceof HTMLInputElement) {
+            textInput.value = e.target.value;
+
+            debouncedColorChange();
+          }
         });
 
+        /**
+         * Event listener for textInput input event to normalize color value,
+         * synchronize color input value, and trigger debounced color change handling.
+         *
+         * @param {InputEvent} e - The input event triggered by textInput element.
+         *
+         * @returns {void}
+         */
         textInput.addEventListener("input", (e) => {
-          const normalized = this.normalizeColor(e.target.value);
-          if (normalized) {
-            colorInput.value = normalized;
-          }
+          if (e.target instanceof HTMLInputElement) {
+            const normalized = this.normalizeColor(e.target.value);
 
-          this.handleColorChange(property, e.target.value);
+            if (normalized) {
+              colorInput.value = normalized;
+            }
+
+            debouncedColorChange();
+          }
         });
 
         inputWrapper.append(colorInput);
@@ -320,8 +361,11 @@ export class ColorCustomizationDialog {
   }
 
   /**
-   * @param {any} property
-   * @param {any} value
+   * Handles the color change by updating internal state and applying styles
+   * to the shadow DOM host element, then dispatching a custom event.
+   *
+   * @param {string} property - The CSS property name to update.
+   * @param {string} value - The new value for the CSS property.
    *
    * @returns {void}
    */
@@ -331,7 +375,17 @@ export class ColorCustomizationDialog {
 
     // Apply immediately for live preview
     const root = this.shadow.host;
-    root.style.setProperty(property, value);
+    if (root instanceof HTMLElement) {
+      root.style.setProperty(property, value);
+
+      this.shadow.dispatchEvent(
+        new CustomEvent("sprite-garden-reset", {
+          detail: {
+            colors: this.colors,
+          },
+        }),
+      );
+    }
   }
 
   /** @returns {void} */
@@ -368,7 +422,7 @@ export class ColorCustomizationDialog {
     if (this.dirty) {
       if (confirm("Close without saving?")) {
         // Revert to original colors if not saved
-        applyColors(this.shadow, this.originalColors);
+        applyColorsToShadowHost(this.shadow, this.originalColors);
 
         this.dialog.close();
       }
@@ -382,6 +436,8 @@ export class ColorCustomizationDialog {
   /** @returns {void} */
   handleDialogClose() {
     this.removeEventListeners();
+
+    this.dialog.remove();
   }
 
   /** @returns {void} */

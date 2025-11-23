@@ -2,15 +2,16 @@ import { getShadowRoot } from "../util/getShadowRoot.mjs";
 import { ColorCustomizationDialog } from "../dialog/colors/index.mjs";
 
 /**
- * @param {any} gThis
+ * @param {typeof globalThis} gThis
  *
  * @returns {Promise<ColorCustomizationDialog>}
  */
 export async function showColorCustomizationDialog(gThis) {
+  const shadow = getShadowRoot(gThis.document, "sprite-garden");
   const colorDialog = new ColorCustomizationDialog(
     gThis,
     gThis.document,
-    getShadowRoot(gThis.document, "sprite-garden"),
+    shadow,
   );
 
   await colorDialog.createDialog();

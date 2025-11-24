@@ -60,6 +60,6 @@ npm i && npm test
 
 ## to run Playwright e2e tests
 
-``sh
+```sh
 npm i && npm e2e
 ```

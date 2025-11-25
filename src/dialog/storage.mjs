@@ -514,14 +514,14 @@ export class StorageDialog {
     const isSelected = !!selected;
 
     const loadBtn = this.dialog.querySelector("#loadSelectedBtn");
-    if (loadBtn instanceof HTMLInputElement) {
+    if (loadBtn instanceof HTMLButtonElement) {
       loadBtn.disabled = !isSelected;
       loadBtn.style.opacity = isSelected ? "1" : "0.5";
       loadBtn.style.cursor = isSelected ? "pointer" : "not-allowed";
     }
 
     const deleteBtn = this.dialog.querySelector("#deleteSelectedBtn");
-    if (deleteBtn instanceof HTMLInputElement) {
+    if (deleteBtn instanceof HTMLButtonElement) {
       deleteBtn.disabled = !isSelected;
       deleteBtn.style.opacity = isSelected ? "1" : "0.5";
       deleteBtn.style.cursor = isSelected ? "pointer" : "not-allowed";

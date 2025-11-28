@@ -1,14 +1,15 @@
-/** @typedef {import('signal-polyfill').Signal.State} Signal.State */
-
 /**
- * Track water changes during gameplay
+ * Marks a region of tiles for water physics updates.
  *
- * @param {number} x
- * @param {number} y
- * @param {Signal.State} queue
- * @param {number} worldWidth
- * @param {number} worldHeight
- * @param {number} [radius=5]
+ * Adds all tiles within a radius to a dirty queue for processing in the next physics step.
+ * Used to efficiently track only changed areas rather than entire world.
+ *
+ * @param {number} x - Center X coordinate in tiles
+ * @param {number} y - Center Y coordinate in tiles
+ * @param {Object} queue - State Signal containing Set of dirty region keys
+ * @param {number} worldWidth - Total world width in tiles
+ * @param {number} worldHeight - Total world height in tiles
+ * @param {number} [radius=5] - Search radius in tiles
  *
  * @returns {void}
  */

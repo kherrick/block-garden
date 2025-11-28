@@ -1,7 +1,12 @@
 /**
- * @param {any} gThis
+ * Creates a serializable snapshot of current game state and config.
  *
- * @returns {{ config: { breakMode: any; canvasScale: any; currentResolution: any; fogMode: any; fogScale: any; FRICTION: any; GRAVITY: any; isFogScaled: any; MAX_FALL_SPEED: any; SURFACE_LEVEL: any; TILE_SIZE: any; version: any; WORLD_HEIGHT: any; WORLD_WIDTH: any; worldSeed: any; }; state: { camera: any; exploredMap: any; gameTime: any; growthTimers: any; materialsInventory: any; plantStructures: any; player: any; seedInventory: any; seeds: any; selectedMaterialType: any; selectedSeedType: any; viewMode: any; world: any;  }; }}
+ * Extracts all Signal values to plain objects for save file storage.
+ * Includes world data, player position, inventory, and game settings.
+ *
+ * @param {typeof globalThis} gThis - Global this or window object with spriteGarden property
+ *
+ * @returns {Object} Serializable save object with config and state properties
  */
 export function createSaveState(gThis) {
   const state = gThis.spriteGarden.state;

@@ -1,12 +1,17 @@
+/** @typedef {import('signal-polyfill').Signal.State} Signal.State */
+
+/** @typedef {import('../state/config/tiles.mjs').TileMap} TileMap */
+/** @typedef {import('../state/config/index.mjs').WaterPhysicsConfig} WaterPhysicsConfig */
+
 /**
  * Runtime water physics update
  *
- * @param {any} tiles
- * @param {any} waterPhysicsConfig
- * @param {any} waterPhysicsQueue
- * @param {any} world
- * @param {any} worldHeight
- * @param {any} worldWidth
+ * @param {TileMap} tiles - Map of all tile definitions
+ * @param {WaterPhysicsConfig} waterPhysicsConfig - Water physics configuration
+ * @param {Signal.State} waterPhysicsQueue - Queue of water updates to process
+ * @param {Signal.State} world - Signal State with world tile data
+ * @param {number} worldHeight - Total world height in tiles
+ * @param {number} worldWidth - Total world width in tiles
  *
  * @returns {void}
  */

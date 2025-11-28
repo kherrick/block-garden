@@ -1,11 +1,14 @@
+/** @typedef {import('../state/config/tiles.mjs').TileMap} TileMap */
+/** @typedef {import('../map/world.mjs').WorldMap} WorldMap */
+
 /**
- * @param {any} world
- * @param {any} centerX
- * @param {any} surfaceY
- * @param {any} size
- * @param {any} worldWidth
- * @param {any} worldHeight
- * @param {any} tiles
+ * @param {WorldMap} world - Signal State with world tile data
+ * @param {number} centerX - Lake center x coordinate
+ * @param {number} surfaceY - Surface level y coordinate
+ * @param {number} size - Approximate lake size in tiles
+ * @param {number} worldWidth - Total world width in tiles
+ * @param {number} worldHeight - Total world height in tiles
+ * @param {TileMap} tiles - Map of all tile definitions
  *
  * @returns {void}
  */

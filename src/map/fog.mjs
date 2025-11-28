@@ -1,8 +1,13 @@
+/** @typedef {import('signal-polyfill').Signal.State} Signal.State */
+
+/** @typedef {import('../init/fog.mjs').CombinedColorMap} CombinedColorMap */
+/** @typedef {import('../state/state.mjs').TilePosition} TilePosition */
+
 export class FogMap {
   /**
    * @param {number} width
    * @param {number} height
-   * @param {any} colors
+   * @param {CombinedColorMap|undefined} [colors]
    */
   constructor(width, height, colors) {
     this.colors = colors;
@@ -60,7 +65,7 @@ export class FogMap {
   /**
    * Mark multiple tiles as explored (returns true if any were newly explored)
    *
-   * @param {any} tiles
+   * @param {TilePosition[]} tiles
    *
    * @returns {boolean}
    */
@@ -92,17 +97,17 @@ export class FogMap {
    *
    * @static
    *
-   * @param {any} fogObj
+   * @param {{ [key: string]: boolean }} fogObj
    * @param {number} width
    * @param {number} height
-   * @param {any} colors
+   * @param {CombinedColorMap|undefined} [colors]
    *
    * @returns {FogMap}
    */
   static fromObject(fogObj, width, height, colors) {
     const fog = new FogMap(width, height, colors);
 
-    // Handle old object format: { "x,y": true, ... }
+    // Handle object format: { "x,y": true, ... }
     if (fogObj && typeof fogObj === "object") {
       for (const key in fogObj) {
         if (fogObj[key]) {
@@ -138,8 +143,8 @@ export class FogMap {
   /**
    * Update explored map based on player position
    *
-   * @param {any} player
-   * @param {any} tileSize
+   * @param {Signal.State} player
+   * @param {number} tileSize
    * @param {number} [fogRevealRadius=15]
    *
    * @returns {boolean}
@@ -182,10 +187,10 @@ export class FogMap {
   /**
    * Render map fog overlay
    *
-   * @param {any} ctx
-   * @param {any} canvas
+   * @param {CanvasRenderingContext2D} ctx
+   * @param {HTMLCanvasElement} canvas
    * @param {number} tileSize
-   * @param {any} camera
+   * @param {Signal.State} camera
    *
    * @returns {void}
    */
@@ -235,10 +240,10 @@ export class FogMap {
   /**
    * Scaled fog for performance
    *
-   * @param {any} ctx
-   * @param {any} canvas
+   * @param {CanvasRenderingContext2D} ctx
+   * @param {HTMLCanvasElement} canvas
    * @param {number} tileSize
-   * @param {any} camera
+   * @param {Signal.State} camera
    * @param {number} [fogScale=2]
    *
    * @returns {void}

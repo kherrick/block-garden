@@ -3,6 +3,8 @@ import { gameConfig, gameState } from "../state/state.mjs";
 import { initNewWorld } from "../init/newWorld.mjs";
 import { WorldMap } from "./world.mjs";
 
+/** @typedef {import('signal-polyfill').Signal.State} Signal.State */
+
 export const mapEditorState = {
   isEnabled: false,
   selectedTile: null,
@@ -11,12 +13,14 @@ export const mapEditorState = {
   lastPaintedTile: null,
 };
 
+/** @typedef {import('../state/config/tiles.mjs').TileMap} TileMap */
+
 /**
  * Initialize map editor mode
  *
- * @param {any} shadow
- * @param {any} fogMode
- * @param {any} viewMode
+ * @param {ShadowRoot} shadow - Shadow root for DOM access
+ * @param {Signal.State} fogMode - Signal State with fog mode data
+ * @param {Signal.State} viewMode - Signal State with view mode data
  *
  * @returns {void}
  */
@@ -28,9 +32,9 @@ export function initMapEditor(shadow, fogMode, viewMode) {
 /**
  * Setup map editor controls
  *
- * @param {any} shadow
- * @param {any} fogMode
- * @param {any} viewMode
+ * @param {ShadowRoot} shadow - Shadow root for DOM access
+ * @param {Signal.State} fogMode - Signal State with fog mode data
+ * @param {Signal.State} viewMode - Signal State with view mode data
  *
  * @returns {void}
  */
@@ -49,15 +53,19 @@ function setupMapEditorControls(shadow, fogMode, viewMode) {
   const brushSizeSelect = shadow.getElementById("brushSizeSelect");
   if (brushSizeSelect) {
     brushSizeSelect.addEventListener("change", (e) => {
-      mapEditorState.brushSize = parseInt(e.target.value);
+      if (e.target instanceof HTMLSelectElement) {
+        mapEditorState.brushSize = parseInt(e.target.value);
+      }
     });
   }
 
   // Tile selection buttons
   shadow.querySelectorAll(".tile-btn").forEach((btn) => {
     btn.addEventListener("click", (e) => {
-      const tileType = e.target.dataset.tile;
-      selectTile(shadow, tileType);
+      if (e.target instanceof HTMLButtonElement) {
+        const tileType = e.target.dataset.tile;
+        selectTile(shadow, tileType);
+      }
     });
   });
 
@@ -79,7 +87,10 @@ function setupMapEditorControls(shadow, fogMode, viewMode) {
         mapEditorState.selectedTile &&
         confirm(`Fill current layer with ${mapEditorState.selectedTile}?`)
       ) {
-        fillCurrentLayer(shadow.getElementById("canvas"));
+        fillCurrentLayer(
+          /** @type {HTMLCanvasElement} */
+          (shadow.getElementById("canvas")),
+        );
       }
     });
   }
@@ -122,9 +133,9 @@ function setupMapEditorControls(shadow, fogMode, viewMode) {
 /**
  * Update map editor UI state
  *
- * @param {any} shadow
- * @param {any} fogMode
- * @param {any} viewMode
+ * @param {ShadowRoot} shadow
+ * @param {Signal.State} fogMode
+ * @param {Signal.State} viewMode
  *
  * @returns {void}
  */
@@ -154,8 +165,8 @@ function updateMapEditorUI(shadow, fogMode, viewMode) {
 /**
  * Select a tile type for painting
  *
- * @param {any} shadow
- * @param {any} tileType
+ * @param {ShadowRoot} shadow
+ * @param {string} tileType
  *
  * @returns {void}
  */
@@ -183,14 +194,14 @@ function selectTile(shadow, tileType) {
 /**
  * Handle canvas clicks for tile placement
  *
- * @param {any} x
- * @param {any} y
- * @param {any} camera
- * @param {any} tiles
- * @param {any} tileSize
- * @param {any} worldHeight
- * @param {any} worldWidth
- * @param {any} world
+ * @param {number} x
+ * @param {number} y
+ * @param {Signal.State} camera
+ * @param {TileMap} tiles
+ * @param {number} tileSize
+ * @param {number} worldHeight
+ * @param {number} worldWidth
+ * @param {Signal.State} world
  *
  * @returns {boolean}
  */
@@ -227,14 +238,14 @@ export function handleMapEditorClick(
 /**
  * Handle dragging for continuous painting
  *
- * @param {any} x
- * @param {any} y
- * @param {any} camera
- * @param {any} tiles
- * @param {any} tileSize
- * @param {any} worldHeight
- * @param {any} worldWidth
- * @param {any} world
+ * @param {number} x
+ * @param {number} y
+ * @param {Signal.State} camera
+ * @param {TileMap} tiles
+ * @param {number} tileSize
+ * @param {number} worldHeight
+ * @param {number} worldWidth
+ * @param {Signal.State} world
  * @param {boolean} [isStart=false]
  *
  * @returns {boolean}
@@ -284,12 +295,12 @@ export function handleMapEditorDragEnd() {
 /**
  * Paint tiles at the specified location with current brush size
  *
- * @param {any} centerX
- * @param {any} centerY
- * @param {any} tiles
- * @param {any} worldHeight
- * @param {any} worldWidth
- * @param {any} world
+ * @param {number} centerX
+ * @param {number} centerY
+ * @param {TileMap} tiles
+ * @param {number} worldHeight
+ * @param {number} worldWidth
+ * @param {Signal.State} world
  *
  * @returns {void}
  */
@@ -365,7 +376,7 @@ function clearMap() {
 /**
  * Fill current visible layer with selected tile
  *
- * @param {any} canvas
+ * @param {HTMLCanvasElement} canvas
  *
  * @returns {void}
  */

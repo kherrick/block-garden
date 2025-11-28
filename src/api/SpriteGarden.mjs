@@ -73,7 +73,7 @@ export class SpriteGarden {
    * Retrieves the current materials inventory object.
    * Returns an empty object if no inventory is available.
    *
-   * @returns {Object.<string, number>} An object mapping material types to counts.
+   * @returns {{ [material: string]: number }} An object mapping material types to counts.
    */
   getInventory() {
     return this.state.materialsInventory?.get
@@ -329,7 +329,7 @@ export class SpriteGarden {
    * and the final trailing spacing column is removed.
    *
    * @param {string} text - The text to measure.
-   * @param {Object.<string, string[]>} characters - Map of characters to bitmap rows.
+   * @param {{ [char: string]: string[] }} characters - Map of characters to bitmap rows.
    *
    * @returns {number} The total width of the rendered text in columns.
    */
@@ -358,7 +358,7 @@ export class SpriteGarden {
    * @param {*} onTile - Tile used for "on" pixels of the character bitmap.
    * @param {*} [offTile=this.tiles.DIRT] - Tile used for "off" pixels and spacing.
    * @param {number} [spacing=1] - Number of blank columns between characters.
-   * @param {Object.<string, string[]>} [characters=Characters] - Map of characters to bitmap rows.
+   * @param {{ [char: string]: string[] }} [characters=Characters] - Map of characters to bitmap rows.
    *
    * @returns {{x:number, y:number, width:number, height:number}} The drawn text bounds.
    */
@@ -629,7 +629,7 @@ export class SpriteGarden {
    */
   async getQRCodeModule() {
     const mod = "https://kherrick.github.io/sprite-garden/deps/qrcode.mjs";
-    const qrcode = await import(mod);
+    const { qrcode } = await import(mod);
 
     return qrcode;
   }

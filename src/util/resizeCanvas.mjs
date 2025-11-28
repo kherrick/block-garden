@@ -1,8 +1,13 @@
+/** @typedef {import('../state/config/index.mjs').GameConfig} GameConfig */
+
 /**
- * Resize canvas based on resolution setting
+ * Resizes the game canvas based on the configured resolution setting.
  *
- * @param {ShadowRoot} shadow
- * @param {any} gameConfig
+ * Supports fixed resolutions (400, 800) and fullscreen mode.
+ * Updates CSS classes and fog scale accordingly.
+ *
+ * @param {ShadowRoot} shadow - Shadow root containing the canvas element
+ * @param {GameConfig} gameConfig - Game configuration object
  *
  * @returns {void}
  */

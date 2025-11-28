@@ -1,25 +1,33 @@
 import { Signal } from "signal-polyfill";
 
+/** @typedef {import('../util/colors/index.mjs').TileColorMap} TileColorMap */
+/** @typedef {import('./config/tiles.mjs').TileIdMap} TileIdMap */
+/** @typedef {import('./config/tiles.mjs').TileMap} TileMap */
+
+/** @typedef {{ x: number, y: number }} CameraState */
+/** @typedef {{ x: number, y: number }} PlayerState */
+/** @typedef {{ camera: CameraState, player: PlayerState }} PreviousState */
+
 /**
  * Render world
  *
- * @param {any} canvas
- * @param {any} player
- * @param {any} camera
- * @param {any} tiles
- * @param {any} tileSize
- * @param {any} viewMode
- * @param {any} world
- * @param {any} worldHeight
- * @param {any} worldWidth
- * @param {any} fogMode
- * @param {any} isFogScaled
- * @param {any} fogScale
- * @param {any} exploredMap
- * @param {any} previousState
- * @param {any} interpolation
- * @param {any} tileColorMap
- * @param {any} tileNameByIdMap
+ * @param {HTMLCanvasElement} canvas
+ * @param {Signal.State} player
+ * @param {Signal.State} camera
+ * @param {TileMap} tiles
+ * @param {number} tileSize
+ * @param {Signal.State} viewMode
+ * @param {Signal.State} world
+ * @param {number} worldHeight
+ * @param {number} worldWidth
+ * @param {Signal.State} fogMode
+ * @param {Signal.State} isFogScaled
+ * @param {Signal.State} fogScale
+ * @param {Signal.State} exploredMap
+ * @param {PreviousState} previousState
+ * @param {number} interpolation
+ * @param {TileColorMap} tileColorMap
+ * @param {TileIdMap} tileNameByIdMap
  *
  * @returns {void}
  */

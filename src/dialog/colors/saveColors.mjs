@@ -1,10 +1,12 @@
 import localForage from "localforage";
 
+/** @typedef {import("./index.mjs").CombinedColorMap} CombinedColorMap */
+
 /**
  * Save colors to localForage
  *
- * @param {any} colors
- * @param {any} key
+ * @param {CombinedColorMap} colors
+ * @param {string} key
  *
  * @returns {Promise<void>}
  */

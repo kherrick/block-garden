@@ -1,7 +1,7 @@
 export class ExamplesDialog {
   /**
-   * @param {any} doc
-   * @param {any} shadow
+   * @param {Document} doc
+   * @param {ShadowRoot} shadow
    */
   constructor(doc, shadow) {
     this.doc = doc;
@@ -12,10 +12,10 @@ export class ExamplesDialog {
   }
 
   /**
-   * @param {any} part
-   * @param {any} path
+   * @param {string} part
+   * @param {string} path
    *
-   * @returns {Promise<any>}
+   * @returns {Promise<HTMLDialogElement>}
    */
   async createDialog(part, path) {
     if (this.dialog) {
@@ -24,7 +24,9 @@ export class ExamplesDialog {
 
     const dialogClass = `${part}-content`;
 
-    let dialog = this.shadow.querySelector(`.${dialogClass}`);
+    let dialog =
+      /** @type HTMLDialogElement */
+      (this.shadow.querySelector(`.${dialogClass}`));
 
     if (!dialog) {
       dialog = this.doc.createElement("dialog");
@@ -51,7 +53,7 @@ export class ExamplesDialog {
   }
 
   /**
-   * @param {any} e
+   * @param {MouseEvent} e
    *
    * @returns {void}
    */
@@ -81,20 +83,20 @@ export class ExamplesDialog {
 
   /** @returns {void} */
   show() {
-    this.dialog.showModal();
+    this.dialog instanceof HTMLDialogElement && this.dialog.showModal();
   }
 
   /** @returns {void} */
   close() {
     this.removeEventListeners();
 
-    this.dialog.close();
+    this.dialog instanceof HTMLDialogElement && this.dialog.close();
   }
 }
 
 /**
- * @param {any} doc
- * @param {any} shadow
+ * @param {Document} doc
+ * @param {ShadowRoot} shadow
  *
  * @returns {Promise<ExamplesDialog>}
  */

@@ -1,12 +1,15 @@
 import { gameConfig } from "../../state/state.mjs";
 
+/** @typedef {import('../../map/world.mjs').WorldMap} WorldMap */
+/** @typedef {import('../../state/config/tiles.mjs').TileMap} TileMap */
+
 /**
  * Add moss to cave surfaces
  *
- * @param {any} world
- * @param {any} worldWidth
- * @param {any} worldHeight
- * @param {any} tiles
+ * @param {WorldMap} world
+ * @param {number} worldWidth
+ * @param {number} worldHeight
+ * @param {TileMap} tiles
  *
  * @returns {void}
  */

@@ -2,7 +2,7 @@ import { colors } from "../../state/config/colors.mjs";
 
 import { buildStyleMapByPropNames } from "./buildStyleMapByPropNames.mjs";
 
-/** @typedef {import('./index.mjs').CombinedMap} CombinedMap */
+/** @typedef {import('./index.mjs').CombinedColorMap} CombinedColorMap */
 
 /**
  * Extracts all CSS custom properties prefixed with --sg from the computed styles of a shadow DOM host.
@@ -10,10 +10,10 @@ import { buildStyleMapByPropNames } from "./buildStyleMapByPropNames.mjs";
  * Used for both general UI colors and game tile colors, as defined in the colors object, and returns
  * them as a combined map.
  *
- * @param {object} gThis - The global context or window object that provides getComputedStyle.
+ * @param {typeof globalThis} gThis - The global context or window object that provides getComputedStyle.
  * @param {ShadowRoot} shadow - The shadow root whose host's computed styles will be inspected.
  *
- * @returns {CombinedMap} An object mapping CSS custom property names (without the --sg- prefix) to their values.
+ * @returns {CombinedColorMap} An object mapping CSS custom property names (without the --sg- prefix) to their values.
  *
  * @example
  * const cssProps = getCustomProperties(window, shadowRoot);

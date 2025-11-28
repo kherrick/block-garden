@@ -1,3 +1,18 @@
+/**
+ * Key code to key name mapping.
+ *
+ * @typedef {{ [code: number]: string }} KeyNameMap
+ */
+
+/**
+ * Maps legacy key codes (keyCode property) to key names.
+ *
+ * Used for older keyboard event handling. Note: deprecated but still supported for compatibility.
+ *
+ * @type {KeyNameMap}
+ *
+ * @constant
+ */
 export const keyMap = {
   13: "Enter",
   17: "Control",
@@ -46,6 +61,16 @@ export const keyMap = {
   90: "z",
 };
 
+/**
+ * Maps keyboard event codes to their key name strings.
+ *
+ * Uses the modern keyboard event code property.
+ * Extends keyMap with code-specific naming conventions (e.g., 'KeyA', 'Digit1').
+ *
+ * @type {KeyNameMap}
+ *
+ * @constant
+ */
 export const codeMap = {
   ...keyMap,
   13: "Enter",

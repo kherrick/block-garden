@@ -1,12 +1,19 @@
 import { updateState } from "../state/state.mjs";
 import { getHarvestMap } from "./getHarvestMap.mjs";
 
+/** @typedef {import('../state/config/tiles.mjs').TileDefinition} TileDefinition */
+/** @typedef {import('../state/config/tiles.mjs').TileMap} TileMap */
+
 /**
- * @param {any} cropTile
- * @param {any} tiles
- * @param {any} world
- * @param {any} x
- * @param {any} y
+ * Harvests a mature crop, giving player seeds and replacing tile with air.
+ *
+ * Grants 2-4 seeds based on random generation.
+ *
+ * @param {TileDefinition} cropTile - The mature crop tile to harvest
+ * @param {TileMap} tiles - Map of all tile definitions
+ * @param {Object} world - World object with setTile method
+ * @param {number} x - X coordinate in tiles
+ * @param {number} y - Y coordinate in tiles
  *
  * @returns {void}
  */

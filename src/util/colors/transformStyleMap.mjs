@@ -1,27 +1,31 @@
-/** @typedef {import('./index.mjs').CombinedMap} CombinedMap */
+/** @typedef {import('./index.mjs').CombinedColorMap} CombinedColorMap */
 
 /**
  * Transform an existing style map using a CSS prefix.
  *
- * @param {CombinedMap} [styleMap={}] - The input style map which includes
+ * @param {CombinedColorMap} [styleMap={}] - The input style map which includes
  * properties from ColorMap, TileColorMap, and potentially others.
  * @param {string} [prefix="--sg-"] - The prefix to filter keys in the styleMap.
  * @param {(key: string) => string} [keyTransform=(key) => key] - Function to transform keys after prefix removal.
  *
- * @returns {CombinedMap} A new object containing the transformed keys and values from the filtered styleMap. The
+ * @returns {CombinedColorMap} A new object containing the transformed keys and values from the filtered styleMap. The
  * return object may include keys from ColorMap, TileColorMap, and potentially additional properties.
  */
 export function transformStyleMap(
   styleMap = {},
   prefix = "--sg-",
-  suffix = "-color",
+  suffix = "",
   keyTransform = (key) => key,
 ) {
-  let combinedMap;
+  let CombinedColorMap;
 
   for (const [key, value] of Object.entries(styleMap)) {
-    if (!combinedMap) {
-      combinedMap = {};
+    if (!CombinedColorMap) {
+      CombinedColorMap = {};
+    }
+
+    if (!key.startsWith(prefix)) {
+      continue;
     }
 
     let resolvedTileKey = key.slice(prefix.length);
@@ -31,8 +35,8 @@ export function transformStyleMap(
     );
 
     const tileKey = keyTransform(resolvedTileKey);
-    combinedMap[tileKey] = value.trim().replace(/^['"]|['"]$/g, "");
+    CombinedColorMap[tileKey] = value.trim().replace(/^['"]|['"]$/g, "");
   }
 
-  return combinedMap;
+  return CombinedColorMap;
 }

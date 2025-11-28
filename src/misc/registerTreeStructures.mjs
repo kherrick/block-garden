@@ -1,10 +1,13 @@
+/** @typedef {import('../map/world.mjs').WorldMap} WorldMap */
+/** @typedef {import('../state/config/tiles.mjs').TileMap} TileMap */
+
 /**
- * @param {any} world
- * @param {any} worldWidth
- * @param {any} worldHeight
- * @param {any} tiles
+ * @param {WorldMap} world - Signal State with world tile data
+ * @param {number} worldWidth - Total world width in tiles
+ * @param {number} worldHeight - Total world height in tiles
+ * @param {TileMap} tiles - Map of all tile definitions
  *
- * @returns {{}}
+ * @returns {Object} Map of tree structures
  */
 export function registerTreeStructures(world, worldWidth, worldHeight, tiles) {
   const structures = {};

@@ -6,7 +6,7 @@ let noise2D = null;
 let currentSeed = null;
 
 /**
- * @param {any} seed
+ * @param {number} seed
  *
  * @returns {void}
  */
@@ -20,8 +20,8 @@ export function initNoise(seed) {
 /**
  * Enhanced noise function that combines multiple octaves for more natural terrain
  *
- * @param {any} x
- * @param {any} y
+ * @param {number} x
+ * @param {number} y
  * @param {number} [seed=0]
  * @param {number} [octaves=3]
  * @param {number} [persistence=0.5]
@@ -38,9 +38,9 @@ export function noise(
   scale = 0.02,
 ) {
   // Initialize noise if not already done or seed changed
-  const seedString = seed.toString();
-  if (!noise2D || currentSeed !== seedString) {
-    initNoise(seedString);
+  // const seedString = seed.toString();
+  if (!noise2D || currentSeed !== seed) {
+    initNoise(seed);
   }
 
   let value = 0;
@@ -63,7 +63,7 @@ export function noise(
 /**
  * Specialized terrain noise for height maps
  *
- * @param {any} x
+ * @param {number} x
  * @param {number} [seed=0]
  *
  * @returns {number}
@@ -75,7 +75,7 @@ export function terrainNoise(x, seed = 0) {
 /**
  * Biome noise for determining biome types
  *
- * @param {any} x
+ * @param {number} x
  * @param {number} [seed=500]
  *
  * @returns {number}
@@ -87,8 +87,8 @@ export function biomeNoise(x, seed = 500) {
 /**
  * Cave noise for underground generation
  *
- * @param {any} x
- * @param {any} y
+ * @param {number} x
+ * @param {number} y
  * @param {number} [seed=1000]
  *
  * @returns {number}
@@ -100,7 +100,7 @@ export function caveNoise(x, y, seed = 1000) {
 /**
  * Water source noise for placing water bodies
  *
- * @param {any} x
+ * @param {number} x
  * @param {number} [seed=2000]
  *
  * @returns {number}
@@ -110,10 +110,33 @@ export function waterNoise(x, seed = 2000) {
 }
 
 /**
+ * Cloud distribution noise
+ *
+ * @param {number} x
+ * @param {number} [y=0]
+ * @param {number} [seed=2000]
+ * @param {number} [octaves=2]
+ * @param {number} [persistence=0.5]
+ * @param {number} [scale=0.01]
+ *
+ * @returns {number}
+ */
+export function cloudNoise(
+  x,
+  y = 0,
+  seed = 2000,
+  octaves = 2,
+  persistence = 0.5,
+  scale = 0.01,
+) {
+  return noise(x, y, seed, octaves, persistence, scale);
+}
+
+/**
  * Ore distribution noise
  *
- * @param {any} x
- * @param {any} y
+ * @param {number} x
+ * @param {number} y
  * @param {number} [seed=3000]
  *
  * @returns {number}

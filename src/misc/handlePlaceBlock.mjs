@@ -1,20 +1,29 @@
 import localForage from "localforage";
+import { SpriteGarden } from "../api/SpriteGarden.mjs";
 
 import { getShadowRoot } from "../util/getShadowRoot.mjs";
 import { getTileFromMaterial } from "./getTileFromMaterial.mjs";
 import { updateRangeValue } from "../update/ui/range.mjs";
 import { updateState } from "../state/state.mjs";
 
+/** @typedef {import("../state/state.mjs").PlayerState} PlayerState */
+/** @typedef {import('../state/config/tiles.mjs').TileMap} TileMap */
+
 /**
- * @param {any} key
- * @param {any} materialsInventory
- * @param {any} player
- * @param {any} selectedMaterialType
- * @param {any} tiles
- * @param {any} tileSize
- * @param {any} world
- * @param {any} worldHeight
- * @param {any} worldWidth
+ * Handles placing a block in the world at specified position.
+ *
+ * Determines target position based on directional key input.
+ * Updates inventory and range UI when block is successfully placed.
+ *
+ * @param {string} key - Direction key ('k', 'o', 'u', 'i') controlling placement direction
+ * @param {Object} materialsInventory - State containing material inventory counts
+ * @param {PlayerState} player - Player state with x, y, width, height properties
+ * @param {string|null} selectedMaterialType - Currently selected material to place
+ * @param {TileMap} tiles - Map of all tile definitions
+ * @param {number} tileSize - Size of each tile in pixels
+ * @param {Object} world - World with getTile and setTile methods
+ * @param {number} worldHeight - Total world height in tiles
+ * @param {number} worldWidth - Total world width in tiles
  *
  * @returns {Promise<void>}
  */

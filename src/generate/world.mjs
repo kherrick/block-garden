@@ -12,17 +12,23 @@ import { updateState } from "../state/state.mjs";
 import { updateWaterPhysics } from "../water/updateWaterPhysics.mjs";
 import { WorldMap } from "../map/world.mjs";
 
+/** @typedef {import('../state/config/index.mjs').BiomeMap} BiomeMap */
+/** @typedef {import('../state/config/tiles.mjs').TileMap} TileMap */
+
 /**
- * Generate world
+ * Generates a complete procedural world with terrain, caves, water, and biomes.
  *
- * @param {any} biomes
- * @param {any} surfaceLevel
- * @param {any} tiles
- * @param {any} worldSeed
- * @param {any} worldHeight
- * @param {any} worldWidth
+ * Uses seeded noise for deterministic generation across playthroughs.
+ * Populates terrain based on height maps, biome rules, and procedural features.
  *
- * @returns {WorldMap}
+ * @param {BiomeMap} biomes - Biome definitions
+ * @param {number} surfaceLevel - Y-coordinate where surface terrain begins
+ * @param {TileMap} tiles - Map of all tile definitions
+ * @param {number} worldSeed - Seed for noise-based generation
+ * @param {number} worldHeight - World height in tiles
+ * @param {number} worldWidth - World width in tiles
+ *
+ * @returns {WorldMap} Complete generated world
  */
 export function generateWorld(
   biomes,
@@ -204,29 +210,57 @@ export function generateWorld(
     }
   }
 
+  // Create Signal State for queue and world - keep same world instance
+  const waterPhysicsQueue = new Signal.State(new Set(initialQueue));
+  const worldState = new Signal.State(currentWorld);
+
   // (more iterations for world gen)
   for (let i = 0; i < 100; i++) {
-    const tempQueue = {
-      get: () => initialQueue,
-      set: (v) => {
-        initialQueue.clear();
-        v.forEach((k) => initialQueue.add(k));
-      },
-    };
-
     updateWaterPhysics(
       tiles,
-      { frameCounter: 999 }, // Force immediate update
-      tempQueue,
-      new Signal.State(currentWorld),
+      {
+        updateInterval: 0,
+        frameCounter: 999, // Force immediate update
+        maxIterationsPerUpdate: 0,
+        checkRadius: 0,
+        dirtyRegions: new Set(),
+      },
+      waterPhysicsQueue,
+      worldState,
       worldWidth,
       worldHeight,
     );
 
-    // Water settled
-    if (initialQueue.size === 0) {
+    // Check if water settled
+    const currentQueue = waterPhysicsQueue.get();
+    if (currentQueue.size === 0) {
       break;
     }
+
+    // Prepare queue for next iteration - add adjacent tiles that might need updating
+    const nextQueue = new Set();
+    currentQueue.forEach((pos) => {
+      const [x, y] = pos.split(",").map(Number);
+
+      nextQueue.add(pos); // Re-add current position
+      if (x > 0) {
+        nextQueue.add(`${x - 1},${y}`);
+      }
+
+      if (x < worldWidth - 1) {
+        nextQueue.add(`${x + 1},${y}`);
+      }
+
+      if (y > 0) {
+        nextQueue.add(`${x},${y - 1}`);
+      }
+
+      if (y < worldHeight - 1) {
+        nextQueue.add(`${x},${y + 1}`);
+      }
+    });
+
+    waterPhysicsQueue.set(nextQueue);
   }
 
   console.log("World generation complete!");

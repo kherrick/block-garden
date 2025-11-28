@@ -1,8 +1,10 @@
+/** @typedef {import('signal-polyfill').Signal.State} Signal.State */
+
 /**
- * @param {any} depthEl
- * @param {any} player
- * @param {any} surfaceLevel
- * @param {any} tileSize
+ * @param {HTMLDivElement} depthEl
+ * @param {Signal.State} player
+ * @param {number} surfaceLevel
+ * @param {number} tileSize
  *
  * @returns {void}
  */

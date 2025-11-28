@@ -4,14 +4,23 @@ import { mapEditorState } from "../map/editor.mjs";
 import { markWaterRegionDirty } from "../water/markWaterRegionDirty.mjs";
 import { updateState } from "../state/state.mjs";
 
+/** @typedef {import('signal-polyfill').Signal.State} Signal.State */
+
+/** @typedef {import('../map/world.mjs').WorldMap} WorldMap */
+/** @typedef {import('../state/config/tiles.mjs').TileDefinition} TileDefinition */
+/** @typedef {import('../state/config/tiles.mjs').TileMap} TileMap */
+/** @typedef {import("../state/state.mjs").PlayerState} PlayerState */
+
 /**
- * Helper function to check if a tile position is part of a mature plant structure
+ * Checks if a tile position is part of a mature plant structure.
  *
- * @param {any} x
- * @param {any} y
- * @param {any} plantStructures
+ * Used to determine if breaking this tile should harvest the entire plant.
  *
- * @returns {boolean}
+ * @param {number} x - X coordinate in tiles
+ * @param {number} y - Y coordinate in tiles
+ * @param {Object} plantStructures - State Signal containing all plant structures
+ *
+ * @returns {boolean} True if tile is part of a mature plant
  */
 function isMaturePlantPart(x, y, plantStructures) {
   for (const [key, structure] of Object.entries(plantStructures.get())) {
@@ -26,24 +35,26 @@ function isMaturePlantPart(x, y, plantStructures) {
 }
 
 /**
- * @param {any} tile
- * @param {any} tiles
+ * Determines if a tile is part of the standard tree structure (trunk or leaves).
  *
- * @returns {boolean}
+ * @param {TileDefinition|null} tile - The tile to check
+ * @param {TileMap} tiles - Map of all tile definitions
+ *
+ * @returns {boolean} True if tile is tree trunk or leaves
  */
 function isTreePart(tile, tiles) {
   return tile === tiles.TREE_TRUNK || tile === tiles.TREE_LEAVES;
 }
 
 /**
- * @param {any} growthTimers
- * @param {any} plantStructures
- * @param {any} player
- * @param {any} tiles
- * @param {any} tileSize
- * @param {any} world
- * @param {any} worldHeight
- * @param {any} worldWidth
+ * @param {Signal.State} growthTimers - Signal State with growth timer data
+ * @param {Signal.State} plantStructures - Signal State with plant structure data
+ * @param {PlayerState} player - Signal State with player position/dimension data
+ * @param {TileMap} tiles - Map of all tile definitions
+ * @param {number} tileSize - Size of each tile in pixels
+ * @param {WorldMap} world - Signal State with world tile data
+ * @param {number} worldHeight - Total world height in tiles
+ * @param {number} worldWidth - Total world width in tiles
  * @param {string} [mode="regular"]
  *
  * @returns {void}
@@ -339,15 +350,15 @@ function handleBreakBlock(
 }
 
 /**
- * @param {any} growthTimers
- * @param {any} plantStructures
- * @param {any} player
- * @param {any} tiles
- * @param {any} tileSize
- * @param {any} world
- * @param {any} worldHeight
- * @param {any} worldWidth
- * @param {any} queue
+ * @param {Signal.State} growthTimers - Signal State with growth timer data
+ * @param {Signal.State} plantStructures - Signal State with plant structure data
+ * @param {Signal.State} player - Signal State with player position/dimension data
+ * @param {TileMap} tiles - Map of all tile definitions
+ * @param {number} tileSize - Size of each tile in pixels
+ * @param {Signal.State} world - Signal State with world tile data
+ * @param {number} worldHeight - Total world height in tiles
+ * @param {number} worldWidth - Total world width in tiles
+ * @param {Signal.State} queue - Queue of blocks to harvest
  * @param {string} [mode="regular"]
  *
  * @returns {void}

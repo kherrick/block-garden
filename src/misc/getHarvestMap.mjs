@@ -1,8 +1,10 @@
 import { extractSeeds } from "./selectSeed.mjs";
 
+/** @typedef {import('../state/config/tiles.mjs').TileMap} TileMap */
+
 /**
- * @param {any} tiles
+ * @param {TileMap} tiles - Map of all tile definitions
  *
- * @returns {any}
+ * @returns {Object}
  */
 export const getHarvestMap = (tiles) => extractSeeds(tiles);

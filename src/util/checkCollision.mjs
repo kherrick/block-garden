@@ -1,18 +1,20 @@
 import { isSolid } from "./isSolid.mjs";
 
 /**
- * Check collision with world
+ * Detects collision between an axis-aligned bounding box and solid world tiles.
  *
- * @param {any} height
- * @param {any} tileSize
- * @param {any} width
- * @param {any} world
- * @param {any} worldHeight
- * @param {any} worldWidth
- * @param {any} x
- * @param {any} y
+ * Tests multiple points around the bounding box perimeter for collision.
  *
- * @returns {boolean}
+ * @param {number} height - Height of the bounding box in pixels
+ * @param {number} tileSize - Size of each tile in pixels
+ * @param {number} width - Width of the bounding box in pixels
+ * @param {Object} world - World object with getTile method
+ * @param {number} worldHeight - Total world height in tiles
+ * @param {number} worldWidth - Total world width in tiles
+ * @param {number} x - X-coordinate of bounding box in pixels
+ * @param {number} y - Y-coordinate of bounding box in pixels
+ *
+ * @returns {boolean} True if collision detected, false otherwise
  */
 export function checkCollision(
   height,

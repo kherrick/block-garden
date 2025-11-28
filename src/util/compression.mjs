@@ -1,7 +1,9 @@
 /**
- * Get ISO like data for filename
+ * Generates an ISO-like timestamp string suitable for use in filenames.
  *
- * @returns {string}
+ * Format: YYYY-MM-DD_HH-MM-SS.mmm (in UTC).
+ *
+ * @returns {string} Timestamp string for filename (e.g., '2025-11-26_14-30-45.123')
  */
 export function getIsoDateForFilename() {
   const now = new Date();
@@ -17,11 +19,14 @@ export function getIsoDateForFilename() {
 }
 
 /**
- * Compress string to gzip binary Blob
+ * Compresses a string using the CompressionStream API (gzip format).
  *
- * @param {any} str
+ * Returns a binary Blob suitable for download or transmission.
+ * Gracefully handles browsers without native CompressionStream support.
  *
- * @returns {Promise<Blob>}
+ * @param {string} str - The string to compress
+ *
+ * @returns {Promise<Blob|undefined>} Compressed gzip Blob, or undefined if CompressionStream unavailable
  */
 export async function compressToBinaryBlob(str) {
   const input = new TextEncoder().encode(str);
@@ -38,12 +43,14 @@ export async function compressToBinaryBlob(str) {
 }
 
 /**
- * Compress string directly to gzip binary file
+ * Compresses a string and writes it directly to a file handle.
  *
- * @param {any} str
- * @param {any} outputFileHandle
+ * Uses the File System Access API for saving compressed data.
  *
- * @returns {Promise<void>}
+ * @param {string} str - The string to compress
+ * @param {FileSystemFileHandle} outputFileHandle - File handle to write compressed data to
+ *
+ * @returns {Promise<void>} Resolves when file write is complete
  */
 export async function compressToBinaryFile(str, outputFileHandle) {
   const compressedBlob = await compressToBinaryBlob(str);
@@ -56,8 +63,8 @@ export async function compressToBinaryFile(str, outputFileHandle) {
 /**
  * Decompress gzip binary file to text file
  *
- * @param {any} inputFile
- * @param {any} outputFileHandle
+ * @param {Blob} inputFile
+ * @param {FileSystemFileHandle} outputFileHandle
  *
  * @returns {Promise<void>}
  */
@@ -80,8 +87,8 @@ export async function decompressFromBinaryFile(inputFile, outputFileHandle) {
 /**
  * Compress string and save binary gzip file
  *
- * @param {any} gThis
- * @param {any} stringData
+ * @param {typeof globalThis} gThis
+ * @param {string} stringData
  *
  * @returns {Promise<void>}
  */
@@ -120,7 +127,7 @@ export async function runCompress(gThis, stringData) {
 /**
  * Decompress gzip binary file
  *
- * @param {any} gThis
+ * @param {typeof globalThis} gThis
  *
  * @returns {Promise<void>}
  */

@@ -3,20 +3,25 @@ import { generateWorld } from "../generate/world.mjs";
 import { registerTreeStructures } from "../misc/registerTreeStructures.mjs";
 import { WorldMap } from "../map/world.mjs";
 
+/** @typedef {import('signal-polyfill').Signal.State} Signal.State */
+
+/** @typedef {import("../state/config/index.mjs").BiomeMap} BiomeMap */
+/** @typedef {import("../state/config/index.mjs").TileMap} TileMap */
+
 /**
- * @param {any} biomes
- * @param {any} surfaceLevel
- * @param {any} tileSize
- * @param {any} tiles
- * @param {any} worldHeight
- * @param {any} worldWidth
- * @param {any} worldSeed
- * @param {any} gameTime
- * @param {any} growthTimers
- * @param {any} plantStructures
- * @param {any} player
- * @param {any} seedInventory
- * @param {any} [newSeed=null]
+ * @param {BiomeMap} biomes
+ * @param {number} surfaceLevel
+ * @param {number} tileSize
+ * @param {TileMap} tiles
+ * @param {number} worldHeight
+ * @param {number} worldWidth
+ * @param {Signal.State} worldSeed
+ * @param {Signal.State} gameTime
+ * @param {Signal.State} growthTimers
+ * @param {Signal.State} plantStructures
+ * @param {Signal.State} player
+ * @param {Signal.State} seedInventory
+ * @param {number} [newSeed=null]
  *
  * @returns {WorldMap}
  */
@@ -38,7 +43,7 @@ export function initNewWorld(
   let currentWorldSeed;
 
   if (newSeed !== null) {
-    worldSeed.set(newSeed.toString());
+    worldSeed.set(newSeed);
 
     currentWorldSeed = newSeed;
   } else {

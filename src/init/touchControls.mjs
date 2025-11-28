@@ -3,14 +3,19 @@ import { handleBreakBlockWithWaterPhysics } from "../misc/handleBreakBlock.mjs";
 import { handleFarmAction } from "../misc/handleFarmAction.mjs";
 import { handlePlaceBlock } from "../misc/handlePlaceBlock.mjs";
 
+/** @typedef {import('./game.mjs').CustomShadowHost} CustomShadowHost */
+
 /**
  * Touch controls
  *
- * @param {any} shadow
+ * @param {ShadowRoot} shadow
  *
  * @returns {void}
  */
 export function initTouchControls(shadow) {
+  const host =
+    /** @type {CustomShadowHost} */
+    (shadow.host);
   const touchButtons = shadow.querySelectorAll(".touch-btn");
 
   touchButtons.forEach((btn) => {
@@ -20,8 +25,11 @@ export function initTouchControls(shadow) {
     let intervalId = null;
 
     function executeKeyAction() {
-      shadow.host.touchKeys[key] = true;
-      btn.style.background = "var(--sg-color-gray-alpha-30)";
+      host.touchKeys[key] = true;
+
+      if (btn instanceof HTMLButtonElement) {
+        btn.style.background = "var(--sg-color-gray-alpha-30)";
+      }
 
       if (key === "f") {
         handleFarmAction(
@@ -30,7 +38,6 @@ export function initTouchControls(shadow) {
           gameState.player.get(),
           gameState.seedInventory.get(),
           gameState.selectedSeedType.get(),
-          gameConfig.TileName,
           gameConfig.TILES,
           gameConfig.TILE_SIZE.get(),
           gameState.world.get(),
@@ -73,8 +80,12 @@ export function initTouchControls(shadow) {
 
     function stopHeldAction() {
       isPressed = false;
-      shadow.host.touchKeys[key] = false;
-      btn.style.background = "var(--sg-ui-touch-btn-background-color)";
+
+      host.touchKeys[key] = false;
+
+      if (btn instanceof HTMLButtonElement) {
+        btn.style.background = "var(--sg-ui-touch-btn-background-color)";
+      }
 
       if (intervalId) {
         clearInterval(intervalId);
@@ -128,52 +139,62 @@ export function initTouchControls(shadow) {
   });
 
   // Handle block placement mobile controls
-  shadow.querySelectorAll(".touch-btn.place-block").forEach((pb) => {
-    pb.addEventListener(
-      "touchstart",
-      async () =>
-        await handlePlaceBlock(
-          pb.dataset.key,
-          gameState.materialsInventory.get(),
-          gameState.player.get(),
-          gameState.selectedMaterialType.get(),
-          gameConfig.TILES,
-          gameConfig.TILE_SIZE.get(),
-          gameState.world.get(),
-          gameConfig.WORLD_HEIGHT.get(),
-          gameConfig.WORLD_WIDTH.get(),
-        ),
-    );
+  shadow.querySelectorAll(".touch-btn.place-block").forEach(
+    (
+      /** @type HTMLDivElement */
+      pb,
+    ) => {
+      pb.addEventListener(
+        "touchstart",
+        async () =>
+          await handlePlaceBlock(
+            pb.dataset.key,
+            gameState.materialsInventory.get(),
+            gameState.player.get(),
+            gameState.selectedMaterialType.get(),
+            gameConfig.TILES,
+            gameConfig.TILE_SIZE.get(),
+            gameState.world.get(),
+            gameConfig.WORLD_HEIGHT.get(),
+            gameConfig.WORLD_WIDTH.get(),
+          ),
+      );
 
-    pb.addEventListener(
-      "click",
-      async () =>
-        await handlePlaceBlock(
-          pb.dataset.key,
-          gameState.materialsInventory.get(),
-          gameState.player.get(),
-          gameState.selectedMaterialType.get(),
-          gameConfig.TILES,
-          gameConfig.TILE_SIZE.get(),
-          gameState.world.get(),
-          gameConfig.WORLD_HEIGHT.get(),
-          gameConfig.WORLD_WIDTH.get(),
-        ),
-    );
-  });
+      pb.addEventListener(
+        "click",
+        async () =>
+          await handlePlaceBlock(
+            pb.dataset.key,
+            gameState.materialsInventory.get(),
+            gameState.player.get(),
+            gameState.selectedMaterialType.get(),
+            gameConfig.TILES,
+            gameConfig.TILE_SIZE.get(),
+            gameState.world.get(),
+            gameConfig.WORLD_HEIGHT.get(),
+            gameConfig.WORLD_WIDTH.get(),
+          ),
+      );
+    },
+  );
 
-  shadow.addEventListener("keyup", (e) => {
-    shadow.host.keys[e.key.toLowerCase()] = false;
+  shadow.addEventListener(
+    "keyup",
+    /** @param {KeyboardEvent} e */
+    (e) => {
+      host.keys[e.key.toLowerCase()] = false;
 
-    e.preventDefault();
-  });
+      e.preventDefault();
+    },
+  );
 
   // Prevent default touch behaviors
   shadow.addEventListener(
     "touchstart",
     (e) => {
       if (
-        e.target.closest(".touch-controls") ||
+        (e.target instanceof HTMLDivElement &&
+          e.target.closest(".touch-controls")) ||
         e.target === shadow.getElementById("canvas")
       ) {
         e.preventDefault();
@@ -186,7 +207,8 @@ export function initTouchControls(shadow) {
     "touchmove",
     (e) => {
       if (
-        e.target.closest(".touch-controls") ||
+        (e.target instanceof HTMLDivElement &&
+          e.target.closest(".touch-controls")) ||
         e.target === shadow.getElementById("canvas")
       ) {
         e.preventDefault();
@@ -199,7 +221,8 @@ export function initTouchControls(shadow) {
     "touchend",
     (e) => {
       if (
-        e.target.closest(".touch-controls") ||
+        (e.target instanceof HTMLDivElement &&
+          e.target.closest(".touch-controls")) ||
         e.target === shadow.getElementById("canvas")
       ) {
         e.preventDefault();
@@ -211,7 +234,8 @@ export function initTouchControls(shadow) {
   // Prevent context menu on long press
   shadow.addEventListener("contextmenu", (e) => {
     if (
-      e.target.closest(".touch-controls") ||
+      (e.target instanceof HTMLDivElement &&
+        e.target.closest(".touch-controls")) ||
       e.target === shadow.getElementById("canvas")
     ) {
       e.preventDefault();
@@ -221,7 +245,8 @@ export function initTouchControls(shadow) {
   // Prevent zoom on double tap
   shadow.addEventListener("dblclick", (e) => {
     if (
-      e.target.closest(".touch-controls") ||
+      (e.target instanceof HTMLDivElement &&
+        e.target.closest(".touch-controls")) ||
       e.target === shadow.getElementById("canvas")
     ) {
       e.preventDefault();

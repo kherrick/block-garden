@@ -1,12 +1,16 @@
 import { getBiome } from "../../misc/getBiome.mjs";
 
+/** @typedef {import('signal-polyfill').Signal.State} Signal.State */
+
+/** @typedef {import('../../state/config/index.mjs').BiomeMap} BiomeMap */
+
 /**
- * @param {any} biomeEl
- * @param {any} player
- * @param {any} biomes
- * @param {any} tileSize
- * @param {any} worldWidth
- * @param {any} worldSeed
+ * @param {HTMLDivElement} biomeEl
+ * @param {Signal.State} player
+ * @param {BiomeMap} biomes
+ * @param {number} tileSize
+ * @param {number} worldWidth
+ * @param {Signal.State} worldSeed
  *
  * @returns {void}
  */

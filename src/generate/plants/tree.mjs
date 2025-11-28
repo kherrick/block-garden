@@ -1,10 +1,12 @@
 import { getRandomSeed } from "../../misc/getRandomSeed.mjs";
 
+/** @typedef {import('../../state/config/tiles.mjs').TileMap} TileMap */
+
 /**
- * @param {any} x
- * @param {any} y
- * @param {any} progress
- * @param {any} tiles
+ * @param {number} x
+ * @param {number} y
+ * @param {number} progress
+ * @param {TileMap} tiles
  *
  * @returns {{ x: any; y: any; tile: any; }[]}
  */

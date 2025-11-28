@@ -1,20 +1,22 @@
 import { checkCollision } from "../util/checkCollision.mjs";
 import { isKeyPressed } from "../util/isKeyPressed.mjs";
 
+/** @typedef {import('signal-polyfill').Signal.State} Signal.State */
+
 /**
  * Update player physics
  *
- * @param {any} friction
- * @param {any} gravity
- * @param {any} maxFallSpeed
- * @param {any} tileSize
- * @param {any} worldHeight
- * @param {any} worldWidth
- * @param {any} world
- * @param {any} camera
- * @param {any} player
- * @param {any} cnvs
- * @param {any} shadow
+ * @param {number} friction
+ * @param {number} gravity
+ * @param {number} maxFallSpeed
+ * @param {number} tileSize
+ * @param {number} worldHeight
+ * @param {number} worldWidth
+ * @param {Signal.State} world
+ * @param {Signal.State} camera
+ * @param {Signal.State} player
+ * @param {HTMLCanvasElement} cnvs
+ * @param {ShadowRoot} shadow
  * @param {number} [movementScale=1]
  *
  * @returns {void}

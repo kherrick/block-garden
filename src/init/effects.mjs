@@ -3,18 +3,20 @@ import { effect } from "../util/effect.mjs";
 import { updateInventoryUI } from "../update/ui/inventory.mjs";
 import { getRandomSeed } from "../misc/getRandomSeed.mjs";
 
+/** @typedef {import('signal-polyfill').Signal.State} Signal.State */
+
 /**
- * @param {any} shadow
- * @param {any} totalSeeds
- * @param {any} breakMode
- * @param {any} fogMode
- * @param {any} worldSeed
- * @param {any} gameTime
- * @param {any} materialsInventory
- * @param {any} seedInventory
- * @param {any} selectedMaterialType
- * @param {any} selectedSeedType
- * @param {any} viewMode
+ * @param {ShadowRoot} shadow
+ * @param {Signal.State} totalSeeds
+ * @param {Signal.State} breakMode
+ * @param {Signal.State} fogMode
+ * @param {Signal.State} worldSeed
+ * @param {Signal.State} gameTime
+ * @param {Signal.State} materialsInventory
+ * @param {Signal.State} seedInventory
+ * @param {Signal.State} selectedMaterialType
+ * @param {Signal.State} selectedSeedType
+ * @param {Signal.State} viewMode
  *
  * @returns {void}
  */
@@ -40,7 +42,7 @@ export function initEffects(
   effect(() => {
     const seedInput = shadow.getElementById("worldSeedInput");
 
-    if (seedInput && !seedInput.value) {
+    if (seedInput instanceof HTMLInputElement && !seedInput.value) {
       const currentSeedDisplay = shadow.getElementById("currentSeed");
       const currentWorldSeed = worldSeed.get();
 
@@ -51,7 +53,7 @@ export function initEffects(
         return;
       }
 
-      const randomSeed = getRandomSeed();
+      const randomSeed = String(getRandomSeed());
 
       seedInput.value = randomSeed;
 
@@ -65,7 +67,7 @@ export function initEffects(
 
     const gameTimeEl = shadow.getElementById("gameTime");
     if (gameTimeEl) {
-      gameTimeEl.textContent = Math.floor(currentGameTime);
+      gameTimeEl.textContent = String(Math.floor(currentGameTime));
     }
   });
 

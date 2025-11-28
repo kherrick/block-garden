@@ -1,14 +1,109 @@
 import { Signal } from "signal-polyfill";
+
 import { gameConfig } from "./config/index.mjs";
 import { FogMap } from "../map/fog.mjs";
 
+/** @typedef {import('./config/index.mjs').GameConfig} GameConfig */
+
 const { TileName } = gameConfig;
 
+/**
+ * @typedef {{x: number, y: number}} TilePosition TilePosition
+ */
+
+/**
+ * @typedef {{x: number, y: number}} TilePositionNormalized TilePositionNormalized
+ */
+
+/**
+ * @typedef {{x: number, y: number}} PixelPosition PixelPosition
+ */
+
+/**
+ * Player state object.
+ *
+ * @typedef {Object} PlayerState
+ *
+ * @property {number} x - X position in pixels
+ * @property {number} y - Y position in pixels
+ * @property {number} width - Width in pixels
+ * @property {number} height - Height in pixels
+ * @property {number} velocityX - Horizontal velocity in pixels/frame
+ * @property {number} velocityY - Vertical velocity in pixels/frame
+ * @property {number} speed - Movement speed in pixels/frame
+ * @property {number} jumpPower - Jump force multiplier
+ * @property {boolean} onGround - Whether player is touching solid ground
+ * @property {string} color - Hex color for player sprite
+ * @property {number} lastDirection - Last facing direction (-1 left, 1 right)
+ */
+
+/**
+ * Player object with position and size.
+ *
+ * @typedef {Object} Player
+ *
+ * @property {number} x - X position in pixels
+ * @property {number} y - Y position in pixels
+ * @property {number} width - Width in pixels
+ * @property {number} height - Height in pixels
+ */
+
+/**
+ * Positional information relative to world.
+ *
+ * @typedef {Object} PlayerPositionData
+ *
+ * @property {PixelPosition} pixel - Pixel coordinates
+ * @property {TilePosition} tile - Tile coordinates
+ * @property {TilePositionNormalized} normalized - Normalized position (0-1)
+ * @property {{horizontal: string, vertical: string}} location - Descriptive region
+ * @property {{isAtLeft: boolean, isAtRight: boolean, isAtTop: boolean, isAtBottom: boolean}} bounds - Boundary flags
+ */
+
+/**
+ * Camera state object.
+ *
+ * @typedef {Object} CameraState
+ *
+ * @property {number} x - Camera X offset in pixels
+ * @property {number} y - Camera Y offset in pixels
+ * @property {number} speed - Camera movement smoothing speed
+ */
+
+/**
+ * Game configuration state.
+ *
+ * @typedef {Object} GameState
+ *
+ * @property {Signal.State} world
+ * @property {Signal.State} exploredMap
+ * @property {Signal.State} plantStructures
+ * @property {Signal.State} gameTime
+ * @property {Signal.State} growthTimers
+ * @property {Signal.State} seeds
+ * @property {Signal.State} selectedMaterialType
+ * @property {Signal.State} selectedSeedType
+ * @property {Signal.State} shouldReset
+ * @property {Signal.State} viewMode
+ * @property {Signal.State} waterPhysicsQueue
+ * @property {Signal.State} seedInventory
+ * @property {Signal.State} materialsInventory
+ * @property {Signal.State} player
+ * @property {Signal.State} camera
+ */
+
+/**
+ * Primary game state store using reactive Signals.
+ *
+ * Contains world, player, camera, and inventory data.
+ *
+ * @type {GameState}
+ *
+ * @constant
+ */
 export const gameState = {
-  // World data
-  world: new Signal.State({
-    setTile: (...deps) => {},
-  }),
+  // World data - initialized in initState() to avoid circular dependency
+  world: new Signal.State(null),
   // Tracks which tiles have been explored for map fog
   exploredMap: new Signal.State(new FogMap(500, 300)),
   // Store plant growth data
@@ -81,6 +176,15 @@ export const gameState = {
   }),
 };
 
+/**
+ * Computed (derived) state values that depend on gameState Signals.
+ *
+ * Updates automatically when dependencies change.
+ *
+ * @type {Object}
+ *
+ * @constant
+ */
 export const computedSignals = {
   totalSeeds: new Signal.Computed(() => {
     const inventory = gameState.seedInventory.get();
@@ -90,8 +194,12 @@ export const computedSignals = {
 };
 
 /**
- * @param {any} key
- * @param {any} updater
+ * Updates a gameState Signal value by applying an updater function.
+ *
+ * Safe no-op if the key doesn't exist or isn't a Signal.
+ *
+ * @param {string} key - The key of the Signal in gameState to update
+ * @param {(current: any) => any} updater - Function that takes current value and returns new value
  *
  * @returns {void}
  */
@@ -104,8 +212,12 @@ export function updateState(key, updater) {
 }
 
 /**
- * @param {any} key
- * @param {any} updater
+ * Updates a gameConfig Signal value by applying an updater function.
+ *
+ * Safe no-op if the key doesn't exist or isn't a Signal.
+ *
+ * @param {string} key - The key of the Signal in gameConfig to update
+ * @param {(current: any) => any} updater - Function that takes current value and returns new value
  *
  * @returns {void}
  */
@@ -118,51 +230,75 @@ export function updateConfig(key, updater) {
 }
 
 /**
- * @param {any} key
- * @param {any} value
+ * Sets a gameConfig Signal value directly.
  *
- * @returns {any}
+ * Safe no-op if the key doesn't exist or isn't a Signal.
+ *
+ * @param {string} key - The key of the Signal in gameConfig
+ * @param {any} value - The new value to set
+ *
+ * @returns {any} The return value from Signal.set()
  */
 export function setConfig(key, value) {
   return gameConfig[key]?.set(value);
 }
 
 /**
- * @param {any} key
+ * Gets the current value of a gameConfig Signal.
  *
- * @returns {any}
+ * Returns undefined if the key doesn't exist or isn't a Signal.
+ *
+ * @param {string} key - The key of the Signal in gameConfig
+ *
+ * @returns {any} The current value of the Signal
  */
 export function getConfig(key) {
   return gameConfig[key]?.get();
 }
 
 /**
- * @param {any} key
- * @param {any} value
+ * Sets a gameState Signal value directly.
  *
- * @returns {any}
+ * Safe no-op if the key doesn't exist or isn't a Signal.
+ *
+ * @param {string} key - The key of the Signal in gameState
+ * @param {any} value - The new value to set
+ *
+ * @returns {any} The return value from Signal.set()
  */
 export function setState(key, value) {
   return gameState[key]?.set(value);
 }
 
 /**
- * @param {any} key
+ * Gets the current value of a gameState Signal.
  *
- * @returns {any}
+ * Returns undefined if the key doesn't exist or isn't a Signal.
+ *
+ * @param {string} key - The key of the Signal in gameState
+ *
+ * @returns {any} The current value of the Signal
  */
 export function getState(key) {
   return gameState[key]?.get();
 }
 
 /**
- * @param {any} gThis
- * @param {any} version
+ * Initializes the global state store and exposes it through globalThis.
  *
- * @returns {{ gameConfig: any; gameState: any; }}
+ * Sets up reactive state access for the game and external APIs.
+ *
+ * @param {typeof globalThis} gThis - Global this or window object
+ * @param {string} version - Game version string to set in config
+ *
+ * @returns {Promise<{gameConfig: GameConfig, gameState: GameState}>} Object containing both config and state
  */
-export function initState(gThis, version) {
+export async function initState(gThis, version) {
   gameConfig.version.set(version);
+
+  // Initialize world map here to avoid circular dependency
+  const { WorldMap } = await import("../map/world.mjs");
+  gameState.world.set(new WorldMap(500, 300));
 
   // Expose reactive state through globalThis
   gThis.spriteGarden = {

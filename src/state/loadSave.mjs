@@ -5,9 +5,14 @@ import { FogMap } from "../map/fog.mjs";
 import { WorldMap } from "../map/world.mjs";
 
 /**
- * @param {any} gThis
- * @param {any} shadow
- * @param {any} saveState
+ * Restores game state and config from a save file.
+ *
+ * Reconstructs complex objects like world maps and fog maps from serialized data.
+ * Updates all Signal values to restore previous game state.
+ *
+ * @param {typeof globalThis} gThis - Global this or window object with spriteGarden property
+ * @param {ShadowRoot} shadow - Shadow root for canvas resizing
+ * @param {Object} saveState - Save state object created by createSaveState
  *
  * @returns {void}
  */

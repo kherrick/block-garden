@@ -1,7 +1,7 @@
 import localForage from "localforage";
 
 /**
- * @param {any} shadow
+ * @param {ShadowRoot} shadow
  *
  * @returns {Promise<void>}
  */
@@ -13,7 +13,7 @@ export async function updateRangeUI(shadow) {
 }
 
 /**
- * @param {any} shadow
+ * @param {ShadowRoot} shadow
  *
  * @returns {Promise<void>}
  */

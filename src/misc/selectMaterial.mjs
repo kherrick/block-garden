@@ -1,17 +1,23 @@
 /**
- * Material selection function
+ * UI event handler for material selection.
  *
- * @param {any} doc
- * @param {any} state
- * @param {any} event
+ * Toggles material selection in the inventory UI and updates game state.
+ * Deselects the material if it's already selected (toggle behavior).
+ *
+ * @param {Object} state - Game state object with selectedMaterialType Signal
+ * @param {Event} event - Click event from the material button element
  *
  * @returns {void}
  */
-export function selectMaterial(doc, state, event) {
+export function selectMaterial(state, event) {
+  if (!(event.currentTarget instanceof HTMLElement)) {
+    throw new Error("currentTarget is not an HTMLElement");
+  }
+
   const [materialType] = Object.keys(event.currentTarget.dataset);
 
-  for (const element of event.currentTarget.parentElement.children) {
-    element.classList.remove("selected");
+  for (const el of event.currentTarget.parentElement.children) {
+    el.classList.remove("selected");
   }
 
   event.currentTarget.classList.toggle("selected");

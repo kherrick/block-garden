@@ -15,7 +15,7 @@
 
 /**
  * CSS Custom Properties Map
- * @typedef {{[key: string]: string} & ColorMap & TileColorMap} CombinedMap
+ * @typedef {{[key: string]: string} & ColorMap & TileColorMap} CombinedColorMap
  */
 
 /**

@@ -1,16 +1,22 @@
 import { updateState } from "../state/state.mjs";
+
 import { harvestCrop } from "./harvestCrop.mjs";
 import { plantSeed } from "./plantSeed.mjs";
 
+/** @typedef {import('signal-polyfill').Signal.State} Signal.State */
+
+/** @typedef {import('../state/config/tiles.mjs').TileMap} TileMap */
+/** @typedef {import('../map/world.mjs').WorldMap} WorldMap */
+
 /**
- * @param {any} growthTimers
- * @param {any} plantStructures
- * @param {any} structure
- * @param {any} structureKey
- * @param {any} tiles
- * @param {any} world
- * @param {any} worldHeight
- * @param {any} worldWidth
+ * @param {Signal.State} growthTimers growthTimers - Signal State with growth timer data
+ * @param {Signal.State} plantStructures plantStructures - Signal State with plant structure data
+ * @param {Object} structure - Plant structure object
+ * @param {string} structureKey - Key for the structure in plantStructures
+ * @param {TileMap} tiles - Map of all tile definitions
+ * @param {WorldMap} world - World with getTile and setTile methods
+ * @param {number} worldHeight - Total world height in tiles
+ * @param {number} worldWidth - Total world width in tiles
  *
  * @returns {void}
  */
@@ -84,27 +90,26 @@ function harvestMaturePlant(
 }
 
 /**
- * @param {any} growthTimers
- * @param {any} plantStructures
- * @param {any} player
- * @param {any} seedInventory
- * @param {any} selectedSeedType
- * @param {any} tileName
- * @param {any} tiles
- * @param {any} tileSize
- * @param {any} world
- * @param {any} worldHeight
- * @param {any} worldWidth
+ * @param {Signal.State} growthTimers growthTimers - Signal State with growth timer data
+ * @param {Signal.State} plantStructures plantStructures - Signal State with plant structure data
+ * @param {Signal.State} player - Signal State with player position/dimension data
+ * @param {Signal.State} seedInventory - Signal State with seed inventory data
+ * @param {string} selectedSeedType - Currently selected seed type
+ * @param {TileMap} tiles - Map of all tile definitions
+ * @param {number} tileSize - Size of each tile in pixels
+ * @param {WorldMap} world - World with getTile and setTile methods
+ * @param {number} worldHeight - Total world height in tiles
+ * @param {number} worldWidth - Total world width in tiles
  *
  * @returns {void}
  */
 export function handleFarmAction(
   growthTimers,
   plantStructures,
+  /** @type {{ [key: string]: number }} */
   player,
   seedInventory,
   selectedSeedType,
-  tileName,
   tiles,
   tileSize,
   world,

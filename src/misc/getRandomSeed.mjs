@@ -1,18 +1,26 @@
 /**
- * @param {any} min
- * @param {any} max
+ * Generates a random integer within specified range using Math.random().
  *
- * @returns {any}
+ * Returns inclusive range [min, max].
+ *
+ * @param {number} min - Minimum value (inclusive)
+ * @param {number} max - Maximum value (inclusive)
+ *
+ * @returns {number} Random integer in range
  */
 export function getRandomInRange(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 /**
- * @param {any} min
- * @param {any} max
+ * Generates a cryptographically secure random integer within specified range.
  *
- * @returns {any}
+ * Uses Web Crypto API to avoid modulo bias for high-security use cases.
+ *
+ * @param {number} min - Minimum value (inclusive)
+ * @param {number} max - Maximum value (inclusive)
+ *
+ * @returns {number} Cryptographically random integer in range
  */
 export function getCryptoRandomInt(min, max) {
   const range = max - min + 1;
@@ -31,14 +39,19 @@ export function getCryptoRandomInt(min, max) {
 }
 
 /**
- * @param {number} [minValue=1]
- * @param {number} [maxValue=4294967295]
+ * Generates a random seed for world generation.
  *
- * @returns {any}
+ * Prefers crypto-secure random if available, falls back to Math.random().
+ * Useful for ensuring different worlds on each playthrough.
+ *
+ * @param {number} [minValue=1] - Minimum seed value (inclusive)
+ * @param {number} [maxValue=4294967295] - Maximum seed value (inclusive), 32-bit max
+ *
+ * @returns {number} Random seed suitable for world generation
  */
 export function getRandomSeed(minValue = 1, maxValue = 4294967295) {
   return typeof globalThis.crypto === "object" &&
     typeof globalThis.crypto.getRandomValues === "function"
     ? getCryptoRandomInt(minValue, maxValue)
-    : getRandomInRange(minValue, maxValue).toString();
+    : getRandomInRange(minValue, maxValue);
 }

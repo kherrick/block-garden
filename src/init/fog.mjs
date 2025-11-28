@@ -1,12 +1,16 @@
 import { FogMap } from "../map/fog.mjs";
 
+/** @typedef {import('signal-polyfill').Signal.State} Signal.State */
+
+/** @typedef {import('../util/colors/index.mjs').CombinedColorMap} CombinedColorMap */
+
 /**
  * Initialize fog
  *
- * @param {any} isFogScaled
- * @param {any} worldHeight
- * @param {any} worldWidth
- * @param {any} colors
+ * @param {Signal.State} isFogScaled
+ * @param {number} worldHeight
+ * @param {number} worldWidth
+ * @param {CombinedColorMap} colors
  *
  * @returns {FogMap}
  */

@@ -1,11 +1,45 @@
 import { TILES } from "./tiles.mjs";
 
+/** @typedef {import('./tiles.mjs').TileDefinition} TileDefinition */
+
+/**
+ * Single biome definition.
+ *
+ * @typedef {Object} Biome
+ *
+ * @property {boolean} trees - Whether this biome naturally spawns trees
+ * @property {string} name - Display name for the biome
+ * @property {TileDefinition} surfaceTile - The primary surface tile for this biome
+ * @property {TileDefinition} subTile - The subsurface tile for this biome
+ * @property {TileDefinition[]} crops - Array of crops that naturally grow in this biome
+ */
+
+/**
+ * Biome definitions mapping.
+ *
+ * @typedef {Object} BiomeMap
+ *
+ * @property {Biome} FOREST - Temperate forest with trees and diverse crops
+ * @property {Biome} DESERT - Hot, dry region with cacti and succulents
+ * @property {Biome} TUNDRA - Cold region with limited vegetation
+ * @property {Biome} SWAMP - Wet region with water-based crops
+ */
+
 const biomeFields = {
   crops: [],
   surfaceTile: null,
   subTile: null,
 };
 
+/**
+ * Biome definitions for all world regions.
+ *
+ * Will be initialized after TILES is defined with surface/sub tiles and crops.
+ *
+ * @type {BiomeMap}
+ *
+ * @constant
+ */
 // Biome definitions Will be set after TILES is defined
 const BIOMES = {
   FOREST: { trees: true, name: "Forest", ...biomeFields },
@@ -49,4 +83,13 @@ BIOMES.SWAMP.crops = [
   TILES.WILLOW_TREE,
 ];
 
+/**
+ * Map of all biome definitions keyed by biome name.
+ *
+ * Each biome contains terrain types, naturally spawning crops, and environment properties.
+ *
+ * @type {BiomeMap}
+ *
+ * @constant
+ */
 export { BIOMES };

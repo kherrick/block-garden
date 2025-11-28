@@ -1,3 +1,19 @@
+/** @typedef {import('../../state/state.mjs').Player} Player */
+/** @typedef {import('../../state/state.mjs').PlayerPositionData} PlayerPositionData */
+
+/**
+ * Calculates player position in multiple coordinate systems.
+ *
+ * Converts pixel position to tile, normalized (0-1), and descriptive location.
+ * Useful for map rendering, UI updates, and boundary detection.
+ *
+ * @param {Player} player - Player object with x, y, width, height
+ * @param {number} tileSize - Size of each tile in pixels
+ * @param {number} worldHeight - Total world height in tiles
+ * @param {number} worldWidth - Total world width in tiles
+ *
+ * @returns {PlayerPositionData} Comprehensive position data in multiple formats
+ */
 export function getPlayerPosition(player, tileSize, worldHeight, worldWidth) {
   // Get pixel position
   const pixelX = player.x;

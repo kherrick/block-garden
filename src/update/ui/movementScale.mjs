@@ -1,11 +1,11 @@
 import localForage from "localforage";
 
 /**
- * @param {any} doc
+ * @param {ShadowRoot} shadow
  *
  * @returns {Promise<void>}
  */
-export async function updateMovementScaleUI(doc) {
+export async function updateMovementScaleUI(shadow) {
   let movementScaleValue = await localForage.getItem(
     `sprite-garden-movement-scale`,
   );
@@ -19,16 +19,16 @@ export async function updateMovementScaleUI(doc) {
     );
   }
 
-  doc.querySelector('[data-key="x"].middle').innerHTML =
+  shadow.querySelector('[data-key="x"].middle').innerHTML =
     `&times;${Number(movementScaleValue)}`;
 }
 
 /**
- * @param {any} doc
+ * @param {ShadowRoot} shadow
  *
  * @returns {Promise<void>}
  */
-export async function updateMovementScaleValue(doc) {
+export async function updateMovementScaleValue(shadow) {
   const movementScaleValue = Number(
     Number(await localForage.getItem("sprite-garden-movement-scale")) || 1,
   );
@@ -50,5 +50,5 @@ export async function updateMovementScaleValue(doc) {
     newMovementScaleValue,
   );
 
-  await updateMovementScaleUI(doc);
+  await updateMovementScaleUI(shadow);
 }

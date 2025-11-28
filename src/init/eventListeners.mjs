@@ -37,6 +37,8 @@ import {
 import { initFog } from "./fog.mjs";
 import { initNewWorld } from "./newWorld.mjs";
 
+/** @typedef {import('./game.mjs').CustomShadowHost} CustomShadowHost */
+
 /**
  * @param {typeof globalThis} gThis - The global `this` context (global object), typically `window` in browsers.
  * @param {ShadowRoot} shadow - The shadow DOM root element where the game components are rendered.
@@ -86,7 +88,7 @@ export function initGlobalEventListeners(gThis, shadow) {
 }
 
 /**
- * @param {any} shadow
+ * @param {ShadowRoot} shadow
  *
  * @returns {void}
  */
@@ -107,8 +109,8 @@ function setupMovementScaleUI(shadow) {
 }
 
 /**
- * @param {any} gThis
- * @param {any} shadow
+ * @param {typeof globalThis} gThis
+ * @param {ShadowRoot} shadow
  *
  * @returns {void}
  */
@@ -157,7 +159,7 @@ function setupDialogButtons(gThis, shadow) {
 }
 
 /**
- * @param {any} e
+ * @param {MouseEvent} e
  *
  * @returns {void}
  */
@@ -166,20 +168,22 @@ function handleCornerClick(e) {
   e.stopPropagation();
 
   const heading = e.currentTarget;
-  const cornerContainer = heading.nextElementSibling;
+  if (heading instanceof HTMLDivElement) {
+    const cornerContainer = heading.nextElementSibling;
 
-  if (cornerContainer.getAttribute("hidden") !== null) {
-    cornerContainer.removeAttribute("hidden");
+    if (cornerContainer.getAttribute("hidden") !== null) {
+      cornerContainer.removeAttribute("hidden");
 
-    return;
+      return;
+    }
+
+    cornerContainer.setAttribute("hidden", "hidden");
   }
-
-  cornerContainer.setAttribute("hidden", "hidden");
 }
 
 /**
- * @param {any} gThis
- * @param {any} shadow
+ * @param {typeof globalThis} gThis
+ * @param {ShadowRoot} shadow
  *
  * @returns {void}
  */
@@ -214,120 +218,131 @@ export function initDocumentEventListeners(gThis, shadow) {
   });
 
   // Keyboard events
-  shadow.addEventListener("keydown", async (e) => {
-    const lowercaseKey = e.key.toLowerCase();
+  shadow.addEventListener(
+    "keydown",
+    /** @param {KeyboardEvent} e */
+    async (e) => {
+      const lowercaseKey = e.key.toLowerCase();
 
-    shadow.host.keys[lowercaseKey] = true;
+      const host =
+        /** @type {CustomShadowHost} */
+        (shadow.host);
+      host.keys[lowercaseKey] = true;
 
-    // Allow digits 0-9, enter, and delete
-    if (lowercaseKey === "enter") {
-      if (e.target.getAttribute("id") === "worldSeedInput") {
+      // Allow digits 0-9, enter, and delete
+      if (lowercaseKey === "enter") {
+        if (
+          e.target instanceof HTMLInputElement &&
+          e.target.getAttribute("id") === "worldSeedInput"
+        ) {
+          handleGenerateButton();
+        }
+      }
+
+      // Always hide the world generation panel with escape
+      if (lowercaseKey === "escape") {
+        shadow
+          .querySelector('[class="seed-controls"]')
+          .setAttribute("hidden", "hidden");
+      }
+
+      // Add 'S' key to show / hide the world generation panel
+      if (lowercaseKey === "s" && e.ctrlKey) {
+        e.preventDefault();
+
+        shadow
+          .querySelector('[class="seed-controls"]')
+          .toggleAttribute("hidden");
+      }
+
+      if (
+        (lowercaseKey >= "0" && lowercaseKey <= "9") ||
+        lowercaseKey === "backspace" ||
+        lowercaseKey === "delete" ||
+        lowercaseKey === "escape"
+      ) {
+        return;
+      }
+
+      // Add 'R' key to regenerate world with random seed
+      if (lowercaseKey === "r" && e.ctrlKey) {
+        e.preventDefault();
+
+        handleRandomSeedButton();
+      }
+
+      // Add 'G' key to regenerate world with current seed (to see changes)
+      if (lowercaseKey === "g" && e.ctrlKey) {
+        e.preventDefault();
+
         handleGenerateButton();
       }
-    }
 
-    // Always hide the world generation panel with escape
-    if (lowercaseKey === "escape") {
-      shadow
-        .querySelector('[class="seed-controls"]')
-        .setAttribute("hidden", "hidden");
-    }
+      // Add 'E' key to handle toggling the break mode
+      if (lowercaseKey === "e") {
+        e.preventDefault();
 
-    // Add 'S' key to show / hide the world generation panel
-    if (lowercaseKey === "s" && e.ctrlKey) {
+        toggleBreakMode();
+      }
+
+      // Add 'X' key to handle movement scale actions
+      if (lowercaseKey === "x") {
+        e.preventDefault();
+
+        await updateMovementScaleValue(shadow);
+      }
+
+      // Handle farming actions
+      if (lowercaseKey === "f") {
+        handleFarmAction(
+          gameState.growthTimers,
+          gameState.plantStructures,
+          gameState.player.get(),
+          gameState.seedInventory.get(),
+          gameState.selectedSeedType.get(),
+          gameConfig.TILES,
+          gameConfig.TILE_SIZE.get(),
+          gameState.world.get(),
+          gameConfig.WORLD_HEIGHT.get(),
+          gameConfig.WORLD_WIDTH.get(),
+        );
+      }
+
+      if (lowercaseKey === "r") {
+        handleBreakBlockWithWaterPhysics(
+          gameState.growthTimers,
+          gameState.plantStructures,
+          gameState.player,
+          gameConfig.TILES,
+          gameConfig.TILE_SIZE.get(),
+          gameState.world,
+          gameConfig.WORLD_HEIGHT.get(),
+          gameConfig.WORLD_WIDTH.get(),
+          gameState.waterPhysicsQueue,
+          gameConfig.breakMode.get(),
+        );
+      }
+
+      // Handle block placement keys
+      const blockKeys = ["u", "i", "o", "j", "k", "l", "m", ",", "."];
+
+      if (blockKeys.includes(lowercaseKey)) {
+        await handlePlaceBlock(
+          lowercaseKey,
+          gameState.materialsInventory.get(),
+          gameState.player.get(),
+          gameState.selectedMaterialType.get(),
+          gameConfig.TILES,
+          gameConfig.TILE_SIZE.get(),
+          gameState.world.get(),
+          gameConfig.WORLD_HEIGHT.get(),
+          gameConfig.WORLD_WIDTH.get(),
+        );
+      }
+
       e.preventDefault();
-
-      shadow.querySelector('[class="seed-controls"]').toggleAttribute("hidden");
-    }
-
-    if (
-      (lowercaseKey >= "0" && lowercaseKey <= "9") ||
-      lowercaseKey === "backspace" ||
-      lowercaseKey === "delete" ||
-      lowercaseKey === "escape"
-    ) {
-      return;
-    }
-
-    // Add 'R' key to regenerate world with random seed
-    if (lowercaseKey === "r" && e.ctrlKey) {
-      e.preventDefault();
-
-      handleRandomSeedButton();
-    }
-
-    // Add 'G' key to regenerate world with current seed (to see changes)
-    if (lowercaseKey === "g" && e.ctrlKey) {
-      e.preventDefault();
-
-      handleGenerateButton();
-    }
-
-    // Add 'E' key to handle toggling the break mode
-    if (lowercaseKey === "e") {
-      e.preventDefault();
-
-      toggleBreakMode();
-    }
-
-    // Add 'X' key to handle movement scale actions
-    if (lowercaseKey === "x") {
-      e.preventDefault();
-
-      await updateMovementScaleValue(shadow);
-    }
-
-    // Handle farming actions
-    if (lowercaseKey === "f") {
-      handleFarmAction(
-        gameState.growthTimers,
-        gameState.plantStructures,
-        gameState.player.get(),
-        gameState.seedInventory.get(),
-        gameState.selectedSeedType.get(),
-        gameConfig.TileName,
-        gameConfig.TILES,
-        gameConfig.TILE_SIZE.get(),
-        gameState.world.get(),
-        gameConfig.WORLD_HEIGHT.get(),
-        gameConfig.WORLD_WIDTH.get(),
-      );
-    }
-
-    if (lowercaseKey === "r") {
-      handleBreakBlockWithWaterPhysics(
-        gameState.growthTimers,
-        gameState.plantStructures,
-        gameState.player,
-        gameConfig.TILES,
-        gameConfig.TILE_SIZE.get(),
-        gameState.world,
-        gameConfig.WORLD_HEIGHT.get(),
-        gameConfig.WORLD_WIDTH.get(),
-        gameState.waterPhysicsQueue,
-        gameConfig.breakMode.get(),
-      );
-    }
-
-    // Handle block placement keys
-    const blockKeys = ["u", "i", "o", "j", "k", "l", "m", ",", "."];
-
-    if (blockKeys.includes(lowercaseKey)) {
-      await handlePlaceBlock(
-        lowercaseKey,
-        gameState.materialsInventory.get(),
-        gameState.player.get(),
-        gameState.selectedMaterialType.get(),
-        gameConfig.TILES,
-        gameConfig.TILE_SIZE.get(),
-        gameState.world.get(),
-        gameConfig.WORLD_HEIGHT.get(),
-        gameConfig.WORLD_WIDTH.get(),
-      );
-    }
-
-    e.preventDefault();
-  });
+    },
+  );
 
   const fogButton = shadow.getElementById("toggleFog");
 
@@ -351,7 +366,13 @@ export function initDocumentEventListeners(gThis, shadow) {
   worldStateBtn.addEventListener("click", handleWorldStateButton);
 
   function handleGenerateButton() {
+    /** @type string | null */
+    let seedInputValue = null;
     const seedInput = shadow.getElementById("worldSeedInput");
+    if (seedInput instanceof HTMLInputElement) {
+      seedInputValue = seedInput.value;
+    }
+
     const currentSeedDisplay = shadow.getElementById("currentSeed");
 
     const worldHeight = gameConfig.WORLD_HEIGHT.get();
@@ -370,7 +391,7 @@ export function initDocumentEventListeners(gThis, shadow) {
       gameState.plantStructures,
       gameState.player,
       gameState.seedInventory,
-      seedInput.value,
+      Number(seedInputValue),
     );
 
     gameState.world.set(currentWorld);
@@ -386,9 +407,9 @@ export function initDocumentEventListeners(gThis, shadow) {
     // Set the fog in state
     gameState.exploredMap.set(currentFog);
 
-    console.log(`Generated new world with seed: ${seedInput.value}`);
+    console.log(`Generated new world with seed: ${seedInputValue}`);
 
-    currentSeedDisplay.textContent = seedInput.value;
+    currentSeedDisplay.textContent = seedInputValue;
   }
 
   function handleRandomSeedButton() {
@@ -431,9 +452,11 @@ export function initDocumentEventListeners(gThis, shadow) {
 
     console.log(`Generated new world with random seed: ${randomSeed}`);
 
-    seedInput.value = randomSeed;
+    if (seedInput instanceof HTMLInputElement) {
+      seedInput.value = String(randomSeed);
+    }
 
-    currentSeedDisplay.textContent = randomSeed;
+    currentSeedDisplay.textContent = String(randomSeed);
   }
 
   const generateBtn = shadow.getElementById("generateWithSeed");
@@ -446,7 +469,9 @@ export function initDocumentEventListeners(gThis, shadow) {
   copySeedBtn.addEventListener("click", async function () {
     const seedInput = shadow.getElementById("worldSeedInput");
 
-    await copyToClipboard(gThis, seedInput.value);
+    if (seedInput instanceof HTMLInputElement) {
+      await copyToClipboard(gThis, seedInput.value);
+    }
   });
 
   const saveMode = shadow.getElementById("saveModeToggle");
@@ -561,7 +586,10 @@ export function initDocumentEventListeners(gThis, shadow) {
       loadSaveState(gThis, shadow, saveState);
 
       const { worldSeed } = saveState.config;
-      seedInput.value = worldSeed;
+
+      if (seedInput instanceof HTMLInputElement) {
+        seedInput.value = worldSeed;
+      }
 
       currentSeedDisplay.textContent = worldSeed;
 
@@ -590,13 +618,19 @@ export function initDocumentEventListeners(gThis, shadow) {
   corners.forEach((corner) => {
     const heading = corner.querySelector(".ui-grid__corner--heading");
 
-    heading.addEventListener("click", (e) => handleCornerClick(e));
+    heading.addEventListener(
+      "click",
+      (
+        /** @type MouseEvent */
+        e,
+      ) => handleCornerClick(e),
+    );
   });
 }
 
 /**
- * @param {any} gThis
- * @param {any} shadow
+ * @param {typeof globalThis} gThis
+ * @param {ShadowRoot} shadow
  *
  * @returns {void}
  */
@@ -611,19 +645,26 @@ export function initElementEventListeners(gThis, shadow) {
   const resolutionSelectEl = shadow.getElementById("resolutionSelect");
   if (resolutionSelectEl) {
     resolutionSelectEl.addEventListener("change", (e) => {
-      gameConfig.currentResolution.set(e.currentTarget.value);
+      if (e.currentTarget instanceof HTMLSelectElement) {
+        gameConfig.currentResolution.set(e.currentTarget.value);
 
-      resizeCanvas(shadow, gameConfig);
+        resizeCanvas(shadow, gameConfig);
+      }
     });
   }
 
   const genBtn = shadow.getElementById("initNewWorld");
   if (genBtn) {
     genBtn.addEventListener("click", () => {
+      /** @type string | null */
+      let seedInputValue = null;
       const seedInput = shadow.getElementById("worldSeedInput");
-      const currentSeedDisplay = shadow.getElementById("currentSeed");
+      if (seedInput instanceof HTMLInputElement) {
+        seedInputValue = seedInput.value;
+      }
 
-      currentSeedDisplay.textContent = seedInput.value;
+      const currentSeedDisplay = shadow.getElementById("currentSeed");
+      currentSeedDisplay.textContent = seedInputValue;
 
       const worldHeight = gameConfig.WORLD_HEIGHT.get();
       const worldWidth = gameConfig.WORLD_WIDTH.get();
@@ -641,7 +682,7 @@ export function initElementEventListeners(gThis, shadow) {
         gameState.plantStructures,
         gameState.player,
         gameState.seedInventory,
-        seedInput.value,
+        Number(seedInputValue),
       );
 
       gameState.world.set(currentWorld);
@@ -668,7 +709,7 @@ export function initElementEventListeners(gThis, shadow) {
     // Material button event listeners
     shadow.querySelectorAll(".material-btn").forEach((materialBtn) => {
       materialBtn.addEventListener("click", (e) => {
-        selectMaterial(shadow, gameState, e);
+        selectMaterial(gameState, e);
       });
     });
   }
@@ -689,7 +730,7 @@ export function initElementEventListeners(gThis, shadow) {
 
   // Set default to 400x400 and update the select element
   const sel = shadow.getElementById("resolutionSelect");
-  if (sel) {
+  if (sel instanceof HTMLSelectElement) {
     sel.value = "400";
   }
 }

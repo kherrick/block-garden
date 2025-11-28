@@ -1,11 +1,14 @@
+/** @typedef {import('../map/world.mjs').WorldMap} WorldMap */
+/** @typedef {import('../state/config/tiles.mjs').TileMap} TileMap */
+
 /**
- * @param {any} centerX
- * @param {any} centerY
- * @param {any} radius
- * @param {any} tiles
- * @param {any} world
- * @param {any} worldHeight
- * @param {any} worldWidth
+ * @param {number} centerX
+ * @param {number} centerY
+ * @param {number} radius
+ * @param {TileMap} tiles
+ * @param {WorldMap} world
+ * @param {number} worldHeight
+ * @param {number} worldWidth
  *
  * @returns {void}
  */
@@ -32,15 +35,15 @@ export function createCaveRoom(
 }
 
 /**
- * @param {any} angle
- * @param {any} length
- * @param {any} startX
- * @param {any} startY
- * @param {any} tiles
- * @param {any} width
- * @param {any} world
- * @param {any} worldHeight
- * @param {any} worldWidth
+ * @param {number} angle
+ * @param {number} length
+ * @param {number} startX
+ * @param {number} startY
+ * @param {TileMap} tiles
+ * @param {number} width
+ * @param {WorldMap} world
+ * @param {number} worldHeight
+ * @param {number} worldWidth
  *
  * @returns {void}
  */
@@ -95,11 +98,11 @@ export function createCaveTunnel(
 /**
  * Cave generation functions
  *
- * @param {any} surfaceLevel
- * @param {any} tiles
- * @param {any} world
- * @param {any} worldHeight
- * @param {any} worldWidth
+ * @param {number} surfaceLevel
+ * @param {TileMap} tiles
+ * @param {WorldMap} world
+ * @param {number} worldHeight
+ * @param {number} worldWidth
  *
  * @returns {void}
  */

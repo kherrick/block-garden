@@ -1,13 +1,13 @@
-/** @typedef {import('./index.mjs').CombinedMap} CombinedMap */
+/** @typedef {import('./index.mjs').CombinedColorMap} CombinedColorMap */
 
 /**
- * Transform a CSSStyleDeclaration into a CombinedMap by filtering keys with a prefix.
+ * Transform a CSSStyleDeclaration into a CombinedColorMap by filtering keys with a prefix.
  *
  * @param {CSSStyleDeclaration} cssStyleDeclaration - The CSSStyleDeclaration object to read from.
  * @param {string} [prefix="--sg-"] - The prefix used to filter CSS custom property keys.
  * @param {(key: string) => string} [keyTransform=(key) => key] - Function to transform keys after removing the prefix.
  *
- * @returns {CombinedMap} A new object containing keys and values from the CSSStyleDeclaration
+ * @returns {CombinedColorMap} A new object containing keys and values from the CSSStyleDeclaration
  * that match the prefix. This object includes entries from ColorMap, TileColorMap, and may include additional
  * properties.
  */
@@ -17,11 +17,11 @@ export function transformStyleMapByStyleDeclaration(
   suffix = "-color",
   keyTransform = (key) => key,
 ) {
-  let combinedMap;
+  let CombinedColorMap;
 
   for (const propName of cssStyleDeclaration) {
-    if (!combinedMap) {
-      combinedMap = {};
+    if (!CombinedColorMap) {
+      CombinedColorMap = {};
     }
 
     let resolvedPropName = propName.slice(prefix.length);
@@ -38,9 +38,9 @@ export function transformStyleMapByStyleDeclaration(
         .trim()
         .replace(/^['"]|['"]$/g, "");
 
-      combinedMap[tileKey] = rawValue;
+      CombinedColorMap[tileKey] = rawValue;
     }
   }
 
-  return combinedMap;
+  return CombinedColorMap;
 }

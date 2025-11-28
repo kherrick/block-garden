@@ -19,14 +19,17 @@ import { generateTulipStructure } from "./tulip.mjs";
 import { generateWheatStructure } from "./wheat.mjs";
 import { generateWillowTreeStructure } from "./willowTree.mjs";
 
+/** @typedef {import('../../map/world.mjs').TileDefinition} TileDefinition */
+/** @typedef {import('../../state/config/tiles.mjs').TileMap} TileMap */
+
 /**
- * @param {any} x
- * @param {any} y
- * @param {any} seedType
- * @param {any} progress
- * @param {any} tiles
+ * @param {number} x
+ * @param {number} y
+ * @param {string} seedType
+ * @param {number} progress
+ * @param {TileMap} tiles
  *
- * @returns {{ x: any; y: any; tile: any; }[]}
+ * @returns {{ x: number; y: number; tile: TileDefinition; }[]}
  */
 export function generatePlantStructure(x, y, seedType, progress, tiles) {
   // Ensure progress is between 0 and 1

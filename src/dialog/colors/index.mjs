@@ -5,6 +5,8 @@ import { debounce } from "../../util/debounce.mjs";
 import { resetColors } from "./resetColors.mjs";
 import { saveColors } from "./saveColors.mjs";
 
+/** @typedef {import('../../util/colors/index.mjs').CombinedColorMap} CombinedColorMap */
+
 // Color customization system for Sprite Garden
 export const COLOR_STORAGE_KEY = "sprite-garden-custom-colors";
 
@@ -19,6 +21,7 @@ export class ColorCustomizationDialog {
     this.doc = doc;
     this.shadow = shadow;
     this.dialog = null;
+    /** @type CombinedColorMap */
     this.colors = {};
     this.originalColors = {};
 
@@ -341,9 +344,9 @@ export class ColorCustomizationDialog {
   }
 
   /**
-   * @param {any} color
+   * @param {string} color
    *
-   * @returns {any}
+   * @returns {string}
    */
   normalizeColor(color) {
     // Try to convert color to hex format for color input
@@ -403,11 +406,11 @@ export class ColorCustomizationDialog {
 
   /** @returns {void} */
   show() {
-    this.dialog.showModal();
+    this.dialog instanceof HTMLDialogElement && this.dialog.showModal();
   }
 
   /**
-   * @param {any} e
+   * @param {KeyboardEvent} e
    *
    * @returns {void}
    */
@@ -426,13 +429,23 @@ export class ColorCustomizationDialog {
         // Revert to original colors if not saved
         applyColorsToShadowHost(this.shadow, this.originalColors);
 
-        this.dialog.close();
+        requestAnimationFrame(() => {
+          this.shadow.dispatchEvent(
+            new CustomEvent("sprite-garden-reset", {
+              detail: {
+                colors: this.originalColors,
+              },
+            }),
+          );
+        });
+
+        this.dialog instanceof HTMLDialogElement && this.dialog.close();
       }
 
       return;
     }
 
-    this.dialog.close();
+    this.dialog instanceof HTMLDialogElement && this.dialog.close();
   }
 
   /** @returns {void} */

@@ -1,14 +1,15 @@
 import localForage from "localforage";
 
+/** @typedef {import("./index.mjs").CombinedColorMap} CombinedColorMap */
+
 /**
  * Load saved colors from localForage
  *
- * @param {any} doc
- * @param {any} key
+ * @param {string} key
  *
- * @returns {Promise<any>}
+ * @returns {Promise<CombinedColorMap>}
  */
-export async function getSavedColors(doc, key) {
+export async function getSavedColors(key) {
   try {
     const savedColors = await localForage.getItem(key);
 

@@ -1,9 +1,11 @@
+/** @typedef {import('signal-polyfill').Signal.State} Signal.State */
+
 /**
  * Update inventory display
  *
- * @param {any} shadow
- * @param {any} materialsInventory
- * @param {any} seedInventory
+ * @param {ShadowRoot} shadow
+ * @param {Signal.State} materialsInventory
+ * @param {Signal.State} seedInventory
  *
  * @returns {void}
  */

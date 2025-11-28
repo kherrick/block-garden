@@ -1,3 +1,26 @@
+/**
+ * Bitmap font character definitions.
+ *
+ * Each character is defined as an array of strings where '1' represents a filled pixel.
+ * Used for rendering text in the game UI.
+ *
+ * @typedef {{ [char: string]: string[] }} CharacterMap
+ *
+ * @property {string[]} A-Z - Letter characters defined as pixel grids
+ * @property {string[]} 0-9 - Digit characters defined as pixel grids
+ * @property {string[]} [symbol] - Punctuation and symbol characters
+ */
+
+/**
+ * Bitmap font character map for text rendering.
+ *
+ * Each character is a 5-pixel tall bitmap where each row is a binary string.
+ * Dimensions vary per character for realistic spacing.
+ *
+ * @type {CharacterMap}
+ *
+ * @constant
+ */
 export const characters = {
   A: ["0110", "1001", "1111", "1001", "1001"],
   B: ["1110", "1001", "1110", "1001", "1110"],

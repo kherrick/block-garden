@@ -1,8 +1,16 @@
 /**
- * @param {any} doc
- * @param {any} tagName
+ * Locates a web component's shadow root by tag name.
  *
- * @returns {any}
+ * Recursively searches through the DOM including shadow DOM boundaries.
+ *
+ * @param {Document|Element} doc - Document or root element to search from
+ * @param {string} tagName - The tag name to find (e.g., 'sprite-garden')
+ *
+ * @returns {ShadowRoot|null} The shadow root of the matching element, or null if not found
+ *
+ * @example
+ * const shadowRoot = getShadowRoot(document, 'sprite-garden');
+ * const canvas = shadowRoot?.getElementById('canvas');
  */
 export function getShadowRoot(doc, tagName) {
   const findElement = (e, n) => {

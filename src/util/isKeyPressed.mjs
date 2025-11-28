@@ -1,11 +1,22 @@
 /**
- * Combined input check
+ * Checks if a key or touch button is currently pressed.
  *
- * @param {any} shadow
- * @param {any} key
+ * Checks both keyboard input and touch control buttons from shadow host.
  *
- * @returns {any}
+ * @param {ShadowRoot} shadow - Shadow root containing the host element with input state
+ * @param {string} key - The key code or touch button name to check
+ *
+ * @returns {boolean} True if the key or button is pressed, false otherwise
  */
 export function isKeyPressed(shadow, key) {
-  return shadow.host?.keys[key] || shadow.host?.touchKeys[key];
+  const host = shadow.host;
+  if (
+    host &&
+    typeof host === "object" &&
+    "keys" in host &&
+    "touchKeys" in host
+  ) {
+    return host.keys[key] || host.touchKeys[key];
+  }
+  return false;
 }

@@ -1,9 +1,11 @@
 import { gameConfig } from "../state/state.mjs";
 
+/** @typedef {import('../state/config/tiles.mjs').TileDefinition} TileDefinition */
+
 export class WorldMap {
   /**
-   * @param {any} width
-   * @param {any} height
+   * @param {number} width - World width in tiles
+   * @param {number} height - World height in tiles
    */
   constructor(width, height) {
     this.width = width;
@@ -30,10 +32,10 @@ export class WorldMap {
   }
 
   /**
-   * @param {any} x
-   * @param {any} y
+   * @param {number} x - X coordinate in tiles
+   * @param {number} y - Y coordinate in tiles
    *
-   * @returns {any}
+   * @returns {TileDefinition} Tile at the given position
    */
   getTile(x, y) {
     if (x < 0 || x >= this.width || y < 0 || y >= this.height) {
@@ -46,9 +48,9 @@ export class WorldMap {
   }
 
   /**
-   * @param {any} x
-   * @param {any} y
-   * @param {any} tile
+   * @param {number} x - X coordinate in tiles
+   * @param {number} y - Y coordinate in tiles
+   * @param {TileDefinition} tile - Tile to set
    *
    * @returns {void}
    */
@@ -66,13 +68,11 @@ export class WorldMap {
    * Convert from array format
    *
    * @static
-   * @static
-   * @static
-   * @param {any} worldData
-   * @param {any} width
-   * @param {any} height
+   * @param {Array<Array<TileDefinition>>} worldData - 2D array of tiles
+   * @param {number} width - World width in tiles
+   * @param {number} height - World height in tiles
    *
-   * @returns {WorldMap}
+   * @returns {WorldMap} Initialized world map
    */
   static fromArray(worldData, width, height) {
     const worldMap = new WorldMap(width, height);
@@ -122,7 +122,7 @@ export class WorldMap {
   /**
    * Convert to array format for saving
    *
-   * @returns {any[][]}
+   * @returns {Array<Array<TileDefinition>>} 2D array representation of world
    */
   toArray() {
     const arrayWorld = [];

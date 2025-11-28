@@ -5,7 +5,7 @@ import { rgbToHex } from "../../util/colors/rgbToHex.mjs";
 
 import { transformStyleMapByStyleDeclaration } from "../../util/colors/transformStyleMapByStyleDeclaration.mjs";
 
-import { normalizeTileName } from "../../state/config/tiles.mjs";
+import { normalizeTileName, TileName } from "../../state/config/tiles.mjs";
 
 import { SpriteGarden } from "../SpriteGarden.mjs";
 
@@ -52,7 +52,30 @@ export class DrawBitmap extends SpriteGarden {
     return { pixels, targetWidth, targetHeight };
   }
 
-  // compute and return ideal color map based on image and banned tiles
+  /**
+   * Runtime check that object has string values.
+   *
+   * @param {any} obj
+   *
+   * @returns {obj is { [property: string]: string }}
+   */
+  isStringMap(obj) {
+    if (typeof obj !== "object" || obj === null) {
+      return false;
+    }
+
+    return Object.values(obj).every((value) => typeof value === "string");
+  }
+
+  /**
+   * Get an ideal color map for an image.
+   *
+   * @param {string} imageUrl - URL of the image to analyze.
+   * @param {number} [maxSize=64] - Maximum size to scale the image before processing.
+   * @param {Set} [bannedTiles=new Set()] - Set of tiles to exclude from consideration.
+   *
+   * @returns {Promise<{ [property: string]: string }>} Resolves to an object mapping property names to color strings.
+   */
   async getIdealColorMapForImage(
     imageUrl,
     maxSize = 64,
@@ -127,9 +150,13 @@ export class DrawBitmap extends SpriteGarden {
         const [r, g, b] = avg;
 
         idealColorMap[
-          `--sg-tile-color-${tileName.toLowerCase().replace("_", "-")}`
+          `--sg-tile-${tileName.toLowerCase().replace("_", "-")}-color`
         ] = rgbToHex(r, g, b);
       }
+    }
+
+    if (!this.isStringMap(idealColorMap)) {
+      return;
     }
 
     return idealColorMap;
@@ -158,7 +185,11 @@ export class DrawBitmap extends SpriteGarden {
     );
 
     // List of banned tile names (normalized form to match keys)
-    const bannedTiles = new Set(["XRAY", "LOADING_PIXEL"]);
+    const bannedTiles = new Set([
+      TileName.BEDROCK,
+      TileName.LOADING_PIXEL,
+      TileName.XRAY,
+    ]);
 
     // Build palette array and reverse map RGB string -> tileName
     const paletteRGB = [];

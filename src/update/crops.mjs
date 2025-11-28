@@ -1,12 +1,16 @@
 import { generatePlantStructure } from "../generate/plants/index.mjs";
 
+/** @typedef {import('signal-polyfill').Signal.State} Signal.State */
+
+/** @typedef {import('../state/config/tiles.mjs').TileMap} TileMap */
+
 /**
- * @param {any} growthTimers
- * @param {any} plantStructures
- * @param {any} tiles
- * @param {any} world
- * @param {any} worldHeight
- * @param {any} worldWidth
+ * @param {Signal.State} growthTimers
+ * @param {Signal.State} plantStructures
+ * @param {TileMap} tiles
+ * @param {Signal.State} world
+ * @param {number} worldHeight
+ * @param {number} worldWidth
  *
  * @returns {void}
  */

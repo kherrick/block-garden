@@ -1,9 +1,14 @@
+/** @typedef {import('../state/config/tiles.mjs').TileMap} TileMap */
+
 /**
- * Farming functions
+ * Creates a map of seed tile IDs to seed type names.
  *
- * @param {any} tiles
+ * Filters tiles to include only those marked as seeds.
+ * Used for quick lookup during planting and inventory management.
  *
- * @returns {any}
+ * @param {TileMap} tiles - Map of all tile definitions
+ *
+ * @returns {{ [id: number]: string }} Map of seed tile ID to seed type name
  */
 export function extractSeeds(tiles) {
   return Object.fromEntries(
@@ -14,22 +19,35 @@ export function extractSeeds(tiles) {
 }
 
 /**
- * @param {any} obj
- * @param {number} [provided=1]
+ * Creates a map from object values to a provided count value.
  *
- * @returns {any}
+ * Useful for initializing inventory with uniform counts.
+ *
+ * @param {Object} obj - Object whose values will become map keys
+ * @param {number} [provided=1] - The count value to assign to each key
+ *
+ * @returns {{ [key: string]: number }} Map of object values to provided count
  */
 export function mapValuesToProvided(obj, provided = 1) {
   return Object.fromEntries(Object.values(obj).map((v) => [v, provided]));
 }
 
 /**
- * @param {any} state
- * @param {any} event
+ * UI event handler for seed selection.
+ *
+ * Toggles seed selection in the inventory UI and updates game state.
+ * Deselects the seed if it's already selected (toggle behavior).
+ *
+ * @param {Object} state - Game state object with selectedSeedType Signal
+ * @param {Event} event - Click event from the seed button element
  *
  * @returns {void}
  */
 export function selectSeed(state, event) {
+  if (!(event.currentTarget instanceof HTMLElement)) {
+    throw new Error("currentTarget is not an HTMLElement");
+  }
+
   const [seedType] = Object.keys(event.currentTarget.dataset);
 
   for (const element of event.currentTarget.parentElement.children) {

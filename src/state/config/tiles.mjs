@@ -1,7 +1,49 @@
 /**
- * @param {any} v
+ * Tile property definition.
  *
- * @returns {any}
+ * @typedef {Object} TileDefinition
+ *
+ * @property {number} [id] - Unique identifier for the tile sprite
+ * @property {boolean} [crop=false] - Whether this tile is a crop
+ * @property {boolean} [farmable=false] - Whether this tile can be farmed
+ * @property {boolean} [solid=false] - Whether this tile is solid/collidable
+ * @property {boolean} [isSeed=false] - Whether this tile is a seed
+ * @property {string|string[]|null} [drops=null] - What material(s) drop when harvested
+ * @property {number} [growthTime] - Time in game ticks for crop to grow
+ */
+
+/**
+ * Tiles.
+ *
+ * Used for consistent tile usage throughout the game.
+ *
+ * @typedef {{ [name: string]: TileDefinition }} TileMap
+ */
+
+/**
+ * Normalized tile names mapping to string identifiers.
+ *
+ * Used for consistent tile identification throughout the game.
+ *
+ * @typedef {{ [name: string]: string }} TileNameMap
+ */
+
+/**
+ * Normalized tile names mapping to id numbers.
+ *
+ * Map of tile ID to denormalized tile name.
+ *
+ * @typedef {{ [id: number]: string }} TileIdMap
+ */
+
+/**
+ * Creates a tile definition object with default values.
+ *
+ * Merges provided properties with sensible defaults for solid, farmable, crop, and seed flags.
+ *
+ * @param {Partial<TileDefinition>} v - Tile properties to set
+ *
+ * @returns {TileDefinition} Complete tile definition with defaults applied
  */
 const getT = (v) => ({
   crop: false,
@@ -12,6 +54,13 @@ const getT = (v) => ({
   ...v,
 });
 
+/**
+ * Map of all tile name constants.
+ *
+ * @type {TileNameMap}
+ *
+ * @constant
+ */
 export const TileName = {
   AIR: "AIR",
   AGAVE_BASE: "AGAVE_BASE",
@@ -60,6 +109,7 @@ export const TileName = {
   FERN_GROWING: "FERN_GROWING",
   FERN_STEM: "FERN_STEM",
   FERN: "FERN",
+  FOG: "FOG",
   GOLD: "GOLD",
   GRASS: "GRASS",
   ICE: "ICE",
@@ -74,6 +124,7 @@ export const TileName = {
   LAVENDER_GROWING: "LAVENDER_GROWING",
   LAVENDER_STEM: "LAVENDER_STEM",
   LAVENDER: "LAVENDER",
+  LOADING_PIXEL: "LOADING_PIXEL",
   LOTUS_BUD: "LOTUS_BUD",
   LOTUS_FLOWER: "LOTUS_FLOWER",
   LOTUS_GROWING: "LOTUS_GROWING",
@@ -90,6 +141,9 @@ export const TileName = {
   PINE_TREE_GROWING: "PINE_TREE_GROWING",
   PINE_TREE: "PINE_TREE",
   PINE_TRUNK: "PINE_TRUNK",
+  PLAYER_BODY: "PLAYER_BODY",
+  PLAYER_BORDER: "PLAYER_BORDER",
+  PLAYER_EYES: "PLAYER_EYES",
   PUMICE: "PUMICE",
   PUMPKIN_FRUIT: "PUMPKIN_FRUIT",
   PUMPKIN_GROWING: "PUMPKIN_GROWING",
@@ -134,8 +188,19 @@ export const TileName = {
   WILLOW_TREE: "WILLOW_TREE",
   WILLOW_TRUNK: "WILLOW_TRUNK",
   WOOD: "WOOD",
+  XRAY: "XRAY",
 };
 
+/**
+ * Complete tile definitions mapping tile names to their properties.
+ *
+ * Each tile includes an ID for sprite rendering, flags for behavior (solid, farmable, crop),
+ * and optional growth time and drop information.
+ *
+ * @type {TileMap}
+ *
+ * @constant
+ */
 export const TILES = {
   [TileName.AIR]: getT({ id: 0 }),
   [TileName.AGAVE_BASE]: getT({ id: 82, solid: true }),
@@ -241,6 +306,7 @@ export const TILES = {
     drops: "FERN",
     isSeed: true,
   }),
+  [TileName.FOG]: getT({ id: 121 }),
   [TileName.GOLD]: getT({ id: 9, solid: true, drops: "GOLD" }),
   [TileName.GRASS]: getT({
     id: 1,
@@ -272,6 +338,7 @@ export const TILES = {
     drops: "LAVENDER",
     isSeed: true,
   }),
+  [TileName.LOADING_PIXEL]: getT({ id: 122 }),
   [TileName.LOTUS_BUD]: getT({ id: 112 }),
   [TileName.LOTUS_FLOWER]: getT({ id: 113 }),
   [TileName.LOTUS_GROWING]: getT({ id: 109, crop: true }),
@@ -307,6 +374,9 @@ export const TILES = {
     isSeed: true,
   }),
   [TileName.PINE_TRUNK]: getT({ id: 63, solid: true }),
+  [TileName.PLAYER_BODY]: getT({ id: 124 }),
+  [TileName.PLAYER_BORDER]: getT({ id: 125 }),
+  [TileName.PLAYER_EYES]: getT({ id: 126 }),
   [TileName.PUMICE]: getT({ id: 71, solid: true, drops: "PUMICE" }),
   [TileName.PUMPKIN_FRUIT]: getT({ id: 106 }),
   [TileName.PUMPKIN_GROWING]: getT({ id: 103, crop: true }),
@@ -404,31 +474,44 @@ export const TILES = {
   }),
   [TileName.WILLOW_TRUNK]: getT({ id: 66, solid: true }),
   [TileName.WOOD]: getT({ id: 73, solid: false, crop: true, drops: "WOOD" }),
+  [TileName.XRAY]: getT({ id: 123 }),
 };
 
 /**
- * @param {any} name
+ * Converts a tile name from kebab-case or mixed case to UPPER_SNAKE_CASE.
  *
- * @returns {any}
+ * Used to normalize tile name input for lookups.
+ *
+ * @param {string} name - The tile name to normalize (e.g., "berry-bush" or "BerryBush")
+ *
+ * @returns {string} Normalized tile name in UPPER_SNAKE_CASE (e.g., "BERRY_BUSH")
  */
 export function normalizeTileName(name) {
   return name.toUpperCase().replace(/-/g, "_");
 }
 
 /**
- * @param {any} name
+ * Converts a tile name from UPPER_SNAKE_CASE to kebab-case.
  *
- * @returns {any}
+ * Inverse operation of normalizeTileName.
+ *
+ * @param {string} name - The tile name to denormalize (e.g., "BERRY_BUSH")
+ *
+ * @returns {string} Denormalized tile name in kebab-case (e.g., "berry-bush")
  */
 export function denormalizeTileName(name) {
   return name.toLowerCase().replace(/_/g, "-");
 }
 
 /**
- * @param {any} currentTiles
- * @param {any} id
+ * Looks up a tile name by its unique sprite ID.
  *
- * @returns {string}
+ * Used for reverse lookups when you have an ID and need the tile name.
+ *
+ * @param {TileMap} currentTiles - The tiles map to search
+ * @param {number} id - The sprite ID to look for
+ *
+ * @returns {string|null} The tile name matching the ID, or null if not found
  */
 export function getTileNameById(currentTiles, id) {
   for (const key in currentTiles) {
@@ -441,9 +524,13 @@ export function getTileNameById(currentTiles, id) {
 }
 
 /**
- * @param {any} currentTiles
+ * Creates a map for O(1) reverse lookups from tile ID to tile name.
  *
- * @returns {any}
+ * Useful for efficient sprite-to-name conversions during rendering.
+ *
+ * @param {TileMap} currentTiles - The tiles map to index
+ *
+ * @returns {TileIdMap} Map of tile ID to denormalized tile name
  */
 export function getTileNameByIdMap(currentTiles) {
   return Object.fromEntries(

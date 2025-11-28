@@ -1,18 +1,31 @@
 import { biomeNoise, initNoise } from "../util/noise.mjs";
 
+/** @typedef {import('../state/config/biomes.mjs').BiomeMap} BiomeMap */
+
 /**
- * @param {any} x
- * @param {any} biomes
- * @param {any} seed
+ * Determines the biome type at a given X coordinate using Perlin noise.
  *
- * @returns {any}
+ * Combines temperature and humidity noise to select between four biome types.
+ * Uses temperature range -1 (cold) to 1 (hot) and humidity range -1 (dry) to 1 (wet).
+ *
+ * Biome selection rules:
+ * - Temperature < -0.4: TUNDRA
+ * - Temperature > 0.4 AND humidity < -0.2: DESERT
+ * - Humidity > 0.3: SWAMP
+ * - Otherwise: FOREST
+ *
+ * @param {number} x - X coordinate to get biome for
+ * @param {BiomeMap} biomes - Biome definitions map
+ * @param {number} seed - Seed for noise generation
+ *
+ * @returns {Object} The biome object for this coordinate
  */
 export function getBiome(x, biomes, seed) {
   // Initialize noise with seed
   initNoise(seed);
 
-  const temperatureNoise = biomeNoise(x, parseInt(seed) + 600);
-  const humidityNoise = biomeNoise(x, parseInt(seed) + 700);
+  const temperatureNoise = biomeNoise(x, seed + 600);
+  const humidityNoise = biomeNoise(x, seed + 700);
 
   // Create more interesting biome distribution
   // Temperature: -1 (cold) to 1 (hot)

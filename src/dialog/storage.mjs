@@ -20,7 +20,7 @@ const STORAGE_KEY_PREFIX = "sprite-garden-save-";
 /**
  * Get current save mode
  *
- * @returns {Promise<any>}
+ * @returns {Promise<string>}
  * */
 export async function getSaveMode() {
   try {
@@ -37,7 +37,7 @@ export async function getSaveMode() {
 /**
  * Set save mode
  *
- * @param {any} mode
+ * @param {string} mode
  *
  * @returns {Promise<void>}
  */
@@ -57,7 +57,7 @@ let lastAutoSaveTime = 0;
 /**
  * Auto-save functionality
  *
- * @param {any} gThis
+ * @param {typeof globalThis} gThis
  *
  * @returns {Promise<void>}
  */
@@ -106,10 +106,10 @@ export async function autoSaveGame(gThis) {
 /**
  * Check for auto-save on load
  *
- * @param {any} gThis
- * @param {any} shadow
+ * @param {typeof globalThis} gThis
+ * @param {ShadowRoot} shadow
  *
- * @returns {Promise<any>}
+ * @returns {Promise<boolean>}
  */
 export async function checkAutoSave(gThis, shadow) {
   try {
@@ -198,9 +198,13 @@ export async function checkAutoSave(gThis, shadow) {
             const seedInput = shadow.getElementById("worldSeedInput");
             const currentSeedDisplay = shadow.getElementById("currentSeed");
 
-            if (seedInput) seedInput.value = worldSeed;
+            if (seedInput instanceof HTMLInputElement) {
+              seedInput.value = worldSeed;
+            }
 
-            if (currentSeedDisplay) currentSeedDisplay.textContent = worldSeed;
+            if (currentSeedDisplay) {
+              currentSeedDisplay.textContent = worldSeed;
+            }
 
             console.log("Auto-save loaded successfully");
           } catch (error) {
@@ -255,7 +259,7 @@ export class StorageDialog {
     this.handleWorldNameInput = this.handleWorldNameInput.bind(this);
   }
 
-  /** @returns {Promise<any>} */
+  /** @returns {Promise<HTMLDialogElement>} */
   async createDialog() {
     if (this.dialog) {
       this.dialog.remove();
@@ -529,7 +533,7 @@ export class StorageDialog {
   }
 
   /**
-   * @param {any} e
+   * @param {KeyboardEvent} e
    *
    * @returns {void}
    */
@@ -547,7 +551,7 @@ export class StorageDialog {
   }
 
   /**
-   * @param {any} e
+   * @param {MouseEvent} e
    *
    * @returns {void}
    */
@@ -744,23 +748,23 @@ export class StorageDialog {
 
   /** @returns {void} */
   show() {
-    this.dialog.showModal();
+    this.dialog instanceof HTMLDialogElement && this.dialog.showModal();
   }
 
   /** @returns {void} */
   close() {
     this.removeEventListeners();
 
-    this.dialog.close();
+    this.dialog instanceof HTMLDialogElement && this.dialog.close();
   }
 }
 
 /**
  * Export function to create and show dialog
  *
- * @param {any} gThis
- * @param {any} doc
- * @param {any} shadow
+ * @param {typeof globalThis} gThis
+ * @param {Document} doc
+ * @param {ShadowRoot} shadow
  *
  * @returns {Promise<StorageDialog>}
  */

@@ -1,13 +1,17 @@
+/** @typedef {import("./index.mjs").CombinedColorMap} CombinedColorMap */
+
 /**
  * Apply custom colors to ShadowRoot Host
  *
- * @param {any} shadow
- * @param {any} colorProps
+ * @param {ShadowRoot} shadow
+ * @param {CombinedColorMap} colorProps
  *
  * @returns {void}
  */
 export function applyColorsToShadowHost(shadow, colorProps) {
   for (const [property, value] of Object.entries(colorProps)) {
-    shadow.host.style.setProperty(property, value);
+    if (shadow.host instanceof HTMLElement) {
+      shadow.host.style.setProperty(property, value);
+    }
   }
 }

@@ -1,11 +1,16 @@
 import { terrainNoise, initNoise } from "../util/noise.mjs";
 
 /**
- * @param {any} worldWidth
- * @param {any} surfaceLevel
- * @param {any} seed
+ * Generates a height map for terrain using multi-octave Perlin noise.
  *
- * @returns {any}
+ * Combines multiple noise frequencies to create natural-looking rolling terrain with peaks.
+ * Results are smoothed and clamped to reasonable bounds.
+ *
+ * @param {number} worldWidth - Width of the world in tiles
+ * @param {number} surfaceLevel - Base surface level Y coordinate
+ * @param {number} seed - Seed for deterministic noise generation
+ *
+ * @returns {number[]} Array of height values, one per column
  */
 export function generateHeightMap(worldWidth, surfaceLevel, seed) {
   // Initialize the seeded noise generator
@@ -17,16 +22,16 @@ export function generateHeightMap(worldWidth, surfaceLevel, seed) {
     let height = surfaceLevel;
 
     // Main terrain shape - large rolling hills
-    height += terrainNoise(x, parseInt(seed)) * 15;
+    height += terrainNoise(x, seed) * 15;
 
     // Add medium frequency variation for more interesting terrain
-    height += terrainNoise(x, parseInt(seed) + 100) * 8;
+    height += terrainNoise(x, seed + 100) * 8;
 
     // Add small details
-    height += terrainNoise(x, parseInt(seed) + 200) * 4;
+    height += terrainNoise(x, seed + 200) * 4;
 
     // Add some sharper features occasionally
-    const sharpNoise = terrainNoise(x, parseInt(seed) + 300);
+    const sharpNoise = terrainNoise(x, seed + 300);
 
     if (sharpNoise > 0.6) {
       height += (sharpNoise - 0.6) * 20; // Create occasional peaks
@@ -43,12 +48,15 @@ export function generateHeightMap(worldWidth, surfaceLevel, seed) {
 }
 
 /**
- * Smooth the height map to prevent overly jagged terrain
+ * Smooths a height map using multi-pass averaging.
  *
- * @param {any} heights
- * @param {number} [passes=1]
+ * Reduces jagged terrain variations while preserving major features.
+ * Uses 3-point averaging (weighted center).
  *
- * @returns {any}
+ * @param {number[]} heights - Array of height values to smooth
+ * @param {number} [passes=1] - Number of smoothing passes to apply
+ *
+ * @returns {number[]} Smoothed height array
  */
 function smoothHeights(heights, passes = 1) {
   const smoothed = [...heights];

@@ -5,28 +5,53 @@ import {
   mapEditorState,
 } from "../map/editor.mjs";
 
+/** @typedef {import('signal-polyfill').Signal.State} Signal.State */
+
+/** @typedef {import('../map/world.mjs').WorldMap} WorldMap */
+/** @typedef {import('../state/config/tiles.mjs').TileMap} TileMap */
+
 /**
- * @param {any} e
- * @param {any} el
- * @param {any} scale
+ * @param {MouseEvent|TouchEvent} e - Pointer or touch event
+ * @param {HTMLCanvasElement} el - Canvas element
+ * @param {number} scale - Scale factor
  *
- * @returns {{ x: number; y: number; }}
+ * @returns {{ x: number; y: number; } | undefined} Returns undefined if position can't be determined
  */
 function getPointerPosition(e, el, scale) {
-  const rect = el.getBoundingClientRect();
+  /** @type {number|undefined} */
+  let clientX;
+  /** @type {number|undefined} */
+  let clientY;
 
-  let clientX, clientY;
-
-  if (e.touches && e.touches.length > 0) {
+  if (e instanceof MouseEvent) {
+    clientX = e.clientX;
+    clientY = e.clientY;
+  } else if (e.touches && e.touches.length > 0) {
     clientX = e.touches[0].clientX;
     clientY = e.touches[0].clientY;
   } else {
-    clientX = e.clientX;
-    clientY = e.clientY;
+    return; // unsupported event type
   }
+
+  if (
+    clientX === undefined ||
+    clientY === undefined ||
+    !isFinite(clientX) ||
+    !isFinite(clientY) ||
+    !isFinite(scale) ||
+    scale <= 0
+  ) {
+    return; // invalid values, avoid NaN
+  }
+
+  const rect = el.getBoundingClientRect();
 
   const scaleX = (el.width / rect.width) * scale;
   const scaleY = (el.height / rect.height) * scale;
+
+  if (!isFinite(scaleX) || !isFinite(scaleY)) {
+    return; // invalid value, not finite
+  }
 
   return {
     x: (clientX - rect.left) * scaleX,
@@ -35,15 +60,15 @@ function getPointerPosition(e, el, scale) {
 }
 
 /**
- * @param {any} e
- * @param {any} el
- * @param {any} camera
- * @param {any} scale
- * @param {any} tiles
- * @param {any} tileSize
- * @param {any} world
- * @param {any} worldHeight
- * @param {any} worldWidth
+ * @param {MouseEvent|TouchEvent} e - Pointer or touch event
+ * @param {HTMLCanvasElement} el - Canvas element
+ * @param {Signal.State} camera - Signal State with camera position data
+ * @param {number} scale - Scale factor
+ * @param {TileMap} tiles - Map of all tile definitions
+ * @param {number} tileSize - Size of each tile in pixels
+ * @param {WorldMap} world - Signal State with world tile data
+ * @param {number} worldHeight - Total world height in tiles
+ * @param {number} worldWidth - Total world width in tiles
  *
  * @returns {void}
  */
@@ -85,13 +110,13 @@ function inspectTile(
 }
 
 /**
- * @param {any} e
- * @param {any} camera
- * @param {any} tiles
- * @param {any} tileSize
- * @param {any} worldHeight
- * @param {any} worldWidth
- * @param {any} world
+ * @param {MouseEvent} e - Mouse event
+ * @param {Signal.State} camera - Signal State with camera position data
+ * @param {TileMap} tiles - Map of all tile definitions
+ * @param {number} tileSize - Size of each tile in pixels
+ * @param {number} worldHeight - Total world height in tiles
+ * @param {number} worldWidth - Total world width in tiles
+ * @param {Signal.State} world - Signal State with world tile data
  *
  * @returns {void}
  */
@@ -104,6 +129,10 @@ export function handleMouseDown(
   worldWidth,
   world,
 ) {
+  if (!(e.target instanceof HTMLCanvasElement)) {
+    return;
+  }
+
   const el = e.target;
   const rect = el.getBoundingClientRect();
   const x = e.clientX - rect.left;
@@ -134,6 +163,7 @@ export function handleMouseDown(
       world,
       true,
     );
+
     e.preventDefault();
 
     // Don't process tile inspection
@@ -148,14 +178,14 @@ function handleMouseUp() {
 }
 
 /**
- * @param {any} e
- * @param {any} camera
- * @param {any} scale
- * @param {any} tiles
- * @param {any} tileSize
- * @param {any} worldHeight
- * @param {any} worldWidth
- * @param {any} world
+ * @param {MouseEvent} e - Mouse event
+ * @param {Signal.State} camera - Signal State with camera position data
+ * @param {number} scale - Scale factor
+ * @param {TileMap} tiles - Map of all tile definitions
+ * @param {number} tileSize - Size of each tile in pixels
+ * @param {number} worldHeight - Total world height in tiles
+ * @param {number} worldWidth - Total world width in tiles
+ * @param {Signal.State} world - Signal State with world tile data
  *
  * @returns {void}
  */
@@ -169,6 +199,10 @@ function handleMouseMove(
   worldWidth,
   world,
 ) {
+  if (!(e.target instanceof HTMLCanvasElement)) {
+    return;
+  }
+
   const el = e.target;
   const rect = el.getBoundingClientRect();
   const x = e.clientX - rect.left;
@@ -196,6 +230,7 @@ function handleMouseMove(
       return;
     }
   }
+
   inspectTile(
     e,
     el,
@@ -210,14 +245,14 @@ function handleMouseMove(
 }
 
 /**
- * @param {any} e
- * @param {any} camera
- * @param {any} scale
- * @param {any} tiles
- * @param {any} tileSize
- * @param {any} worldHeight
- * @param {any} worldWidth
- * @param {any} world
+ * @param {TouchEvent} e - Touch event
+ * @param {Signal.State} camera - Signal State with camera position data
+ * @param {number} scale - Scale factor
+ * @param {TileMap} tiles - Map of all tile definitions
+ * @param {number} tileSize - Size of each tile in pixels
+ * @param {number} worldHeight - Total world height in tiles
+ * @param {number} worldWidth - Total world width in tiles
+ * @param {Signal.State} world - Signal State with world tile data
  *
  * @returns {void}
  */
@@ -231,6 +266,10 @@ function handleTouchStart(
   worldWidth,
   world,
 ) {
+  if (!(e.target instanceof HTMLCanvasElement)) {
+    return;
+  }
+
   const el = e.target;
 
   if (e.touches.length === 1) {
@@ -262,11 +301,13 @@ function handleTouchStart(
         world,
         true,
       );
+
       e.preventDefault();
 
       return;
     }
   }
+
   inspectTile(
     e,
     el,
@@ -281,14 +322,14 @@ function handleTouchStart(
 }
 
 /**
- * @param {any} e
- * @param {any} camera
- * @param {any} scale
- * @param {any} tiles
- * @param {any} tileSize
- * @param {any} worldHeight
- * @param {any} worldWidth
- * @param {any} world
+ * @param {TouchEvent} e - Touch event
+ * @param {Signal.State} camera - Signal State with camera position data
+ * @param {number} scale - Scale factor
+ * @param {TileMap} tiles - Map of all tile definitions
+ * @param {number} tileSize - Size of each tile in pixels
+ * @param {number} worldHeight - Total world height in tiles
+ * @param {number} worldWidth - Total world width in tiles
+ * @param {Signal.State} world - Signal State with world tile data
  *
  * @returns {void}
  */
@@ -302,6 +343,10 @@ function handleTouchMove(
   worldWidth,
   world,
 ) {
+  if (!(e.target instanceof HTMLCanvasElement)) {
+    return;
+  }
+
   const el = e.target;
 
   if (e.touches.length === 1) {
@@ -329,6 +374,7 @@ function handleTouchMove(
       return;
     }
   }
+
   inspectTile(
     e,
     el,
@@ -345,14 +391,14 @@ function handleTouchMove(
 /**
  * Mouse/touch handling for tile inspection
  *
- * @param {any} cnvs
- * @param {any} camera
- * @param {any} scale
- * @param {any} tiles
- * @param {any} tileSize
- * @param {any} worldHeight
- * @param {any} worldWidth
- * @param {any} world
+ * @param {HTMLCanvasElement} cnvs - Canvas element
+ * @param {Signal.State} camera - Signal State with camera position data
+ * @param {number} scale - Scale factor
+ * @param {TileMap} tiles - Map of all tile definitions
+ * @param {number} tileSize - Size of each tile in pixels
+ * @param {number} worldHeight - Total world height in tiles
+ * @param {number} worldWidth - Total world width in tiles
+ * @param {Signal.State} world - Signal State with world tile data
  *
  * @returns {void}
  */

@@ -1,7 +1,22 @@
 import { Signal } from "signal-polyfill";
 
 /**
+ * Cleanup function called before effect re-executes or is disposed.
+ *
+ * @typedef {() => void} EffectCleanup
+ */
+
+/**
+ * Reactive effect callback function.
+ *
+ * May return a cleanup function to be invoked before next execution.
+ *
+ * @typedef {() => (void|EffectCleanup)} EffectCallback
+ */
+
+/**
  * effect implementation from: https://github.com/proposal-signals/signal-polyfill/blob/4cf87cef28aa89e938f079e4d82e9bf10f6d0a4c/README.md
+ *
  * @type {boolean}
  */
 let needsEnqueue = true;
@@ -47,12 +62,12 @@ function processPending() {
  *
  * // To clean up:
  * // dispose();
- * @param {any} callback -
- * Function executed when dependent signals change. If it returns a function,
- * that function is used as a cleanup and called before the next invocation or disposal.
+ * @param {EffectCallback} callback - Function executed when dependent signals change.
+ * If it returns a function, that function is used as a cleanup and called
+ * before the next invocation or disposal.
  *
- * @returns {() => void} Dispose function: when called, the effect stops reacting
- * and any registered cleanup is invoked.
+ * @returns {() => void} Dispose function: when called, stops effect reactions
+ * and invokes any registered cleanup
  */
 export function effect(callback) {
   let cleanup;

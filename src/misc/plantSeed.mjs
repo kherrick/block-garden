@@ -1,14 +1,21 @@
 import { updateState } from "../state/state.mjs";
 
+/** @typedef {import('../state/config/tiles.mjs').TileMap} TileMap */
+
 /**
- * @param {any} growthTimers
- * @param {any} plantStructures
- * @param {any} seedInventory
- * @param {any} seedType
- * @param {any} tiles
- * @param {any} world
- * @param {any} x
- * @param {any} y
+ * Plants a seed at the specified world tile coordinates.
+ *
+ * Verifies farmable ground exists below and initializes crop growth.
+ * Updates both the world tiles and growth timer state.
+ *
+ * @param {Object} growthTimers - State Signal tracking crop growth progress
+ * @param {Object} plantStructures - State Signal for complex plant structures
+ * @param {Object} seedInventory - State Signal for seed inventory counts
+ * @param {string} seedType - Seed name (e.g., 'WHEAT', 'CARROT') to plant
+ * @param {TileMap} tiles - Map of all tile definitions
+ * @param {Object} world - World with getTile and setTile methods
+ * @param {number} x - X coordinate in tiles
+ * @param {number} y - Y coordinate in tiles
  *
  * @returns {void}
  */

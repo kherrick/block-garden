@@ -91,15 +91,18 @@ export async function initGame(gThis, shadow, cnvs) {
     console.log(`continuing with static version: ${version}`);
   }
 
-  const { gameConfig, gameState } = initState(gThis, version);
+  const { gameConfig, gameState } = await initState(gThis, version);
   const doc = gThis.document;
 
-  const host = /** @type {CustomShadowHost} */ (shadow.host);
+  const host =
+    /** @type {CustomShadowHost} */
+    (shadow.host);
+
   host.keys = {};
   host.touchKeys = {};
 
   // init colors
-  const savedColors = await getSavedColors(shadow, COLOR_STORAGE_KEY);
+  const savedColors = await getSavedColors(COLOR_STORAGE_KEY);
   const initialColors = getCustomProperties(gThis, shadow);
   const colors = savedColors ?? initialColors;
 
@@ -204,8 +207,10 @@ export async function initGame(gThis, shadow, cnvs) {
       cnvs,
       gThis,
       shadow,
-      shadow.getElementById("currentBiome"),
-      shadow.getElementById("currentDepth"),
+      /** @type HTMLDivElement */
+      (shadow.getElementById("currentBiome")),
+      /** @type HTMLDivElement */
+      (shadow.getElementById("currentDepth")),
       getTileNameByIdMap(gameConfig.TILES),
       tileColorMap,
       gameConfig.BIOMES,
@@ -250,8 +255,10 @@ export async function initGame(gThis, shadow, cnvs) {
     cnvs,
     gThis,
     shadow,
-    shadow.getElementById("currentBiome"),
-    shadow.getElementById("currentDepth"),
+    /** @type HTMLDivElement */
+    (shadow.getElementById("currentBiome")),
+    /** @type HTMLDivElement */
+    (shadow.getElementById("currentDepth")),
     getTileNameByIdMap(gameConfig.TILES),
     tileColorMap,
     gameConfig.BIOMES,

@@ -1,7 +1,14 @@
+/**
+ * Dialog management class for displaying modal content.
+ *
+ * Handles creation, rendering, and event handling for dialog overlays.
+ */
 export class AboutDialog {
   /**
-   * @param {any} doc
-   * @param {any} shadow
+   * Creates an AboutDialog instance.
+   *
+   * @param {Document} doc - Document object for element creation
+   * @param {ShadowRoot} shadow - Shadow root to append dialog to
    */
   constructor(doc, shadow) {
     this.doc = doc;
@@ -12,9 +19,14 @@ export class AboutDialog {
   }
 
   /**
-   * @param {any} part
+   * Creates and renders a dialog from a fetched HTML template.
    *
-   * @returns {Promise<any>}
+   * Removes existing dialog if present. Fetches content and injects into DOM.
+   * Initializes event listeners and shows close button.
+   *
+   * @param {string} part - Path to fetch dialog content from
+   *
+   * @returns {Promise<HTMLDialogElement>} The created dialog element
    */
   async createDialog(part) {
     if (this.dialog) {
@@ -42,14 +54,18 @@ export class AboutDialog {
         .removeAttribute("hidden");
     }
 
+    if (!(dialog instanceof HTMLDialogElement)) {
+      throw new Error("Failed to create or find HTMLDialogElement");
+    }
+
     this.dialog = dialog;
     this.initEventListeners();
 
-    return dialog;
+    return this.dialog;
   }
 
   /**
-   * @param {any} e
+   * @param {MouseEvent} e
    *
    * @returns {void}
    */
@@ -79,20 +95,20 @@ export class AboutDialog {
 
   /** @returns {void} */
   show() {
-    this.dialog.showModal();
+    this.dialog instanceof HTMLDialogElement && this.dialog.showModal();
   }
 
   /** @returns {void} */
   close() {
     this.removeEventListeners();
 
-    this.dialog.close();
+    this.dialog instanceof HTMLDialogElement && this.dialog.close();
   }
 }
 
 /**
- * @param {any} doc
- * @param {any} shadow
+ * @param {Document} doc
+ * @param {ShadowRoot} shadow
  *
  * @returns {Promise<AboutDialog>}
  */

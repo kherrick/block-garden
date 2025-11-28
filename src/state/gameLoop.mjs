@@ -7,6 +7,15 @@ import { updatePlayer } from "../update/player.mjs";
 import { updateWaterPhysics } from "../water/updateWaterPhysics.mjs";
 import { render } from "./render.mjs";
 
+/** @typedef {import('signal-polyfill').Signal.State} Signal.State */
+
+/** @typedef {import('../map/world.mjs').WorldMap} WorldMap */
+/** @typedef {import('../state/config/biomes.mjs').BiomeMap} BiomeMap */
+/** @typedef {import('../state/config/index.mjs').WaterPhysicsConfig} WaterPhysicsConfig */
+/** @typedef {import('../state/config/tiles.mjs').TileIdMap} TileIdMap */
+/** @typedef {import('../state/config/tiles.mjs').TileMap} TileMap */
+/** @typedef {import('../util/colors/index.mjs').TileColorMap} TileColorMap */
+
 // Fixed timestep configuration
 const TARGET_FPS = 50;
 const FIXED_TIMESTEP = 1000 / TARGET_FPS; // 16.67ms per update
@@ -26,7 +35,7 @@ let lastFetchTime = 0;
 
 const fetchInterval = 1000; // ms
 
-/** @returns {Promise<any>} */
+/** @returns {Promise<number>} */
 async function getScaleThrottled() {
   const now = Date.now();
 
@@ -40,39 +49,39 @@ async function getScaleThrottled() {
 }
 
 /**
- * Game loop
+ * Main game loop - handles fixed timestep updates and rendering
  *
- * @param {any} cnvs
- * @param {any} gThis
- * @param {any} shadow
- * @param {any} biomeEl
- * @param {any} depthEl
- * @param {any} tileNameByIdMap
- * @param {any} tileColorMap
- * @param {any} biomes
- * @param {any} fogMode
- * @param {any} fogScale
- * @param {any} friction
- * @param {any} gravity
- * @param {any} isFogScaled
- * @param {any} maxFallSpeed
- * @param {any} surfaceLevel
- * @param {any} tileSize
- * @param {any} tiles
- * @param {any} waterPhysicsConfig
- * @param {any} worldHeight
- * @param {any} worldWidth
- * @param {any} worldSeed
- * @param {any} camera
- * @param {any} exploredMap
- * @param {any} gameTime
- * @param {any} growthTimers
- * @param {any} plantStructures
- * @param {any} player
- * @param {any} shouldReset
- * @param {any} viewMode
- * @param {any} waterPhysicsQueue
- * @param {any} world
+ * @param {HTMLCanvasElement} cnvs - Canvas element for rendering
+ * @param {typeof globalThis} gThis - Global window object
+ * @param {ShadowRoot} shadow - Shadow DOM root
+ * @param {HTMLDivElement} biomeEl - Biome UI element
+ * @param {HTMLDivElement} depthEl - Depth UI element
+ * @param {TileIdMap} tileNameByIdMap - Map of tile IDs to names
+ * @param {TileColorMap} tileColorMap - Map of tile names to colors
+ * @param {BiomeMap} biomes - Array of biome configurations
+ * @param {Signal.State} fogMode - Fog rendering mode
+ * @param {Signal.State} fogScale - Fog scale factor
+ * @param {number} friction - Player friction coefficient
+ * @param {number} gravity - Gravity value
+ * @param {Signal.State} isFogScaled - Whether fog is scaled
+ * @param {number} maxFallSpeed - Maximum fall speed for player
+ * @param {number} surfaceLevel - World surface level in tiles
+ * @param {number} tileSize - Size of each tile in pixels
+ * @param {TileMap} tiles - Map of all tile definitions
+ * @param {WaterPhysicsConfig} waterPhysicsConfig - Water physics configuration
+ * @param {number} worldHeight - Total world height in tiles
+ * @param {number} worldWidth - Total world width in tiles
+ * @param {Signal.State} worldSeed - Seed for world generation
+ * @param {Signal.State} camera - Camera position state
+ * @param {Signal.State} exploredMap - Map of explored tiles
+ * @param {Signal.State} gameTime - Current game time state
+ * @param {Signal.State} growthTimers - Growth timers for crops
+ * @param {Signal.State} plantStructures - Plant structure data
+ * @param {Signal.State} player - Player state
+ * @param {Signal.State} shouldReset - Reset flag state
+ * @param {Signal.State} viewMode - Current view mode state
+ * @param {Signal.State} waterPhysicsQueue - Queue for water physics updates
+ * @param {Signal.State} world - World state with tile methods
  *
  * @returns {Promise<void>}
  */

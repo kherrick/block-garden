@@ -15,12 +15,14 @@ module.exports = {
     "**/node_modules/**",
     "**/src/**",
     "index.mjs",
-    "service-worker.js",
+    "**service-worker**/**",
     "workbox-*.cjs",
     "workbox-*.js",
   ],
   swDest: "./service-worker.js",
   sourcemap: false,
+  // Custom handler for Web Share Target before Workbox runtime caching
+  importScripts: ["service-worker/share-target-handler.mjs"],
   // https://developer.chrome.com/docs/workbox/modules/workbox-build#property-BasePartial-maximumFileSizeToCacheInBytes
   maximumFileSizeToCacheInBytes: 2097152 * 3,
   // define runtime caching rules

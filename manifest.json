@@ -78,5 +78,18 @@
       "src": "https://kherrick.github.io/sprite-garden/assets/screenshots/sprite-garden-screenshot-594x982.png",
       "type": "image/png"
     }
-  ]
+  ],
+  "share_target": {
+    "action": "share/share-target.html",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "files": [
+        {
+          "name": "gameState",
+          "accept": [".sgs", ".sgs.txt", "application/gzip", "application/*"]
+        }
+      ]
+    }
+  }
 }

@@ -4,6 +4,7 @@ import { arrayBufferToBase64, base64toBlob } from "../util/conversion.mjs";
 import { compressToBinaryBlob } from "../util/compression.mjs";
 import { createSaveState } from "../state/createSave.mjs";
 import { loadSaveState } from "../state/loadSave.mjs";
+import { retrieveSharedSave, deleteSharedSave } from "../state/shareTarget.mjs";
 
 const TIME_SECONDS_ONE = 1000;
 const TIME_MINUTES_ONE = 1 * 60 * TIME_SECONDS_ONE;
@@ -230,6 +231,125 @@ export async function checkAutoSave(gThis, shadow) {
     });
   } catch (error) {
     console.error("Failed to check for auto-save:", error);
+
+    return false;
+  }
+}
+
+/**
+ * Check for and load shared saves from Web Share Target API
+ * Displays a dialog asking user to load the shared save
+ *
+ * @param {typeof globalThis} gThis
+ * @param {ShadowRoot} shadow
+ *
+ * @returns {Promise<boolean>} - true if a shared save was loaded, false otherwise
+ */
+export async function checkSharedSave(gThis, shadow) {
+  try {
+    const sharedSave = await retrieveSharedSave();
+
+    if (!sharedSave || !sharedSave.data) {
+      return false;
+    }
+
+    // Create and show shared save dialog
+    const dialog = gThis.document.createElement("dialog");
+    dialog.style.cssText = `
+      background: var(--sg-color-gray-50);
+      border-radius: 0.5rem;
+      border: 0.125rem solid var(--sg-color-gray-900);
+      color: var(--sg-color-gray-900);
+      font-family: monospace;
+      padding: 1.25rem;
+      max-width: 25rem;
+      z-index: 10000;
+    `;
+
+    const timestamp = new Date(sharedSave.timestamp).toLocaleString();
+    dialog.innerHTML = `
+      <h3 style="margin: 0 0 1rem 0">Shared Game Save</h3>
+      <p style="margin: 0 0 1rem 0">
+        A game save was shared with you (${timestamp}). Would you like to load it?
+      </p>
+      <div style="display: flex; gap: 0.625rem; justify-content: flex-end">
+        <button id="sharedSaveNo" style="
+          background: var(--sg-color-red-500);
+          border-radius: 0.25rem;
+          border: none;
+          color: white;
+          cursor: pointer;
+          padding: 0.5rem 0.9375rem;
+        ">No</button>
+        <button id="sharedSaveYes" style="
+          background: var(--sg-color-green-500);
+          border-radius: 0.25rem;
+          border: none;
+          color: white;
+          cursor: pointer;
+          padding: 0.5rem 0.9375rem;
+        ">Yes</button>
+      </div>
+    `;
+
+    shadow.append(dialog);
+
+    dialog.showModal();
+
+    return new Promise((resolve) => {
+      dialog
+        .querySelector("#sharedSaveYes")
+        .addEventListener("click", async () => {
+          try {
+            const saveState = sharedSave.data;
+
+            loadSaveState(gThis, shadow, saveState);
+
+            const { worldSeed } = saveState.config;
+            const seedInput = shadow.getElementById("worldSeedInput");
+            const currentSeedDisplay = shadow.getElementById("currentSeed");
+
+            if (seedInput instanceof HTMLInputElement) {
+              seedInput.value = worldSeed;
+            }
+
+            if (currentSeedDisplay) {
+              currentSeedDisplay.textContent = worldSeed;
+            }
+
+            // Delete the shared save after loading it
+            await deleteSharedSave();
+
+            console.log("Shared save loaded successfully");
+          } catch (error) {
+            console.error("Failed to load shared save:", error);
+          }
+
+          dialog.close();
+          dialog.remove();
+
+          resolve(true);
+        });
+
+      dialog
+        .querySelector("#sharedSaveNo")
+        .addEventListener("click", async () => {
+          // Delete the shared save if user declines
+          await deleteSharedSave();
+          dialog.close();
+          dialog.remove();
+
+          resolve(false);
+        });
+
+      dialog.addEventListener("cancel", async () => {
+        // Delete the shared save if dialog is cancelled
+        await deleteSharedSave();
+        resolve(false);
+      });
+    });
+  } catch (error) {
+    console.error("Failed to check for shared save:", error);
 
     return false;
   }

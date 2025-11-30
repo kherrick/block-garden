@@ -66,4 +66,19 @@ export default [
       terser(),
     ],
   },
+  {
+    input: "service-worker/share-target-handler.mjs",
+    output: {
+      file: "dist/service-worker/share-target-handler.mjs",
+      format: "esm",
+      sourcemap: false,
+    },
+    external,
+    plugins: [
+      nodeResolve(),
+      commonjs(),
+      typescript({ noEmitOnError: true }),
+      terser(),
+    ],
+  },
 ];

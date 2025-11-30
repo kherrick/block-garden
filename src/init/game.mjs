@@ -18,6 +18,7 @@ import {
   AUTO_SAVE_INTERVAL,
   autoSaveGame,
   checkAutoSave,
+  checkSharedSave,
   getSaveMode,
 } from "../dialog/storage.mjs";
 
@@ -130,9 +131,16 @@ export async function initGame(gThis, shadow, cnvs) {
   const worldHeight = gameConfig.WORLD_HEIGHT.get();
   const worldWidth = gameConfig.WORLD_WIDTH.get();
 
-  // Check for auto-save before generating new world
-  const autoSaveLoaded = await checkAutoSave(gThis, shadow);
-  if (!autoSaveLoaded) {
+  // Check for shared save first (takes priority)
+  let sharedSaveLoaded = await checkSharedSave(gThis, shadow);
+
+  // If no shared save, check for auto-save
+  let autoSaveLoaded = false;
+  if (!sharedSaveLoaded) {
+    autoSaveLoaded = await checkAutoSave(gThis, shadow);
+  }
+
+  if (!sharedSaveLoaded && !autoSaveLoaded) {
     const currentWorld = initNewWorld(
       gameConfig.BIOMES,
       gameConfig.SURFACE_LEVEL.get(),

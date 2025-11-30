@@ -11,6 +11,7 @@
 export function createSaveState(gThis) {
   const state = gThis.spriteGarden.state;
   const config = gThis.spriteGarden.config;
+  const plantStructures = state.plantStructures.get();
 
   return {
     config: {
@@ -36,7 +37,33 @@ export function createSaveState(gThis) {
       gameTime: state.gameTime.get(),
       growthTimers: state.growthTimers.get(),
       materialsInventory: state.materialsInventory.get(),
-      plantStructures: state.plantStructures.get(),
+      plantStructures: Object.fromEntries(
+        Object.entries(plantStructures).map(([plantLocation, plant]) => {
+          if (typeof plant?.blocks === "object") {
+            const plantBlockEntries = Object.entries(plant.blocks);
+
+            return [
+              plantLocation,
+              {
+                ...plant,
+                blocks: Object.fromEntries(
+                  plantBlockEntries.map(([key, plantBlocks]) => {
+                    return [
+                      key,
+                      {
+                        ...plantBlocks,
+                        tile: plantBlocks.tile.id,
+                      },
+                    ];
+                  }),
+                ),
+              },
+            ];
+          }
+
+          return [plantLocation, { ...plant }];
+        }),
+      ),
       player: state.player.get(),
       seedInventory: state.seedInventory.get(),
       seeds: state.seeds.get(),

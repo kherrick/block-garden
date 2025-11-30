@@ -1,4 +1,5 @@
 import { gameConfig } from "../state/state.mjs";
+import { getTileById } from "../state/config/tiles.mjs";
 
 /** @typedef {import('../state/config/tiles.mjs').TileDefinition} TileDefinition */
 
@@ -78,15 +79,6 @@ export class WorldMap {
     const worldMap = new WorldMap(width, height);
     const tiles = gameConfig.TILES;
 
-    // Create a map of tile IDs to tile objects for faster lookup
-    const tileIdMap = new Map();
-
-    for (const [_, tile] of Object.entries(tiles)) {
-      if (tile && typeof tile.id === "number") {
-        tileIdMap.set(tile.id, tile);
-      }
-    }
-
     for (let x = 0; x < width; x++) {
       if (!worldData[x]) {
         continue;
@@ -95,24 +87,40 @@ export class WorldMap {
       for (let y = 0; y < height; y++) {
         const savedTile = worldData[x][y];
 
-        if (!savedTile || savedTile.id === undefined || savedTile.id === null) {
+        if (savedTile === undefined || savedTile === null) {
           worldMap.setTile(x, y, tiles.AIR);
 
           continue;
         }
 
-        // Find the matching tile from our tile map
-        const matchingTile = tileIdMap.get(savedTile.id);
+        let tileToSet = tiles.AIR;
 
-        if (matchingTile) {
-          worldMap.setTile(x, y, matchingTile);
-        } else {
-          console.warn(
-            `Unknown tile ID ${savedTile.id} at (${x}, ${y}), defaulting to AIR`,
-          );
+        // Handle new format: numeric ID
+        if (typeof savedTile === "number") {
+          const matchingTile = getTileById(tiles, savedTile);
 
-          worldMap.setTile(x, y, tiles.AIR);
+          if (matchingTile) {
+            tileToSet = matchingTile;
+          } else {
+            console.warn(
+              `Unknown tile ID ${savedTile} at (${x}, ${y}), defaulting to AIR`,
+            );
+          }
         }
+        // Handle old format: tile object with id property
+        else if (typeof savedTile === "object" && savedTile.id !== undefined) {
+          const matchingTile = getTileById(tiles, savedTile.id);
+
+          if (matchingTile) {
+            tileToSet = matchingTile;
+          } else {
+            console.warn(
+              `Unknown tile ID ${savedTile.id} at (${x}, ${y}), defaulting to AIR`,
+            );
+          }
+        }
+
+        worldMap.setTile(x, y, tileToSet);
       }
     }
 
@@ -131,7 +139,7 @@ export class WorldMap {
       arrayWorld[x] = [];
 
       for (let y = 0; y < this.height; y++) {
-        arrayWorld[x][y] = this.getTile(x, y);
+        arrayWorld[x][y] = this.getTile(x, y).id;
       }
     }
 

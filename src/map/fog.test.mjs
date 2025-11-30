@@ -370,8 +370,8 @@ describe("FogMap class", () => {
 
       const obj = fog.toObject();
 
-      expect(obj["5,5"]).toBe(true);
-      expect(obj["10,10"]).toBe(true);
+      expect(obj["5,5"]).toBe(1);
+      expect(obj["10,10"]).toBe(1);
     });
 
     test("returns sparse object with only explored tiles", () => {
@@ -381,7 +381,7 @@ describe("FogMap class", () => {
       const obj = fog.toObject();
 
       expect(Object.keys(obj).length).toBe(1);
-      expect(obj["2,2"]).toBe(true);
+      expect(obj["2,2"]).toBe(1);
     });
 
     test("returns empty object for fully unexplored map", () => {
@@ -400,9 +400,9 @@ describe("FogMap class", () => {
 
       const obj = fog.toObject();
 
-      expect(obj["0,0"]).toBe(true);
-      expect(obj["5,5"]).toBe(true);
-      expect(obj["9,9"]).toBe(true);
+      expect(obj["0,0"]).toBe(1);
+      expect(obj["5,5"]).toBe(1);
+      expect(obj["9,9"]).toBe(1);
       expect(Object.keys(obj).length).toBe(3);
     });
   });

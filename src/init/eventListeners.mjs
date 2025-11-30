@@ -62,6 +62,14 @@ export function initGlobalEventListeners(gThis, shadow) {
   updateRangeUI(shadow);
   updateMovementScaleUI(shadow);
 
+  const closeWorldGenerationBtn = shadow.getElementById("closeWorldGeneration");
+  if (closeWorldGenerationBtn) {
+    closeWorldGenerationBtn.addEventListener("click", () => {
+      shadow
+        .querySelector('[class="seed-controls"]')
+        .setAttribute("hidden", "hidden");
+    });
+  }
   const customizeColors = shadow.getElementById("customizeColorsBtn");
   if (customizeColors) {
     const config = gThis.spriteGarden.config;
@@ -513,7 +521,7 @@ export function initDocumentEventListeners(gThis, shadow) {
     }
   });
 
-  const saveCompressedBtn = shadow.getElementById("saveCompressedState");
+  const saveCompressedBtn = shadow.getElementById("saveExternalGameFile");
   saveCompressedBtn.addEventListener("click", async function () {
     try {
       const saveState = createSaveState(gThis);
@@ -529,8 +537,8 @@ export function initDocumentEventListeners(gThis, shadow) {
     }
   });
 
-  const loadCompressedBtn = shadow.getElementById("loadCompressedState");
-  loadCompressedBtn.addEventListener("click", async function () {
+  const loadExternalGameFileBtn = shadow.getElementById("loadExternalGameFile");
+  loadExternalGameFileBtn.addEventListener("click", async function () {
     try {
       const currentSeedDisplay = shadow.getElementById("currentSeed");
       const seedInput = shadow.getElementById("worldSeedInput");
@@ -543,7 +551,10 @@ export function initDocumentEventListeners(gThis, shadow) {
           types: [
             {
               description: "Sprite Garden Save Game Files",
-              accept: { "application/gzip": [".sgs"] },
+              accept: {
+                "application/*": [".sgs"],
+                "text/plain": [".sgs.json.txt"],
+              },
             },
           ],
         });
@@ -553,7 +564,7 @@ export function initDocumentEventListeners(gThis, shadow) {
         // Fallback for browsers without showOpenFilePicker
         const input = gThis.document.createElement("input");
         input.type = "file";
-        input.accept = ".sgs";
+        input.accept = ".sgs,.sgs.json.txt";
         input.style.display = "none";
 
         shadow.append(input);
@@ -568,21 +579,25 @@ export function initDocumentEventListeners(gThis, shadow) {
         shadow.removeChild(input);
       }
 
-      let stateJSON;
-
-      // Feature detection for DecompressionStream
-      if ("DecompressionStream" in gThis) {
+      let stateJSON = "{}";
+      const isJSON = file.name.endsWith(".sgs.json.txt");
+      if (isJSON) {
+        stateJSON = (await file.text()).replace(/\s+/g, "");
+      } else if ("DecompressionStream" in gThis) {
         const decompressedStream = file
           .stream()
-          .pipeThrough(new DecompressionStream("gzip"));
+          .pipeThrough(new gThis.DecompressionStream("gzip"));
 
-        const decompressedBlob = await new Response(decompressedStream).blob();
+        const decompressedBlob = await new gThis.Response(
+          decompressedStream,
+        ).blob();
 
         stateJSON = await decompressedBlob.text();
+      } else {
+        throw new Error("No JSON detect and DecompressionStream not supported");
       }
 
       const saveState = JSON.parse(stateJSON);
-
       loadSaveState(gThis, shadow, saveState);
 
       const { worldSeed } = saveState.config;
@@ -600,10 +615,137 @@ export function initDocumentEventListeners(gThis, shadow) {
     }
   });
 
+  let canShareFiles = false;
+  const shareExternalGameFileBtn = shadow.getElementById(
+    "shareExternalGameFile",
+  );
+
+  if (
+    typeof navigator !== "undefined" &&
+    typeof navigator.canShare !== "undefined"
+  ) {
+    // Test if we can actually share files
+    try {
+      canShareFiles = navigator.canShare({ files: [new File([], "test")] });
+    } catch (e) {
+      console.info(`File sharing is not enabled. ${JSON.stringify(e)}`);
+    }
+  }
+
+  if (canShareFiles) {
+    shadow
+      .querySelectorAll(".seed-controls--share")
+      .forEach((s) => s.removeAttribute("hidden"));
+
+    shareExternalGameFileBtn.addEventListener("click", async function () {
+      try {
+        let file;
+
+        // Feature detection for showOpenFilePicker
+        if (gThis.showOpenFilePicker) {
+          const [fileHandle] = await gThis.showOpenFilePicker({
+            types: [
+              {
+                description: "Sprite Garden Save Game Files",
+                accept: {
+                  "application/*": [".sgs"],
+                  "text/plain": [".sgs.json.txt"],
+                },
+              },
+            ],
+          });
+
+          file = await fileHandle.getFile();
+        } else {
+          // Fallback for browsers without showOpenFilePicker
+          const input = gThis.document.createElement("input");
+          input.type = "file";
+          input.accept = ".sgs,.sgs.json.txt";
+          input.style.display = "none";
+
+          shadow.append(input);
+
+          const filePromise = new Promise((resolve) => {
+            input.onchange = () => resolve(input.files[0]);
+          });
+
+          input.click();
+
+          file = await filePromise;
+          shadow.removeChild(input);
+        }
+
+        let stateJSON;
+        const isJSON = file.name.endsWith(".sgs.json.txt");
+        if (isJSON) {
+          stateJSON = (await file.text()).replace(/\s+/g, "");
+        } else if ("DecompressionStream" in gThis) {
+          const decompressedStream = file
+            .stream()
+            .pipeThrough(new gThis.DecompressionStream("gzip"));
+
+          const decompressedBlob = await new gThis.Response(
+            decompressedStream,
+          ).blob();
+
+          stateJSON = await decompressedBlob.text();
+        } else {
+          throw new Error("Unable to read game state file.");
+        }
+
+        // Validate the file is a valid game state before sharing
+        let saveState;
+        try {
+          saveState = JSON.parse(stateJSON);
+        } catch (parseError) {
+          throw new Error("Invalid game state file: not valid JSON.");
+        }
+
+        // Verify required game state properties
+        if (!saveState.config || !saveState.state) {
+          throw new Error(
+            "Invalid game state file: missing required config or state.",
+          );
+        }
+
+        file = new File([stateJSON], `${file.name}.json.txt`, {
+          type: "text/plain",
+          lastModified: Date.now(),
+        });
+
+        // Check if we can share files
+        if (
+          typeof navigator !== "undefined" &&
+          typeof navigator.canShare !== "undefined" &&
+          navigator.canShare({ files: [file] })
+        ) {
+          await navigator.share({
+            files: [file],
+            title: "Sprite Garden Game Save",
+            text: `Visit Sprite Garden, then 'Load' and checkout my world: ${file.name}\n\n`,
+            url: "https://kherrick.github.io/sprite-garden",
+          });
+
+          console.log("Game state file shared successfully");
+        } else {
+          alert("Web Share API is not available on this device or browser.");
+        }
+      } catch (error) {
+        // Only log if it's not a user cancellation
+        if (error.name !== "AbortError") {
+          console.error("Failed to share game state file:", error);
+          alert("Failed to share game state file. Check console for details.");
+        } else {
+          console.log("Game state file sharing was cancelled by the user");
+        }
+      }
+    });
+  }
+
   // Add event listener for storage dialog button
-  const useStorageBtn = shadow.getElementById("useStorageBtn");
-  if (useStorageBtn) {
-    useStorageBtn.addEventListener("click", async function () {
+  const openStorageBtn = shadow.getElementById("openStorageBtn");
+  if (openStorageBtn) {
+    openStorageBtn.addEventListener("click", async function () {
       try {
         await showStorageDialog(gThis, gThis.document, shadow);
       } catch (error) {
@@ -650,67 +792,6 @@ export function initElementEventListeners(gThis, shadow) {
 
         resizeCanvas(shadow, gameConfig);
       }
-    });
-  }
-
-  const genBtn = shadow.getElementById("initNewWorld");
-  if (genBtn) {
-    genBtn.addEventListener("click", () => {
-      /** @type string | null */
-      let seedInputValue = null;
-      const seedInput = shadow.getElementById("worldSeedInput");
-      if (seedInput instanceof HTMLInputElement) {
-        seedInputValue = seedInput.value;
-      }
-
-      const currentSeedDisplay = shadow.getElementById("currentSeed");
-      currentSeedDisplay.textContent = seedInputValue;
-
-      const worldHeight = gameConfig.WORLD_HEIGHT.get();
-      const worldWidth = gameConfig.WORLD_WIDTH.get();
-
-      const currentWorld = initNewWorld(
-        gameConfig.BIOMES,
-        gameConfig.SURFACE_LEVEL.get(),
-        gameConfig.TILE_SIZE.get(),
-        gameConfig.TILES,
-        worldHeight,
-        worldWidth,
-        gameConfig.worldSeed,
-        gameState.gameTime,
-        gameState.growthTimers,
-        gameState.plantStructures,
-        gameState.player,
-        gameState.seedInventory,
-        Number(seedInputValue),
-      );
-
-      gameState.world.set(currentWorld);
-
-      const colors = getCustomProperties(gThis, shadow);
-      const currentFog = initFog(
-        gameConfig.isFogScaled,
-        worldHeight,
-        worldWidth,
-        colors,
-      );
-
-      // Set the fog in state
-      gameState.exploredMap.set(currentFog);
-    });
-
-    // Seed button event listeners
-    shadow.querySelectorAll(".seed-btn").forEach((seedBtn) => {
-      seedBtn.addEventListener("click", (e) => {
-        selectSeed(gameState, e);
-      });
-    });
-
-    // Material button event listeners
-    shadow.querySelectorAll(".material-btn").forEach((materialBtn) => {
-      materialBtn.addEventListener("click", (e) => {
-        selectMaterial(gameState, e);
-      });
     });
   }
 

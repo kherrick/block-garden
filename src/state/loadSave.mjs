@@ -2,6 +2,7 @@ import { getCustomProperties } from "../util/colors/getCustomProperties.mjs";
 
 import { FogMap } from "../map/fog.mjs";
 import { WorldMap } from "../map/world.mjs";
+import { getTileById } from "./config/tiles.mjs";
 
 /**
  * Restores game state and config from a save file.
@@ -49,6 +50,41 @@ export function loadSaveState(gThis, shadow, saveState) {
         }
       }
 
+      continue;
+    }
+
+    if (key === "plantStructures") {
+      const savedPlants = saveState.state.plantStructures;
+      const tiles = gameConfig.TILES;
+
+      const reconstructedPlants = Object.fromEntries(
+        Object.entries(savedPlants).map(([location, plant]) => [
+          location,
+          {
+            ...plant,
+            blocks: Object.fromEntries(
+              Object.entries(plant.blocks).map(([key, block]) => {
+                let tile = tiles.AIR;
+
+                // support both full object
+                if (typeof block.tile === "object") {
+                  tile = block.tile;
+                  // and lookup by number
+                } else if (typeof block.tile === "number") {
+                  const matchingTile = getTileById(tiles, block.tile);
+                  if (matchingTile) {
+                    tile = matchingTile;
+                  }
+                }
+
+                return [key, { ...block, tile }];
+              }),
+            ),
+          },
+        ]),
+      );
+
+      gameState.plantStructures.set(reconstructedPlants);
       continue;
     }
 

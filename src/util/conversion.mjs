@@ -67,3 +67,50 @@ export function base64toBlob(gThis, base64Data, mimeType) {
 
   return new Blob([uint8Array.buffer], { type: mimeType });
 }
+
+/**
+ * Converts a File object to a base64-encoded string asynchronously.
+ *
+ * Reads the file contents using FileReader as an ArrayBuffer, then encodes
+ * the binary data to base64 format. Useful for uploading files, embedding
+ * images in data URLs, or transmitting binary file data over text protocols.
+ *
+ * @param {File} file - The File object to read and encode (from file input or drag-drop)
+ *
+ * @returns {Promise<string>} Promise that resolves to the base64-encoded string of the file contents
+ *
+ * @throws {Error} If the FileReader fails or result is not an ArrayBuffer
+ *
+ * @example
+ * const fileInput = document.querySelector('input[type="file"]');
+ * fileInput.addEventListener('change', async (e) => {
+ *   const file = e.target.files[0];
+ *   try {
+ *     const base64 = await fileToBase64(file);
+ *     console.log(base64); // e.g., "data:application/pdf;base64,JVBERi0xLjQ..."
+ *   } catch (error) {
+ *     console.error('Failed to encode file:', error);
+ *   }
+ * });
+ */
+export async function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      const result = reader.result;
+
+      if (result instanceof ArrayBuffer) {
+        const uint8Array = new Uint8Array(result);
+        const base64String = btoa(String.fromCharCode.apply(null, uint8Array));
+
+        resolve(base64String);
+      } else {
+        reject(new Error("Failed to read file as ArrayBuffer"));
+      }
+    };
+
+    reader.onerror = reject;
+    reader.readAsArrayBuffer(file);
+  });
+}

@@ -49,22 +49,45 @@ async function handleShareTarget(request) {
       throw new Error("No gameState file in form data");
     }
 
-    // Read the gzipped file
-    const arrayBuffer = await file.arrayBuffer();
+    // Handle both .sgs (gzip) and .sgs.json.txt (non compressed) game save files
+    const isJSON = file.name.endsWith(".sgs.json.txt");
 
-    // Decompress the gzip data
-    const stream = new ReadableStream({
-      start(controller) {
-        controller.enqueue(new Uint8Array(arrayBuffer));
-        controller.close();
-      },
-    });
+    let stateJSON;
+    let gzipFile = file;
 
-    const decompressedStream = stream.pipeThrough(
-      new DecompressionStream("gzip"),
-    );
-    const decompressedBlob = await new Response(decompressedStream).blob();
-    const stateJSON = await decompressedBlob.text();
+    if (isJSON) {
+      stateJSON = (await file.text()).replace(/\s+/g, "");
+
+      // Compress stateJSON into gzipFile using CompressionStream
+      const encoder = new TextEncoder();
+      const byteData = encoder.encode(stateJSON);
+
+      const compressionStream = new CompressionStream("gzip");
+      const writer = compressionStream.writable.getWriter();
+      writer.write(byteData);
+      writer.close();
+
+      gzipFile = await new Response(compressionStream.readable).blob();
+    } else {
+      // Read the gzipped file (now always a proper gzip File)
+      const arrayBuffer = await gzipFile.arrayBuffer();
+
+      // Decompress the gzip data
+      const stream = new ReadableStream({
+        start(controller) {
+          controller.enqueue(new Uint8Array(arrayBuffer));
+          controller.close();
+        },
+      });
+
+      const decompressedStream = stream.pipeThrough(
+        new DecompressionStream("gzip"),
+      );
+
+      const decompressedBlob = await new Response(decompressedStream).blob();
+
+      stateJSON = await decompressedBlob.text();
+    }
 
     // Parse the JSON
     const saveData = JSON.parse(stateJSON);
@@ -72,7 +95,7 @@ async function handleShareTarget(request) {
     // Store for the page to retrieve
     pendingShareData = {
       saveData,
-      fileName: file.name,
+      fileName: gzipFile.name, // Use normalized filename
     };
 
     console.log("[ShareTarget] Stored shared save data in Service Worker");

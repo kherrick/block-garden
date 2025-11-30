@@ -97,7 +97,7 @@ export class FogMap {
    *
    * @static
    *
-   * @param {{ [key: string]: boolean }} fogObj
+   * @param {{ [key: string]: boolean|number }} fogObj
    * @param {number} width
    * @param {number} height
    * @param {CombinedColorMap|undefined} [colors]
@@ -107,7 +107,7 @@ export class FogMap {
   static fromObject(fogObj, width, height, colors) {
     const fog = new FogMap(width, height, colors);
 
-    // Handle object format: { "x,y": true, ... }
+    // Handle object format: { "x,y": truthy, ... }
     if (fogObj && typeof fogObj === "object") {
       for (const key in fogObj) {
         if (fogObj[key]) {
@@ -132,7 +132,7 @@ export class FogMap {
     for (let y = 0; y < this.height; y++) {
       for (let x = 0; x < this.width; x++) {
         if (this.isExplored(x, y)) {
-          obj[`${x},${y}`] = true;
+          obj[`${x},${y}`] = 1;
         }
       }
     }

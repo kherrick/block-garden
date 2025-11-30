@@ -370,13 +370,18 @@ export class StorageDialog {
     this.shadow = shadow;
     this.dialog = null;
     this.savedGames = [];
-    this.close = this.close.bind(this);
 
+    this.close = this.close.bind(this);
     this.deleteSelectedGame = this.deleteSelectedGame.bind(this);
     this.loadSelectedGame = this.loadSelectedGame.bind(this);
+    this.shareSelectedGame = this.shareSelectedGame.bind(this);
     this.saveCurrentGame = this.saveCurrentGame.bind(this);
     this.handleDialogClick = this.handleDialogClick.bind(this);
     this.handleWorldNameInput = this.handleWorldNameInput.bind(this);
+    this.handleDragOver = this.handleDragOver.bind(this);
+    this.handleDragLeave = this.handleDragLeave.bind(this);
+    this.handleFileDrop = this.handleFileDrop.bind(this);
+    this.handleFileSelect = this.handleFileSelect.bind(this);
   }
 
   /** @returns {Promise<HTMLDialogElement>} */
@@ -463,33 +468,37 @@ export class StorageDialog {
       </div>
 
       <div>
-        <h4 style="margin: 0.625rem 0">Load Saved Game</h4>
+        <h4 style="margin: 0.625rem 0">Load Saved Game / Drag & Drop</h4>
         <div
-          id="savedGamesList"
+          id="gameDropZone"
           style="
-            border: 0.0625rem solid var(--sg-color-gray-400);
+            border: 0.0625rem dashed var(--sg-color-gray-400);
             border-radius: 0.25rem;
-            max-height: 18.75rem;
-            overflow-y: auto;
+            position: relative;
+            transition: all 0.2s ease;
+            padding: 0;
           "
         >
-          <!-- Saved games will be populated here -->
-        </div>
-        <div style="margin-top: 0.625rem; display: flex; gap: 0.625rem">
-          <button
-            id="loadSelectedBtn"
-            disabled
+          <div
+            id="savedGamesList"
             style="
-              background: var(--sg-color-blue-500);
+              border: 0.0625rem solid var(--sg-color-gray-400);
               border-radius: 0.25rem;
-              border: none;
-              color: white;
-              cursor: pointer;
-              padding: 0.5rem 0.9375rem;
+              max-height: 18.75rem;
+              overflow-y: auto;
             "
           >
-            Load Selected
-          </button>
+            <!-- Saved games will be populated here -->
+          </div>
+          <input
+            id="fileInput"
+            type="file"
+            accept=".sgs,text/plain"
+            style="display: none"
+            multiple
+          />
+        </div>
+        <div style="margin-top: 0.625rem; display: flex; gap: 0.625rem">
           <button
             id="deleteSelectedBtn"
             disabled
@@ -504,6 +513,35 @@ export class StorageDialog {
           >
             Delete Selected
           </button>
+          <button
+            id="shareSelectedBtn"
+            disabled
+            hidden
+            style="
+              background: var(--sg-color-medium-purple);
+              border-radius: 0.25rem;
+              border: none;
+              color: white;
+              cursor: pointer;
+              padding: 0.5rem 0.9375rem;
+            "
+          >
+            Share Selected
+          </button>
+          <button
+            id="loadSelectedBtn"
+            disabled
+            style="
+              background: var(--sg-color-blue-500);
+              border-radius: 0.25rem;
+              border: none;
+              color: white;
+              cursor: pointer;
+              padding: 0.5rem 0.9375rem;
+            "
+          >
+            Load Selected
+          </button>
         </div>
       </div>
     `;
@@ -514,6 +552,7 @@ export class StorageDialog {
     await this.loadSavedGamesList();
 
     this.initEventListeners();
+    this.updateButtonStates();
 
     return dialog;
   }
@@ -650,6 +689,40 @@ export class StorageDialog {
       deleteBtn.style.opacity = isSelected ? "1" : "0.5";
       deleteBtn.style.cursor = isSelected ? "pointer" : "not-allowed";
     }
+
+    // Check if Web Share API supports files and enable/disable share button accordingly
+    const shareBtn = this.dialog.querySelector("#shareSelectedBtn");
+    if (shareBtn instanceof HTMLButtonElement) {
+      const canShareFiles =
+        typeof navigator !== "undefined" &&
+        typeof navigator.canShare !== "undefined";
+      let canShare = false;
+      if (canShareFiles) {
+        // Test if we can actually share files
+        try {
+          const testFile = new File([], "test");
+          canShare = navigator.canShare({ files: [testFile] });
+
+          shareBtn.disabled = !isSelected;
+          shareBtn.style.opacity = canShare ? "1" : "0.5";
+          shareBtn.style.cursor = canShare ? "pointer" : "not-allowed";
+        } catch {
+          shareBtn.disabled = true;
+          shareBtn.setAttribute("hidden", "hidden");
+          shareBtn.style.opacity = "0.5";
+          shareBtn.style.cursor = "not-allowed";
+        }
+      } else {
+        shareBtn.disabled = true;
+        shareBtn.setAttribute("hidden", "hidden");
+        shareBtn.style.opacity = "0.5";
+        shareBtn.style.cursor = "not-allowed";
+      }
+
+      if (canShare) {
+        shareBtn.removeAttribute("hidden");
+      }
+    }
   }
 
   /**
@@ -687,13 +760,25 @@ export class StorageDialog {
     const saveBtn = this.dialog.querySelector("#saveToStorageBtn");
     const loadBtn = this.dialog.querySelector("#loadSelectedBtn");
     const deleteBtn = this.dialog.querySelector("#deleteSelectedBtn");
+    const shareBtn = this.dialog.querySelector("#shareSelectedBtn");
     const worldNameInput = this.dialog.querySelector("#worldNameInput");
+    const gameDropZone = this.dialog.querySelector("#gameDropZone");
+    const fileInput = this.dialog.querySelector("#fileInput");
 
     closeBtn.addEventListener("click", this.close);
     saveBtn.addEventListener("click", this.saveCurrentGame);
     loadBtn.addEventListener("click", this.loadSelectedGame);
     deleteBtn.addEventListener("click", this.deleteSelectedGame);
+    shareBtn.addEventListener("click", this.shareSelectedGame);
     worldNameInput.addEventListener("keydown", this.handleWorldNameInput);
+
+    // Drag and drop for file upload
+    gameDropZone.addEventListener("dragover", this.handleDragOver);
+    gameDropZone.addEventListener("dragleave", this.handleDragLeave);
+    gameDropZone.addEventListener("drop", this.handleFileDrop);
+
+    // File input change event
+    fileInput.addEventListener("change", this.handleFileSelect);
 
     // Close on outside click
     this.dialog.addEventListener("click", this.handleDialogClick);
@@ -705,16 +790,166 @@ export class StorageDialog {
     const saveBtn = this.dialog.querySelector("#saveToStorageBtn");
     const loadBtn = this.dialog.querySelector("#loadSelectedBtn");
     const deleteBtn = this.dialog.querySelector("#deleteSelectedBtn");
+    const shareBtn = this.dialog.querySelector("#shareSelectedBtn");
     const worldNameInput = this.dialog.querySelector("#worldNameInput");
+    const gameDropZone = this.dialog.querySelector("#gameDropZone");
+    const fileInput = this.dialog.querySelector("#fileInput");
 
     closeBtn.removeEventListener("click", this.close);
     saveBtn.removeEventListener("click", this.saveCurrentGame);
     loadBtn.removeEventListener("click", this.loadSelectedGame);
     deleteBtn.removeEventListener("click", this.deleteSelectedGame);
+    shareBtn.removeEventListener("click", this.shareSelectedGame);
     worldNameInput.removeEventListener("keydown", this.handleWorldNameInput);
+
+    // Drag and drop
+    gameDropZone.removeEventListener("dragover", this.handleDragOver);
+    gameDropZone.removeEventListener("dragleave", this.handleDragLeave);
+    gameDropZone.removeEventListener("drop", this.handleFileDrop);
+
+    // File input
+    fileInput.removeEventListener("change", this.handleFileSelect);
 
     // Close on outside click
     this.dialog.removeEventListener("click", this.handleDialogClick);
+  }
+
+  /** @returns {void} */
+  handleDragOver(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const gameDropZone = this.dialog.querySelector("#gameDropZone");
+    if (gameDropZone instanceof HTMLElement) {
+      gameDropZone.style.borderColor = "var(--sg-color-blue-500)";
+      gameDropZone.style.backgroundColor = "rgba(100, 200, 255, 0.1)";
+    }
+  }
+
+  /** @returns {void} */
+  handleDragLeave(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const gameDropZone = this.dialog.querySelector("#gameDropZone");
+    if (gameDropZone instanceof HTMLElement) {
+      gameDropZone.style.borderColor = "var(--sg-color-gray-400)";
+      gameDropZone.style.backgroundColor = "";
+    }
+  }
+
+  /** @returns {void} */
+  handleFileDrop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const gameDropZone = this.dialog.querySelector("#gameDropZone");
+    if (gameDropZone instanceof HTMLElement) {
+      gameDropZone.style.borderColor = "var(--sg-color-gray-400)";
+      gameDropZone.style.backgroundColor = "";
+    }
+
+    const files = e.dataTransfer.files;
+    this.processFiles(files);
+  }
+
+  /** @returns {void} */
+  handleFileSelect(e) {
+    const files = e.target.files;
+    this.processFiles(files);
+  }
+
+  /**
+   * Process dropped or selected files
+   *
+   * @param {FileList} files
+   *
+   * @returns {Promise<void>}
+   */
+  async processFiles(files) {
+    for (const file of files) {
+      if (!file.name.endsWith(".sgs") && !file.name.endsWith(".sgs.json.txt")) {
+        console.warn(`Skipping file ${file.name}: invalid extension`);
+        continue;
+      }
+
+      try {
+        const fileContent = await file.arrayBuffer();
+        await this.loadGameFromFile(fileContent, file.name);
+      } catch (error) {
+        console.error(`Failed to load file ${file.name}:`, error);
+        alert(`Failed to load file: ${file.name}. Check console for details.`);
+      }
+    }
+  }
+
+  /**
+   * Load game from file buffer
+   *
+   * @param {ArrayBuffer} fileBuffer
+   * @param {string} fileName
+   *
+   * @returns {Promise<void>}
+   */
+  async loadGameFromFile(fileBuffer, fileName) {
+    try {
+      let stateJSON;
+
+      // Check if this is a .sgs.json.txt file (plain JSON text) or .sgs file (gzip compressed)
+      if (fileName.endsWith(".sgs.json.txt")) {
+        // Plain JSON text file
+        const decoder = new TextDecoder();
+        stateJSON = decoder.decode(fileBuffer);
+      } else {
+        // Gzip compressed .sgs file
+        const compressedBlob = new this.gThis.Blob([fileBuffer], {
+          type: "application/gzip",
+        });
+
+        // Decompress
+        if ("DecompressionStream" in this.gThis) {
+          const decompressedStream = compressedBlob
+            .stream()
+            .pipeThrough(new this.gThis.DecompressionStream("gzip"));
+
+          const decompressedBlob = await new this.gThis.Response(
+            decompressedStream,
+          ).blob();
+
+          stateJSON = await decompressedBlob.text();
+        } else {
+          throw new Error("DecompressionStream not supported");
+        }
+      }
+
+      // Parse and load save state
+      const saveState = JSON.parse(stateJSON);
+      loadSaveState(this.gThis, this.shadow, saveState);
+
+      // Update UI elements
+      const { worldSeed } = saveState.config;
+      const seedInput = this.doc.getElementById("worldSeedInput");
+      const currentSeedDisplay = this.doc.getElementById("currentSeed");
+
+      if (seedInput instanceof HTMLInputElement) {
+        seedInput.value = worldSeed;
+      }
+
+      if (currentSeedDisplay) currentSeedDisplay.textContent = worldSeed;
+
+      console.log(`Game loaded from file: ${fileName}`);
+
+      // Reset file input
+      const fileInput = this.dialog.querySelector("#fileInput");
+      if (fileInput instanceof HTMLInputElement) {
+        fileInput.value = "";
+      }
+
+      this.close();
+    } catch (error) {
+      console.error(`Failed to process game file ${fileName}:`, error);
+      throw error;
+    }
   }
 
   /** @returns {Promise<void>} */
@@ -864,6 +1099,77 @@ export class StorageDialog {
         console.error("Failed to delete game from storage:", error);
 
         alert("Failed to delete game. Check console for details.");
+      }
+    }
+  }
+
+  /** @returns {Promise<void>} */
+  async shareSelectedGame() {
+    const selected = this.dialog.querySelector(
+      'input[name="selectedGame"]:checked',
+    );
+
+    if (!selected) {
+      return;
+    }
+
+    let game;
+    if (selected instanceof HTMLInputElement) {
+      const gameIndex = parseInt(selected.value);
+
+      game = this.savedGames[gameIndex];
+    }
+
+    let stateJSON;
+    if ("DecompressionStream" in globalThis) {
+      const decompressedStream = base64toBlob(
+        globalThis,
+        game.data,
+        "application/gzip",
+      )
+        .stream()
+        .pipeThrough(new globalThis.DecompressionStream("gzip"));
+      const decompressedBlob = await new globalThis.Response(
+        decompressedStream,
+      ).blob();
+
+      stateJSON = await decompressedBlob.text();
+    } else {
+      throw new Error("DecompressionStream not supported");
+    }
+
+    try {
+      // Create base64 text blob
+      const base64Blob = new Blob([stateJSON], { type: "text/plain" });
+
+      // Create File object with .sgs.json.txt extension
+      const fileName = `${game.name.replace(/[^a-zA-Z0-9]/g, "_")}-${game.timestamp}.sgs.json.txt`;
+      const file = new File([base64Blob], fileName, { type: "text/plain" });
+
+      // Check if we can share this file
+      if (
+        typeof navigator !== "undefined" &&
+        typeof navigator.canShare !== "undefined" &&
+        navigator.canShare({ files: [file] })
+      ) {
+        await navigator.share({
+          files: [file],
+          title: "Sprite Garden Game Save",
+          url: "https://kherrick.github.io/sprite-garden",
+          text: `Visit Sprite Garden, then 'Load' and checkout my world: ${game.name}\n\n`,
+        });
+
+        console.log("Game shared successfully:", game.name);
+      } else {
+        alert("Web Share API is not available on this device or browser.");
+      }
+    } catch (error) {
+      // Only log if it's not a user cancellation
+      if (error.name !== "AbortError") {
+        console.error("Failed to share game:", error);
+        alert("Failed to share game. Check console for details.");
+      } else {
+        console.log("Game sharing was cancelled by the user");
       }
     }
   }

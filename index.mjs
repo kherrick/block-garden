@@ -656,9 +656,26 @@ export class SpriteGarden extends HTMLElement {
             gap: 0.625rem;
           }
 
-          .seed-controls h4 {
+          .seed-controls__header {
+            display: flex;
+            gap: 0.625rem;
+            justify-content: space-between;
+            margin-bottom: 0.625rem;
+          }
+
+          .seed-controls h4, .seed-controls__header h4 {
             color: var(--sg-color-white);
             margin: 0 0 0.625rem 0;
+          }
+
+          .seed-controls__header button {
+            background: var(--sg-color-red-500);
+            border-radius: 0.25rem;
+            border: none;
+            color: white;
+            cursor: pointer;
+            margin: 0 0 0.625rem 0;
+            padding: 0.3125rem 0.625rem;
           }
 
           .seed-controls input {
@@ -676,6 +693,7 @@ export class SpriteGarden extends HTMLElement {
           .seed-controls__save-load {
             display: flex;
             flex-direction: column;
+            margin-bottom: 0.5rem;
           }
 
           #saveModeToggle {
@@ -1613,8 +1631,12 @@ export class SpriteGarden extends HTMLElement {
         </div>
 
         <div class="seed-controls" hidden="hidden">
-          <h4>World Generation</h4>
-
+          <div class="seed-controls__header">
+            <h4>World Generation</h4>
+            <button id="closeWorldGeneration">
+              &times;
+            </button>
+          </div>
           <div class="seed-controls__actions">
             <label>
               Seed:
@@ -1634,13 +1656,23 @@ export class SpriteGarden extends HTMLElement {
             <p>Current seed: <span id="currentSeed"></span></p>
           </div>
 
-          <h4>New Game, Load / Save Game File</h4>
+          <h4>Load / Save / Store</h4>
 
           <div class="seed-controls__save-load">
-            <button id="initNewWorld">🌍 New World</button>
-            <button id="useStorageBtn">💾 Use Storage</button>
-            <button id="loadCompressedState">Load Game File</button>
-            <button id="saveCompressedState">Save Game File</button>
+            <button id="loadExternalGameFile">💾 Load Game File From Disk</button>
+            <button id="saveExternalGameFile">🗃️ Save Game File To Disk</button>
+            <button id="openStorageBtn">🗄️ Open Game Storage</button>
+          </div>
+
+          <h4 class="seed-controls__header seed-controls--share" hidden>Share</h4>
+
+          <div class="seed-controls__save-load seed-controls--share" hidden>
+            <button id="shareExternalGameFile">🌍 Share External Game File</button>
+          </div>
+
+          <h4>Mode</h4>
+
+          <div class="seed-controls__save-load">
             <button id="saveModeToggle">Save Mode Auto</button>
           </div>
         </div>

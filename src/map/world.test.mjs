@@ -300,8 +300,8 @@ describe("WorldMap class", () => {
 
       const array = world.toArray();
 
-      expect(array[3][5].id).toBe(dirtTile.id);
-      expect(array[7][2].id).toBe(stoneTile.id);
+      expect(array[3][5]).toBe(dirtTile.id);
+      expect(array[7][2]).toBe(stoneTile.id);
     });
 
     test("includes air tiles in array representation", () => {
@@ -312,7 +312,7 @@ describe("WorldMap class", () => {
       // All tiles should be air by default
       for (let x = 0; x < 5; x++) {
         for (let y = 0; y < 5; y++) {
-          expect(array[x][y].id).toBe(airTile.id);
+          expect(array[x][y]).toBe(airTile.id);
         }
       }
     });
@@ -324,18 +324,18 @@ describe("WorldMap class", () => {
 
       const array1 = world.toArray();
 
-      expect(array1[5][5].id).toBe(dirtTile.id);
+      expect(array1[5][5]).toBe(dirtTile.id);
 
       // Modify world
       world.setTile(5, 5, stoneTile);
 
       // Original array should be unchanged
-      expect(array1[5][5].id).toBe(dirtTile.id);
+      expect(array1[5][5]).toBe(dirtTile.id);
 
       // New array should have the update
       const array2 = world.toArray();
 
-      expect(array2[5][5].id).toBe(stoneTile.id);
+      expect(array2[5][5]).toBe(stoneTile.id);
     });
 
     test("handles world with mixed tile types", () => {
@@ -348,10 +348,10 @@ describe("WorldMap class", () => {
 
       const array = world.toArray();
 
-      expect(array[0][0].id).toBe(dirtTile.id);
-      expect(array[1][0].id).toBe(stoneTile.id);
-      expect(array[2][0].id).toBe(grassTile.id);
-      expect(array[3][0].id).toBe(waterTile.id);
+      expect(array[0][0]).toBe(dirtTile.id);
+      expect(array[1][0]).toBe(stoneTile.id);
+      expect(array[2][0]).toBe(grassTile.id);
+      expect(array[3][0]).toBe(waterTile.id);
     });
   });
 

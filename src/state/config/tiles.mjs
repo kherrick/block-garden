@@ -544,7 +544,27 @@ export function denormalizeTileName(name) {
  * Used for reverse lookups when you have an ID and need the tile name.
  *
  * @param {TileMap} currentTiles - The tiles map to search
- * @param {number} id - The sprite ID to look for
+ * @param {number} id - The tile ID to look for
+ *
+ * @returns {TileDefinition|null} The tile definition matching the ID, or null if not found
+ */
+export function getTileById(currentTiles, id) {
+  for (const tiles in currentTiles) {
+    if (currentTiles[tiles].id === id) {
+      return currentTiles[tiles];
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Looks up a tile name by its unique tile ID.
+ *
+ * Used for reverse lookups when you have an ID and need the tile name.
+ *
+ * @param {TileMap} currentTiles - The tiles map to search
+ * @param {number} id - The tile ID to look for
  *
  * @returns {string|null} The tile name matching the ID, or null if not found
  */

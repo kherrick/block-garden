@@ -43,7 +43,12 @@ export function updateCrops(
 
       // Clear old plant blocks from the world
       if (structure.blocks) {
-        structure.blocks.forEach((block) => {
+        // Blocks can be an array or an object depending on save format
+        const blocksArray = Array.isArray(structure.blocks)
+          ? structure.blocks
+          : Object.values(structure.blocks);
+
+        blocksArray.forEach((block) => {
           if (
             block.x >= 0 &&
             block.x < worldWidth &&
@@ -67,7 +72,12 @@ export function updateCrops(
       );
 
       // Place the new plant blocks in the world
-      structure.blocks.forEach((block) => {
+      // Blocks can be an array or an object depending on save format
+      const newBlocksArray = Array.isArray(structure.blocks)
+        ? structure.blocks
+        : Object.values(structure.blocks);
+
+      newBlocksArray.forEach((block) => {
         if (
           block.x >= 0 &&
           block.x < worldWidth &&

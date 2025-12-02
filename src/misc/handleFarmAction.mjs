@@ -31,7 +31,12 @@ function harvestMaturePlant(
   worldWidth,
 ) {
   if (structure.blocks) {
-    structure.blocks.forEach((block) => {
+    // Blocks can be an array or an object depending on save format
+    const blocksArray = Array.isArray(structure.blocks)
+      ? structure.blocks
+      : Object.values(structure.blocks);
+
+    blocksArray.forEach((block) => {
       if (
         block.x >= 0 &&
         block.x < worldWidth &&
@@ -173,8 +178,13 @@ export function handleFarmAction(
     // Look for mature plant structures that contain this tile
     for (const [key, structure] of Object.entries(currentStructures)) {
       if (structure.mature && structure.blocks) {
+        // Blocks can be an array or an object depending on save format
+        const blocksArray = Array.isArray(structure.blocks)
+          ? structure.blocks
+          : Object.values(structure.blocks);
+
         // Check if any block in the structure matches our target position
-        const matchingBlock = structure.blocks.find(
+        const matchingBlock = blocksArray.find(
           (block) => block.x === targetX && block.y === targetY,
         );
 

@@ -3,7 +3,12 @@ import extrasHandler from "konami-code-js";
 import { copyToClipboard } from "../util/copyToClipboard.mjs";
 import { createSaveState } from "../state/createSave.mjs";
 import { debounce } from "../util/debounce.mjs";
-import { gameConfig, gameState } from "../state/state.mjs";
+import {
+  tutorialListener,
+  gameConfig,
+  gameState,
+  hasDismissedTutorial,
+} from "../state/state.mjs";
 import { getCustomProperties } from "../util/colors/getCustomProperties.mjs";
 import { getRandomSeed } from "../misc/getRandomSeed.mjs";
 import { handleBreakBlockWithWaterPhysics } from "../misc/handleBreakBlock.mjs";
@@ -26,6 +31,7 @@ import { updateRangeUI } from "../update/ui/range.mjs";
 import { showAboutDialog } from "../dialog/about.mjs";
 import { showExamplesDialog } from "../dialog/examples.mjs";
 import { showPrivacyDialog } from "../dialog/privacy.mjs";
+import { showToast } from "../dialog/showToast.mjs";
 
 import {
   autoSaveGame,
@@ -36,6 +42,7 @@ import {
 
 import { initFog } from "./fog.mjs";
 import { initNewWorld } from "./newWorld.mjs";
+import { dismissTutorialToast } from "../util/dismissTutorialToast.mjs";
 
 /** @typedef {import('./game.mjs').CustomShadowHost} CustomShadowHost */
 
@@ -225,6 +232,27 @@ export function initDocumentEventListeners(gThis, shadow) {
     handler.disable();
   });
 
+  // Toast Event Listener
+  shadow.addEventListener("sprite-garden-toast", (e) => {
+    if (e instanceof CustomEvent) {
+      showToast(shadow, e.detail.message, e.detail.config);
+    }
+  });
+
+  tutorialListener.set((e) => {
+    if (e instanceof KeyboardEvent && !hasDismissedTutorial.get()) {
+      const key = e.key.toLowerCase();
+
+      if (key === "w" || key === "arrowup" || key === " ") {
+        dismissTutorialToast(shadow);
+
+        hasDismissedTutorial.set(true);
+      }
+    }
+  });
+
+  shadow.addEventListener("keydown", tutorialListener.get());
+
   // Keyboard events
   shadow.addEventListener(
     "keydown",
@@ -303,6 +331,7 @@ export function initDocumentEventListeners(gThis, shadow) {
       // Handle farming actions
       if (lowercaseKey === "f") {
         handleFarmAction(
+          shadow,
           gameState.growthTimers,
           gameState.plantStructures,
           gameState.player.get(),
@@ -318,6 +347,7 @@ export function initDocumentEventListeners(gThis, shadow) {
 
       if (lowercaseKey === "r") {
         handleBreakBlockWithWaterPhysics(
+          shadow,
           gameState.growthTimers,
           gameState.plantStructures,
           gameState.player,
@@ -336,6 +366,7 @@ export function initDocumentEventListeners(gThis, shadow) {
 
       if (blockKeys.includes(lowercaseKey)) {
         await handlePlaceBlock(
+          shadow,
           lowercaseKey,
           gameState.materialsInventory.get(),
           gameState.player.get(),
@@ -812,13 +843,13 @@ export function initElementEventListeners(gThis, shadow) {
   // Set up seed button event listeners
   const seedBtns = shadow.querySelectorAll(".seed-btn");
   seedBtns.forEach((btn) => {
-    btn.addEventListener("click", (e) => selectSeed(gameState, e));
+    btn.addEventListener("click", (e) => selectSeed(shadow, gameState, e));
   });
 
   // Set up material button event listeners
   const materialBtns = shadow.querySelectorAll(".material-btn");
   materialBtns.forEach((btn) => {
-    btn.addEventListener("click", (e) => selectMaterial(gameState, e));
+    btn.addEventListener("click", (e) => selectMaterial(shadow, gameState, e));
   });
 
   // Set default to 400x400 and update the select element

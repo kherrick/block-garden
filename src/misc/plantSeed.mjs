@@ -1,4 +1,4 @@
-import { seedTileMap } from "../state/config/tiles.mjs";
+import { seedTileMap, stringifyToLowerCase } from "../state/config/tiles.mjs";
 import { updateState } from "../state/state.mjs";
 
 /** @typedef {import('signal-polyfill').Signal.State} Signal.State */
@@ -12,6 +12,7 @@ import { updateState } from "../state/state.mjs";
  * Verifies farmable ground exists below and initializes crop growth.
  * Updates both the world tiles and growth timer state.
  *
+ * @param {ShadowRoot} shadow - The shadow root of Sprite Garden
  * @param {Signal.State} growthTimers - State Signal tracking crop growth progress
  * @param {Signal.State} plantStructures - State Signal for complex plant structures
  * @param {Signal.State} seedInventory - State Signal for seed inventory counts
@@ -24,6 +25,7 @@ import { updateState } from "../state/state.mjs";
  * @returns {void}
  */
 export function plantSeed(
+  shadow,
   growthTimers,
   plantStructures,
   seedInventory,
@@ -41,6 +43,7 @@ export function plantSeed(
     return; // Can't plant without farmable ground
   }
 
+  let message;
   if (seedTileMap[seedType] && seedInventory[seedType] > 0) {
     // Update world with initial growing tile
     world.setTile(x, y, seedTileMap[seedType]);
@@ -75,12 +78,17 @@ export function plantSeed(
       },
     });
 
-    console.log(
-      `Planted ${seedType} at (${x}, ${y}), ${seedInventory[seedType] - 1} seeds remaining`,
-    );
+    message = `Planted ${stringifyToLowerCase(seedType)} at (${x}, ${y}), ${seedInventory[seedType] - 1} seeds remaining`;
   } else {
-    console.log(
-      `Cannot plant ${seedType} - no seeds available or invalid seed type`,
-    );
+    message = `Cannot plant ${stringifyToLowerCase(seedType)} - no seeds available or invalid seed type`;
   }
+
+  console.log(message);
+  shadow.dispatchEvent(
+    new CustomEvent("sprite-garden-toast", {
+      detail: {
+        message,
+      },
+    }),
+  );
 }

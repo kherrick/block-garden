@@ -1,15 +1,18 @@
+import { stringifyToLowerCase } from "../state/config/tiles.mjs";
+
 /**
  * UI event handler for material selection.
  *
  * Toggles material selection in the inventory UI and updates game state.
  * Deselects the material if it's already selected (toggle behavior).
  *
+ * @param {ShadowRoot} shadow - The shadow root of Sprite Garden
  * @param {Object} state - Game state object with selectedMaterialType Signal
  * @param {Event} event - Click event from the material button element
  *
  * @returns {void}
  */
-export function selectMaterial(state, event) {
+export function selectMaterial(shadow, state, event) {
   if (!(event.currentTarget instanceof HTMLElement)) {
     throw new Error("currentTarget is not an HTMLElement");
   }
@@ -35,5 +38,13 @@ export function selectMaterial(state, event) {
 
   state.selectedMaterialType.set(newSelected);
 
-  console.log(`New selected material: ${newSelected}`);
+  const message = `New selected material: ${stringifyToLowerCase(newSelected)}`;
+  console.log(message);
+  shadow.dispatchEvent(
+    new CustomEvent("sprite-garden-toast", {
+      detail: {
+        message,
+      },
+    }),
+  );
 }

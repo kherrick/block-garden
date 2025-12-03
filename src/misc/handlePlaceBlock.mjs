@@ -1,10 +1,9 @@
 import localForage from "localforage";
-import { SpriteGarden } from "../api/SpriteGarden.mjs";
 
-import { getShadowRoot } from "../util/getShadowRoot.mjs";
 import { getTileFromMaterial } from "./getTileFromMaterial.mjs";
 import { updateRangeValue } from "../update/ui/range.mjs";
 import { updateState } from "../state/state.mjs";
+import { stringifyToLowerCase } from "../state/config/tiles.mjs";
 
 /** @typedef {import("../state/state.mjs").PlayerState} PlayerState */
 /** @typedef {import('../state/config/tiles.mjs').TileMap} TileMap */
@@ -15,6 +14,7 @@ import { updateState } from "../state/state.mjs";
  * Determines target position based on directional key input.
  * Updates inventory and range UI when block is successfully placed.
  *
+ * @param {ShadowRoot} shadow - The shadow root of Sprite Garden
  * @param {string} key - Direction key ('k', 'o', 'u', 'i') controlling placement direction
  * @param {Object} materialsInventory - State containing material inventory counts
  * @param {PlayerState} player - Player state with x, y, width, height properties
@@ -28,6 +28,7 @@ import { updateState } from "../state/state.mjs";
  * @returns {Promise<void>}
  */
 export async function handlePlaceBlock(
+  shadow,
   key,
   materialsInventory,
   player,
@@ -43,13 +44,10 @@ export async function handlePlaceBlock(
 
   let targetX, targetY;
   let rangeValue = (await localForage.getItem("sprite-garden-range")) || 1;
-
   // Determine placement position based on key pressed
   switch (key.toLowerCase()) {
     case "k": // Middle button
-      await updateRangeValue(
-        getShadowRoot(globalThis.document, "sprite-garden"),
-      );
+      await updateRangeValue(shadow);
 
       return;
     case "u": // Top left
@@ -182,18 +180,46 @@ export async function handlePlaceBlock(
       }
       break;
     default:
-      console.log(`Invalid placement key: ${key}`);
+      const message = `Invalid placement key: ${key}`;
+
+      console.log(message);
+      shadow.dispatchEvent(
+        new CustomEvent("sprite-garden-toast", {
+          detail: {
+            message,
+          },
+        }),
+      );
+
       return;
   }
 
   if (!selectedMaterialType) {
-    console.log("No material selected for placement");
+    const message = "No material selected for placement";
+
+    console.log(message);
+    shadow.dispatchEvent(
+      new CustomEvent("sprite-garden-toast", {
+        detail: {
+          message,
+        },
+      }),
+    );
 
     return;
   }
 
   if (materialsInventory[selectedMaterialType] <= 0) {
-    console.log(`No ${selectedMaterialType} available to place`);
+    const message = `No ${stringifyToLowerCase(selectedMaterialType)} available to place`;
+
+    console.log(message);
+    shadow.dispatchEvent(
+      new CustomEvent("sprite-garden-toast", {
+        detail: {
+          message,
+        },
+      }),
+    );
 
     return;
   }
@@ -205,8 +231,15 @@ export async function handlePlaceBlock(
     targetY < 0 ||
     targetY >= worldHeight
   ) {
-    console.log(
-      `Cannot place block outside world bounds at (${targetX}, ${targetY})`,
+    const message = `Cannot place block outside world bounds at (${targetX}, ${targetY})`;
+
+    console.log(message);
+    shadow.dispatchEvent(
+      new CustomEvent("sprite-garden-toast", {
+        detail: {
+          message,
+        },
+      }),
     );
 
     return;
@@ -216,8 +249,15 @@ export async function handlePlaceBlock(
   const currentTile = world.getTile(targetX, targetY);
 
   if (currentTile && currentTile !== tiles.AIR && currentTile.solid) {
-    console.log(
-      `Cannot place block at (${targetX}, ${targetY}) - position occupied`,
+    const message = `Cannot place block at (${targetX}, ${targetY}) - position occupied`;
+
+    console.log(message);
+    shadow.dispatchEvent(
+      new CustomEvent("sprite-garden-toast", {
+        detail: {
+          message,
+        },
+      }),
     );
 
     return;
@@ -227,7 +267,16 @@ export async function handlePlaceBlock(
   const tileToPlace = getTileFromMaterial(selectedMaterialType, tiles);
 
   if (!tileToPlace) {
-    console.log(`Invalid material type: ${selectedMaterialType}`);
+    const message = `Invalid material type: ${stringifyToLowerCase(selectedMaterialType)}`;
+
+    console.log(message);
+    shadow.dispatchEvent(
+      new CustomEvent("sprite-garden-toast", {
+        detail: {
+          message,
+        },
+      }),
+    );
 
     return;
   }
@@ -241,7 +290,14 @@ export async function handlePlaceBlock(
     [selectedMaterialType]: inv[selectedMaterialType] - 1,
   }));
 
-  console.log(
-    `Placed ${selectedMaterialType} at (${targetX}, ${targetY}), ${materialsInventory[selectedMaterialType] - 1} remaining`,
+  const message = `Placed ${stringifyToLowerCase(selectedMaterialType)} at (${targetX}, ${targetY}), ${materialsInventory[selectedMaterialType] - 1} remaining.`;
+
+  console.log(message);
+  shadow.dispatchEvent(
+    new CustomEvent("sprite-garden-toast", {
+      detail: {
+        message,
+      },
+    }),
   );
 }

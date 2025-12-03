@@ -1,4 +1,9 @@
-import { gameConfig, gameState } from "../state/state.mjs";
+import { dismissTutorialToast } from "../util/dismissTutorialToast.mjs";
+import {
+  gameConfig,
+  gameState,
+  hasDismissedTutorial,
+} from "../state/state.mjs";
 import { handleBreakBlockWithWaterPhysics } from "../misc/handleBreakBlock.mjs";
 import { handleFarmAction } from "../misc/handleFarmAction.mjs";
 import { handlePlaceBlock } from "../misc/handlePlaceBlock.mjs";
@@ -31,8 +36,16 @@ export function initTouchControls(shadow) {
         btn.style.background = "var(--sg-color-gray-alpha-30)";
       }
 
+      if (
+        !hasDismissedTutorial.get() &&
+        (key === "r" || key === "w" || key === "upright" || key == "upleft")
+      ) {
+        dismissTutorialToast(shadow);
+      }
+
       if (key === "f") {
         handleFarmAction(
+          shadow,
           gameState.growthTimers,
           gameState.plantStructures,
           gameState.player.get(),
@@ -48,6 +61,7 @@ export function initTouchControls(shadow) {
 
       if (key === "r") {
         handleBreakBlockWithWaterPhysics(
+          shadow,
           gameState.growthTimers,
           gameState.plantStructures,
           gameState.player,
@@ -148,6 +162,7 @@ export function initTouchControls(shadow) {
         "touchstart",
         async () =>
           await handlePlaceBlock(
+            shadow,
             pb.dataset.key,
             gameState.materialsInventory.get(),
             gameState.player.get(),
@@ -164,6 +179,7 @@ export function initTouchControls(shadow) {
         "click",
         async () =>
           await handlePlaceBlock(
+            shadow,
             pb.dataset.key,
             gameState.materialsInventory.get(),
             gameState.player.get(),

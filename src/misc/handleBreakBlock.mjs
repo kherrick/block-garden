@@ -1,5 +1,11 @@
 import { getHarvestMap } from "./getHarvestMap.mjs";
 import { getMaterialFromTile } from "./getMaterialFromTile.mjs";
+
+import {
+  getTileNameById,
+  stringifyToLowerCase,
+} from "../state/config/tiles.mjs";
+
 import { mapEditorState } from "../map/editor.mjs";
 import { markWaterRegionDirty } from "../water/markWaterRegionDirty.mjs";
 import { updateState } from "../state/state.mjs";
@@ -52,6 +58,7 @@ function isTreePart(tile, tiles) {
 }
 
 /**
+ * @param {ShadowRoot} shadow - The shadow root of Sprite Garden
  * @param {Signal.State} growthTimers - Signal State with growth timer data
  * @param {Signal.State} plantStructures - Signal State with plant structure data
  * @param {PlayerState} player - Signal State with player position/dimension data
@@ -65,6 +72,7 @@ function isTreePart(tile, tiles) {
  * @returns {void}
  */
 function handleBreakBlock(
+  shadow,
   growthTimers,
   plantStructures,
   player,
@@ -332,6 +340,20 @@ function handleBreakBlock(
       }
     });
 
+    const blockNames = blocksToBreak
+      .map((block) =>
+        stringifyToLowerCase(getTileNameById(tiles, block.tile.id)),
+      )
+      .join(", ");
+
+    shadow.dispatchEvent(
+      new CustomEvent("sprite-garden-toast", {
+        detail: {
+          message: `Collected ${JSON.stringify(blockNames)}`,
+        },
+      }),
+    );
+
     // Apply updates back to state, world, timers, and structures
     growthTimers.set(updatedTimers);
     plantStructures.set(updatedStructures);
@@ -365,6 +387,7 @@ function handleBreakBlock(
 }
 
 /**
+ * @param {ShadowRoot} shadow - The shadow root of Sprite Garden
  * @param {Signal.State} growthTimers - Signal State with growth timer data
  * @param {Signal.State} plantStructures - Signal State with plant structure data
  * @param {Signal.State} player - Signal State with player position/dimension data
@@ -379,6 +402,7 @@ function handleBreakBlock(
  * @returns {void}
  */
 export function handleBreakBlockWithWaterPhysics(
+  shadow,
   growthTimers,
   plantStructures,
   player,
@@ -403,6 +427,7 @@ export function handleBreakBlockWithWaterPhysics(
 
   // Store original function result
   const originalResult = handleBreakBlock(
+    shadow,
     growthTimers,
     plantStructures,
     currentPlayer,

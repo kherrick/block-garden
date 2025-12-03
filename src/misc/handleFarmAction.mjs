@@ -1,7 +1,7 @@
-import { updateState } from "../state/state.mjs";
-
 import { harvestCrop } from "./harvestCrop.mjs";
 import { plantSeed } from "./plantSeed.mjs";
+import { stringifyToLowerCase } from "../state/config/tiles.mjs";
+import { updateState } from "../state/state.mjs";
 
 /** @typedef {import('signal-polyfill').Signal.State} Signal.State */
 
@@ -9,6 +9,7 @@ import { plantSeed } from "./plantSeed.mjs";
 /** @typedef {import('../map/world.mjs').WorldMap} WorldMap */
 
 /**
+ * @param {ShadowRoot} shadow - The shadow root of Sprite Garden
  * @param {Signal.State} growthTimers growthTimers - Signal State with growth timer data
  * @param {Signal.State} plantStructures plantStructures - Signal State with plant structure data
  * @param {Object} structure - Plant structure object
@@ -21,6 +22,7 @@ import { plantSeed } from "./plantSeed.mjs";
  * @returns {void}
  */
 function harvestMaturePlant(
+  shadow,
   growthTimers,
   plantStructures,
   structure,
@@ -58,9 +60,7 @@ function harvestMaturePlant(
       [structure.seedType]: inv[structure.seedType] + seedsGained,
     }));
 
-    console.log(
-      `Harvested mature ${structure.seedType}, gained ${seedsGained} seeds`,
-    );
+    let message = `Harvested mature ${stringifyToLowerCase(structure.seedType)}, gained ${seedsGained} seed${seedsGained > 1 ? "s" : ""}.`;
 
     // Check for a wood like structure
     const item = "WOOD";
@@ -78,8 +78,17 @@ function harvestMaturePlant(
         [item]: inv[item] + woodGained,
       }));
 
-      console.log(`Gained ${woodGained} ${item.toLowerCase()}`);
+      message = `${message} Gained ${woodGained} ${stringifyToLowerCase(item)}.`;
     }
+
+    console.log(message);
+    shadow.dispatchEvent(
+      new CustomEvent("sprite-garden-toast", {
+        detail: {
+          message,
+        },
+      }),
+    );
   }
 
   // Remove the plant structure and any associated timers
@@ -95,6 +104,7 @@ function harvestMaturePlant(
 }
 
 /**
+ * @param {ShadowRoot} shadow - The shadow root of Sprite Garden
  * @param {Signal.State} growthTimers growthTimers - Signal State with growth timer data
  * @param {Signal.State} plantStructures plantStructures - Signal State with plant structure data
  * @param {Signal.State} player - Signal State with player position/dimension data
@@ -109,6 +119,7 @@ function harvestMaturePlant(
  * @returns {void}
  */
 export function handleFarmAction(
+  shadow,
   growthTimers,
   plantStructures,
   /** @type {{ [key: string]: number }} */
@@ -200,6 +211,7 @@ export function handleFarmAction(
     // If we found a mature plant structure, harvest it
     if (harvestableStructure && structureKey) {
       harvestMaturePlant(
+        shadow,
         growthTimers,
         plantStructures,
         harvestableStructure,
@@ -213,9 +225,9 @@ export function handleFarmAction(
       // Exit after successful harvest
       return;
     }
-    // Check for simple crops (fallback for any remaining simple crop tiles)
+    // Check for crops (fallback for any remaining crop tiles)
     else if (currentTile && currentTile.crop) {
-      harvestCrop(currentTile, tiles, world, targetX, targetY);
+      harvestCrop(shadow, currentTile, tiles, world, targetX, targetY);
 
       // Exit after successful harvest
       return;
@@ -227,6 +239,7 @@ export function handleFarmAction(
       seedInventory[selectedSeedType] > 0
     ) {
       plantSeed(
+        shadow,
         growthTimers,
         plantStructures,
         seedInventory,

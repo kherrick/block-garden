@@ -697,6 +697,8 @@ export class StorageDialog {
         typeof navigator !== "undefined" &&
         typeof navigator.canShare !== "undefined";
       let canShare = false;
+      // const canShareFiles = true;
+      // let canShare = true;
       if (canShareFiles) {
         // Test if we can actually share files
         try {

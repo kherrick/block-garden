@@ -539,6 +539,16 @@ export function denormalizeTileName(name) {
 }
 
 /**
+ *
+ * @param {string} str
+ *
+ * @returns {string} stringified string
+ */
+export function stringifyToLowerCase(str) {
+  return str.replace("_", " ").replace("-", " ").toLowerCase();
+}
+
+/**
  * Looks up a tile name by its unique sprite ID.
  *
  * Used for reverse lookups when you have an ID and need the tile name.

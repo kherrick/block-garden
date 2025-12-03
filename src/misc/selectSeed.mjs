@@ -1,3 +1,5 @@
+import { stringifyToLowerCase } from "../state/config/tiles.mjs";
+
 /** @typedef {import('../state/config/tiles.mjs').TileMap} TileMap */
 
 /**
@@ -38,12 +40,13 @@ export function mapValuesToProvided(obj, provided = 1) {
  * Toggles seed selection in the inventory UI and updates game state.
  * Deselects the seed if it's already selected (toggle behavior).
  *
+ * @param {ShadowRoot} shadow - The shadow root of Sprite Garden
  * @param {Object} state - Game state object with selectedSeedType Signal
  * @param {Event} event - Click event from the seed button element
  *
  * @returns {void}
  */
-export function selectSeed(state, event) {
+export function selectSeed(shadow, state, event) {
   if (!(event.currentTarget instanceof HTMLElement)) {
     throw new Error("currentTarget is not an HTMLElement");
   }
@@ -60,12 +63,20 @@ export function selectSeed(state, event) {
 
   const currentSelected = state.selectedSeedType.get();
 
-  console.log(`Current selected: ${currentSelected}`);
+  console.log(`Current selected seed: ${currentSelected}`);
 
   const newSelected =
     currentSelected === seedType.toUpperCase() ? null : seedType.toUpperCase();
 
   state.selectedSeedType.set(newSelected);
 
-  console.log(`New selected: ${newSelected}`);
+  const message = `New selected seed: ${stringifyToLowerCase(newSelected)}`;
+  console.log(message);
+  shadow.dispatchEvent(
+    new CustomEvent("sprite-garden-toast", {
+      detail: {
+        message,
+      },
+    }),
+  );
 }

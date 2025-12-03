@@ -28,9 +28,13 @@ import { getSavedColors } from "../dialog/colors/getSavedColors.mjs";
 
 import { resizeCanvas } from "../util/resizeCanvas.mjs";
 
-import { computedSignals, initState } from "../state/state.mjs";
-import { colors as spriteGardenColors } from "../state/config/colors.mjs";
+import {
+  computedSignals,
+  initState,
+  tutorialToastShown,
+} from "../state/state.mjs";
 import { gameLoop } from "../state/gameLoop.mjs";
+import { colors as spriteGardenColors } from "../state/config/colors.mjs";
 import { getTileNameByIdMap } from "../state/config/tiles.mjs";
 
 import { buildStyleMapByPropNamesWithoutPrefixesOrSuffixes } from "../util/colors/buildStyleMapByPropNamesWithoutPrefixesOrSuffixes.mjs";
@@ -259,6 +263,28 @@ export async function initGame(gThis, shadow, cnvs) {
     "-color",
   );
 
+  // Show initial tutorial toast
+  const showTutorialToast = () => {
+    if (!tutorialToastShown.get()) {
+      tutorialToastShown.set(true);
+
+      shadow.dispatchEvent(
+        new CustomEvent("sprite-garden-toast", {
+          detail: {
+            message:
+              '🎮 Use the on screen controls or keyboard to jump or dig! Press the spacebar, ↑,  "W", or "R" to begin.',
+            config: {
+              duration: 0,
+              manualClose: true,
+              stack: true,
+              bottomOffset: 2,
+            },
+          },
+        }),
+      );
+    }
+  };
+
   await gameLoop(
     cnvs,
     gThis,
@@ -294,6 +320,9 @@ export async function initGame(gThis, shadow, cnvs) {
     gameState.waterPhysicsQueue,
     gameState.world,
   );
+
+  // Show tutorial toast after game loop starts
+  setTimeout(() => showTutorialToast(), 500);
 
   // hide loading animation
   shadow.getElementById("loading").setAttribute("hidden", "hidden");

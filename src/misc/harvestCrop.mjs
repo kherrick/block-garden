@@ -1,3 +1,4 @@
+import { stringifyToLowerCase } from "../state/config/tiles.mjs";
 import { updateState } from "../state/state.mjs";
 import { getHarvestMap } from "./getHarvestMap.mjs";
 
@@ -9,6 +10,7 @@ import { getHarvestMap } from "./getHarvestMap.mjs";
  *
  * Grants 2-4 seeds based on random generation.
  *
+ * @param {ShadowRoot} shadow - The shadow root of Sprite Garden
  * @param {TileDefinition} cropTile - The mature crop tile to harvest
  * @param {TileMap} tiles - Map of all tile definitions
  * @param {Object} world - World object with setTile method
@@ -17,11 +19,11 @@ import { getHarvestMap } from "./getHarvestMap.mjs";
  *
  * @returns {void}
  */
-export function harvestCrop(cropTile, tiles, world, x, y) {
+export function harvestCrop(shadow, cropTile, tiles, world, x, y) {
   const seedType = getHarvestMap(tiles)[cropTile.id];
 
   if (seedType) {
-    // Give player 2-4 seeds when harvesting simple crops
+    // Give player 2-4 seeds when harvesting crops
     const seedsGained = 2 + Math.floor(Math.random() * 3);
 
     updateState("seedInventory", (inv) => ({
@@ -32,8 +34,15 @@ export function harvestCrop(cropTile, tiles, world, x, y) {
     // Remove crop from world
     world.setTile(x, y, tiles.AIR);
 
-    console.log(
-      `Harvested simple ${seedType} crop, gained ${seedsGained} seeds`,
+    const message = `Harvested ${stringifyToLowerCase(seedType)} crop, gained ${seedsGained} seeds`;
+
+    console.log(message);
+    shadow.dispatchEvent(
+      new CustomEvent("sprite-garden-toast", {
+        detail: {
+          message,
+        },
+      }),
     );
   }
 }

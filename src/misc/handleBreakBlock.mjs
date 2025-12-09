@@ -10,40 +10,15 @@ import { mapEditorState } from "../map/editor.mjs";
 import { markWaterRegionDirty } from "../water/markWaterRegionDirty.mjs";
 import { updateState } from "../state/state.mjs";
 
+import { harvestMaturePlant } from "./harvestMaturePlant.mjs";
+import { isMaturePlantPart } from "./isMaturePlantPart.mjs";
+
 /** @typedef {import('signal-polyfill').Signal.State} Signal.State */
 
 /** @typedef {import('../map/world.mjs').WorldMap} WorldMap */
 /** @typedef {import('../state/config/tiles.mjs').TileDefinition} TileDefinition */
 /** @typedef {import('../state/config/tiles.mjs').TileMap} TileMap */
 /** @typedef {import("../state/state.mjs").PlayerState} PlayerState */
-
-/**
- * Checks if a tile position is part of a mature plant structure.
- *
- * Used to determine if breaking this tile should harvest the entire plant.
- *
- * @param {number} x - X coordinate in tiles
- * @param {number} y - Y coordinate in tiles
- * @param {Object} plantStructures - State Signal containing all plant structures
- *
- * @returns {boolean} True if tile is part of a mature plant
- */
-function isMaturePlantPart(x, y, plantStructures) {
-  for (const [key, structure] of Object.entries(plantStructures.get())) {
-    if (structure.mature && structure.blocks) {
-      // Blocks can be an array or an object depending on save format
-      const blocksArray = Array.isArray(structure.blocks)
-        ? structure.blocks
-        : Object.values(structure.blocks);
-
-      if (blocksArray.find((b) => b.x === x && b.y === y)) {
-        return true;
-      }
-    }
-  }
-
-  return false;
-}
 
 /**
  * Determines if a tile is part of the standard tree structure (trunk or leaves).
@@ -84,7 +59,16 @@ function handleBreakBlock(
   mode = "regular",
 ) {
   if (mapEditorState.isEnabled) {
-    console.log("Breaking disabled in map editor mode");
+    const message = "Breaking disabled in map editor mode";
+
+    console.log(message);
+    shadow.dispatchEvent(
+      new CustomEvent("sprite-garden-toast", {
+        detail: {
+          message,
+        },
+      }),
+    );
 
     return;
   }
@@ -119,8 +103,7 @@ function handleBreakBlock(
           tile !== tiles.AIR &&
           tile !== tiles.BEDROCK &&
           tile !== tiles.LAVA &&
-          tile !== tiles.WATER && // Don't break water
-          !isMaturePlantPart(targetX, targetY, plantStructures)
+          tile !== tiles.WATER
         ) {
           blocksToBreak.push({ x: targetX, y: targetY, tile, priority: dy });
         }
@@ -143,8 +126,7 @@ function handleBreakBlock(
           tile !== tiles.AIR &&
           tile !== tiles.BEDROCK &&
           tile !== tiles.LAVA &&
-          tile !== tiles.WATER &&
-          !isMaturePlantPart(targetX, targetY, plantStructures)
+          tile !== tiles.WATER
         ) {
           blocksToBreak.push({ x: targetX, y: targetY, tile, priority: 1 });
         }
@@ -173,8 +155,6 @@ function handleBreakBlock(
 
           const tile = world.getTile(targetX, targetY);
 
-          // Can break most blocks except bedrock, air, lava, and water
-          // Also exclude mature plant parts (they should be harvested, not broken)
           if (
             tile &&
             tile !== tiles.AIR &&
@@ -214,15 +194,12 @@ function handleBreakBlock(
 
           const tile = world.getTile(targetX, targetY);
 
-          // Can break most blocks except bedrock, air, lava, and water
-          // Also exclude mature plant parts (they should be harvested, not broken)
           if (
             tile &&
             tile !== tiles.AIR &&
             tile !== tiles.BEDROCK &&
             tile !== tiles.LAVA &&
-            tile !== tiles.WATER &&
-            !isMaturePlantPart(targetX, targetY, plantStructures)
+            tile !== tiles.WATER
           ) {
             blocksToBreak.push({
               x: targetX,
@@ -237,10 +214,54 @@ function handleBreakBlock(
   }
 
   if (blocksToBreak.length > 0) {
-    // Break multiple blocks at once
-    const currentTimers = growthTimers.get();
+    // Check if any of the blocks are part of mature plant structures
     const currentStructures = plantStructures.get();
+    const maturePlantsToHarvest = new Set();
 
+    for (const block of blocksToBreak) {
+      for (const [key, structure] of Object.entries(currentStructures)) {
+        if (structure.mature && structure.blocks) {
+          const blocksArray = Array.isArray(structure.blocks)
+            ? structure.blocks
+            : Object.values(structure.blocks);
+
+          const matchingBlock = blocksArray.find(
+            (plantBlock) =>
+              plantBlock.x === block.x && plantBlock.y === block.y,
+          );
+
+          if (matchingBlock) {
+            maturePlantsToHarvest.add(key);
+
+            break;
+          }
+        }
+      }
+    }
+
+    // Harvest any mature plants that were found
+    if (maturePlantsToHarvest.size > 0) {
+      for (const structureKey of maturePlantsToHarvest) {
+        const structure = currentStructures[structureKey];
+
+        harvestMaturePlant(
+          shadow,
+          growthTimers,
+          plantStructures,
+          structure,
+          structureKey,
+          tiles,
+          world,
+          worldHeight,
+          worldWidth,
+        );
+      }
+
+      return; // Exit early since we harvested mature plants
+    }
+
+    // Continue with regular block breaking for non-mature-plant blocks
+    const currentTimers = growthTimers.get();
     const updatedTimers = { ...currentTimers };
     const updatedStructures = { ...currentStructures };
 
@@ -316,8 +337,9 @@ function handleBreakBlock(
         }
 
         // Give small chance to drop seeds from broken natural crops
-        if (block.tile.crop && Math.random() < 0.3) {
-          const seedType = getHarvestMap(tiles)[block.tile.id];
+        if (block.tile.isSeed || (block.tile.crop && Math.random() < 0.3)) {
+          const harvestMap = getHarvestMap(tiles);
+          const seedType = harvestMap[block.tile.id];
 
           if (seedType) {
             seedUpdates[seedType] = (seedUpdates[seedType] || 0) + 1;
@@ -364,7 +386,7 @@ function handleBreakBlock(
         const updated = { ...inv };
 
         Object.entries(seedUpdates).forEach(([seedType, amount]) => {
-          updated[seedType] += amount;
+          updated[seedType] = (updated[seedType] || 0) + amount;
         });
 
         return updated;
@@ -377,7 +399,9 @@ function handleBreakBlock(
         const updated = { ...inv };
 
         Object.entries(materialUpdates).forEach(([materialType, amount]) => {
-          updated[materialType] = (updated[materialType] || 0) + amount;
+          if (!tiles[materialType]?.isSeed === true) {
+            updated[materialType] = (updated[materialType] || 0) + amount;
+          }
         });
 
         return updated;

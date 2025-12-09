@@ -16,9 +16,9 @@ export function updateInventoryUI(shadow, materialsInventory, seedInventory) {
     const el = shadow?.getElementById(`${seedType}Count`);
 
     try {
-      el.textContent = seedInventory[seedType.toUpperCase()];
+      el.textContent = seedInventory[seedKey];
     } catch (e) {
-      console.error;
+      console.error(e);
     }
   });
 
@@ -27,10 +27,14 @@ export function updateInventoryUI(shadow, materialsInventory, seedInventory) {
     const materialType = materialKey.toLowerCase();
     const el = shadow?.getElementById(`${materialType}Count`);
 
+    if (!el) {
+      return;
+    }
+
     try {
-      el.textContent = materialsInventory[materialType.toUpperCase()];
+      el.textContent = materialsInventory[materialKey];
     } catch (e) {
-      console.error;
+      console.error(e);
     }
   });
 }

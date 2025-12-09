@@ -119,7 +119,7 @@ export function initEffects(
 
     const selectedSeedEl = shadow.getElementById("selectedSeed");
     if (selectedSeedEl) {
-      selectedSeedEl.textContent = selectedSeed || "None";
+      selectedSeedEl.textContent = selectedSeed?.replace("_", " ") || "None";
     }
   });
 
@@ -129,7 +129,8 @@ export function initEffects(
 
     const selectedMaterialEl = shadow.getElementById("selectedMaterial");
     if (selectedMaterialEl) {
-      selectedMaterialEl.textContent = selectedMaterial || "None";
+      selectedMaterialEl.textContent =
+        selectedMaterial?.replace("_", " ") || "None";
     }
   });
 }

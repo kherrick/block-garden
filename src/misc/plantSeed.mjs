@@ -38,7 +38,16 @@ export function plantSeed(
   // Check if there's farmable ground below
   const belowTile = world.getTile(x, y + 1);
   if (!belowTile || !belowTile.farmable) {
-    console.log(`Cannot plant at (${x}, ${y}) - no farmable ground below`);
+    const message = `Cannot plant at (${x}, ${y}) - no farmable ground below`;
+
+    console.log(message);
+    shadow.dispatchEvent(
+      new CustomEvent("sprite-garden-toast", {
+        detail: {
+          message,
+        },
+      }),
+    );
 
     return; // Can't plant without farmable ground
   }

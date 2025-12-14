@@ -17,6 +17,7 @@ export class SpriteGarden {
 
     this.config = this.gThis.spriteGarden.config;
     this.state = this.gThis.spriteGarden.state;
+    this.computed = this.gThis.spriteGarden.computed;
     this.tiles = this.config.TILES;
   }
 

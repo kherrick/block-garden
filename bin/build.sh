@@ -61,6 +61,7 @@ fi
 npm run build:base:index \
   && npm run build:base:index:unbundled \
   && npm run build:base:about \
+  && npm run build:base:examples \
   && npm run build:base:privacy \
   && npm run build:base:share-target \
   && npm run build:gh-pages:nojekyll \

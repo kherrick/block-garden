@@ -70,7 +70,13 @@ export function selectSeed(shadow, state, event) {
 
   state.selectedSeedType.set(newSelected);
 
-  const message = `New selected seed: ${stringifyToLowerCase(newSelected)}`;
+  let message;
+  if (newSelected) {
+    message = `New selected seed: ${stringifyToLowerCase(newSelected)}`;
+  } else {
+    message = "No selected seed.";
+  }
+
   console.log(message);
   shadow.dispatchEvent(
     new CustomEvent("sprite-garden-toast", {

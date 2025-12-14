@@ -545,7 +545,7 @@ export function denormalizeTileName(name) {
  * @returns {string} stringified string
  */
 export function stringifyToLowerCase(str) {
-  return str.replace("_", " ").replace("-", " ").toLowerCase();
+  return str?.replace("_", " ").replace("-", " ").toLowerCase();
 }
 
 /**

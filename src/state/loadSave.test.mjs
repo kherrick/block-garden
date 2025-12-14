@@ -12,15 +12,27 @@ jest.unstable_mockModule("../util/colors/getCustomProperties.mjs", () => ({
   })),
 }));
 
+const mockFogMapInstance = {
+  updateFromPlayer: jest.fn(),
+  render: jest.fn(),
+  width: 100,
+  height: 100,
+};
+
+const mockFogMap = jest.fn((width, height) => ({
+  ...mockFogMapInstance,
+  width,
+  height,
+}));
+
+mockFogMap.fromObject = jest.fn((_, width, height) => ({
+  ...mockFogMapInstance,
+  width,
+  height,
+}));
+
 jest.unstable_mockModule("../map/fog.mjs", () => ({
-  FogMap: {
-    fromObject: jest.fn((_, width, height) => ({
-      updateFromPlayer: jest.fn(),
-      render: jest.fn(),
-      width,
-      height,
-    })),
-  },
+  FogMap: mockFogMap,
 }));
 
 jest.unstable_mockModule("../map/world.mjs", () => ({
@@ -194,12 +206,13 @@ describe("loadSaveState function", () => {
     expect(gThis.spriteGarden.state.exploredMap.get()).toBeDefined();
   });
 
-  test("skips empty explored map", async () => {
+  test("creates a new FogMap for empty explored map", async () => {
     saveState.state.exploredMap = {};
 
     await loadSaveState(gThis, shadow, saveState);
 
     expect(FogMap.fromObject).not.toHaveBeenCalled();
+    expect(FogMap).toHaveBeenCalledWith(100, 100, expect.any(Object));
   });
 
   test("converts world map using WorldMap.fromArray", async () => {

@@ -22,7 +22,7 @@ import { updateState } from "../state/state.mjs";
  * @param {number} x - X coordinate in tiles
  * @param {number} y - Y coordinate in tiles
  *
- * @returns {void}
+ * @returns {boolean} - Whether planting happened
  */
 export function plantSeed(
   shadow,
@@ -49,7 +49,7 @@ export function plantSeed(
       }),
     );
 
-    return; // Can't plant without farmable ground
+    return false;
   }
 
   let message;
@@ -88,10 +88,19 @@ export function plantSeed(
     });
 
     message = `Planted ${stringifyToLowerCase(seedType)} at (${x}, ${y}), ${seedInventory[seedType] - 1} seeds remaining`;
-  } else {
-    message = `Cannot plant ${stringifyToLowerCase(seedType)} - no seeds available or invalid seed type`;
+    console.log(message);
+    shadow.dispatchEvent(
+      new CustomEvent("sprite-garden-toast", {
+        detail: {
+          message,
+        },
+      }),
+    );
+
+    return true;
   }
 
+  message = `Cannot plant ${stringifyToLowerCase(seedType)} - no seeds available or invalid seed type`;
   console.log(message);
   shadow.dispatchEvent(
     new CustomEvent("sprite-garden-toast", {
@@ -100,4 +109,6 @@ export function plantSeed(
       },
     }),
   );
+
+  return false;
 }

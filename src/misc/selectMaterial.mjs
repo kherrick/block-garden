@@ -38,7 +38,13 @@ export function selectMaterial(shadow, state, event) {
 
   state.selectedMaterialType.set(newSelected);
 
-  const message = `New selected material: ${stringifyToLowerCase(newSelected)}`;
+  let message;
+  if (newSelected) {
+    message = `New selected material: ${stringifyToLowerCase(newSelected)}`;
+  } else {
+    message = "No selected material.";
+  }
+
   console.log(message);
   shadow.dispatchEvent(
     new CustomEvent("sprite-garden-toast", {

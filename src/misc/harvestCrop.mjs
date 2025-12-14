@@ -17,7 +17,7 @@ import { getHarvestMap } from "./getHarvestMap.mjs";
  * @param {number} x - X coordinate in tiles
  * @param {number} y - Y coordinate in tiles
  *
- * @returns {void}
+ * @returns {boolean} - Whether harvesting happened
  */
 export function harvestCrop(shadow, cropTile, tiles, world, x, y) {
   const seedType = getHarvestMap(tiles)[cropTile.id];
@@ -35,7 +35,6 @@ export function harvestCrop(shadow, cropTile, tiles, world, x, y) {
     world.setTile(x, y, tiles.AIR);
 
     const message = `Harvested ${stringifyToLowerCase(seedType)} crop, gained ${seedsGained} seeds`;
-
     console.log(message);
     shadow.dispatchEvent(
       new CustomEvent("sprite-garden-toast", {
@@ -44,5 +43,9 @@ export function harvestCrop(shadow, cropTile, tiles, world, x, y) {
         },
       }),
     );
+
+    return true;
   }
+
+  return false;
 }

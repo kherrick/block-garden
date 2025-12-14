@@ -1,3 +1,9 @@
+import {
+  getTileNameById,
+  stringifyToLowerCase,
+  TILES,
+} from "../state/config/tiles.mjs";
+
 import { harvestCrop } from "./harvestCrop.mjs";
 import { harvestMaturePlant } from "./harvestMaturePlant.mjs";
 import { plantSeed } from "./plantSeed.mjs";
@@ -6,6 +12,187 @@ import { plantSeed } from "./plantSeed.mjs";
 
 /** @typedef {import('../state/config/tiles.mjs').TileMap} TileMap */
 /** @typedef {import('../map/world.mjs').WorldMap} WorldMap */
+
+function getFarmingPositions(player, playerTileX, playerTileY) {
+  const positions = [];
+
+  if (player.lastDirection !== 0) {
+    const dx = player.lastDirection > 0 ? 1 : -1;
+    positions.push(
+      { x: playerTileX + dx, y: playerTileY },
+      { x: playerTileX + dx, y: playerTileY + 1 },
+    );
+  }
+
+  positions.push(
+    { x: playerTileX, y: playerTileY + 1 },
+    { x: playerTileX, y: playerTileY },
+  );
+
+  return positions;
+}
+
+function isWithinWorldBounds(x, y, worldWidth, worldHeight) {
+  return x >= 0 && x < worldWidth && y >= 0 && y < worldHeight;
+}
+
+function findHarvestableStructure(plantStructures, targetX, targetY) {
+  const currentStructures = plantStructures.get();
+
+  for (const [key, structure] of Object.entries(currentStructures)) {
+    if (!structure.mature || !structure.blocks) continue;
+
+    const blocksArray = Array.isArray(structure.blocks)
+      ? structure.blocks
+      : Object.values(structure.blocks);
+
+    const matchingBlock = blocksArray.find(
+      (block) => block.x === targetX && block.y === targetY,
+    );
+
+    if (matchingBlock) {
+      return { structure, key };
+    }
+  }
+
+  return null;
+}
+
+function canHarvestCrop(tile) {
+  return tile?.crop && !tile.seed;
+}
+
+function canPlantSeed(tile, tiles, selectedSeedType, seedInventory) {
+  return (
+    tile === tiles.AIR &&
+    selectedSeedType &&
+    seedInventory[selectedSeedType] > 0
+  );
+}
+
+function performHarvestMaturePlant(params, harvestable) {
+  const {
+    shadow,
+    growthTimers,
+    plantStructures,
+    tiles,
+    world,
+    worldHeight,
+    worldWidth,
+  } = params;
+
+  harvestMaturePlant(
+    shadow,
+    growthTimers,
+    plantStructures,
+    harvestable.structure,
+    harvestable.key,
+    tiles,
+    world,
+    worldHeight,
+    worldWidth,
+  );
+
+  return true;
+}
+
+function performHarvestCrop(params, currentTile, targetX, targetY) {
+  const { shadow, tiles, world } = params;
+
+  const result = harvestCrop(
+    shadow,
+    currentTile,
+    tiles,
+    world,
+    targetX,
+    targetY,
+  );
+
+  if (!result) {
+    showMessage(shadow, world, targetX, targetY, "harvest");
+  }
+
+  return result;
+}
+
+function performPlantSeed(params, targetX, targetY) {
+  const {
+    shadow,
+    growthTimers,
+    plantStructures,
+    seedInventory,
+    selectedSeedType,
+    tiles,
+    world,
+  } = params;
+
+  return plantSeed(
+    shadow,
+    growthTimers,
+    plantStructures,
+    seedInventory,
+    selectedSeedType,
+    tiles,
+    world,
+    targetX,
+    targetY,
+  );
+}
+
+function tryFarmingAction(params, pos) {
+  const {
+    plantStructures,
+    tiles,
+    selectedSeedType,
+    seedInventory,
+    world,
+    worldWidth,
+    worldHeight,
+  } = params;
+
+  const { x: targetX, y: targetY } = pos;
+
+  if (!isWithinWorldBounds(targetX, targetY, worldWidth, worldHeight)) {
+    return false;
+  }
+
+  const currentTile = world.getTile(targetX, targetY);
+
+  // Try harvesting mature plant
+  const harvestable = findHarvestableStructure(
+    plantStructures,
+    targetX,
+    targetY,
+  );
+
+  if (harvestable) {
+    return performHarvestMaturePlant(params, harvestable);
+  }
+
+  // Try planting seed
+  if (canPlantSeed(currentTile, tiles, selectedSeedType, seedInventory)) {
+    return performPlantSeed(params, targetX, targetY);
+  }
+
+  // Try harvesting crop
+  if (canHarvestCrop(currentTile)) {
+    return performHarvestCrop(params, currentTile, targetX, targetY);
+  }
+
+  return false;
+}
+
+function showMessage(shadow, world, tileX, tileY, type) {
+  const tile = stringifyToLowerCase(
+    getTileNameById(TILES, world.getTile(tileX, tileY).id),
+  );
+
+  const message = `Cannot ${type} ${tile} at (${tileX}, ${tileY})`;
+
+  shadow.dispatchEvent(
+    new CustomEvent("sprite-garden-toast", { detail: { message } }),
+  );
+}
 
 /**
  * @param {ShadowRoot} shadow - The shadow root of Sprite Garden
@@ -39,123 +226,29 @@ export function handleFarmAction(
   const playerTileX = Math.floor((player.x + player.width / 2) / tileSize);
   const playerTileY = Math.floor((player.y + player.height / 2) / tileSize);
 
-  // Check multiple positions for farming actions
-  const farmingPositions = [];
+  const farmingPositions = getFarmingPositions(
+    player,
+    playerTileX,
+    playerTileY,
+  );
 
-  // If player is moving horizontally, check in front of player
-  if (player.lastDirection !== 0) {
-    const dx = player.lastDirection > 0 ? 1 : -1;
+  const params = {
+    shadow,
+    growthTimers,
+    plantStructures,
+    seedInventory,
+    selectedSeedType,
+    tiles,
+    world,
+    worldHeight,
+    worldWidth,
+  };
 
-    farmingPositions.push({
-      x: playerTileX + dx,
-      y: playerTileY, // Same level as player
-    });
+  const actionPerformed = farmingPositions.some((pos) =>
+    tryFarmingAction(params, pos),
+  );
 
-    farmingPositions.push({
-      x: playerTileX + dx,
-      y: playerTileY + 1, // One below player level
-    });
-  }
-
-  // Always check directly below the player
-  farmingPositions.push({
-    x: playerTileX,
-    y: playerTileY + 1,
-  });
-
-  // Also check the tile the player is standing on
-  farmingPositions.push({
-    x: playerTileX,
-    y: playerTileY,
-  });
-
-  // Try each position until we find something to farm
-  for (const pos of farmingPositions) {
-    const { x: targetX, y: targetY } = pos;
-
-    if (
-      targetX < 0 ||
-      targetX >= worldWidth ||
-      targetY < 0 ||
-      targetY >= worldHeight
-    ) {
-      continue;
-    }
-
-    const currentTile = world.getTile(targetX, targetY);
-
-    // Check if this position is part of a mature plant structure
-    let harvestableStructure = null;
-    let structureKey = null;
-
-    const currentStructures = plantStructures.get();
-
-    // Look for mature plant structures that contain this tile
-    for (const [key, structure] of Object.entries(currentStructures)) {
-      if (structure.mature && structure.blocks) {
-        // Blocks can be an array or an object depending on save format
-        const blocksArray = Array.isArray(structure.blocks)
-          ? structure.blocks
-          : Object.values(structure.blocks);
-
-        // Check if any block in the structure matches our target position
-        const matchingBlock = blocksArray.find(
-          (block) => block.x === targetX && block.y === targetY,
-        );
-
-        if (matchingBlock) {
-          harvestableStructure = structure;
-          structureKey = key;
-
-          break;
-        }
-      }
-    }
-
-    // If we found a mature plant structure, harvest it
-    if (harvestableStructure && structureKey) {
-      harvestMaturePlant(
-        shadow,
-        growthTimers,
-        plantStructures,
-        harvestableStructure,
-        structureKey,
-        tiles,
-        world,
-        worldHeight,
-        worldWidth,
-      );
-
-      // Exit after successful harvest
-      return;
-    }
-    // Check for crops (fallback for any remaining crop tiles)
-    else if (currentTile && currentTile.crop) {
-      harvestCrop(shadow, currentTile, tiles, world, targetX, targetY);
-
-      // Exit after successful harvest
-      return;
-    }
-    // Plant seeds if the tile is empty and we have seeds selected
-    else if (
-      currentTile === tiles.AIR &&
-      selectedSeedType &&
-      seedInventory[selectedSeedType] > 0
-    ) {
-      plantSeed(
-        shadow,
-        growthTimers,
-        plantStructures,
-        seedInventory,
-        selectedSeedType,
-        tiles,
-        world,
-        targetX,
-        targetY,
-      );
-
-      // Exit after successful planting
-      return;
-    }
+  if (!actionPerformed) {
+    showMessage(shadow, world, playerTileX, playerTileY, "farm");
   }
 }

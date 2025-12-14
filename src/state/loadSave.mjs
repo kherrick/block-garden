@@ -123,18 +123,19 @@ export async function loadSaveState(gThis, shadow, state) {
 
     // convert explored map data
     if (key === "exploredMap") {
-      let fogMap = {};
-
       const existingMap = saveState.state.exploredMap;
-      if (existingMap && Object.keys(existingMap).length > 0) {
-        const colors = getCustomProperties(gThis, shadow);
+      const colors = getCustomProperties(gThis, shadow);
 
+      let fogMap;
+      if (existingMap && Object.keys(existingMap).length > 0) {
         fogMap = FogMap.fromObject(
           existingMap,
           worldWidth,
           worldHeight,
           colors,
         );
+      } else {
+        fogMap = new FogMap(worldWidth, worldHeight, colors);
       }
 
       gameState.exploredMap.set(fogMap);

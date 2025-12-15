@@ -1,8 +1,7 @@
 import extrasHandler from "konami-code-js";
 
-import { copyToClipboard } from "../util/copyToClipboard.mjs";
 import { createSaveState } from "../state/createSave.mjs";
-import { debounce } from "../util/debounce.mjs";
+import { loadSaveState } from "../state/loadSave.mjs";
 import {
   tutorialListener,
   gameConfig,
@@ -10,12 +9,20 @@ import {
   hasDismissedTutorial,
   hasEnabledExtras,
 } from "../state/state.mjs";
+
+import { initTrain } from "../api/train/index.mjs";
+
+import { copyToClipboard } from "../util/copyToClipboard.mjs";
+import { debounce } from "../util/debounce.mjs";
+import { dismissTutorialToast } from "../util/dismissTutorialToast.mjs";
+import { extractAttachments } from "../util/extractAttachments.mjs";
+import { extractJsonFromPng } from "../util/canvasToPngWithState.mjs";
 import { getCustomProperties } from "../util/colors/getCustomProperties.mjs";
+
 import { getRandomSeed } from "../misc/getRandomSeed.mjs";
 import { handleBreakBlockWithWaterPhysics } from "../misc/handleBreakBlock.mjs";
 import { handleFarmAction } from "../misc/handleFarmAction.mjs";
 import { handlePlaceBlock } from "../misc/handlePlaceBlock.mjs";
-import { loadSaveState } from "../state/loadSave.mjs";
 import { resizeCanvas } from "../util/resizeCanvas.mjs";
 import { runCompress } from "../util/compression.mjs";
 import { selectMaterial } from "../misc/selectMaterial.mjs";
@@ -23,17 +30,16 @@ import { selectSeed } from "../misc/selectSeed.mjs";
 import { showColorCustomizationDialog } from "../misc/customColors.mjs";
 import { toggleBreakMode } from "../misc/toggleBreakMode.mjs";
 
+import { updateRangeUI } from "../update/ui/range.mjs";
 import {
   updateMovementScaleUI,
   updateMovementScaleValue,
 } from "../update/ui/movementScale.mjs";
 
-import { updateRangeUI } from "../update/ui/range.mjs";
-import { showAboutDialog } from "../dialog/about.mjs";
 import { showExamplesDialog } from "../dialog/examples.mjs";
 import { showPrivacyDialog } from "../dialog/privacy.mjs";
 import { showToast } from "../dialog/showToast.mjs";
-
+import { showAboutDialog } from "../dialog/about.mjs";
 import {
   autoSaveGame,
   getSaveMode,
@@ -43,9 +49,6 @@ import {
 
 import { initFog } from "./fog.mjs";
 import { initNewWorld } from "./newWorld.mjs";
-import { dismissTutorialToast } from "../util/dismissTutorialToast.mjs";
-import { extractAttachments } from "../util/extractAttachments.mjs";
-import { extractJsonFromPng } from "../util/canvasToPngWithState.mjs";
 
 /** @typedef {import('./game.mjs').CustomShadowHost} CustomShadowHost */
 
@@ -231,6 +234,11 @@ export function initDocumentEventListeners(gThis, shadow) {
     );
 
     settingsContainer.removeAttribute("hidden");
+
+    const trainContainer = shadow.querySelector("#trainPanel");
+    trainContainer.removeAttribute("hidden");
+    initTrain();
+
     hasEnabledExtras.set(true);
     handler.disable();
   });

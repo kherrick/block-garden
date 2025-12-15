@@ -37,6 +37,21 @@ export default [
     ],
   },
   {
+    input: "src/api/train/index.mjs",
+    output: {
+      file: "dist/src/api/train/sprite-garden-train-bundle-min.mjs",
+      format: "esm",
+      sourcemap: false,
+    },
+    external,
+    plugins: [
+      nodeResolve(),
+      commonjs(),
+      typescript({ noEmitOnError: true }),
+      terser(),
+    ],
+  },
+  {
     input: "src/api/examples/index.mjs",
     output: {
       file: "dist/src/api/examples/sprite-garden-examples-bundle-min.mjs",

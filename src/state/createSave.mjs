@@ -66,7 +66,6 @@ export function createSaveState(gThis) {
       ),
       player: state.player.get(),
       seedInventory: state.seedInventory.get(),
-      seeds: state.seeds.get(),
       selectedMaterialType: state.selectedMaterialType.get(),
       selectedSeedType: state.selectedSeedType.get(),
       viewMode: state.viewMode.get(),

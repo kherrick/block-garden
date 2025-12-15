@@ -80,7 +80,6 @@ const { TileNames } = gameConfig;
  * @property {Signal.State} plantStructures
  * @property {Signal.State} gameTime
  * @property {Signal.State} growthTimers
- * @property {Signal.State} seeds
  * @property {Signal.State} selectedMaterialType
  * @property {Signal.State} selectedSeedType
  * @property {Signal.State} shouldReset
@@ -110,7 +109,6 @@ export const gameState = {
   plantStructures: new Signal.State({}),
   gameTime: new Signal.State(0),
   growthTimers: new Signal.State({}),
-  seeds: new Signal.State(0),
   selectedMaterialType: new Signal.State(null),
   selectedSeedType: new Signal.State(null),
   shouldReset: new Signal.State(false),

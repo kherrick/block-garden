@@ -234,6 +234,224 @@ export class SpriteGarden extends HTMLElement {
             max-width: 15.625rem;
           }
 
+          /* Center position for train panel */
+          .ui-grid__corner--center {
+            align-self: start;
+            grid-column: 1 / 3;
+            grid-row: 1 / 3;
+            justify-self: center;
+            margin-top: 0.5rem;
+            max-height: 80dvh;
+            max-height: 80vh;
+            max-width: 90dvw;
+            max-width: 90vw;
+            z-index: 100;
+          }
+
+          /* Train Panel */
+          #train {
+            backdrop-filter: blur(0.3125rem);
+            background: var(--sg-color-black-alpha-80);
+            border-radius: 0.5rem;
+            border: 0.0625rem solid var(--sg-color-gray-alpha-10);
+            color: var(--sg-color-white);
+            font-size: 0.5625rem;
+          }
+
+          .train-section {
+            border-bottom: 0.0625rem solid var(--sg-color-gray-700);
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+          }
+
+          .train-section:last-child {
+            border-bottom: none;
+          }
+
+          .train-status {
+            display: grid;
+            font-size: 0.625rem;
+            gap: 0.5rem;
+            grid-template-columns: 1fr 1fr;
+          }
+
+          .train-status > div {
+            padding: 0.25rem;
+          }
+
+          .train-config {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+          }
+
+          .train-config label {
+            align-items: center;
+            display: flex;
+            font-size: 0.625rem;
+            justify-content: space-between;
+          }
+
+          .train-config input {
+            background: var(--sg-color-gray-900);
+            border-radius: 0.25rem;
+            border: 0.0625rem solid var(--sg-color-gray-700);
+            color: var(--sg-color-white);
+            font-size: 0.625rem;
+            padding: 0.25rem 0.5rem;
+            width: 5rem;
+          }
+
+          .train-config input:focus {
+            outline: 0.125rem solid var(--sg-color-green-500);
+          }
+
+          .train-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: space-between;
+          }
+
+          .train-actions button {
+            background: var(--sg-color-green-500);
+            border-radius: 0.25rem;
+            border: none;
+            color: var(--sg-color-white);
+            cursor: pointer;
+            font-size: 0.625rem;
+            padding: 0.5rem 1rem;
+            transition: background 0.2s;
+            width: 12rem;
+          }
+
+          .train-actions button:hover:not(:disabled) {
+            background: var(--sg-color-green-600);
+          }
+
+          .train-actions button:active:not(:disabled) {
+            transform: scale(0.95);
+          }
+
+          .train-actions button:disabled {
+            background: var(--sg-color-gray-700);
+            cursor: not-allowed;
+            opacity: 0.5;
+          }
+
+          #trainStartBtn {
+            background: var(--sg-color-green-500);
+          }
+
+          #trainStopBtn {
+            background: var(--sg-color-red-500);
+          }
+
+          #trainTestBtn {
+            background: var(--sg-color-blue-500);
+          }
+
+          #trainExportBtn {
+            background: var(--sg-color-amber-500);
+          }
+
+          #trainCopyLogsBtn {
+            background: var(--sg-color-medium-purple);
+          }
+
+          #trainImportBtn {
+            background: var(--sg-color-gray-900);
+          }
+
+          #trainClearLogsBtn {
+            background: var(--sg-color-gray-600);
+            color: var(--sg-color-gray-900);
+          }
+
+          .train-logs {
+            background: var(--sg-color-black);
+            border-radius: 0.25rem;
+            border: 0.0625rem solid var(--sg-color-gray-700);
+            font-family: monospace;
+            font-size: 0.5625rem;
+            padding: 0.5rem;
+          }
+
+          .train-log-entry {
+            border-bottom: 0.0625rem solid var(--sg-color-gray-800);
+            padding: 0.125rem 0;
+          }
+
+          .train-log-entry:last-child {
+            border-bottom: none;
+          }
+
+          .train-log-entry--success {
+            color: var(--sg-color-green-400);
+          }
+
+          .train-log-entry--warning {
+            color: var(--sg-color-amber-400);
+          }
+
+          .train-log-entry--error {
+            color: var(--sg-color-red-400);
+          }
+
+          .train-log-entry--info {
+            color: var(--sg-color-blue-400);
+          }
+
+          .train-log-time {
+            color: var(--sg-color-gray-500);
+            margin-right: 0.5rem;
+          }
+
+          @media (min-width: 30rem) {
+            #train {
+              font-size: 0.725rem;
+            }
+
+            .train-status,
+            .train-config label,
+            .train-config input,
+            .train-actions button {
+              font-size: 0.725rem;
+            }
+
+            .train-logs {
+              font-size: 0.6875rem;
+            }
+          }
+
+          @media (min-width: 48rem) {
+            #train {
+              font-size: 1rem;
+            }
+
+            .train-status {
+              font-size: 0.875rem;
+            }
+
+            .train-config label,
+            .train-config input {
+              font-size: 0.875rem;
+            }
+
+            .train-config input {
+              width: 6rem;
+            }
+
+            .train-actions button {
+              font-size: 0.875rem;
+              padding: 0.625rem 1.25rem;
+            }
+
+            .train-logs {
+              font-size: 0.75rem;
+            }
+          }
+
           #stats,
           #controls,
           #settings,
@@ -1738,7 +1956,82 @@ export class SpriteGarden extends HTMLElement {
             </div>
           </div>
         </div>
+        <div class="ui-grid__corner ui-grid__corner--center" id="trainPanel" hidden="hidden">
+          <div id="train">
+            <div class="ui-grid__corner--heading">🤖 Training</div>
+            <div class="ui-grid__corner--container" hidden="hidden">
 
+              <!-- Status Section -->
+              <div class="train-section">
+                <div class="ui-grid__corner--sub-heading">📊 Status</div>
+                <div class="train-status">
+                  <div>Episode: <span id="trainEpisode">0</span> / <span id="trainTotalEpisodes">0</span></div>
+                  <div>Best Time: <span id="trainBestTime">--</span>s</div>
+                  <div>Q-Table Size: <span id="trainQTableSize">0</span></div>
+                  <div>Epsilon: <span id="trainEpsilon">0.00</span></div>
+                  <div>Seeds: <span id="seedsPlanted">0</span> / <span id="seedsLeftToPlant">0</span></div>
+                  <div>Streak: <span id="trainSuccessStreak">0</span> ✅ | <span id="trainConsecutiveFailures">0</span> ❌</div>
+                  <div>Action: <span id="trainAction"></span></div>
+                </div>
+              </div>
+
+              <!-- Training Controls -->
+              <div class="train-section">
+                <div class="ui-grid__corner--sub-heading">⚙️ Configuration</div>
+                <div class="train-config">
+                  <label>
+                    Episodes:
+                    <input id="trainEpisodes" type="number" value="50" min="1" max="1000" />
+                  </label>
+                  <label>
+                    Max Steps:
+                    <input id="trainMaxSteps" type="number" value="100" min="10" max="1000" />
+                  </label>
+                  <label>
+                    Learning Rate (α):
+                    <input id="trainAlpha" type="number" value="0.2" step="0.01" min="0" max="1" />
+                  </label>
+                  <label>
+                    Discount (γ):
+                    <input id="trainGamma" type="number" value="0.95" step="0.01" min="0" max="1" />
+                  </label>
+                  <label>
+                    Decay:
+                    <input id="trainDecay" type="number" value="0.995" step="0.001" min="0.9" max="1" />
+                  </label>
+                  <label>
+                    Epsilon (ε):
+                    <input id="trainEpsilonInput" type="number" value="0.6" step="0.01" min="0" max="1" />
+                  </label>
+                  <label>
+                    Test Epsilon (ε):
+                    <input id="testEpsilonInput" type="number"value="0.25" step="0.01" min="0" max="1" />
+                  </label>
+                </div>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="train-section">
+                <div class="train-actions">
+                  <button id="trainStartBtn">🚀 Start Training</button>
+                  <button id="trainStopBtn" disabled>⏹ Stop</button>
+                  <button id="trainTestBtn">🧪 Test Agent</button>
+                  <button id="trainExportBtn">💾 Export Q-Table</button>
+                  <button id="trainImportBtn">📥 Import Q-Table</button>
+                  <button id="trainCopyLogsBtn">📋 Copy Logs</button>
+                  <button id="trainClearLogsBtn">🧹 Clear Logs</button>
+                </div>
+              </div>
+
+              <!-- Logs Section -->
+              <div class="train-section">
+                <div class="ui-grid__corner--sub-heading">📝 Logs</div>
+                <div id="trainLogs" class="train-logs"></div>
+              </div>
+
+            </div>
+          </div>
+        </div>
         <div class="seed-controls" hidden="hidden">
           <div class="seed-controls__header">
             <h4>World Generation</h4>

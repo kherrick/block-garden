@@ -1,8 +1,10 @@
-import { sleep } from "../../util/sleep.mjs";
+import { sleep } from "../misc/sleep.mjs";
 
 import { SpriteGarden } from "../SpriteGarden.mjs";
 
 import { getPlayerPosition } from "../player/getPlayerPosition.mjs";
+import { jumpUp } from "../player/movement.mjs";
+import { pressKey } from "../player/pressKey.mjs";
 
 export class Gold extends SpriteGarden {
   returnToMinDepth = false;
@@ -59,7 +61,7 @@ export class Gold extends SpriteGarden {
     ) {
       console.log("⬇️ Dig down");
 
-      await this.pressKey(82);
+      await pressKey(this.shadow, 82);
 
       await sleep(300);
     }
@@ -71,7 +73,7 @@ export class Gold extends SpriteGarden {
     );
 
     // Start game setup
-    await this.pressKey(32, 300);
+    await jumpUp(this.shadow, 300);
     await sleep(500);
 
     // Farm in case starting on tree
@@ -136,7 +138,7 @@ export class Gold extends SpriteGarden {
       console.log(`🔄 Pass ${pass} start`);
 
       console.log(`Jumping before dig at right edge`);
-      await this.pressKey(32, 300);
+      await jumpUp;
       await sleep(300);
 
       console.log("⬇️ Dig down 2 tile at right edge");
@@ -193,7 +195,7 @@ export class Gold extends SpriteGarden {
       }
 
       console.log("🔄 Jumping before dig at left edge");
-      await this.pressKey(32, 300);
+      await jumpUp(this.shadow, 300);
       await sleep(300);
 
       // Dig down 2 tiles at left edge

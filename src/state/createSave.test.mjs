@@ -109,7 +109,6 @@ describe("createSaveState function", () => {
       height: 8,
     });
     expect(state.seedInventory).toEqual({ wheat: 10, carrot: 5 });
-    expect(state.seeds).toEqual({ wheat: { name: "Wheat" } });
     expect(state.selectedMaterialType).toBe("dirt");
     expect(state.selectedSeedType).toBe("wheat");
     expect(state.viewMode).toBe("normal");
@@ -323,29 +322,6 @@ describe("createSaveState function", () => {
     const saveState = createSaveState(gThis);
 
     expect(saveState.config.version).toBe("2.5.3-beta");
-  });
-
-  test("handles seeds with nested properties", () => {
-    const complexSeeds = {
-      wheat: {
-        name: "Wheat",
-        growthTime: 100,
-        yield: 5,
-        requirements: { water: true, light: true },
-      },
-      carrot: {
-        name: "Carrot",
-        growthTime: 80,
-        yield: 3,
-        requirements: { water: false, light: true },
-      },
-    };
-
-    gThis.spriteGarden.state.seeds.set(complexSeeds);
-
-    const saveState = createSaveState(gThis);
-
-    expect(saveState.state.seeds).toEqual(complexSeeds);
   });
 
   test("handles empty explored map", () => {

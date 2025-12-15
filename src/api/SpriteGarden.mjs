@@ -1,10 +1,12 @@
-import { markWaterRegionDirty } from "../water/markWaterRegionDirty.mjs";
-import { resizeCanvas } from "../util/resizeCanvas.mjs";
-import { sleep } from "../util/sleep.mjs";
-
-import { characters as Characters } from "./characters.mjs";
-import { codeMap as CodeMap, keyMap as KeyMap } from "./keys.mjs";
 import { getShadowRoot } from "../util/getShadowRoot.mjs";
+import { resizeCanvas } from "../util/resizeCanvas.mjs";
+import { sleep } from "./misc/sleep.mjs";
+
+import { markWaterRegionDirty } from "../water/markWaterRegionDirty.mjs";
+
+import { characters as Characters } from "./misc/characters.mjs";
+import { createKeyEvent } from "./player/createKeyEvent.mjs";
+import { pressKey } from "./player/pressKey.mjs";
 
 export class SpriteGarden {
   /**
@@ -677,29 +679,6 @@ export class SpriteGarden {
   }
 
   /**
-   * Creates a synthetic KeyboardEvent with specified type and keyCode, mapping
-   * key and code values from provided maps or using defaults.
-   *
-   * @param {string} type - The event type ('keydown', 'keyup', etc.).
-   * @param {number} keyCode - The numeric key code for the event.
-   * @param {Object} [codeMap=CodeMap] - Map from keyCode to code string.
-   * @param {Object} [keyMap=KeyMap] - Map from keyCode to key string.
-   *
-   * @returns {KeyboardEvent} The constructed KeyboardEvent object.
-   */
-  createKeyEvent(type, keyCode, codeMap = CodeMap, keyMap = KeyMap) {
-    return new KeyboardEvent(type, {
-      key: keyMap[keyCode] || "",
-      code: codeMap[keyCode] || "",
-      keyCode,
-      which: keyCode,
-      bubbles: true,
-      cancelable: true,
-      composed: true,
-    });
-  }
-
-  /**
    * Dispatches a 'keydown' event with the given keyCode to the shadow DOM root.
    *
    * @param {number} keyCode - The keyCode to dispatch a keydown event for.
@@ -707,7 +686,7 @@ export class SpriteGarden {
    * @returns {Promise<void>}
    */
   async holdKey(keyCode) {
-    this.shadow.dispatchEvent(this.createKeyEvent("keydown", keyCode));
+    this.shadow.dispatchEvent(createKeyEvent("keydown", keyCode));
   }
 
   /**
@@ -718,24 +697,20 @@ export class SpriteGarden {
    * @returns {Promise<void>}
    */
   async releaseKey(keyCode) {
-    this.shadow.dispatchEvent(this.createKeyEvent("keyup", keyCode));
+    this.shadow.dispatchEvent(createKeyEvent("keyup", keyCode));
   }
 
   /**
-   * Simulates a key press by dispatching a 'keydown' event, awaiting a hold time,
-   * then dispatching a corresponding 'keyup' event.
-   *
-   * @param {number} keyCode - The keyCode of the key to press.
-   * @param {number} [holdTime=100] - Time in milliseconds to hold the key down.
+   * Release all provided keys.
    *
    * @returns {Promise<void>}
    */
-  async pressKey(keyCode, holdTime = 100) {
-    this.shadow.dispatchEvent(this.createKeyEvent("keydown", keyCode));
+  async releaseAllKeys(keys, delay = 50) {
+    for (const k of keys) {
+      await this.releaseKey(k);
+    }
 
-    await sleep(holdTime);
-
-    this.shadow.dispatchEvent(this.createKeyEvent("keyup", keyCode));
+    await sleep(delay);
   }
 
   /**
@@ -748,7 +723,7 @@ export class SpriteGarden {
    */
   async pressKeyRepeat(keyCode, times, delay = 100) {
     for (let i = 0; i < times; i++) {
-      await this.pressKey(keyCode, delay / 2);
+      await pressKey(this.shadow, keyCode, delay / 2);
       await sleep(delay);
     }
   }
@@ -763,7 +738,7 @@ export class SpriteGarden {
    */
   async pressKeySequence(keyCodes, delay = 100) {
     for (const keyCode of keyCodes) {
-      await this.pressKey(keyCode, delay / 2);
+      await pressKey(this.shadow, keyCode, delay / 2);
       await sleep(delay);
     }
   }

@@ -1,5 +1,6 @@
 import { resizeCanvas } from "../../util/resizeCanvas.mjs";
-import { sleep } from "../../util/sleep.mjs";
+import { sleep } from "../misc/sleep.mjs";
+
 import { SpriteGarden } from "../SpriteGarden.mjs";
 
 export class MessagingScrolled extends SpriteGarden {

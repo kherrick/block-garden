@@ -22,7 +22,6 @@ describe("state module", () => {
       expect(gameState).toHaveProperty("plantStructures");
       expect(gameState).toHaveProperty("gameTime");
       expect(gameState).toHaveProperty("growthTimers");
-      expect(gameState).toHaveProperty("seeds");
       expect(gameState).toHaveProperty("selectedMaterialType");
       expect(gameState).toHaveProperty("selectedSeedType");
       expect(gameState).toHaveProperty("shouldReset");

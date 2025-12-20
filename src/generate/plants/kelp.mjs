@@ -1,38 +1,28 @@
-/** @typedef {import('../../state/config/tiles.mjs').TileMap} TileMap */
+import { blockNames } from "../../state/config/blocks.mjs";
 
-/**
- * @param {number} x
- * @param {number} y
- * @param {number} progress
- * @param {TileMap} tiles
- *
- * @returns {{ x: any; y: any; tile: any; }[]}
- */
-export function generateKelpStructure(x, y, progress, tiles) {
-  const blocks = [];
+export function generateKelpStructure(x, y, z, progress, blocks) {
+  const structure = [];
+  const getBlockId = (name) => blocks.findIndex((b) => b.name === name);
 
-  // Early stage
+  const GROWING = getBlockId(blockNames.KELP_GROWING);
+  const BLADE = getBlockId(blockNames.KELP_BLADE);
+  const BULB = getBlockId(blockNames.KELP_BULB);
+
+  // Checks if underwater? Assuming placed underwater for now.
+
   if (progress < 0.1) {
-    blocks.push({ x, y, tile: tiles.KELP_GROWING });
-
-    return blocks;
+    structure.push({ x, y, z, blockId: GROWING });
+    return structure;
   }
 
-  const maxHeight = 6;
-  const currentHeight = Math.max(1, Math.ceil(maxHeight * progress));
+  const maxHeight = 10;
+  const height = Math.floor(maxHeight * progress);
 
-  // Kelp grows upward in wavy pattern
-  for (let i = 0; i < currentHeight; i++) {
-    // Create wavy effect
-    const wave = Math.floor(Math.sin(i * 0.5) * 1.5);
-
-    blocks.push({ x: x + wave, y: y - i, tile: tiles.KELP_BLADE });
-
-    // Add bulbs periodically
-    if (progress > 0.5 && i % 2 === 1 && i < currentHeight - 1) {
-      blocks.push({ x: x + wave, y: y - i, tile: tiles.KELP_BULB });
-    }
+  for (let i = 0; i < height; i++) {
+    const isBulb = i === height - 1 || i % 4 === 3;
+    const block = isBulb ? BULB : BLADE;
+    structure.push({ x, y: y + i, z, blockId: block });
   }
 
-  return blocks;
+  return structure;
 }

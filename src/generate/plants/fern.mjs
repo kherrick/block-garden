@@ -1,45 +1,33 @@
-/** @typedef {import('../../state/config/tiles.mjs').TileMap} TileMap */
+import { blockNames } from "../../state/config/blocks.mjs";
 
-/**
- * @param {number} x
- * @param {number} y
- * @param {number} progress
- * @param {TileMap} tiles
- *
- * @returns {{ x: any; y: any; tile: any; }[]}
- */
-export function generateFernStructure(x, y, progress, tiles) {
-  const blocks = [];
+export function generateFernStructure(x, y, z, progress, blocks) {
+  const structure = [];
+  const getBlockId = (name) => blocks.findIndex((b) => b.name === name);
 
-  // Early stage
-  if (progress < 0.1) {
-    blocks.push({ x, y, tile: tiles.FERN_GROWING });
+  const GROWING = getBlockId(blockNames.FERN_GROWING);
+  const STEM = getBlockId(blockNames.FERN_STEM);
+  const FROND = getBlockId(blockNames.FERN_FROND);
 
-    return blocks;
+  if (progress < 0.2) {
+    structure.push({ x, y, z, blockId: GROWING });
+    return structure;
   }
 
-  const maxHeight = 3;
-  const currentHeight = Math.max(1, Math.ceil(maxHeight * progress));
+  structure.push({ x, y, z, blockId: STEM });
 
-  // Central stem
-  for (let i = 0; i < currentHeight; i++) {
-    blocks.push({ x, y: y - i, tile: tiles.FERN_STEM });
+  if (progress > 0.5) {
+    // Fronds spreading
+    // Low to ground
+    structure.push({ x: x + 1, y, z, blockId: FROND });
+    structure.push({ x: x - 1, y, z, blockId: FROND });
+    structure.push({ x, y, z: z + 1, blockId: FROND });
+    structure.push({ x, y, z: z - 1, blockId: FROND });
   }
 
-  // Unfurling fronds
-  if (progress > 0.3) {
-    const frondSpread = Math.ceil(progress * 2);
-
-    for (let i = 0; i < currentHeight; i++) {
-      const spreadAtHeight = Math.min(frondSpread, i + 1);
-
-      for (let dx = -spreadAtHeight; dx <= spreadAtHeight; dx++) {
-        if (dx !== 0) {
-          blocks.push({ x: x + dx, y: y - i, tile: tiles.FERN_FROND });
-        }
-      }
-    }
+  if (progress > 0.8) {
+    // Top frond
+    structure.push({ x, y: y + 1, z, blockId: FROND });
   }
 
-  return blocks;
+  return structure;
 }

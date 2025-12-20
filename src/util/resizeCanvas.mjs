@@ -1,3 +1,5 @@
+/** @typedef {import('signal-polyfill').Signal.State} Signal.State */
+
 /** @typedef {import('../state/config/index.mjs').GameConfig} GameConfig */
 
 /**
@@ -7,28 +9,28 @@
  * Updates CSS classes and fog scale accordingly.
  *
  * @param {ShadowRoot} shadow - Shadow root containing the canvas element
- * @param {GameConfig} gameConfig - Game configuration object
+ * @param {Signal.State} currentResolution - Signal State for current resolution
  *
  * @returns {void}
  */
-export function resizeCanvas(shadow, gameConfig) {
+export function resizeCanvas(shadow, currentResolution) {
   const cnvs = shadow.getElementById("canvas");
   if (cnvs instanceof HTMLCanvasElement) {
-    const currentResolution = gameConfig.currentResolution?.get();
-    if (currentResolution === "fullscreen") {
+    const resolution = currentResolution.get();
+    if (resolution === "fullscreen") {
       // Fullscreen mode
-      shadow?.host.classList.remove(
+      shadow.host.classList.remove(
         "resolution",
         "resolution-400",
         "resolution-800",
       );
 
-      cnvs.width = window.innerWidth;
-      cnvs.height = window.innerHeight;
+      cnvs.width = globalThis.innerWidth;
+      cnvs.height = globalThis.innerHeight;
       cnvs.style.width = "100vw";
+      cnvs.style.width = "100dvw";
       cnvs.style.height = "100vh";
-
-      gameConfig.fogScale.set(36);
+      cnvs.style.height = "100dvh";
 
       return;
     }
@@ -37,21 +39,12 @@ export function resizeCanvas(shadow, gameConfig) {
     shadow.host.classList.add("resolution");
     shadow.host.classList.remove("resolution-400", "resolution-800");
 
-    const size = parseInt(currentResolution);
+    const size = parseInt(resolution);
     cnvs.width = size;
     cnvs.height = size;
     cnvs.style.width = size + "px";
     cnvs.style.height = size + "px";
 
     shadow.host.classList.add(`resolution-${size}`);
-
-    if (currentResolution === "800") {
-      gameConfig.fogScale.set(24);
-
-      return;
-    }
-
-    // update scale for remaining resolutions
-    gameConfig.fogScale.set(12);
   }
 }

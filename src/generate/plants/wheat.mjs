@@ -1,56 +1,28 @@
-/** @typedef {import('../../state/config/tiles.mjs').TileMap} TileMap */
+import { blockNames } from "../../state/config/blocks.mjs";
 
-/**
- * @param {number} x
- * @param {number} y
- * @param {number} progress
- * @param {TileMap} tiles
- *
- * @returns {{ x: any; y: any; tile: any; }[]}
- */
-export function generateWheatStructure(x, y, progress, tiles) {
-  const blocks = [];
+export function generateWheatStructure(x, y, z, progress, blocks) {
+  const structure = [];
+  const getBlockId = (name) => blocks.findIndex((b) => b.name === name);
 
-  // Early stage - just the growing seed
-  if (progress < 0.1) {
-    blocks.push({ x, y, tile: tiles.WHEAT_GROWING });
+  const GROWING = getBlockId(blockNames.WHEAT_GROWING);
+  const STALK = getBlockId(blockNames.WHEAT_STALK);
+  const GRAIN = getBlockId(blockNames.WHEAT_GRAIN);
 
-    return blocks;
+  if (progress < 0.2) {
+    structure.push({ x, y, z, blockId: GROWING });
+    return structure;
   }
 
-  const maxHeight = 4;
-  const currentHeight = Math.max(1, Math.ceil(maxHeight * progress));
+  structure.push({ x, y, z, blockId: STALK });
 
-  for (let i = 0; i < currentHeight; i++) {
-    const tileY = y - i;
-
-    if (i < currentHeight - 1 || progress < 0.8) {
-      // Stalk
-      blocks.push({ x, y: tileY, tile: tiles.WHEAT_STALK });
-    } else {
-      // Top grains when mature
-      blocks.push({ x, y: tileY, tile: tiles.WHEAT_GRAIN });
-    }
-
-    // Add side stalks for fuller appearance
-    if (progress > 0.5 && i > 0 && i < currentHeight - 1) {
-      if (Math.random() < 0.4) {
-        blocks.push({ x: x - 1, y: tileY, tile: tiles.WHEAT_STALK });
-      }
-
-      if (Math.random() < 0.4) {
-        blocks.push({ x: x + 1, y: tileY, tile: tiles.WHEAT_STALK });
-      }
-    }
+  if (progress > 0.5) {
+    structure.push({ x, y: y + 1, z, blockId: STALK });
   }
 
-  // Add grain clusters when fully mature
-  if (progress > 0.9) {
-    const topY = y - currentHeight + 1;
-
-    blocks.push({ x: x - 1, y: topY, tile: tiles.WHEAT_GRAIN });
-    blocks.push({ x: x + 1, y: topY, tile: tiles.WHEAT_GRAIN });
+  if (progress > 0.8) {
+    // Grain head
+    structure.push({ x, y: y + 2, z, blockId: GRAIN });
   }
 
-  return blocks;
+  return structure;
 }

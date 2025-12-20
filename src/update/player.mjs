@@ -1,206 +1,62 @@
-import { checkCollision } from "../util/checkCollision.mjs";
 import { isKeyPressed } from "../util/isKeyPressed.mjs";
 
-/** @typedef {import('signal-polyfill').Signal.State} Signal.State */
+/** @typedef {import('../init/game.mjs').CustomShadowHost} CustomShadowHost */
+/** @typedef {import('../state/state.mjs').GameState} GameState */
 
 /**
- * Update player physics
  *
- * @param {number} friction
- * @param {number} gravity
- * @param {number} maxFallSpeed
- * @param {number} tileSize
- * @param {number} worldHeight
- * @param {number} worldWidth
- * @param {Signal.State} world
- * @param {Signal.State} camera
- * @param {Signal.State} player
- * @param {HTMLCanvasElement} cnvs
  * @param {ShadowRoot} shadow
- * @param {number} [movementScale=1]
+ * @param {GameState} state
+ * @param {number} dt
  *
  * @returns {void}
  */
-export function updatePlayer(
-  friction,
-  gravity,
-  maxFallSpeed,
-  tileSize,
-  worldHeight,
-  worldWidth,
-  world,
-  camera,
-  player,
-  cnvs,
-  shadow,
-  movementScale = 1,
-) {
-  const currentPlayer = player.get();
-  const currentCamera = camera.get();
-  const currentWorld = world.get();
+export function updatePlayer(shadow, state, dt) {
+  const { yaw, flying } = state;
+  const speed = flying ? 12 : 8; // Faster when flying
 
-  currentPlayer.velocityY += gravity;
+  const fx = Math.sin(yaw);
+  const fz = Math.cos(yaw);
 
-  if (currentPlayer.velocityY > maxFallSpeed) {
-    currentPlayer.velocityY = maxFallSpeed;
-  }
+  let targetDx = 0,
+    targetDz = 0;
 
-  // Handle horizontal movement and track direction
-  let horizontalInput = 0;
-  let verticalInput = 0;
-
-  // Check for diagonal inputs first
-  if (isKeyPressed(shadow, "upleft")) {
-    horizontalInput = -1;
-    verticalInput = -1;
-
-    currentPlayer.lastDirection = -1;
+  if (isKeyPressed(shadow, "w")) {
+    targetDx += fx * speed;
+    targetDz += fz * speed;
+  } else if (isKeyPressed(shadow, "a")) {
+    targetDx += fz * speed;
+    targetDz -= fx * speed;
+  } else if (isKeyPressed(shadow, "s")) {
+    targetDx -= fx * speed;
+    targetDz -= fz * speed;
+  } else if (isKeyPressed(shadow, "d")) {
+    targetDx -= fz * speed;
+    targetDz += fx * speed;
+  } else if (isKeyPressed(shadow, "upleft")) {
+    // W + A
+    targetDx += (fx + fz) * speed;
+    targetDz += (fz - fx) * speed;
   } else if (isKeyPressed(shadow, "upright")) {
-    horizontalInput = 1;
-    verticalInput = -1;
-
-    currentPlayer.lastDirection = 1;
+    // W + D
+    targetDx += (fx - fz) * speed;
+    targetDz += (fz + fx) * speed;
   } else if (isKeyPressed(shadow, "downleft")) {
-    horizontalInput = -1;
-    verticalInput = 1;
-
-    currentPlayer.lastDirection = -1;
+    // S + A
+    targetDx += (-fx + fz) * speed;
+    targetDz += (-fz - fx) * speed;
   } else if (isKeyPressed(shadow, "downright")) {
-    horizontalInput = 1;
-    verticalInput = 1;
-
-    currentPlayer.lastDirection = 1;
-  } else {
-    // Check for individual directional inputs
-    if (isKeyPressed(shadow, "a") || isKeyPressed(shadow, "arrowleft")) {
-      horizontalInput = -1;
-
-      currentPlayer.lastDirection = -1;
-    } else if (
-      isKeyPressed(shadow, "d") ||
-      isKeyPressed(shadow, "arrowright")
-    ) {
-      horizontalInput = 1;
-
-      currentPlayer.lastDirection = 1;
-    }
-
-    // Vertical input for diagonal movement (not jumping)
-    if (isKeyPressed(shadow, "s")) {
-      verticalInput = 1;
-    }
+    // S + D
+    targetDx += (-fx - fz) * speed;
+    targetDz += (-fz + fx) * speed;
   }
 
-  // Apply horizontal movement with minimum movement threshold
-  if (horizontalInput !== 0) {
-    const targetVelocity =
-      horizontalInput * currentPlayer.speed * movementScale;
+  // Smooth acceleration
+  state.dx += (targetDx - state.dx) * (flying ? 15 : 10) * dt;
+  state.dz += (targetDz - state.dz) * (flying ? 15 : 10) * dt;
 
-    // If we're starting from zero velocity or changing direction, apply minimal acceleration
-    if (
-      Math.abs(currentPlayer.velocityX) < 0.5 ||
-      Math.sign(currentPlayer.velocityX) !== Math.sign(targetVelocity)
-    ) {
-      currentPlayer.velocityX = targetVelocity * 0.3; // Much slower initial movement
-    } else {
-      currentPlayer.velocityX = targetVelocity;
-    }
-  } else {
-    currentPlayer.velocityX *= friction;
-    currentPlayer.lastDirection = 0;
-  }
-
-  // Handle jumping (including diagonal up movements)
-  if (
-    (isKeyPressed(shadow, "w") ||
-      isKeyPressed(shadow, "arrowup") ||
-      isKeyPressed(shadow, " ") ||
-      isKeyPressed(shadow, "upleft") ||
-      isKeyPressed(shadow, "upright")) &&
-    currentPlayer.onGround
-  ) {
-    currentPlayer.velocityY = -currentPlayer.jumpPower;
-    currentPlayer.onGround = false;
-  }
-
-  // For diagonal movement, apply a slight speed reduction to maintain balance
-  if (horizontalInput !== 0 && verticalInput !== 0) {
-    const diagonalSpeedMultiplier = 0.707; // 1/√2 for proper diagonal speed
-
-    currentPlayer.velocityX *= diagonalSpeedMultiplier;
-  }
-
-  // Move horizontally
-  const newX = currentPlayer.x + currentPlayer.velocityX;
-  if (
-    !checkCollision(
-      currentPlayer.height,
-      tileSize,
-      currentPlayer.width,
-      currentWorld,
-      worldHeight,
-      worldWidth,
-      newX,
-      currentPlayer.y,
-    )
-  ) {
-    currentPlayer.x = newX;
-  } else {
-    currentPlayer.velocityX = 0;
-  }
-
-  // Move vertically
-  const newY = currentPlayer.y + currentPlayer.velocityY;
-  if (
-    !checkCollision(
-      currentPlayer.height,
-      tileSize,
-      currentPlayer.width,
-      currentWorld,
-      worldHeight,
-      worldWidth,
-      currentPlayer.x,
-      newY,
-    )
-  ) {
-    currentPlayer.y = newY;
-    currentPlayer.onGround = false;
-  } else {
-    if (currentPlayer.velocityY > 0) {
-      currentPlayer.onGround = true;
-    }
-
-    currentPlayer.velocityY = 0;
-  }
-
-  // Keep player in world bounds
-  currentPlayer.x = Math.max(
-    0,
-    Math.min(currentPlayer.x, worldWidth * tileSize - currentPlayer.width),
-  );
-
-  currentPlayer.y = Math.max(
-    0,
-    Math.min(currentPlayer.y, worldHeight * tileSize - currentPlayer.height),
-  );
-
-  // Update camera to follow player
-  const targetCameraX =
-    currentPlayer.x + currentPlayer.width / 2 - cnvs.width / 2;
-  const targetCameraY =
-    currentPlayer.y + currentPlayer.height / 2 - cnvs.height / 2;
-
-  currentCamera.x += (targetCameraX - currentCamera.x) * 0.1;
-  currentCamera.y += (targetCameraY - currentCamera.y) * 0.1;
-
-  // Keep camera in bounds
-  currentCamera.x = Math.max(
-    0,
-    Math.min(currentCamera.x, worldWidth * tileSize - cnvs.width),
-  );
-
-  currentCamera.y = Math.max(
-    0,
-    Math.min(currentCamera.y, worldHeight * tileSize - cnvs.height),
-  );
+  // Friction (less in air/flying)
+  const friction = flying ? 0.95 : 0.92;
+  state.dx *= friction;
+  state.dz *= friction;
 }

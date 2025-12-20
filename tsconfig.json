@@ -19,8 +19,5 @@
   ],
   "files": [
     "index.mjs",
-    "service-worker/init.mjs",
-    "src/api/index.mjs",
-    "src/api/examples/index.mjs"
   ]
 }

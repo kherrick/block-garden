@@ -19,12 +19,12 @@
  */
 
 /**
- * General color names mapped to hex codes (may include alpha), without prefixes ('--sg-color').
+ * General color names mapped to hex codes (may include alpha), without prefixes ('--bg-color').
  * @typedef {{ [key: string]: string }} ColorMapWithoutPrefixes
  */
 
 /**
- * Tile-specific color names without prefixes ('--sg-tile-color').
+ * Tile-specific color names without prefixes ('--bg-tile-color').
  * @typedef {{ [key: string]: string }} TileColorMapWithoutPrefixes
  */
 
@@ -33,6 +33,5 @@
  * @typedef {Object} Colors
  *
  * @property {ColorMapWithoutPrefixes} color - General UI colors as hex strings.
- * @property {TileColorMapWithoutPrefixes} tile - Tile colors as hex strings.
  * @property {UIColorMap} ui - UI colors applied.
  */

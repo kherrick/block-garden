@@ -1,44 +1,31 @@
-/** @typedef {import('../../state/config/tiles.mjs').TileMap} TileMap */
+import { blockNames } from "../../state/config/blocks.mjs";
 
-/**
- * @param {number} x
- * @param {number} y
- * @param {number} progress
- * @param {TileMap} tiles
- *
- * @returns {{ x: any; y: any; tile: any; }[]}
- */
-export function generateCarrotStructure(x, y, progress, tiles) {
-  const blocks = [];
+export function generateCarrotStructure(x, y, z, progress, blocks) {
+  const structure = [];
+  const getBlockId = (name) => blocks.findIndex((b) => b.name === name);
 
-  // Early stage
-  if (progress < 0.1) {
-    blocks.push({ x, y, tile: tiles.CARROT_GROWING });
+  const GROWING = getBlockId(blockNames.CARROT_GROWING);
+  const LEAVES = getBlockId(blockNames.CARROT_LEAVES);
+  const ROOT = getBlockId(blockNames.CARROT_ROOT);
 
-    return blocks;
+  // Carrots grow DOWN into ground if possible? But we placed on top.
+  // Block Garden: Root is tile, Leaves are tile.
+  // Let's make root at y (where placed/planted) and leaves above.
+
+  if (progress < 0.3) {
+    structure.push({ x, y, z, blockId: GROWING });
+    return structure;
   }
 
-  // Underground root grows first
-  if (progress > 0.2) {
-    const rootDepth = Math.ceil(2 * progress);
+  // Root (visible part or bury it?)
+  // If we plant "seeds" they are usually on top of dirt.
+  // So the root block sits on dirt.
+  structure.push({ x, y, z, blockId: ROOT });
 
-    for (let i = 1; i <= rootDepth; i++) {
-      blocks.push({ x, y: y + i, tile: tiles.CARROT_ROOT });
-    }
+  // Leaves
+  if (progress > 0.6) {
+    structure.push({ x, y: y + 1, z, blockId: LEAVES });
   }
 
-  // Leaves on top
-  const leafHeight = Math.max(1, Math.ceil(2 * progress));
-
-  for (let i = 0; i < leafHeight; i++) {
-    blocks.push({ x, y: y - i, tile: tiles.CARROT_LEAVES });
-
-    // Spread leaves when more mature
-    if (progress > 0.5 && i === leafHeight - 1) {
-      blocks.push({ x: x - 1, y: y - i, tile: tiles.CARROT_LEAVES });
-      blocks.push({ x: x + 1, y: y - i, tile: tiles.CARROT_LEAVES });
-    }
-  }
-
-  return blocks;
+  return structure;
 }

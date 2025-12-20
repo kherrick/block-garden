@@ -1,63 +1,40 @@
+import Hammer from "hammerjs";
 import localForage from "localforage";
 
-import { initEffects } from "./effects.mjs";
-import { initFog } from "./fog.mjs";
-import { initMapEditor } from "../map/editor.mjs";
-import { initNewWorld } from "./newWorld.mjs";
-
-import {
-  initDocumentEventListeners,
-  initElementEventListeners,
-  initGlobalEventListeners,
-} from "./eventListeners.mjs";
-
 import { initTouchControls } from "./touchControls.mjs";
-import { initTileInspection } from "./tileInspection.mjs";
+import { initHammerControls } from "./hammerControls.mjs";
 
 import {
-  AUTO_SAVE_INTERVAL,
-  autoSaveGame,
-  checkAutoSave,
-  checkSharedSave,
-  getSaveMode,
-} from "../dialog/storage.mjs";
+  initCanvasEventListeners,
+  initElementEventListeners,
+} from "./eventListeners.mjs";
+import { initEffects } from "./effects.mjs";
+import { initGameDependencies } from "./gameDependencies.mjs";
 
-import { applyColorsToShadowHost } from "../util/colors/applyColorsToShadowHost.mjs";
-import { COLOR_STORAGE_KEY } from "../dialog/colors/index.mjs";
-import { getSavedColors } from "../dialog/colors/getSavedColors.mjs";
+import { initState } from "../state/state.mjs";
+import { cancelGameLoop, gameLoop } from "../state/gameLoop.mjs";
+import { getBlockIdByName } from "../state/config/getBlockIdByName.mjs";
 
-import { resizeCanvas } from "../util/resizeCanvas.mjs";
-
-import {
-  computedSignals,
-  initState,
-  tutorialToastShown,
-} from "../state/state.mjs";
-import { gameLoop } from "../state/gameLoop.mjs";
-import { colors as spriteGardenColors } from "../state/config/colors.mjs";
-import { getTileNameByIdMap } from "../state/config/tiles.mjs";
-
-import { buildStyleMapByPropNamesWithoutPrefixesOrSuffixes } from "../util/colors/buildStyleMapByPropNamesWithoutPrefixesOrSuffixes.mjs";
-import { getCustomProperties } from "../util/colors/getCustomProperties.mjs";
-import { transformStyleMap } from "../util/colors/transformStyleMap.mjs";
+import { generateFlatWorld } from "../generate/world.mjs";
 
 /**
  * @typedef {Element & { keys: object, touchKeys: object }} CustomShadowHost
  */
 
 /**
- * Initializes the environment for the game, including input handling, game state, world generation, colors, and other
- * functionality like setting up tile inspection.
+ * Initializes the environment for the game.
  *
- * @param {typeof globalThis} gThis - The global `this` context (global object), typically `window` in browsers.
- * @param {ShadowRoot} shadow - The shadow DOM root element where the game components are rendered.
- * @param {HTMLCanvasElement | null} cnvs - The HTML canvas element used for rendering the game, or null if missing.
+ * @param {typeof globalThis} gThis
+ * @param {ShadowRoot} shadow
+ * @param {HTMLCanvasElement} cnvs
  *
  * @returns {Promise<void>} A promise that resolves once the game initialization completes.
  */
 export async function initGame(gThis, shadow, cnvs) {
+  cancelGameLoop();
+
   shadow.dispatchEvent(
-    new CustomEvent("sprite-garden-load", {
+    new CustomEvent("block-garden-load", {
       detail: { isLoading: true, error: null },
       bubbles: true,
       composed: true,
@@ -65,12 +42,12 @@ export async function initGame(gThis, shadow, cnvs) {
   );
 
   if (!cnvs) {
-    const missingCanvasError = "HTML canvas is required to init Sprite Garden.";
+    const missingCanvasError = "HTML canvas is required to init Block Garden.";
 
     console.error(missingCanvasError);
 
     shadow.dispatchEvent(
-      new CustomEvent("sprite-garden-load", {
+      new CustomEvent("block-garden-load", {
         detail: { isLoading: false, error: missingCanvasError },
         bubbles: true,
         composed: true,
@@ -96,8 +73,12 @@ export async function initGame(gThis, shadow, cnvs) {
     console.log(`continuing with static version: ${version}`);
   }
 
-  const { gameConfig, gameState } = await initState(gThis, version);
-  const doc = gThis.document;
+  const { computedSignals, gameConfig, gameState } = await initState(
+    gThis,
+    version,
+  );
+
+  generateFlatWorld(gameConfig, gameState);
 
   const host =
     /** @type {CustomShadowHost} */
@@ -106,229 +87,80 @@ export async function initGame(gThis, shadow, cnvs) {
   host.keys = {};
   host.touchKeys = {};
 
-  // init colors
-  const savedColors = await getSavedColors(COLOR_STORAGE_KEY);
-  const initialColors = getCustomProperties(gThis, shadow);
-  const colors = savedColors ?? initialColors;
-
-  applyColorsToShadowHost(shadow, colors);
-
-  initMapEditor(shadow, gameConfig.fogMode, gameState.viewMode);
-  initGlobalEventListeners(gThis, shadow);
-  initDocumentEventListeners(gThis, shadow);
-  initElementEventListeners(gThis, shadow);
   initTouchControls(shadow);
-  initEffects(
-    shadow,
-    computedSignals.totalSeeds,
-    gameConfig.breakMode,
-    gameConfig.fogMode,
-    gameConfig.worldSeed,
-    gameState.gameTime,
-    gameState.materialsInventory,
-    gameState.seedInventory,
-    gameState.selectedMaterialType,
-    gameState.selectedSeedType,
-    gameState.viewMode,
-  );
+  initHammerControls(Hammer(shadow.host), shadow, gameState);
 
-  const worldHeight = gameConfig.WORLD_HEIGHT.get();
-  const worldWidth = gameConfig.WORLD_WIDTH.get();
+  initEffects(shadow, computedSignals.currentBlock);
+  initElementEventListeners(shadow, cnvs, gameConfig.currentResolution);
+  initCanvasEventListeners(shadow, cnvs, gameConfig.blocks, gameState.curBlock);
 
-  // Check for shared save first (takes priority)
-  let sharedSaveLoaded = await checkSharedSave(gThis, shadow);
+  // Only pass cnvs to initGameDependencies, and call it once
+  const { gl, cbuf, cube, uL, uM, uMVP } = initGameDependencies(cnvs);
 
-  // If no shared save, check for auto-save
-  let autoSaveLoaded = false;
-  if (!sharedSaveLoaded) {
-    autoSaveLoaded = await checkAutoSave(gThis, shadow);
-  }
+  // Get required UI buttons for flight controls
+  const ui = {
+    descendButton: shadow.getElementById("descend"),
+    flyButton: shadow.getElementById("fly"),
+  };
 
-  if (!sharedSaveLoaded && !autoSaveLoaded) {
-    const currentWorld = initNewWorld(
-      gameConfig.BIOMES,
-      gameConfig.SURFACE_LEVEL.get(),
-      gameConfig.TILE_SIZE.get(),
-      gameConfig.TILES,
-      worldHeight,
-      worldWidth,
-      gameConfig.worldSeed,
-      gameState.gameTime,
-      gameState.growthTimers,
-      gameState.plantStructures,
-      gameState.player,
-      gameState.materialsInventory,
-      gameState.seedInventory,
-    );
+  // Set current block to id of dirt
+  gameState.curBlock.set(getBlockIdByName("Dirt"));
 
-    // Set the world in state
-    gameState.world.set(currentWorld);
+  const ver = await localForage.setItem(`block-garden-version`, version);
 
-    const currentFog = initFog(
-      gameConfig.isFogScaled,
-      worldHeight,
-      worldWidth,
-      colors,
-    );
+  console.log(`Block Garden version: ${ver}`);
 
-    // Set the fog in state
-    gameState.exploredMap.set(currentFog);
-  }
+  shadow.addEventListener("block-garden-reset", () => {
+    // Set all growthTimers to FAST_GROWTH_TIME if enabled else restore to block default
+    const { blocks } = gameConfig;
+    const { growthTimers, plantStructures } = gameState;
+    const FAST_GROWTH_TIME = blocks.FAST_GROWTH_TIME || 30;
 
-  // Set up auto-save interval
-  setInterval(async () => {
-    const saveMode = await getSaveMode();
+    Object.keys(growthTimers).forEach((key) => {
+      if (gameState.fastGrowth) {
+        growthTimers[key] = FAST_GROWTH_TIME;
+      } else {
+        // Restore to block default
+        const plantType = plantStructures[key]?.type;
+        const block = blocks.find((b) => b.name === plantType);
+        growthTimers[key] = block?.growthTime || 10.0;
+      }
+    });
 
-    if (saveMode === "auto") {
-      await autoSaveGame(gThis);
-    }
-  }, AUTO_SAVE_INTERVAL);
-
-  initTileInspection(
-    cnvs,
-    gameState.camera,
-    gameConfig.canvasScale.get(),
-    gameConfig.TILES,
-    gameConfig.TILE_SIZE.get(),
-    gameConfig.WORLD_HEIGHT.get(),
-    gameConfig.WORLD_WIDTH.get(),
-    gameState.world,
-  );
-
-  resizeCanvas(shadow, gameConfig);
-
-  const ver = await localForage.setItem(`sprite-garden-version`, version);
-
-  console.log(`Sprite Garden version: ${ver}`);
-
-  shadow.addEventListener("sprite-garden-reset", async (e) => {
-    let colors;
-
-    if (e instanceof CustomEvent) {
-      colors = e?.detail?.colors ?? {};
-    }
-
-    // Build color map for tiles
-    let tileColorMap;
-    if (Object.keys(colors).length && colors.constructor === Object) {
-      tileColorMap = transformStyleMap(colors, "--sg-tile-", "-color");
-    } else {
-      tileColorMap = transformStyleMap(initialColors, "--sg-tile-", "-color");
-    }
-
-    await gameLoop(
-      cnvs,
-      gThis,
+    // Only call gameLoop, do not re-init dependencies
+    gameLoop(
       shadow,
-      /** @type HTMLDivElement */
-      (shadow.getElementById("currentBiome")),
-      /** @type HTMLDivElement */
-      (shadow.getElementById("currentDepth")),
-      getTileNameByIdMap(gameConfig.TILES),
-      tileColorMap,
-      gameConfig.BIOMES,
-      gameConfig.fogMode,
-      gameConfig.fogScale,
-      gameConfig.FRICTION.get(),
-      gameConfig.GRAVITY.get(),
-      gameConfig.isFogScaled,
-      gameConfig.MAX_FALL_SPEED.get(),
-      gameConfig.SURFACE_LEVEL.get(),
-      gameConfig.TILE_SIZE.get(),
-      gameConfig.TILES,
-      gameConfig.waterPhysics,
-      gameConfig.WORLD_HEIGHT.get(),
-      gameConfig.WORLD_WIDTH.get(),
-      gameConfig.worldSeed,
-      gameState.camera,
-      gameState.exploredMap,
-      gameState.gameTime,
-      gameState.growthTimers,
-      gameState.plantStructures,
-      gameState.player,
-      gameState.shouldReset,
-      gameState.viewMode,
-      gameState.waterPhysicsQueue,
-      gameState.world,
+      cnvs,
+      gameState,
+      gameConfig,
+      ui,
+      gl,
+      cbuf,
+      cube,
+      uL,
+      uM,
+      uMVP,
     );
 
     gameState.shouldReset.set(true);
   });
 
-  // Build color maps
-  const styles = gThis.getComputedStyle(shadow.host);
-  const tileColorMap = buildStyleMapByPropNamesWithoutPrefixesOrSuffixes(
-    styles,
-    Object.keys(spriteGardenColors["tile"]).map((v) => `--sg-tile-${v}-color`),
-    "--sg-tile-",
-    "-color",
-  );
-
-  // Show initial tutorial toast
-  const showTutorialToast = () => {
-    if (!tutorialToastShown.get()) {
-      tutorialToastShown.set(true);
-
-      shadow.dispatchEvent(
-        new CustomEvent("sprite-garden-toast", {
-          detail: {
-            message:
-              '🎮 Use the on screen controls or keyboard to jump or dig! Press the spacebar, ↑,  "W", or "R" to begin.',
-            config: {
-              duration: 0,
-              manualClose: true,
-              stack: true,
-              bottomOffset: 2,
-            },
-          },
-        }),
-      );
-    }
-  };
-
-  await gameLoop(
-    cnvs,
-    gThis,
+  gameLoop(
     shadow,
-    /** @type HTMLDivElement */
-    (shadow.getElementById("currentBiome")),
-    /** @type HTMLDivElement */
-    (shadow.getElementById("currentDepth")),
-    getTileNameByIdMap(gameConfig.TILES),
-    tileColorMap,
-    gameConfig.BIOMES,
-    gameConfig.fogMode,
-    gameConfig.fogScale,
-    gameConfig.FRICTION.get(),
-    gameConfig.GRAVITY.get(),
-    gameConfig.isFogScaled,
-    gameConfig.MAX_FALL_SPEED.get(),
-    gameConfig.SURFACE_LEVEL.get(),
-    gameConfig.TILE_SIZE.get(),
-    gameConfig.TILES,
-    gameConfig.waterPhysics,
-    gameConfig.WORLD_HEIGHT.get(),
-    gameConfig.WORLD_WIDTH.get(),
-    gameConfig.worldSeed,
-    gameState.camera,
-    gameState.exploredMap,
-    gameState.gameTime,
-    gameState.growthTimers,
-    gameState.plantStructures,
-    gameState.player,
-    gameState.shouldReset,
-    gameState.viewMode,
-    gameState.waterPhysicsQueue,
-    gameState.world,
+    cnvs,
+    gameState,
+    gameConfig,
+    ui,
+    gl,
+    cbuf,
+    cube,
+    uL,
+    uM,
+    uMVP,
   );
 
-  // Show tutorial toast after game loop starts
-  setTimeout(() => showTutorialToast(), 500);
-
-  // hide loading animation
-  shadow.getElementById("loading").setAttribute("hidden", "hidden");
   shadow.dispatchEvent(
-    new CustomEvent("sprite-garden-load", {
+    new CustomEvent("block-garden-load", {
       detail: { isLoading: false, pkg, error: null },
       bubbles: true,
       composed: true,

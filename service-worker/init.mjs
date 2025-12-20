@@ -4,7 +4,7 @@ globalThis.isLocalhost = globalThis.location.host === "localhost:3000";
 
 if ("serviceWorker" in navigator && !globalThis.isLocalhost) {
   const wb = new Workbox(
-    "https://kherrick.github.io/sprite-garden/service-worker.js",
+    "https://kherrick.github.io/block-garden/service-worker.js",
   );
 
   wb.addEventListener("waiting", (event) => {

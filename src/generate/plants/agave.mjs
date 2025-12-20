@@ -1,61 +1,45 @@
-/** @typedef {import('../../state/config/tiles.mjs').TileMap} TileMap */
+import { blockNames } from "../../state/config/blocks.mjs";
 
-/**
- * @param {number} x
- * @param {number} y
- * @param {number} progress
- * @param {TileMap} tiles
- *
- * @returns {{ x: any; y: any; tile: any; }[]}
- */
-export function generateAgaveStructure(x, y, progress, tiles) {
-  const blocks = [];
+export function generateAgaveStructure(x, y, z, progress, blocks) {
+  const structure = [];
+  const getBlockId = (name) => blocks.findIndex((b) => b.name === name);
 
-  // Early stage
-  if (progress < 0.1) {
-    blocks.push({ x, y, tile: tiles.AGAVE_GROWING });
+  const GROWING = getBlockId(blockNames.AGAVE_GROWING);
+  const BASE = getBlockId(blockNames.AGAVE_BASE);
+  const SPIKE = getBlockId(blockNames.AGAVE_SPIKE);
+  const STALK = getBlockId(blockNames.AGAVE_FLOWER_STALK);
+  const FLOWER = getBlockId(blockNames.AGAVE_FLOWER);
 
-    return blocks;
+  if (progress < 0.2) {
+    structure.push({ x, y, z, blockId: GROWING });
+    return structure;
   }
 
-  // Central base
-  blocks.push({ x, y, tile: tiles.AGAVE_BASE });
+  // Base
+  structure.push({ x, y, z, blockId: BASE });
 
-  // Rosette of spiky leaves
-  if (progress > 0.2) {
-    const spikeRadius = Math.min(3, Math.ceil((progress - 0.2) * 4));
+  if (progress > 0.4) {
+    // Spikes around base
+    if (progress > 0.5) structure.push({ x: x - 1, y, z, blockId: SPIKE });
+    if (progress > 0.55) structure.push({ x: x + 1, y, z, blockId: SPIKE });
+    if (progress > 0.6) structure.push({ x, y, z: z - 1, blockId: SPIKE });
+    if (progress > 0.65) structure.push({ x, y, z: z + 1, blockId: SPIKE });
+  }
 
-    // Create radial spike pattern
-    for (let dx = -spikeRadius; dx <= spikeRadius; dx++) {
-      for (let dy = -1; dy <= 1; dy++) {
-        if (dx === 0 && dy === 0) continue;
+  // Flower Stalk
+  if (progress > 0.8) {
+    const height = 3;
+    const currentHeight = Math.ceil(height * ((progress - 0.8) / 0.2));
 
-        const distance = Math.abs(dx) + Math.abs(dy);
-
-        if (distance <= spikeRadius && distance > 0) {
-          blocks.push({ x: x + dx, y: y + dy, tile: tiles.AGAVE_SPIKE });
-        }
+    for (let i = 1; i <= height; i++) {
+      // Grow from 1 above base
+      if (i === height && progress > 0.95) {
+        structure.push({ x, y: y + i, z, blockId: FLOWER });
+      } else {
+        structure.push({ x, y: y + i, z, blockId: STALK });
       }
     }
   }
 
-  // Tall flower stalk when very mature
-  if (progress > 0.8) {
-    const stalkHeight = Math.ceil((progress - 0.8) * 30);
-
-    for (let i = 1; i <= stalkHeight; i++) {
-      blocks.push({ x, y: y - i, tile: tiles.AGAVE_FLOWER_STALK });
-    }
-
-    // Flowers at top
-    if (progress > 0.95) {
-      const flowerY = y - stalkHeight;
-
-      blocks.push({ x, y: flowerY, tile: tiles.AGAVE_FLOWER });
-      blocks.push({ x: x - 1, y: flowerY, tile: tiles.AGAVE_FLOWER });
-      blocks.push({ x: x + 1, y: flowerY, tile: tiles.AGAVE_FLOWER });
-    }
-  }
-
-  return blocks;
+  return structure;
 }

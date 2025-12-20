@@ -1,250 +1,290 @@
-import localForage from "localforage";
+import { I, look, mul, persp } from "../util/math.mjs";
+import { ray } from "../util/ray.mjs";
+import { meshChunk, uploadChunkMesh } from "../util/chunkMesher.mjs";
 
-import { updateBiomeUI } from "../update/ui/biome.mjs";
-import { updateCrops } from "../update/crops.mjs";
-import { updateDepthUI } from "../update/ui/depth.mjs";
+import { blocks as blockTypes } from "../state/config/blocks.mjs";
+
 import { updatePlayer } from "../update/player.mjs";
-import { updateWaterPhysics } from "../water/updateWaterPhysics.mjs";
-import { render } from "./render.mjs";
+import { updatePhysics } from "../update/physics.mjs";
+import { updateWorld } from "../update/world.mjs";
+import { updatePlantGrowth } from "../update/plantGrowth.mjs";
 
-/** @typedef {import('signal-polyfill').Signal.State} Signal.State */
-
-/** @typedef {import('../map/world.mjs').WorldMap} WorldMap */
-/** @typedef {import('../state/config/biomes.mjs').BiomeMap} BiomeMap */
-/** @typedef {import('../state/config/index.mjs').WaterPhysicsConfig} WaterPhysicsConfig */
-/** @typedef {import('../state/config/tiles.mjs').TileIdMap} TileIdMap */
-/** @typedef {import('../state/config/tiles.mjs').TileMap} TileMap */
-/** @typedef {import('../util/colors/index.mjs').TileColorMap} TileColorMap */
+/** @typedef {import("../util/ray.mjs").PointWithFace} PointWithFace */
+/** @typedef {import("../util/chunk.mjs").Chunk} Chunk */
 
 // Fixed timestep configuration
 const TARGET_FPS = 50;
-const FIXED_TIMESTEP = 1000 / TARGET_FPS; // 16.67ms per update
-const MAX_UPDATES_PER_FRAME = 20; // Prevent spiral
+const FIXED_TIMESTEP = 1000 / TARGET_FPS; // 20ms per update
+const MAX_UPDATES_PER_FRAME = 20; // Prevent spiral of death
 
 let lastFrameTime = performance.now();
 let accumulatedTime = 0;
+let animationFrameId;
 
-// Store previous state for interpolation
+// State needed for interpolation
 const previousState = {
-  player: { x: 0, y: 0 },
-  camera: { x: 0, y: 0 },
+  x: 0,
+  y: 0,
+  z: 0,
 };
 
-let scaleCache = null;
-let lastFetchTime = 0;
-
-const fetchInterval = 1000; // ms
-
-/** @returns {Promise<number>} */
-async function getScaleThrottled() {
-  const now = Date.now();
-
-  if (now - lastFetchTime > fetchInterval || scaleCache === null) {
-    scaleCache = await localForage.getItem("sprite-garden-movement-scale");
-
-    lastFetchTime = now;
-  }
-
-  return scaleCache;
-}
+let isFirstFrame = true;
 
 /**
- * Main game loop - handles fixed timestep updates and rendering
- *
- * @param {HTMLCanvasElement} cnvs - Canvas element for rendering
- * @param {typeof globalThis} gThis - Global window object
- * @param {ShadowRoot} shadow - Shadow DOM root
- * @param {HTMLDivElement} biomeEl - Biome UI element
- * @param {HTMLDivElement} depthEl - Depth UI element
- * @param {TileIdMap} tileNameByIdMap - Map of tile IDs to names
- * @param {TileColorMap} tileColorMap - Map of tile names to colors
- * @param {BiomeMap} biomes - Array of biome configurations
- * @param {Signal.State} fogMode - Fog rendering mode
- * @param {Signal.State} fogScale - Fog scale factor
- * @param {number} friction - Player friction coefficient
- * @param {number} gravity - Gravity value
- * @param {Signal.State} isFogScaled - Whether fog is scaled
- * @param {number} maxFallSpeed - Maximum fall speed for player
- * @param {number} surfaceLevel - World surface level in tiles
- * @param {number} tileSize - Size of each tile in pixels
- * @param {TileMap} tiles - Map of all tile definitions
- * @param {WaterPhysicsConfig} waterPhysicsConfig - Water physics configuration
- * @param {number} worldHeight - Total world height in tiles
- * @param {number} worldWidth - Total world width in tiles
- * @param {Signal.State} worldSeed - Seed for world generation
- * @param {Signal.State} camera - Camera position state
- * @param {Signal.State} exploredMap - Map of explored tiles
- * @param {Signal.State} gameTime - Current game time state
- * @param {Signal.State} growthTimers - Growth timers for crops
- * @param {Signal.State} plantStructures - Plant structure data
- * @param {Signal.State} player - Player state
- * @param {Signal.State} shouldReset - Reset flag state
- * @param {Signal.State} viewMode - Current view mode state
- * @param {Signal.State} waterPhysicsQueue - Queue for water physics updates
- * @param {Signal.State} world - World state with tile methods
- *
- * @returns {Promise<void>}
+ * Linear interpolation
+ * @param {number} start
+ * @param {number} end
+ * @param {number} t
  */
-export async function gameLoop(
-  cnvs,
-  gThis,
-  shadow,
-  biomeEl,
-  depthEl,
-  tileNameByIdMap,
-  tileColorMap,
-  biomes,
-  fogMode,
-  fogScale,
-  friction,
-  gravity,
-  isFogScaled,
-  maxFallSpeed,
-  surfaceLevel,
-  tileSize,
-  tiles,
-  waterPhysicsConfig,
-  worldHeight,
-  worldWidth,
-  worldSeed,
-  camera,
-  exploredMap,
-  gameTime,
-  growthTimers,
-  plantStructures,
-  player,
-  shouldReset,
-  viewMode,
-  waterPhysicsQueue,
-  world,
-) {
-  if (shouldReset.get()) {
-    shouldReset.set(false);
+const lerp = (start, end, t) => start + (end - start) * t;
 
+/**
+ * Draw a chunk mesh.
+ *
+ * @param {WebGL2RenderingContext} gl
+ * @param {Chunk} chunk
+ * @param {Float32Array} VP - View-projection matrix
+ * @param {WebGLUniformLocation} uMVP
+ * @param {WebGLUniformLocation} uM
+ */
+function drawChunkMesh(gl, chunk, VP, uMVP, uM) {
+  const mesh = chunk.mesh;
+  if (!mesh || mesh.vertexCount === 0) {
     return;
   }
 
-  const currentTime = performance.now();
-  const frameTime = Math.min(currentTime - lastFrameTime, 250);
+  // Bind position buffer
+  gl.bindBuffer(gl.ARRAY_BUFFER, mesh.positionBuffer);
+  gl.enableVertexAttribArray(0);
+  gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
 
+  // Bind normal buffer
+  gl.bindBuffer(gl.ARRAY_BUFFER, mesh.normalBuffer);
+  gl.enableVertexAttribArray(1);
+  gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 0, 0);
+
+  // Bind color buffer
+  gl.bindBuffer(gl.ARRAY_BUFFER, mesh.colorBuffer);
+  gl.enableVertexAttribArray(2);
+  gl.vertexAttribPointer(2, 4, gl.FLOAT, false, 0, 0);
+
+  // Set uniforms - identity model matrix since positions are in world space
+  const M = I();
+  gl.uniformMatrix4fv(uMVP, false, VP);
+  gl.uniformMatrix4fv(uM, false, M);
+
+  // Draw solid geometry
+  gl.drawArrays(gl.TRIANGLES, 0, mesh.vertexCount);
+}
+
+/**
+ * Draw crosshairs in screen center.
+ *
+ * @param {WebGL2RenderingContext} gl
+ * @param {HTMLCanvasElement} cnvs
+ */
+function drawCrosshairs(gl, cnvs) {
+  // Switch to 2D overlay mode
+  gl.disable(gl.DEPTH_TEST);
+
+  // Use simple 2D rendering with WebGL
+  const cx = cnvs.width / 2;
+  const cy = cnvs.height / 2;
+  const size = 10;
+  const thickness = 2;
+
+  // Create a simple 2D crosshair using scissor test and clear
+  gl.enable(gl.SCISSOR_TEST);
+
+  // Set crosshair color (white with some transparency)
+  gl.clearColor(1.0, 1.0, 1.0, 0.8);
+
+  // Horizontal line
+  gl.scissor(cx - size, cy - thickness / 2, size * 2, thickness);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+
+  // Vertical line
+  gl.scissor(cx - thickness / 2, cy - size, thickness, size * 2);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+
+  gl.disable(gl.SCISSOR_TEST);
+
+  // Reset for next frame
+  gl.enable(gl.DEPTH_TEST);
+}
+
+/**
+ * @param {ShadowRoot} shadow
+ * @param {HTMLCanvasElement} cnvs
+ * @param {Object} gameState
+ * @param {Object} gameConfig
+ * @param {Object} ui
+ * @param {WebGL2RenderingContext} gl
+ * @param {Object} cbuf
+ * @param {Object} cube
+ * @param {Object} uL
+ * @param {Object} uM
+ * @param {Object} uMVP
+ */
+export function gameLoop(
+  shadow,
+  cnvs,
+  gameState,
+  gameConfig,
+  ui,
+  gl,
+  cbuf,
+  cube,
+  uL,
+  uM,
+  uMVP,
+) {
+  // Initialize gameTime if missing
+  if (typeof gameState.gameTime === "undefined") {
+    gameState.gameTime = 0;
+  }
+
+  // Initialize previous state on first run
+  if (isFirstFrame) {
+    previousState.x = gameState.x;
+    previousState.y = gameState.y;
+    previousState.z = gameState.z;
+    isFirstFrame = false;
+  }
+
+  const { pitch, yaw, world } = gameState;
+
+  /* ================= Time Management ================= */
+  const currentTime = performance.now();
+  // Cap frame time to prevent spirals (e.g. if tab was backgrounded)
+  const frameTime = Math.min(currentTime - lastFrameTime, 250);
   lastFrameTime = currentTime;
+
   accumulatedTime += frameTime;
 
-  // Fixed timestep updates - run physics at consistent rate
+  /* ================= Fixed Timestep Updates ================= */
   let updates = 0;
+  const dtSeconds = FIXED_TIMESTEP / 1000;
 
   while (accumulatedTime >= FIXED_TIMESTEP && updates < MAX_UPDATES_PER_FRAME) {
-    // Store previous state before update
-    const currentPlayer = player.get();
-    const currentCamera = camera.get();
+    // Store state before update for interpolation
+    previousState.x = gameState.x;
+    previousState.y = gameState.y;
+    previousState.z = gameState.z;
 
-    previousState.player.x = currentPlayer.x;
-    previousState.player.y = currentPlayer.y;
-    previousState.camera.x = currentCamera.x;
-    previousState.camera.y = currentCamera.y;
+    updateWorld(gameState);
+    updatePlayer(shadow, gameState, dtSeconds);
+    const newPos = updatePhysics(shadow, ui, gameState, dtSeconds);
+    updatePlantGrowth(gameState);
 
-    // Update game logic at fixed timestep
-    updatePlayer(
-      friction,
-      gravity,
-      maxFallSpeed,
-      tileSize,
-      worldHeight,
-      worldWidth,
-      world,
-      camera,
-      player,
-      cnvs,
-      shadow,
-      await getScaleThrottled(),
-    );
-
-    updateCrops(
-      growthTimers,
-      plantStructures,
-      tiles,
-      world,
-      worldHeight,
-      worldWidth,
-    );
-
-    updateWaterPhysics(
-      tiles,
-      waterPhysicsConfig,
-      waterPhysicsQueue,
-      world,
-      worldHeight,
-      worldWidth,
-    );
-
-    updateBiomeUI(biomeEl, player, biomes, tileSize, worldWidth, worldSeed);
-    updateDepthUI(depthEl, player, surfaceLevel, tileSize);
+    // Apply physics results
+    gameState.x = newPos.x;
+    gameState.y = newPos.y;
+    gameState.z = newPos.z;
 
     // Advance game time
-    gameTime.set(gameTime.get() + FIXED_TIMESTEP / 1000);
+    gameState.gameTime += dtSeconds;
 
     accumulatedTime -= FIXED_TIMESTEP;
     updates++;
   }
 
-  // Calculate interpolation factor for smooth rendering
-  const interpolation = accumulatedTime / FIXED_TIMESTEP;
+  /* ================= Rendering with Interpolation ================= */
 
-  render(
-    cnvs,
-    player,
-    camera,
-    tiles,
-    tileSize,
-    viewMode,
+  // Calculate interpolation factor (0.0 to 1.0)
+  const alpha = accumulatedTime / FIXED_TIMESTEP;
+
+  // Interpolate camera position
+  const renderX = lerp(previousState.x, gameState.x, alpha);
+  const renderY = lerp(previousState.y, gameState.y, alpha);
+  const renderZ = lerp(previousState.z, gameState.z, alpha);
+
+  // Calculate eye position for rendering (approx 1.62m above feet)
+  // gameState.playerHeight usually around 1.8? Assuming feet position logic
+  // If gameState.y is center of AABB, logic might differ.
+  // Original code: const eyeY = gameState.y - gameState.playerHeight / 2 + 1.62;
+  const eyeY = renderY - gameState.playerHeight / 2 + 1.62;
+
+  // Raycasting depends on actual game logic state OR interpolated state?
+  // Visual raycast should match visual cursor. Physics raycast (action) should match logic.
+  // Usually, for "looking at", we use interpolated position so it matches what user sees.
+  gameState.hit = ray(
     world,
-    worldHeight,
-    worldWidth,
-    fogMode,
-    isFogScaled,
-    fogScale,
-    exploredMap,
-    previousState,
-    interpolation,
-    tileColorMap,
-    tileNameByIdMap,
+    { x: renderX, y: eyeY, z: renderZ },
+    { yaw, pitch },
   );
 
-  // Continue game loop
-  requestAnimationFrame(
-    async () =>
-      await gameLoop(
-        cnvs,
-        gThis,
-        shadow,
-        biomeEl,
-        depthEl,
-        tileNameByIdMap,
-        tileColorMap,
-        biomes,
-        fogMode,
-        fogScale,
-        friction,
-        gravity,
-        isFogScaled,
-        maxFallSpeed,
-        surfaceLevel,
-        tileSize,
-        tiles,
-        waterPhysicsConfig,
-        worldHeight,
-        worldWidth,
-        worldSeed,
-        camera,
-        exploredMap,
-        gameTime,
-        growthTimers,
-        plantStructures,
-        player,
-        shouldReset,
-        viewMode,
-        waterPhysicsQueue,
-        world,
-      ),
+  gl.viewport(0, 0, cnvs.width, cnvs.height);
+  gl.enable(gl.DEPTH_TEST);
+  gl.clearColor(0.5, 0.8, 1, 1);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+  const fx = Math.sin(yaw),
+    fz = Math.cos(yaw);
+  const cosPitch = Math.cos(pitch);
+
+  // Use client dimensions for aspect ratio to handle CSS scaling vs internal resolution
+  const aspect = cnvs.clientWidth / cnvs.clientHeight;
+  const P = persp(I(), Math.PI / 3, aspect, 0.1, 100);
+
+  const V = look(
+    I(),
+    [renderX, eyeY, renderZ],
+    [renderX + fx * cosPitch, eyeY + Math.sin(pitch), renderZ + fz * cosPitch],
+    [0, 1, 0],
   );
+
+  const VP = mul(I(), P, V);
+
+  gl.uniform3f(uL, -0.5, -1, -0.3);
+
+  // Render chunks with face-culled meshes
+  // Note: getVisibleChunks might need consistent position.
+  // Using interpolated position for visibility culling is fine (prevents popping).
+  const visibleChunks = world.getVisibleChunks(renderX, renderZ);
+
+  for (const chunk of visibleChunks) {
+    // Rebuild mesh if dirty
+    if (chunk.dirty) {
+      chunk.mesh = meshChunk(
+        chunk,
+        world,
+        /** @type {{ name: string; color: [number, number, number, number]; }[]} */
+        (blockTypes),
+      );
+      chunk.dirty = false;
+
+      uploadChunkMesh(gl, chunk);
+    }
+
+    // Draw the chunk mesh
+    if (chunk.mesh && chunk.mesh.vertexCount > 0) {
+      drawChunkMesh(gl, chunk, VP, uMVP, uM);
+    }
+  }
+
+  // Draw crosshairs overlay
+  drawCrosshairs(gl, cnvs);
+
+  animationFrameId = requestAnimationFrame(() =>
+    gameLoop(
+      shadow,
+      cnvs,
+      gameState,
+      gameConfig,
+      ui,
+      gl,
+      cbuf,
+      cube,
+      uL,
+      uM,
+      uMVP,
+    ),
+  );
+}
+
+export function cancelGameLoop() {
+  if (animationFrameId) {
+    cancelAnimationFrame(animationFrameId);
+  }
 }

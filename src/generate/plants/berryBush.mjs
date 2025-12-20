@@ -1,67 +1,41 @@
-/** @typedef {import('../../state/config/tiles.mjs').TileMap} TileMap */
+import { blockNames } from "../../state/config/blocks.mjs";
 
-/**
- * @param {number} x
- * @param {number} y
- * @param {number} progress
- * @param {TileMap} tiles
- *
- * @returns {{ x: any; y: any; tile: any; }[]}
- */
-export function generateBerryBushStructure(x, y, progress, tiles) {
-  const blocks = [];
+export function generateBerryBushStructure(x, y, z, progress, blocks) {
+  const structure = [];
+  const getBlockId = (name) => blocks.findIndex((b) => b.name === name);
 
-  // Early stage
-  if (progress < 0.1) {
-    blocks.push({ x, y, tile: tiles.BERRY_BUSH_GROWING });
+  const GROWING = getBlockId(blockNames.BERRY_BUSH_GROWING);
+  const BRANCH = getBlockId(blockNames.BERRY_BUSH_BRANCH);
+  const LEAVES = getBlockId(blockNames.BERRY_BUSH_LEAVES);
+  const BERRIES = getBlockId(blockNames.BERRY_BUSH_BERRIES);
 
-    return blocks;
+  if (progress < 0.2) {
+    structure.push({ x, y, z, blockId: GROWING });
+    return structure;
   }
 
-  const maxHeight = 3;
-  const currentHeight = Math.max(1, Math.ceil(maxHeight * progress));
+  // Small bush structure
+  // Center branch
+  structure.push({ x, y, z, blockId: BRANCH });
 
-  // Central branches
-  for (let i = 0; i < currentHeight; i++) {
-    blocks.push({ x, y: y - i, tile: tiles.BERRY_BUSH_BRANCH });
+  if (progress > 0.4) {
+    // Leaves around
+    structure.push({ x: x + 1, y, z, blockId: LEAVES });
+    structure.push({ x: x - 1, y, z, blockId: LEAVES });
+    structure.push({ x, y, z: z + 1, blockId: LEAVES });
+    structure.push({ x, y, z: z - 1, blockId: LEAVES });
+
+    // Top leaves
+    structure.push({ x, y: y + 1, z, blockId: LEAVES });
   }
 
-  // Add leaves when growing
-  if (progress > 0.3) {
-    const topY = y - currentHeight;
-    const leafRadius = Math.min(2, Math.ceil((progress - 0.3) * 3));
-
-    for (let dx = -leafRadius; dx <= leafRadius; dx++) {
-      for (let dy = 0; dy <= leafRadius; dy++) {
-        const leafX = x + dx;
-
-        const leafY = topY + dy;
-
-        const distance = Math.abs(dx) + Math.abs(dy);
-
-        if (distance <= leafRadius && distance > 0) {
-          blocks.push({ x: leafX, y: leafY, tile: tiles.BERRY_BUSH_LEAVES });
-        }
-      }
-    }
-  }
-
-  // Add berries when mature
   if (progress > 0.8) {
-    const topY = y - currentHeight;
-
-    if (Math.random() < 0.6)
-      blocks.push({ x: x - 1, y: topY + 1, tile: tiles.BERRY_BUSH_BERRIES });
-
-    if (Math.random() < 0.6)
-      blocks.push({ x: x + 1, y: topY + 1, tile: tiles.BERRY_BUSH_BERRIES });
-
-    if (Math.random() < 0.6)
-      blocks.push({ x: x - 1, y: topY, tile: tiles.BERRY_BUSH_BERRIES });
-
-    if (Math.random() < 0.6)
-      blocks.push({ x: x + 1, y: topY, tile: tiles.BERRY_BUSH_BERRIES });
+    // Berries on outside
+    structure.push({ x: x + 1, y: y + 1, z, blockId: BERRIES });
+    structure.push({ x: x - 1, y: y + 1, z, blockId: BERRIES });
+    structure.push({ x, y: y + 1, z: z + 1, blockId: BERRIES });
+    structure.push({ x, y: y + 1, z: z - 1, blockId: BERRIES });
   }
 
-  return blocks;
+  return structure;
 }

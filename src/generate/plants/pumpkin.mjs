@@ -1,65 +1,37 @@
-/** @typedef {import('../../state/config/tiles.mjs').TileMap} TileMap */
+import { blockNames } from "../../state/config/blocks.mjs";
 
-/**
- * @param {number} x
- * @param {number} y
- * @param {number} progress
- * @param {TileMap} tiles
- *
- * @returns {{ x: any; y: any; tile: any; }[]}
- */
-export function generatePumpkinStructure(x, y, progress, tiles) {
-  const blocks = [];
+export function generatePumpkinStructure(x, y, z, progress, blocks) {
+  const structure = [];
+  const getBlockId = (name) => blocks.findIndex((b) => b.name === name);
 
-  // Early stage
-  if (progress < 0.1) {
-    blocks.push({ x, y, tile: tiles.PUMPKIN_GROWING });
+  const GROWING = getBlockId(blockNames.PUMPKIN_GROWING);
+  const VINE = getBlockId(blockNames.PUMPKIN_VINE);
+  const STEM = getBlockId(blockNames.PUMPKIN_STEM);
+  const LEAVES = getBlockId(blockNames.PUMPKIN_LEAVES);
+  const FRUIT = getBlockId(blockNames.PUMPKIN_FRUIT);
 
-    return blocks;
+  if (progress < 0.2) {
+    structure.push({ x, y, z, blockId: GROWING });
+    return structure;
   }
 
-  // Vines spread along ground
-  if (progress > 0.2) {
-    const vineLength = Math.ceil(progress * 3);
+  // Vine grows
+  structure.push({ x, y, z, blockId: STEM });
 
-    for (let i = 0; i < vineLength; i++) {
-      blocks.push({ x: x + i, y, tile: tiles.PUMPKIN_VINE });
-      blocks.push({ x: x - i, y, tile: tiles.PUMPKIN_VINE });
-    }
-  }
-
-  // Add leaves along vines
+  // Spreads
   if (progress > 0.4) {
-    const leafSpacing = 2;
-    const vineLength = Math.ceil(progress * 3);
-
-    for (let i = leafSpacing; i < vineLength; i += leafSpacing) {
-      blocks.push({ x: x + i, y: y - 1, tile: tiles.PUMPKIN_LEAVES });
-      blocks.push({ x: x - i, y: y - 1, tile: tiles.PUMPKIN_LEAVES });
-    }
+    structure.push({ x: x + 1, y, z, blockId: VINE });
   }
 
-  // Pumpkin fruit grows
   if (progress > 0.6) {
-    const fruitSize = Math.ceil((progress - 0.6) * 5);
-
-    blocks.push({ x, y, tile: tiles.PUMPKIN_FRUIT });
-
-    if (fruitSize > 1) {
-      blocks.push({ x: x + 1, y, tile: tiles.PUMPKIN_FRUIT });
-      blocks.push({ x: x - 1, y, tile: tiles.PUMPKIN_FRUIT });
-    }
-
-    if (fruitSize > 2) {
-      blocks.push({ x: x + 1, y: y + 1, tile: tiles.PUMPKIN_FRUIT });
-      blocks.push({ x: x - 1, y: y + 1, tile: tiles.PUMPKIN_FRUIT });
-    }
+    structure.push({ x: x + 1, y: y + 1, z, blockId: LEAVES });
   }
 
-  // Add stem when mature
-  if (progress > 0.9) {
-    blocks.push({ x, y: y - 1, tile: tiles.PUMPKIN_STEM });
+  if (progress > 0.8) {
+    // Pumpkin on the vine
+    // x+2?
+    structure.push({ x: x + 2, y, z, blockId: FRUIT });
   }
 
-  return blocks;
+  return structure;
 }

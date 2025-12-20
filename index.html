@@ -1,16 +1,16 @@
 <!doctype html>
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
   <head>
+    <title>Block Garden</title>
     <base href="/" />
-    <title>Sprite Garden</title>
     <meta charset="utf-8" />
     <meta
-      content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
       name="viewport"
     />
     <meta
       name="description"
-      content="Sprite Garden - A 2D sandbox exploration and farming game. Explore procedurally generated worlds, discover different biomes, mine resources, and cultivate a variety of crops."
+      content="Block Garden - A 3D sandbox exploration and farming game. Explore procedurally generated worlds, dig for resources, and cultivate a variety of plants."
     />
     <meta name="theme-color" content="#000000" />
     <link rel="manifest" href="manifest.json" />
@@ -19,24 +19,23 @@
     <style>
       * {
         -webkit-tap-highlight-color: transparent;
-
         box-sizing: border-box;
+        font-family: Arial, sans-serif;
       }
 
       body {
-        background: var(--sg-color-black, #000);
-        font-family: Arial, sans-serif;
+        background: var(--bg-color-black, #000);
+        color: var(--bg-color-white, #fff);
         margin: 0;
         overflow: hidden;
         padding: 0;
-        touch-action: manipulation;
       }
     </style>
     <script type="importmap">
       {
         "imports": {
           "alea": "https://cdn.jsdelivr.net/npm/alea@1.0.1/+esm",
-          "konami-code-js": "https://cdn.jsdelivr.net/npm/konami-code-js@0.8.3/+esm",
+          "hammerjs": "https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/+esm",
           "localforage": "https://cdn.jsdelivr.net/npm/localforage@1.10.0/+esm",
           "signal-polyfill": "https://cdn.jsdelivr.net/npm/signal-polyfill@0.2.2/+esm",
           "simplex-noise": "https://cdn.jsdelivr.net/npm/simplex-noise@4.0.3/+esm",
@@ -44,10 +43,10 @@
         }
       }
     </script>
-    <script src="service-worker/init.mjs" type="module"></script>
   </head>
+
   <body>
-    <sprite-garden></sprite-garden>
+    <block-garden></block-garden>
 
     <script type="module" src="./index.mjs"></script>
   </body>

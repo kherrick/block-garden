@@ -11,12 +11,12 @@ jest.unstable_mockModule("./src/init/game.mjs", () => ({
 jest.spyOn(console, "info").mockImplementation(() => {});
 
 // Import after mocks
-const { SpriteGarden, tagName } = await import("./index.mjs");
+const { BlockGarden, tagName } = await import("./index.mjs");
 
-describe("sprite-garden web component", () => {
+describe("block-garden web component", () => {
   beforeAll(() => {
     if (!customElements.get(tagName)) {
-      customElements.define(tagName, SpriteGarden);
+      customElements.define(tagName, BlockGarden);
     }
   });
 

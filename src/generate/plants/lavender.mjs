@@ -1,59 +1,47 @@
-/** @typedef {import('../../state/config/tiles.mjs').TileMap} TileMap */
+import { blockNames } from "../../state/config/blocks.mjs";
 
-/**
- * @param {number} x
- * @param {number} y
- * @param {number} progress
- * @param {TileMap} tiles
- *
- * @returns {{ x: any; y: any; tile: any; }[]}
- */
-export function generateLavenderStructure(x, y, progress, tiles) {
-  const blocks = [];
+export function generateLavenderStructure(x, y, z, progress, blocks) {
+  const structure = [];
+  const getBlockId = (name) => blocks.findIndex((b) => b.name === name);
 
-  // Early stage
-  if (progress < 0.1) {
-    blocks.push({ x, y, tile: tiles.LAVENDER_GROWING });
+  const GROWING = getBlockId(blockNames.LAVENDER_GROWING);
+  const BUSH = getBlockId(blockNames.LAVENDER_BUSH);
+  const STEM = getBlockId(blockNames.LAVENDER_STEM);
+  const FLOWERS = getBlockId(blockNames.LAVENDER_FLOWERS);
 
-    return blocks;
+  if (progress < 0.2) {
+    structure.push({ x, y, z, blockId: GROWING });
+    return structure;
   }
 
-  const maxHeight = 2;
-  const currentHeight = Math.max(1, Math.ceil(maxHeight * progress));
+  // Bush base
+  structure.push({ x, y, z, blockId: BUSH });
 
-  // Build bushy base
-  if (progress > 0.2) {
-    blocks.push({ x, y, tile: tiles.LAVENDER_BUSH });
-
-    if (progress > 0.4) {
-      blocks.push({ x: x - 1, y, tile: tiles.LAVENDER_BUSH });
-      blocks.push({ x: x + 1, y, tile: tiles.LAVENDER_BUSH });
-    }
+  if (progress > 0.4) {
+    // Small spread
+    structure.push({ x: x + 1, y, z, blockId: BUSH });
+    structure.push({ x: x - 1, y, z, blockId: BUSH });
+    structure.push({ x, y, z: z + 1, blockId: BUSH });
+    structure.push({ x, y, z: z - 1, blockId: BUSH });
   }
 
-  // Stems rise from bush
-  if (progress > 0.5) {
-    for (let i = 1; i <= currentHeight; i++) {
-      blocks.push({ x, y: y - i, tile: tiles.LAVENDER_STEM });
-
-      if (progress > 0.7 && i === currentHeight) {
-        blocks.push({ x: x - 1, y: y - i, tile: tiles.LAVENDER_STEM });
-        blocks.push({ x: x + 1, y: y - i, tile: tiles.LAVENDER_STEM });
-      }
-    }
+  if (progress > 0.6) {
+    // Stems rising
+    structure.push({ x, y: y + 1, z, blockId: STEM });
+    structure.push({ x: x + 1, y: y + 1, z, blockId: STEM });
+    structure.push({ x: x - 1, y: y + 1, z, blockId: STEM });
+    structure.push({ x, y: y + 1, z: z + 1, blockId: STEM });
+    structure.push({ x, y: y + 1, z: z - 1, blockId: STEM });
   }
 
-  // Purple flowers crown the stems
-  if (progress > 0.75) {
-    const topY = y - currentHeight;
-
-    blocks.push({ x, y: topY, tile: tiles.LAVENDER_FLOWERS });
-
-    if (progress > 0.85) {
-      blocks.push({ x: x - 1, y: topY, tile: tiles.LAVENDER_FLOWERS });
-      blocks.push({ x: x + 1, y: topY, tile: tiles.LAVENDER_FLOWERS });
-    }
+  if (progress > 0.8) {
+    // Flowers on top
+    structure.push({ x, y: y + 2, z, blockId: FLOWERS });
+    structure.push({ x: x + 1, y: y + 2, z, blockId: FLOWERS });
+    structure.push({ x: x - 1, y: y + 2, z, blockId: FLOWERS });
+    structure.push({ x, y: y + 2, z: z + 1, blockId: FLOWERS });
+    structure.push({ x, y: y + 2, z: z - 1, blockId: FLOWERS });
   }
 
-  return blocks;
+  return structure;
 }

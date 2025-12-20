@@ -1,48 +1,36 @@
-/** @typedef {import('../../state/config/tiles.mjs').TileMap} TileMap */
+import { blockNames } from "../../state/config/blocks.mjs";
 
-/**
- * @param {number} x
- * @param {number} y
- * @param {number} progress
- * @param {TileMap} tiles
- *
- * @returns {{ x: any; y: any; tile: any; }[]}
- */
-export function generateBambooStructure(x, y, progress, tiles) {
-  const blocks = [];
+export function generateBambooStructure(x, y, z, progress, blocks) {
+  const structure = [];
+  const getBlockId = (name) => blocks.findIndex((b) => b.name === name);
 
-  // Early stage
+  const GROWING = getBlockId(blockNames.BAMBOO_GROWING);
+  const STALK = getBlockId(blockNames.BAMBOO_STALK);
+  const JOINT = getBlockId(blockNames.BAMBOO_JOINT);
+  const LEAVES = getBlockId(blockNames.BAMBOO_LEAVES);
+
   if (progress < 0.1) {
-    blocks.push({ x, y, tile: tiles.BAMBOO_GROWING });
-
-    return blocks;
+    structure.push({ x, y, z, blockId: GROWING });
+    return structure;
   }
 
-  const maxHeight = 7;
-  const currentHeight = Math.max(1, Math.ceil(maxHeight * progress));
+  const maxHeight = 8;
+  const height = Math.floor(maxHeight * progress);
 
-  // Build bamboo stalk with joints
-  for (let i = 0; i < currentHeight; i++) {
-    // Every 2 blocks is a joint
-    if (i % 2 === 0) {
-      blocks.push({ x, y: y - i, tile: tiles.BAMBOO_JOINT });
-    } else {
-      blocks.push({ x, y: y - i, tile: tiles.BAMBOO_STALK });
+  for (let i = 0; i < height; i++) {
+    // Every 3rd block is a joint? Or just random?
+    // Block Garden might have specific logic but let's do a pattern.
+    const isJoint = i % 3 === 2;
+    structure.push({ x, y: y + i, z, blockId: isJoint ? JOINT : STALK });
+
+    // Leaves at joints
+    if (isJoint && i < height - 1) {
+      // Not at very top? Or yes?
+      // Leaves stick out
+      structure.push({ x: x + 1, y: y + i, z, blockId: LEAVES });
+      structure.push({ x: x - 1, y: y + i, z, blockId: LEAVES });
     }
   }
 
-  // Add leaves at top when more grown
-  if (progress > 0.5) {
-    const topY = y - currentHeight;
-
-    blocks.push({ x: x - 1, y: topY, tile: tiles.BAMBOO_LEAVES });
-    blocks.push({ x: x + 1, y: topY, tile: tiles.BAMBOO_LEAVES });
-
-    if (progress > 0.7) {
-      blocks.push({ x: x - 1, y: topY + 1, tile: tiles.BAMBOO_LEAVES });
-      blocks.push({ x: x + 1, y: topY + 1, tile: tiles.BAMBOO_LEAVES });
-    }
-  }
-
-  return blocks;
+  return structure;
 }

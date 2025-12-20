@@ -1,52 +1,43 @@
-/** @typedef {import('../../state/config/tiles.mjs').TileMap} TileMap */
+import { blockNames } from "../../state/config/blocks.mjs";
 
-/**
- * @param {number} x
- * @param {number} y
- * @param {number} progress
- * @param {TileMap} tiles
- *
- * @returns {{ x: any; y: any; tile: any; }[]}
- */
-export function generateCornStructure(x, y, progress, tiles) {
-  const blocks = [];
+export function generateCornStructure(x, y, z, progress, blocks) {
+  const structure = [];
+  const getBlockId = (name) => blocks.findIndex((b) => b.name === name);
 
-  // Early stage
-  if (progress < 0.1) {
-    blocks.push({ x, y, tile: tiles.CORN_GROWING });
+  const GROWING = getBlockId(blockNames.CORN_GROWING);
+  const STALK = getBlockId(blockNames.CORN_STALK);
+  const LEAVES = getBlockId(blockNames.CORN_LEAVES);
+  const EAR = getBlockId(blockNames.CORN_EAR);
+  const SILK = getBlockId(blockNames.CORN_SILK);
 
-    return blocks;
+  if (progress < 0.2) {
+    structure.push({ x, y, z, blockId: GROWING });
+    return structure;
   }
 
-  const maxHeight = 4;
-  const currentHeight = Math.max(1, Math.ceil(maxHeight * progress));
+  const height = 2; // Corn is 2 blocks tall usually
 
-  // Stalk
-  for (let i = 0; i < currentHeight; i++) {
-    blocks.push({ x, y: y - i, tile: tiles.CORN_STALK });
-  }
+  // Bottom Stalk
+  structure.push({ x, y, z, blockId: STALK });
 
-  // Add leaves as it grows
   if (progress > 0.4) {
-    for (let i = 1; i < currentHeight; i++) {
-      if (i % 2 === 1) {
-        blocks.push({ x: x - 1, y: y - i, tile: tiles.CORN_LEAVES });
-      } else {
-        blocks.push({ x: x + 1, y: y - i, tile: tiles.CORN_LEAVES });
-      }
-    }
+    // Top Stalk
+    structure.push({ x, y: y + 1, z, blockId: STALK });
   }
 
-  // Corn ear appears when mature
-  if (progress > 0.7) {
-    const earY = y - Math.floor(currentHeight * 0.6);
+  if (progress > 0.6) {
+    // Leaves and Ear
+    structure.push({ x: x + 1, y, z, blockId: LEAVES });
+    structure.push({ x: x - 1, y, z, blockId: LEAVES });
 
-    blocks.push({ x: x + 1, y: earY, tile: tiles.CORN_EAR });
-
-    if (progress > 0.85) {
-      blocks.push({ x: x + 1, y: earY - 1, tile: tiles.CORN_SILK });
-    }
+    // Ear on top stalk?
+    structure.push({ x: x + 1, y: y + 1, z, blockId: EAR });
   }
 
-  return blocks;
+  if (progress > 0.8) {
+    // Silk on top of ear
+    structure.push({ x: x + 1, y: y + 2, z, blockId: SILK });
+  }
+
+  return structure;
 }

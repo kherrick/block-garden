@@ -1,64 +1,40 @@
-/** @typedef {import('../../state/config/tiles.mjs').TileMap} TileMap */
+import { blockNames } from "../../state/config/blocks.mjs";
 
-/**
- * @param {number} x
- * @param {number} y
- * @param {number} progress
- * @param {TileMap} tiles
- *
- * @returns {{ x: any; y: any; tile: any; }[]}
- */
-export function generateRoseStructure(x, y, progress, tiles) {
-  const blocks = [];
+export function generateRoseStructure(x, y, z, progress, blocks) {
+  const structure = [];
+  const getBlockId = (name) => blocks.findIndex((b) => b.name === name);
 
-  // Early stage
-  if (progress < 0.1) {
-    blocks.push({ x, y, tile: tiles.ROSE_GROWING });
+  const GROWING = getBlockId(blockNames.ROSE_GROWING);
+  const STEM = getBlockId(blockNames.ROSE_STEM);
+  // Thorns? Could be transparent overlay or just part of stem logic?
+  // We have ROSE_THORNS block. Let's use it as base.
+  const THORNS = getBlockId(blockNames.ROSE_THORNS);
+  const LEAVES = getBlockId(blockNames.ROSE_LEAVES);
+  const BUD = getBlockId(blockNames.ROSE_BUD);
+  const BLOOM = getBlockId(blockNames.ROSE_BLOOM);
 
-    return blocks;
+  if (progress < 0.2) {
+    structure.push({ x, y, z, blockId: GROWING });
+    return structure;
   }
 
-  const maxHeight = 4;
-  const currentHeight = Math.max(1, Math.ceil(maxHeight * progress));
+  const height = 1 + Math.floor(progress * 2); // 1 to 3 blocks
 
-  // Thorny stem
-  for (let i = 0; i < currentHeight; i++) {
-    blocks.push({ x, y: y - i, tile: tiles.ROSE_STEM });
+  for (let i = 0; i < height; i++) {
+    structure.push({ x, y: y + i, z, blockId: i === 0 ? THORNS : STEM });
 
-    // Add thorns along stem
-    if (progress > 0.3 && i > 0 && i < currentHeight - 1) {
-      if (i % 2 === 0) {
-        blocks.push({ x: x - 1, y: y - i, tile: tiles.ROSE_THORNS });
-      } else {
-        blocks.push({ x: x + 1, y: y - i, tile: tiles.ROSE_THORNS });
-      }
+    if (i > 0 && i < height) {
+      // Leaves
+      if (i % 2 === 1)
+        structure.push({ x: x + 1, y: y + i, z, blockId: LEAVES });
+      else structure.push({ x: x - 1, y: y + i, z, blockId: LEAVES });
     }
   }
 
-  // Add leaves
-  if (progress > 0.4) {
-    for (let i = 1; i < currentHeight; i += 2) {
-      blocks.push({ x: x - 1, y: y - i, tile: tiles.ROSE_LEAVES });
-      blocks.push({ x: x + 1, y: y - i, tile: tiles.ROSE_LEAVES });
-    }
+  if (progress > 0.8) {
+    const top = progress > 0.95 ? BLOOM : BUD;
+    structure.push({ x, y: y + height, z, blockId: top });
   }
 
-  // Rose bud forms
-  if (progress > 0.6) {
-    const topY = y - currentHeight;
-
-    blocks.push({ x, y: topY, tile: tiles.ROSE_BUD });
-  }
-
-  // Full bloom
-  if (progress > 0.85) {
-    const topY = y - currentHeight;
-
-    blocks.push({ x, y: topY, tile: tiles.ROSE_BLOOM });
-    blocks.push({ x: x - 1, y: topY, tile: tiles.ROSE_BLOOM });
-    blocks.push({ x: x + 1, y: topY, tile: tiles.ROSE_BLOOM });
-    blocks.push({ x, y: topY - 1, tile: tiles.ROSE_BLOOM });
-  }
-
-  return blocks;
+  return structure;
 }

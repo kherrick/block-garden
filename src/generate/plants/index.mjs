@@ -14,70 +14,30 @@ import { generatePineTreeStructure } from "./pineTree.mjs";
 import { generatePumpkinStructure } from "./pumpkin.mjs";
 import { generateRoseStructure } from "./rose.mjs";
 import { generateSunflowerStructure } from "./sunflower.mjs";
-import { generateTreeStructure } from "./tree.mjs";
 import { generateTulipStructure } from "./tulip.mjs";
 import { generateWheatStructure } from "./wheat.mjs";
 import { generateWillowTreeStructure } from "./willowTree.mjs";
 
-/** @typedef {import('../../map/world.mjs').TileDefinition} TileDefinition */
-/** @typedef {import('../../state/config/tiles.mjs').TileMap} TileMap */
+import { blockNames } from "../../state/config/blocks.mjs";
 
-/**
- * @param {number} x
- * @param {number} y
- * @param {string} seedType
- * @param {number} progress
- * @param {TileMap} tiles
- *
- * @returns {{ x: number; y: number; tile: TileDefinition; }[]}
- */
-export function generatePlantStructure(x, y, seedType, progress, tiles) {
-  // Ensure progress is between 0 and 1
-  progress = Math.max(0, Math.min(1, progress));
-
-  // Different growth patterns for each plant type
-  switch (seedType) {
-    case "WHEAT":
-      return generateWheatStructure(x, y, progress, tiles);
-    case "CARROT":
-      return generateCarrotStructure(x, y, progress, tiles);
-    case "MUSHROOM":
-      return generateMushroomStructure(x, y, progress, tiles);
-    case "CACTUS":
-      return generateCactusStructure(x, y, progress, tiles);
-    case "WALNUT":
-      return generateTreeStructure(x, y, progress, tiles);
-    case "BERRY_BUSH":
-      return generateBerryBushStructure(x, y, progress, tiles);
-    case "BAMBOO":
-      return generateBambooStructure(x, y, progress, tiles);
-    case "SUNFLOWER":
-      return generateSunflowerStructure(x, y, progress, tiles);
-    case "CORN":
-      return generateCornStructure(x, y, progress, tiles);
-    case "PINE_TREE":
-      return generatePineTreeStructure(x, y, progress, tiles);
-    case "WILLOW_TREE":
-      return generateWillowTreeStructure(x, y, progress, tiles);
-    case "FERN":
-      return generateFernStructure(x, y, progress, tiles);
-    case "TULIP":
-      return generateTulipStructure(x, y, progress, tiles);
-    case "AGAVE":
-      return generateAgaveStructure(x, y, progress, tiles);
-    case "LAVENDER":
-      return generateLavenderStructure(x, y, progress, tiles);
-    case "KELP":
-      return generateKelpStructure(x, y, progress, tiles);
-    case "ROSE":
-      return generateRoseStructure(x, y, progress, tiles);
-    case "PUMPKIN":
-      return generatePumpkinStructure(x, y, progress, tiles);
-    case "LOTUS":
-      return generateLotusStructure(x, y, progress, tiles);
-    case "BIRCH":
-      return generateBirchStructure(x, y, progress, tiles);
-    default:
-      return [{ x, y, tile: tiles.WHEAT_GROWING }];
-  }
-}
+export const generators = {
+  [blockNames.AGAVE]: generateAgaveStructure,
+  [blockNames.BAMBOO]: generateBambooStructure,
+  [blockNames.BERRY_BUSH]: generateBerryBushStructure,
+  [blockNames.BIRCH]: generateBirchStructure,
+  [blockNames.CACTUS]: generateCactusStructure,
+  [blockNames.CARROT]: generateCarrotStructure,
+  [blockNames.CORN]: generateCornStructure,
+  [blockNames.FERN]: generateFernStructure,
+  [blockNames.KELP]: generateKelpStructure,
+  [blockNames.LAVENDER]: generateLavenderStructure,
+  [blockNames.LOTUS]: generateLotusStructure,
+  [blockNames.MUSHROOM]: generateMushroomStructure,
+  [blockNames.PINE_TREE]: generatePineTreeStructure,
+  [blockNames.PUMPKIN]: generatePumpkinStructure,
+  [blockNames.ROSE]: generateRoseStructure,
+  [blockNames.SUNFLOWER]: generateSunflowerStructure,
+  [blockNames.TULIP]: generateTulipStructure,
+  [blockNames.WHEAT]: generateWheatStructure,
+  [blockNames.WILLOW_TREE]: generateWillowTreeStructure,
+};

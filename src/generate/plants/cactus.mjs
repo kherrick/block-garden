@@ -1,56 +1,45 @@
-/** @typedef {import('../../state/config/tiles.mjs').TileMap} TileMap */
+import { blockNames } from "../../state/config/blocks.mjs";
 
-/**
- * @param {number} x
- * @param {number} y
- * @param {number} progress
- * @param {TileMap} tiles
- *
- * @returns {{ x: any; y: any; tile: any; }[]}
- */
-export function generateCactusStructure(x, y, progress, tiles) {
-  const blocks = [];
+export function generateCactusStructure(x, y, z, progress, blocks) {
+  const structure = [];
+  const getBlockId = (name) => blocks.findIndex((b) => b.name === name);
 
-  // Early stage
+  const GROWING = getBlockId(blockNames.CACTUS_GROWING);
+  const BODY = getBlockId(blockNames.CACTUS_BODY);
+  const FLOWER = getBlockId(blockNames.CACTUS_FLOWER);
+
   if (progress < 0.1) {
-    blocks.push({ x, y, tile: tiles.CACTUS_GROWING });
-
-    return blocks;
+    structure.push({ x, y, z, blockId: GROWING });
+    return structure;
   }
 
-  const maxHeight = 5;
-  const currentHeight = Math.max(1, Math.ceil(maxHeight * progress));
+  const maxHeight = 4;
+  const height = Math.max(1, Math.floor(maxHeight * progress));
 
-  // Main body (vertical column)
-  for (let i = 0; i < currentHeight; i++) {
-    blocks.push({ x, y: y - i, tile: tiles.CACTUS_BODY });
+  // Trunk
+  for (let i = 0; i < height; i++) {
+    structure.push({ x, y: y + i, z, blockId: BODY });
   }
 
-  // Add left arm when sufficiently grown
-  if (progress > 0.4 && currentHeight > 2) {
-    const leftArmY = y - Math.floor(currentHeight * 0.6);
-    blocks.push({ x: x - 1, y: leftArmY, tile: tiles.CACTUS_BODY });
+  // Arms
+  if (progress > 0.4 && height > 2) {
+    structure.push({ x: x + 1, y: y + 1, z, blockId: BODY });
+    structure.push({ x: x + 1, y: y + 2, z, blockId: BODY });
+  }
+  if (progress > 0.6 && height > 2) {
+    structure.push({ x: x - 1, y: y + 2, z, blockId: BODY });
+    structure.push({ x: x - 1, y: y + 3, z, blockId: BODY });
+  }
 
-    if (progress > 0.6) {
-      blocks.push({ x: x - 1, y: leftArmY - 1, tile: tiles.CACTUS_BODY });
+  // Flower
+  if (progress > 0.9) {
+    structure.push({ x, y: y + height, z, blockId: FLOWER });
+    if (progress > 0.95) {
+      // Flowers on arms?
+      structure.push({ x: x + 1, y: y + 3, z, blockId: FLOWER });
+      structure.push({ x: x - 1, y: y + 4, z, blockId: FLOWER });
     }
   }
 
-  // Add right arm
-  if (progress > 0.5 && currentHeight > 3) {
-    const rightArmY = y - Math.floor(currentHeight * 0.7);
-    blocks.push({ x: x + 1, y: rightArmY, tile: tiles.CACTUS_BODY });
-
-    if (progress > 0.7) {
-      blocks.push({ x: x + 1, y: rightArmY - 1, tile: tiles.CACTUS_BODY });
-    }
-  }
-
-  // Flowers on top if fully mature
-  if (progress > 0.95) {
-    const topY = y - currentHeight;
-    blocks.push({ x, y: topY, tile: tiles.CACTUS_FLOWER });
-  }
-
-  return blocks;
+  return structure;
 }

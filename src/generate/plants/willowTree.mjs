@@ -1,80 +1,50 @@
-/** @typedef {import('../../state/config/tiles.mjs').TileMap} TileMap */
+import { blockNames } from "../../state/config/blocks.mjs";
 
-/**
- * @param {number} x
- * @param {number} y
- * @param {number} progress
- * @param {TileMap} tiles
- *
- * @returns {{ x: any; y: any; tile: any; }[]}
- */
-export function generateWillowTreeStructure(x, y, progress, tiles) {
-  const blocks = [];
+export function generateWillowTreeStructure(x, y, z, progress, blocks) {
+  const structure = [];
+  const getBlockId = (name) => blocks.findIndex((b) => b.name === name);
 
-  // Early stage
+  const GROWING = getBlockId(blockNames.WILLOW_TREE_GROWING);
+  const TRUNK = getBlockId(blockNames.WILLOW_TRUNK);
+  const BRANCHES = getBlockId(blockNames.WILLOW_BRANCHES);
+  const LEAVES = getBlockId(blockNames.WILLOW_LEAVES);
+
   if (progress < 0.1) {
-    blocks.push({ x, y, tile: tiles.WILLOW_TREE_GROWING });
-
-    return blocks;
+    structure.push({ x, y, z, blockId: GROWING });
+    return structure;
   }
 
-  const maxHeight = 6;
-  const currentHeight = Math.max(1, Math.ceil(maxHeight * progress));
+  const maxHeight = 5;
+  const height = Math.floor(maxHeight * progress);
 
   // Trunk
-  for (let i = 0; i < currentHeight; i++) {
-    blocks.push({ x, y: y - i, tile: tiles.WILLOW_TRUNK });
+  for (let i = 0; i < height; i++) {
+    structure.push({ x, y: y + i, z, blockId: TRUNK });
   }
 
-  // Drooping branches when growing
-  if (progress > 0.3) {
-    const topY = y - currentHeight;
-    const branchLength = Math.ceil(progress * 4);
+  if (progress > 0.6) {
+    const crownY = y + height;
+    // Branches spread out
+    structure.push({ x: x + 1, y: crownY, z, blockId: BRANCHES });
+    structure.push({ x: x - 1, y: crownY, z, blockId: BRANCHES });
+    structure.push({ x, y: crownY, z: z + 1, blockId: BRANCHES });
+    structure.push({ x, y: crownY, z: z - 1, blockId: BRANCHES });
 
-    // Left drooping branches
-    for (let i = 0; i < branchLength; i++) {
-      blocks.push({
-        x: x - 1 - Math.floor(i / 2),
-        y: topY + i,
-        tile: tiles.WILLOW_BRANCHES,
-      });
+    // Leaves hanging down from branches
+    if (progress > 0.8) {
+      structure.push({ x: x + 1, y: crownY - 1, z, blockId: LEAVES });
+      structure.push({ x: x - 1, y: crownY - 1, z, blockId: LEAVES });
+      structure.push({ x, y: crownY - 1, z: z + 1, blockId: LEAVES });
+      structure.push({ x, y: crownY - 1, z: z - 1, blockId: LEAVES });
 
-      if (progress > 0.6 && i > 0) {
-        blocks.push({
-          x: x - 1 - Math.floor(i / 2),
-          y: topY + i,
-          tile: tiles.WILLOW_LEAVES,
-        });
-      }
-    }
-
-    // Right drooping branches
-    for (let i = 0; i < branchLength; i++) {
-      blocks.push({
-        x: x + 1 + Math.floor(i / 2),
-        y: topY + i,
-        tile: tiles.WILLOW_BRANCHES,
-      });
-
-      if (progress > 0.6 && i > 0) {
-        blocks.push({
-          x: x + 1 + Math.floor(i / 2),
-          y: topY + i,
-          tile: tiles.WILLOW_LEAVES,
-        });
+      if (progress > 0.9 && height > 3) {
+        structure.push({ x: x + 2, y: crownY - 1, z, blockId: LEAVES });
+        structure.push({ x: x - 2, y: crownY - 1, z, blockId: LEAVES });
+        structure.push({ x: x + 2, y: crownY - 2, z, blockId: LEAVES });
+        structure.push({ x: x - 2, y: crownY - 2, z, blockId: LEAVES });
       }
     }
   }
 
-  // Additional leaves when mature
-  if (progress > 0.8) {
-    const topY = y - currentHeight;
-
-    blocks.push({ x: x - 2, y: topY + 2, tile: tiles.WILLOW_LEAVES });
-    blocks.push({ x: x + 2, y: topY + 2, tile: tiles.WILLOW_LEAVES });
-    blocks.push({ x: x - 3, y: topY + 3, tile: tiles.WILLOW_LEAVES });
-    blocks.push({ x: x + 3, y: topY + 3, tile: tiles.WILLOW_LEAVES });
-  }
-
-  return blocks;
+  return structure;
 }

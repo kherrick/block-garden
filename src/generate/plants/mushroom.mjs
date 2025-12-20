@@ -1,48 +1,42 @@
-/** @typedef {import('../../state/config/tiles.mjs').TileMap} TileMap */
+import { blockNames } from "../../state/config/blocks.mjs";
 
-/**
- * @param {number} x
- * @param {number} y
- * @param {number} progress
- * @param {TileMap} tiles
- *
- * @returns {{ x: any; y: any; tile: any; }[]}
- */
-export function generateMushroomStructure(x, y, progress, tiles) {
-  const blocks = [];
+export function generateMushroomStructure(x, y, z, progress, blocks) {
+  const structure = [];
+  const getBlockId = (name) => blocks.findIndex((b) => b.name === name);
 
-  // Early stage
-  if (progress < 0.1) {
-    blocks.push({ x, y, tile: tiles.MUSHROOM_GROWING });
+  const GROWING = getBlockId(blockNames.MUSHROOM_GROWING);
+  const STEM = getBlockId(blockNames.MUSHROOM_STEM);
+  const CAP = getBlockId(blockNames.MUSHROOM_CAP);
 
-    return blocks;
+  if (progress < 0.2) {
+    structure.push({ x, y, z, blockId: GROWING });
+    return structure;
   }
 
-  const maxHeight = 3;
-  const currentHeight = Math.max(1, Math.ceil(maxHeight * progress));
+  const height = 1 + Math.floor(progress * 2); // 1 to 3 blocks tall
 
-  // Stem
-  for (let i = 0; i < currentHeight; i++) {
-    blocks.push({ x, y: y - i, tile: tiles.MUSHROOM_STEM });
+  for (let i = 0; i < height; i++) {
+    structure.push({ x, y: y + i, z, blockId: STEM });
   }
 
-  // Cap grows as progress advances
-  if (progress > 0.4) {
-    const capY = y - currentHeight;
-    blocks.push({ x, y: capY, tile: tiles.MUSHROOM_CAP });
+  if (progress > 0.6) {
+    // Cap on top
+    // Center
+    structure.push({ x, y: y + height, z, blockId: CAP });
+    // Spread
+    structure.push({ x: x + 1, y: y + height, z, blockId: CAP });
+    structure.push({ x: x - 1, y: y + height, z, blockId: CAP });
+    structure.push({ x, y: y + height, z: z + 1, blockId: CAP });
+    structure.push({ x, y: y + height, z: z - 1, blockId: CAP });
 
-    // Expand cap
-    if (progress > 0.6) {
-      blocks.push({ x: x - 1, y: capY, tile: tiles.MUSHROOM_CAP });
-      blocks.push({ x: x + 1, y: capY, tile: tiles.MUSHROOM_CAP });
-    }
-
+    // Drooping edges?
     if (progress > 0.8) {
-      blocks.push({ x: x - 1, y: capY - 1, tile: tiles.MUSHROOM_CAP });
-      blocks.push({ x, y: capY - 1, tile: tiles.MUSHROOM_CAP });
-      blocks.push({ x: x + 1, y: capY - 1, tile: tiles.MUSHROOM_CAP });
+      structure.push({ x: x + 1, y: y + height - 1, z, blockId: CAP });
+      structure.push({ x: x - 1, y: y + height - 1, z, blockId: CAP });
+      structure.push({ x, y: y + height - 1, z: z + 1, blockId: CAP });
+      structure.push({ x, y: y + height - 1, z: z - 1, blockId: CAP });
     }
   }
 
-  return blocks;
+  return structure;
 }

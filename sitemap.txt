@@ -1,4 +1,2 @@
-https://kherrick.github.io/sprite-garden/
-https://kherrick.github.io/sprite-garden/about/
-https://kherrick.github.io/sprite-garden/privacy/
-https://kherrick.github.io/sprite-garden/src/api/examples/
+https://kherrick.github.io/block-garden/
+https://kherrick.github.io/block-garden/privacy/

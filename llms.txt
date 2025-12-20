@@ -1,14 +1,14 @@
-# [Sprite Garden](https://kherrick.github.io/sprite-garden/)
+# [Block Garden](https://kherrick.github.io/block-garden/)
 
-**Type:** 2D Sandbox Exploration and Farming Game
+**Type:** 3D Sandbox Exploration and Farming Game
 **Platform:** Web (Playable offline, desktop and mobile)
 **Tech:** Custom Element, JavaScript, HTML Canvas, Service Worker
-**Play Now:** [https://kherrick.github.io/sprite-garden/](https://kherrick.github.io/sprite-garden/)
+**Play Now:** [https://kherrick.github.io/block-garden/](https://kherrick.github.io/block-garden/)
 
 ---
 
-> **Sprite Garden** is a 2D sandbox exploration and farming game available at [https://kherrick.github.io/sprite-garden/](https://kherrick.github.io/sprite-garden/).
-> Players explore procedurally generated worlds, discover biomes, dig for resources, plant crops, and shape their environment.
+> **Block Garden** is a 3D sandbox exploration and farming game available at [https://kherrick.github.io/block-garden/](https://kherrick.github.io/block-garden/).
+> Players explore procedurally generated worlds, dig for resources, cultivate plants, and shape their environment.
 
 The game is fully playable without login, and all progress is stored locally or can be exported as downloadable save files.
 Gameplay supports keyboard and mouse controls on desktop, and touch controls on mobile.
@@ -18,17 +18,19 @@ Gameplay supports keyboard and mouse controls on desktop, and touch controls on 
 ## 🎮 Quick Start
 
 - **Move:** W, A, S, D or Arrow Keys
-- **Plant / Harvest:** F
-- **Dig:** R
-- **Save World:** Ctrl + S
+- **Move Up:** Spacebar
+- **Move Down:** Shift
+- **Change Block:** ~ / &#96;
+- **Place Block:** Left Click
+- **Remove Block:** Right Click
 - **Touch Controls:** Tap to move and interact
 
 ---
 
 ## 🌱 Gameplay Overview
 
-Players begin by exploring their surroundings to gather seeds and materials, plant crops, and experiment with terrain.
-Worlds are **procedurally generated**, providing a fresh environment every session with varied biomes and resources.
+Players begin by exploring their surroundings to gather materials, cultivate plants, and experiment with terrain.
+Worlds are **procedurally generated**, providing a fresh environment every session with varied resources.
 
 All progress remains local — no account or online storage is required. Installation and offline play are supported.
 
@@ -40,47 +42,24 @@ All progress remains local — no account or online storage is required. Install
 - Local and downloadable saves
 - Cross-platform (desktop & mobile)
 - Installation and offline play supported
-- Modding and scripting via open API
 - Privacy-respecting (no login or data collection)
-
----
-
-## 🧠 Modding and API Support
-
-*Sprite Garden* is designed for openness and experimentation. Players and developers can extend gameplay through **bookmarklet scripts** or modular JavaScript examples located in:
-
-[`/src/api/examples/`](https://kherrick.github.io/sprite-garden/src/api/examples/)
-
-Below are some example modules demonstrating various extensions:
-
-| Example | Description | Demo Link |
-|----------|--------------|-----------|
-| **Fullscreen** | Toggle fullscreen and reveal options | [Fullscreen.mjs](https://kherrick.github.io/sprite-garden/src/api/examples/Fullscreen.mjs) |
-| **Fireworks** | Particle effects and color trails | [Fireworks.mjs](https://kherrick.github.io/sprite-garden/src/api/examples/Fireworks.mjs) |
-| **Gold** | Automate digging for gold | [Gold.mjs](https://kherrick.github.io/sprite-garden/src/api/examples/Gold.mjs) |
-| **GOL** | Conway’s Game of Life using sprites | [GOL.mjs](https://kherrick.github.io/sprite-garden/src/api/examples/GOL.mjs) |
-| **Heart** | Animated heart pattern | [Heart.mjs](https://kherrick.github.io/sprite-garden/src/api/examples/Heart.mjs) |
-| **Konami Code** | Hidden keyboard sequence example | [KonamiCode.mjs](https://kherrick.github.io/sprite-garden/src/api/examples/KonamiCode.mjs) |
-| **Messaging** | Draw text on the map filled with water | [Messaging.mjs](https://kherrick.github.io/sprite-garden/src/api/examples/Messaging.mjs) |
-| **QRCode** | Generate a QR code on the map | [QRCode.mjs](https://kherrick.github.io/sprite-garden/src/api/examples/QRCode.mjs) |
 
 ---
 
 ## 📚 Documentation
 
-- [**About**](https://kherrick.github.io/sprite-garden/about/) — Site background and design philosophy
-- [**Game README**](https://kherrick.github.io/sprite-garden/README.md) — Detailed overview, features, controls, and gameplay tips
-- [**Privacy Policy**](https://kherrick.github.io/sprite-garden/privacy/) — Information on data handling and user privacy
-- [**Source Code**](https://github.com/kherrick/sprite-garden) — Full project source for exploration and custom development
+- [**Game README**](https://kherrick.github.io/block-garden/README.md) — Detailed overview, features, controls, and gameplay tips
+- [**Privacy Policy**](https://kherrick.github.io/block-garden/privacy/) — Information on data handling and user privacy
+- [**Source Code**](https://github.com/kherrick/block-garden) — Full project source for exploration and custom development
 
 ---
 
 ## 🚀 Try It Out
 
-- **Play Now:** [Sprite Garden](https://kherrick.github.io/sprite-garden/) — Main playable version
+- **Play Now:** [Block Garden](https://kherrick.github.io/block-garden/) — Main playable version
 - **Offline / Local Save:** Supported
 - **No Login Required:** All data stays on your device
 
 ---
 
-**Tags:** progressive web app, PWA, sandbox game, web game, pixel art, farming sim, procedural generation, modding, open source, Canvas, JavaScript, HTML5, browser game
+**Tags:** progressive web app, PWA, sandbox game, web game, webgl, voxel art, farming sim, procedural generation, modding, open source, Canvas, JavaScript, HTML5, browser game

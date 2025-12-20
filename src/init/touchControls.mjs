@@ -1,12 +1,4 @@
-import { dismissTutorialToast } from "../util/dismissTutorialToast.mjs";
-import {
-  gameConfig,
-  gameState,
-  hasDismissedTutorial,
-} from "../state/state.mjs";
-import { handleBreakBlockWithWaterPhysics } from "../misc/handleBreakBlock.mjs";
-import { handleFarmAction } from "../misc/handleFarmAction.mjs";
-import { handlePlaceBlock } from "../misc/handlePlaceBlock.mjs";
+import { gameConfig, gameState } from "../state/state.mjs";
 
 /** @typedef {import('./game.mjs').CustomShadowHost} CustomShadowHost */
 
@@ -33,46 +25,7 @@ export function initTouchControls(shadow) {
       host.touchKeys[key] = true;
 
       if (btn instanceof HTMLButtonElement) {
-        btn.style.background = "var(--sg-color-gray-alpha-30)";
-      }
-
-      if (
-        !hasDismissedTutorial.get() &&
-        (key === "r" || key === "w" || key === "upright" || key == "upleft")
-      ) {
-        dismissTutorialToast(shadow);
-      }
-
-      if (key === "f") {
-        handleFarmAction(
-          shadow,
-          gameState.growthTimers,
-          gameState.plantStructures,
-          gameState.player.get(),
-          gameState.seedInventory.get(),
-          gameState.selectedSeedType.get(),
-          gameConfig.TILES,
-          gameConfig.TILE_SIZE.get(),
-          gameState.world.get(),
-          gameConfig.WORLD_HEIGHT.get(),
-          gameConfig.WORLD_WIDTH.get(),
-        );
-      }
-
-      if (key === "r") {
-        handleBreakBlockWithWaterPhysics(
-          shadow,
-          gameState.growthTimers,
-          gameState.plantStructures,
-          gameState.player,
-          gameConfig.TILES,
-          gameConfig.TILE_SIZE.get(),
-          gameState.world,
-          gameConfig.WORLD_HEIGHT.get(),
-          gameConfig.WORLD_WIDTH.get(),
-          gameState.waterPhysicsQueue,
-          gameConfig.breakMode.get(),
-        );
+        btn.style.background = "var(--bg-color-gray-alpha-30)";
       }
     }
 
@@ -82,23 +35,29 @@ export function initTouchControls(shadow) {
       }
 
       isPressed = true;
+      gameState.uiButtonActive = true;
 
       // Immediate execution
       executeKeyAction();
 
-      // Repeat only for f and r keys every 100ms
-      if (key === "f" || key === "r") {
-        intervalId = setInterval(executeKeyAction, 100);
+      // Handle touch UI block removal
+      if (key === "backspace") {
+        const hit = gameState.hit;
+
+        if (hit) {
+          gameState.world.delete(`${hit.x},${hit.y},${hit.z}`);
+        }
       }
     }
 
     function stopHeldAction() {
       isPressed = false;
+      gameState.uiButtonActive = false;
 
       host.touchKeys[key] = false;
 
       if (btn instanceof HTMLButtonElement) {
-        btn.style.background = "var(--sg-ui-touch-btn-background-color)";
+        btn.style.background = "var(--bg-ui-touch-btn-background-color)";
       }
 
       if (intervalId) {
@@ -150,49 +109,12 @@ export function initTouchControls(shadow) {
 
       stopHeldAction();
     });
+
+    // Stop HammerJS from seeing D-pad interactions via Pointer Events
+    btn.addEventListener("pointerdown", (e) => {
+      e.stopPropagation();
+    });
   });
-
-  // Handle block placement mobile controls
-  shadow.querySelectorAll(".touch-btn.place-block").forEach(
-    (
-      /** @type HTMLDivElement */
-      pb,
-    ) => {
-      pb.addEventListener(
-        "touchstart",
-        async () =>
-          await handlePlaceBlock(
-            shadow,
-            pb.dataset.key,
-            gameState.materialsInventory.get(),
-            gameState.player.get(),
-            gameState.selectedMaterialType.get(),
-            gameConfig.TILES,
-            gameConfig.TILE_SIZE.get(),
-            gameState.world.get(),
-            gameConfig.WORLD_HEIGHT.get(),
-            gameConfig.WORLD_WIDTH.get(),
-          ),
-      );
-
-      pb.addEventListener(
-        "click",
-        async () =>
-          await handlePlaceBlock(
-            shadow,
-            pb.dataset.key,
-            gameState.materialsInventory.get(),
-            gameState.player.get(),
-            gameState.selectedMaterialType.get(),
-            gameConfig.TILES,
-            gameConfig.TILE_SIZE.get(),
-            gameState.world.get(),
-            gameConfig.WORLD_HEIGHT.get(),
-            gameConfig.WORLD_WIDTH.get(),
-          ),
-      );
-    },
-  );
 
   shadow.addEventListener(
     "keyup",

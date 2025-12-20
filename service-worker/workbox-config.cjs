@@ -21,8 +21,6 @@ module.exports = {
   ],
   swDest: "./service-worker.js",
   sourcemap: false,
-  // Custom handler for Web Share Target before Workbox runtime caching
-  importScripts: ["service-worker/share-target-handler.mjs"],
   // https://developer.chrome.com/docs/workbox/modules/workbox-build#property-BasePartial-maximumFileSizeToCacheInBytes
   maximumFileSizeToCacheInBytes: 2097152 * 3,
   // define runtime caching rules
@@ -36,7 +34,7 @@ module.exports = {
 
       options: {
         // use a custom cache name
-        cacheName: "sprite-garden-cache",
+        cacheName: "block-garden-cache",
 
         expiration: {
           // 365 days

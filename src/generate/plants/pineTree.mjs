@@ -1,58 +1,53 @@
-/** @typedef {import('../../state/config/tiles.mjs').TileMap} TileMap */
+import { blockNames } from "../../state/config/blocks.mjs";
 
-/**
- * @param {number} x
- * @param {number} y
- * @param {number} progress
- * @param {TileMap} tiles
- *
- * @returns {{ x: any; y: any; tile: any; }[]}
- */
-export function generatePineTreeStructure(x, y, progress, tiles) {
-  const blocks = [];
+export function generatePineTreeStructure(x, y, z, progress, blocks) {
+  const structure = [];
+  const getBlockId = (name) => blocks.findIndex((b) => b.name === name);
 
-  // Early stage
+  const GROWING = getBlockId(blockNames.PINE_TREE_GROWING);
+  const TRUNK = getBlockId(blockNames.PINE_TRUNK);
+  const NEEDLES = getBlockId(blockNames.PINE_NEEDLES);
+  // Pine cone? Block Garden uses it as drop.
+
   if (progress < 0.1) {
-    blocks.push({ x, y, tile: tiles.PINE_TREE_GROWING });
-
-    return blocks;
+    structure.push({ x, y, z, blockId: GROWING });
+    return structure;
   }
 
-  const maxHeight = 8;
-  const currentHeight = Math.max(1, Math.ceil(maxHeight * progress));
+  const maxHeight = 7;
+  const height = Math.floor(maxHeight * progress);
 
-  // Trunk grows first
-  for (let i = 0; i < currentHeight; i++) {
-    blocks.push({ x, y: y - i, tile: tiles.PINE_TRUNK });
+  // Trunk
+  for (let i = 0; i < height; i++) {
+    structure.push({ x, y: y + i, z, blockId: TRUNK });
   }
 
-  // Needles in conical shape when tree is growing
-  if (progress > 0.25) {
-    const needleStartY = y - Math.floor(currentHeight * 0.3);
-    const needleLayers = Math.ceil(currentHeight * 0.7);
+  // Needles
+  if (progress > 0.4) {
+    // Conical shape
+    // Bottom layer
+    for (let i = 3; i < height; i++) {
+      const width = Math.max(1, Math.floor((height - i) / 2));
+      // If width > 0, make ring/square
+      if (width >= 1) {
+        // Simple + shape for now or square?
+        structure.push({ x: x + 1, y: y + i, z, blockId: NEEDLES });
+        structure.push({ x: x - 1, y: y + i, z, blockId: NEEDLES });
+        structure.push({ x, y: y + i, z: z + 1, blockId: NEEDLES });
+        structure.push({ x, y: y + i, z: z - 1, blockId: NEEDLES });
 
-    for (let layer = 0; layer < needleLayers; layer++) {
-      const layerY = needleStartY - layer;
-      const layerWidth = Math.max(1, Math.floor((needleLayers - layer) / 2));
-
-      for (let dx = -layerWidth; dx <= layerWidth; dx++) {
-        if (dx !== 0 || layer !== 0) {
-          blocks.push({ x: x + dx, y: layerY, tile: tiles.PINE_NEEDLES });
+        if (width > 1) {
+          // Corners
+          structure.push({ x: x + 1, y: y + i, z: z + 1, blockId: NEEDLES });
+          structure.push({ x: x - 1, y: y + i, z: z + 1, blockId: NEEDLES });
+          structure.push({ x: x + 1, y: y + i, z: z - 1, blockId: NEEDLES });
+          structure.push({ x: x - 1, y: y + i, z: z - 1, blockId: NEEDLES });
         }
       }
     }
+    // Top
+    structure.push({ x, y: y + height, z, blockId: NEEDLES });
   }
 
-  // Pine cones when mature
-  if (progress > 0.9) {
-    const midY = y - Math.floor(currentHeight * 0.5);
-
-    if (Math.random() < 0.5)
-      blocks.push({ x: x - 1, y: midY, tile: tiles.PINE_CONE });
-
-    if (Math.random() < 0.5)
-      blocks.push({ x: x + 1, y: midY, tile: tiles.PINE_CONE });
-  }
-
-  return blocks;
+  return structure;
 }

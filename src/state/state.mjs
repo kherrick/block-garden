@@ -1,177 +1,75 @@
 import { Signal } from "signal-polyfill";
 
 import { gameConfig } from "./config/index.mjs";
-import { FogMap } from "../map/fog.mjs";
+import { ChunkManager } from "./chunkManager.mjs";
 
-/** @typedef {import('./config/index.mjs').GameConfig} GameConfig */
-
-const { TileNames } = gameConfig;
-
-/**
- * @typedef {{x: number, y: number}} TilePosition TilePosition
- */
-
-/**
- * @typedef {{x: number, y: number}} TilePositionNormalized TilePositionNormalized
- */
-
-/**
- * @typedef {{x: number, y: number}} PixelPosition PixelPosition
- */
-
-/**
- * Player state object.
- *
- * @typedef {Object} PlayerState
- *
- * @property {number} x - X position in pixels
- * @property {number} y - Y position in pixels
- * @property {number} width - Width in pixels
- * @property {number} height - Height in pixels
- * @property {number} velocityX - Horizontal velocity in pixels/frame
- * @property {number} velocityY - Vertical velocity in pixels/frame
- * @property {number} speed - Movement speed in pixels/frame
- * @property {number} jumpPower - Jump force multiplier
- * @property {boolean} onGround - Whether player is touching solid ground
- * @property {string} color - Hex color for player sprite
- * @property {number} lastDirection - Last facing direction (-1 left, 1 right)
- */
-
-/**
- * Player object with position and size.
- *
- * @typedef {Object} Player
- *
- * @property {number} x - X position in pixels
- * @property {number} y - Y position in pixels
- * @property {number} width - Width in pixels
- * @property {number} height - Height in pixels
- */
-
-/**
- * Positional information relative to world.
- *
- * @typedef {Object} PlayerPositionData
- *
- * @property {PixelPosition} pixel - Pixel coordinates
- * @property {TilePosition} tile - Tile coordinates
- * @property {TilePositionNormalized} normalized - Normalized position (0-1)
- * @property {{horizontal: string, vertical: string}} location - Descriptive region
- * @property {{isAtLeft: boolean, isAtRight: boolean, isAtTop: boolean, isAtBottom: boolean}} bounds - Boundary flags
- */
-
-/**
- * Camera state object.
- *
- * @typedef {Object} CameraState
- *
- * @property {number} x - Camera X offset in pixels
- * @property {number} y - Camera Y offset in pixels
- * @property {number} speed - Camera movement smoothing speed
- */
+/** @typedef {import("../util/ray.mjs").PointWithFace} PointWithFace */
 
 /**
  * Game configuration state.
  *
  * @typedef {Object} GameState
  *
- * @property {Signal.State} world
- * @property {Signal.State} exploredMap
- * @property {Signal.State} plantStructures
- * @property {Signal.State} gameTime
- * @property {Signal.State} growthTimers
- * @property {Signal.State} selectedMaterialType
- * @property {Signal.State} selectedSeedType
+ * @property {Signal.State} curBlock
+ * @property {ChunkManager} world
+ * @property {number} seed
+ * @property {number} yaw
+ * @property {number} pitch
+ * @property {number} x
+ * @property {number} y
+ * @property {number} z
+ * @property {number} dx
+ * @property {number} dy
+ * @property {number} dz
+ * @property {number} playerHeight
+ * @property {number} playerWidth
+ * @property {number} flySpeed
+ * @property {boolean} flying
+ * @property {boolean} onGround
+ * @property {PointWithFace} hit
+ * @property {number} lastSpacePressTime
+ * @property {boolean} spacePressed
+ * @property {boolean} uiButtonActive
+ * @property {Object.<string, Object>} plantStructures
+ * @property {Object.<string, number>} growthTimers
+ * @property {boolean} isPrePlanted
+ * @property {boolean} fastGrowth
  * @property {Signal.State} shouldReset
- * @property {Signal.State} viewMode
- * @property {Signal.State} waterPhysicsQueue
- * @property {Signal.State} seedInventory
- * @property {Signal.State} materialsInventory
- * @property {Signal.State} player
- * @property {Signal.State} camera
  */
 
 /**
  * Primary game state store using reactive Signals.
- *
- * Contains world, player, camera, and inventory data.
  *
  * @type {GameState}
  *
  * @constant
  */
 export const gameState = {
-  // World data - initialized in initState() to avoid circular dependency
-  world: new Signal.State(null),
-  // Tracks which tiles have been explored for map fog
-  exploredMap: new Signal.State(new FogMap(500, 300)),
-  // Store plant growth data
-  plantStructures: new Signal.State({}),
-  gameTime: new Signal.State(0),
-  growthTimers: new Signal.State({}),
-  selectedMaterialType: new Signal.State(null),
-  selectedSeedType: new Signal.State(null),
+  curBlock: new Signal.State(2),
+  world: new ChunkManager(),
+  seed: Math.random(),
+  yaw: 0,
+  pitch: 0,
+  x: 0,
+  y: 2,
+  z: 5,
+  dx: 0,
+  dy: 0,
+  dz: 0,
+  playerHeight: 1.8,
+  playerWidth: 0.6,
+  flySpeed: 10,
+  flying: false,
+  onGround: false,
+  hit: null,
+  lastSpacePressTime: 0,
+  spacePressed: false,
+  uiButtonActive: false,
+  plantStructures: {},
+  growthTimers: {},
+  isPrePlanted: false,
+  fastGrowth: false,
   shouldReset: new Signal.State(false),
-  viewMode: new Signal.State("normal"),
-  waterPhysicsQueue: new Signal.State(new Set()),
-  seedInventory: new Signal.State({
-    [TileNames.AGAVE]: 0,
-    [TileNames.BAMBOO]: 0,
-    [TileNames.BERRY_BUSH]: 0,
-    [TileNames.BIRCH]: 0,
-    [TileNames.CACTUS]: 0,
-    [TileNames.CARROT]: 0,
-    [TileNames.CORN]: 0,
-    [TileNames.FERN]: 0,
-    [TileNames.KELP]: 0,
-    [TileNames.LAVENDER]: 0,
-    [TileNames.LOTUS]: 0,
-    [TileNames.MUSHROOM]: 0,
-    [TileNames.PINE_TREE]: 0,
-    [TileNames.PUMPKIN]: 0,
-    [TileNames.ROSE]: 0,
-    [TileNames.SUNFLOWER]: 0,
-    [TileNames.TULIP]: 0,
-    [TileNames.WALNUT]: 0,
-    [TileNames.WHEAT]: 0,
-    [TileNames.WILLOW_TREE]: 0,
-  }),
-  materialsInventory: new Signal.State({
-    [TileNames.CLAY]: 0,
-    [TileNames.CLOUD]: 0,
-    [TileNames.COAL]: 0,
-    [TileNames.DIRT]: 0,
-    [TileNames.GOLD]: 0,
-    [TileNames.GRASS]: 0,
-    [TileNames.ICE]: 0,
-    [TileNames.IRON]: 0,
-    [TileNames.PUMICE]: 0,
-    [TileNames.SAND]: 0,
-    [TileNames.SNOW]: 0,
-    [TileNames.STONE]: 0,
-    [TileNames.WOOD]: 0,
-  }),
-  // Player character
-  player: new Signal.State({
-    x: 200,
-    y: 50,
-    width: 6,
-    height: 8,
-    velocityX: 0,
-    velocityY: 0,
-    speed: 2.75,
-    jumpPower: 12,
-    onGround: false,
-    color: "#FF69B4",
-    // Track last movement direction
-    lastDirection: 0,
-  }),
-  // Camera system
-  camera: new Signal.State({
-    x: 0,
-    y: 0,
-    speed: 5,
-  }),
 };
 
 /**
@@ -184,10 +82,10 @@ export const gameState = {
  * @constant
  */
 export const computedSignals = {
-  totalSeeds: new Signal.Computed(() => {
-    const inventory = gameState.seedInventory.get();
-
-    return Object.values(inventory).reduce((sum, count) => sum + count, 0);
+  currentBlock: new Signal.Computed(() => {
+    const index = gameState.curBlock.get();
+    const block = gameConfig.blocks[index];
+    return block?.name || "Air";
   }),
 };
 
@@ -289,18 +187,14 @@ export function getState(key) {
  * @param {typeof globalThis} gThis - Global this or window object
  * @param {string} version - Game version string to set in config
  *
- * @returns {Promise<{gameConfig: GameConfig, gameState: GameState}>} Object containing both config and state
+ * @returns {Promise<{computedSignals, gameConfig, gameState: GameState}>} Object containing both config and state
  */
 export async function initState(gThis, version) {
   gameConfig.version.set(version);
 
-  // Initialize world map here to avoid circular dependency
-  const { WorldMap } = await import("../map/world.mjs");
-  gameState.world.set(new WorldMap(500, 300));
-
   // Expose reactive state through globalThis
-  gThis.spriteGarden = {
-    ...gThis?.spriteGarden,
+  gThis.blockGarden = {
+    ...gThis?.blockGarden,
     config: gameConfig,
     state: gameState,
     computed: computedSignals,
@@ -314,14 +208,10 @@ export async function initState(gThis, version) {
   };
 
   return {
+    computedSignals,
     gameConfig,
     gameState,
   };
 }
-
-export const hasEnabledExtras = new Signal.State(false);
-export const hasDismissedTutorial = new Signal.State(false);
-export const tutorialToastShown = new Signal.State(false);
-export const tutorialListener = new Signal.State(null);
 
 export { gameConfig };

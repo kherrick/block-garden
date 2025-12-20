@@ -1,5 +1,5 @@
 /**
- * Adapted for sprite-garden
+ * Adapted for block-garden
  * Bundled by jsDelivr using Rollup v2.79.2 and Terser v5.39.0.
  * Original file: /npm/signal-polyfill@0.2.2/dist/index.js
  *
@@ -68,7 +68,7 @@ function(e){const r=Object.create(W);r.value=e;const o=()=>(p(r),r.value);return
 const Signal = k;
 
 /**
- * Adapted for sprite-garden
+ * Adapted for block-garden
  * Bundled by jsDelivr using Rollup v2.79.2 and Terser v5.39.0.
  * Original file: /npm/signal-utils@0.21.1/dist/index.ts.js
  *

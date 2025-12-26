@@ -29,7 +29,25 @@ if (port < 1024 || port > 65535) {
 }
 
 // enable CORS
-app.use(cors({ origin: `http://localhost:${port}` }));
+const allowedOrigins = ["http://localhost:3000", "http://localhost:4200"];
+
+app.use(
+  cors({
+    origin(origin, callback) {
+      // Allow non-browser clients (no Origin header)
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      // Reject other origins
+      return callback(new Error("Not allowed by CORS"));
+    },
+  }),
+);
 
 // enable compression
 app.use(compression());

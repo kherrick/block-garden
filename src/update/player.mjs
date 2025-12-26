@@ -1,4 +1,5 @@
 import { isKeyPressed } from "../util/isKeyPressed.mjs";
+import { placeBlock, removeBlock } from "../util/interaction.mjs";
 
 /** @typedef {import('../init/game.mjs').CustomShadowHost} CustomShadowHost */
 /** @typedef {import('../state/state.mjs').GameState} GameState */
@@ -49,6 +50,81 @@ export function updatePlayer(shadow, state, dt) {
     // S + D
     targetDx += (-fx - fz) * speed;
     targetDz += (-fz + fx) * speed;
+  }
+
+  if (state.arrowsControlCamera.get()) {
+    // CAMERA ROTATION
+    const ROTATION_SPEED = 2.0;
+
+    if (isKeyPressed(shadow, "arrowleft")) {
+      state.yaw += ROTATION_SPEED * dt;
+    }
+    if (isKeyPressed(shadow, "arrowright")) {
+      state.yaw -= ROTATION_SPEED * dt;
+    }
+
+    if (isKeyPressed(shadow, "arrowup")) {
+      state.pitch += ROTATION_SPEED * dt;
+    }
+    if (isKeyPressed(shadow, "arrowdown")) {
+      state.pitch -= ROTATION_SPEED * dt;
+    }
+
+    // Clamp pitch
+    const MAX_PITCH = Math.PI / 2 - 0.01;
+    state.pitch = Math.max(-MAX_PITCH, Math.min(MAX_PITCH, state.pitch));
+  } else {
+    if (isKeyPressed(shadow, "arrowup")) {
+      targetDx += fx * speed;
+      targetDz += fz * speed;
+    } else if (isKeyPressed(shadow, "arrowleft")) {
+      targetDx += fz * speed;
+      targetDz -= fx * speed;
+    } else if (isKeyPressed(shadow, "arrowdown")) {
+      targetDx -= fx * speed;
+      targetDz -= fz * speed;
+    } else if (isKeyPressed(shadow, "arrowright")) {
+      targetDx -= fz * speed;
+      targetDz += fx * speed;
+    }
+  }
+
+  // action key interaction
+  if (isKeyPressed(shadow, "enter") || isKeyPressed(shadow, "control")) {
+    if (state.actionKeyPressTime === 0) {
+      // Just started pressing
+      state.actionKeyPressTime = performance.now();
+    } else if (state.actionKeyPressTime > 0) {
+      // Key is being held (not already handled)
+      const holdDuration = performance.now() - state.actionKeyPressTime;
+      if (holdDuration > 500) {
+        // Long press: remove block
+        removeBlock(state);
+
+        // Mark as handled and store time for repeat removal (negative = removal mode)
+        state.actionKeyPressTime = -performance.now();
+      }
+    } else {
+      // actionKeyPressTime < 0 means we're in removal mode, check for repeat
+      const lastRemoveTime = -state.actionKeyPressTime;
+      if (performance.now() - lastRemoveTime > 300) {
+        removeBlock(state);
+        state.actionKeyPressTime = -performance.now();
+      }
+    }
+    // If actionKeyPressTime === -1, do nothing (already handled this press)
+  } else {
+    // Key released
+    if (state.actionKeyPressTime > 0) {
+      const holdDuration = performance.now() - state.actionKeyPressTime;
+      if (holdDuration <= 500) {
+        // Short press: place block
+        placeBlock(state);
+      }
+    }
+
+    // Reset for next press (whether it was handled or not)
+    state.actionKeyPressTime = 0;
   }
 
   // Smooth acceleration

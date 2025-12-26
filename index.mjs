@@ -385,14 +385,20 @@ export class BlockGarden extends HTMLElement {
             <div id="stats">
               <div class="ui-grid__corner--heading">🌱 Block Garden</div>
               <div class="ui-grid__corner--container" hidden="hidden">
-                Block: <span id="blockName"></span><br />
+                Block: <span id="blockName"></span><br /><br />
+
                 [ <b>~ / &#96;</b> ]: Change Block<br />
                 [ w / a / s / d ]: Move<br />
-                [ space ]: Up<br />
-                [ shift ]: Down<br />
-                Click To Lock Mouse<br />
+                [ arrow keys ]: Camera<br />
+                [ shift ]: Descend<br />
+                [ space ]: Jump / Ascend<br />
+                [ enter / control ]: Place / Remove Block<br /><br />
+                Use crosshair to center block placement<br />
+                Click Game Canvas To Lock Mouse<br /><br />
+
                 Left Click: Place Block<br />
-                Right Click: Remove Block<br />
+                Right Click: Remove Block<br /><br />
+
                 <a id="privacy" href="privacy/index.html" target="_blank">Privacy Policy</a>
               </div>
             </div>

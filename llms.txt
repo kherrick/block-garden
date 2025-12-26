@@ -17,13 +17,18 @@ Gameplay supports keyboard and mouse controls on desktop, and touch controls on 
 
 ## 🎮 Quick Start
 
-- **Move:** W, A, S, D or Arrow Keys
-- **Move Up:** Spacebar
-- **Move Down:** Shift
-- **Change Block:** ~ / &#96;
-- **Place Block:** Left Click
-- **Remove Block:** Right Click
-- **Touch Controls:** Tap to move and interact
+- **Movement:** W / A / S / D
+- **Camera:** Arrow Keys
+- **Change Block:** ~ / `
+- **Jump / Ascend:** Space
+- **Descend:** Shift
+
+- **Place / Remove Block:** Enter / Control
+- **Use crosshair to center block placement**
+- **Click Game Canvas To Lock Mouse**
+
+- **Left Click:** Place Block
+- **Right Click:** Remove Block
 
 ---
 
@@ -38,7 +43,7 @@ All progress remains local — no account or online storage is required. Install
 
 ## 🧩 Features
 
-- Procedurally generated biomes
+- Procedurally generated worlds
 - Local and downloadable saves
 - Cross-platform (desktop & mobile)
 - Installation and offline play supported

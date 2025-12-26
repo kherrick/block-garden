@@ -1,7 +1,7 @@
 import { debounce } from "../util/debounce.mjs";
 import { effect } from "../util/effect.mjs";
 import { getBlock } from "../util/world.mjs";
-import { intersects } from "../util/aabb.mjs";
+import { placeBlock, removeBlock } from "../util/interaction.mjs";
 import { resizeCanvas } from "../util/resizeCanvas.mjs";
 
 import { gameConfig } from "../state/config/index.mjs";
@@ -175,6 +175,8 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
       e,
     ) => {
       if (
+        shadow.pointerLockElement === cnvs ||
+        shadow.pointerLockElement === shadow.host ||
         globalThis.document.pointerLockElement === cnvs ||
         globalThis.document.pointerLockElement === shadow.host
       ) {
@@ -494,53 +496,12 @@ export function initCanvasEventListeners(shadow, cnvs, blocks, curBlock) {
     const k = `${hit.x},${hit.y},${hit.z}`;
     const world = gameState.world;
 
-    if (e.button === 0 && hit.face) {
-      const newBlockX = hit.x + hit.face.x;
-      const newBlockY = hit.y + hit.face.y;
-      const newBlockZ = hit.z + hit.face.z;
-
-      const playerAABB = {
-        minX: gameState.x - gameState.playerWidth / 2,
-        maxX: gameState.x + gameState.playerWidth / 2,
-        minY: gameState.y - gameState.playerHeight / 2,
-        maxY: gameState.y + gameState.playerHeight / 2,
-        minZ: gameState.z - gameState.playerWidth / 2,
-        maxZ: gameState.z + gameState.playerWidth / 2,
-      };
-
-      const newBlockAABB = {
-        minX: newBlockX,
-        maxX: newBlockX + 1,
-        minY: newBlockY,
-        maxY: newBlockY + 1,
-        minZ: newBlockZ,
-        maxZ: newBlockZ + 1,
-      };
-
-      if (!intersects(playerAABB, newBlockAABB)) {
-        const curBlockId = gameState.curBlock.get();
-        world.set(`${newBlockX},${newBlockY},${newBlockZ}`, curBlockId);
-
-        // seed growth logic
-        // Plant growth logic
-        const placedBlock = blocks[curBlockId];
-        if (placedBlock && placedBlock.isSeed) {
-          const key = `${newBlockX},${newBlockY},${newBlockZ}`;
-          if (!gameState.growthTimers) gameState.growthTimers = {};
-          if (!gameState.plantStructures) gameState.plantStructures = {};
-
-          const growthTime = placedBlock.growthTime || 10.0;
-          gameState.growthTimers[key] = growthTime;
-          gameState.plantStructures[key] = {
-            type: placedBlock.name,
-            blocks: [],
-          };
-        }
-      }
+    if (e.button === 0) {
+      placeBlock(gameState);
     }
 
     if (e.button === 2) {
-      world.delete(k);
+      removeBlock(gameState);
     }
   });
 }

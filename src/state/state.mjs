@@ -35,6 +35,8 @@ import { ChunkManager } from "./chunkManager.mjs";
  * @property {boolean} isPrePlanted
  * @property {boolean} fastGrowth
  * @property {Signal.State} shouldReset
+ * @property {Signal.State} arrowsControlCamera
+ * @property {number} actionKeyPressTime
  */
 
 /**
@@ -70,6 +72,8 @@ export const gameState = {
   isPrePlanted: false,
   fastGrowth: false,
   shouldReset: new Signal.State(false),
+  arrowsControlCamera: new Signal.State(true),
+  actionKeyPressTime: 0,
 };
 
 /**
@@ -85,6 +89,7 @@ export const computedSignals = {
   currentBlock: new Signal.Computed(() => {
     const index = gameState.curBlock.get();
     const block = gameConfig.blocks[index];
+
     return block?.name || "Air";
   }),
 };

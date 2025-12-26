@@ -57,6 +57,7 @@ function isColliding(state, playerAABB) {
             maxY: y + 1,
             maxZ: z + 1,
           };
+
           if (intersects(playerAABB, blockAABB)) {
             return true;
           }

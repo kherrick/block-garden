@@ -15,15 +15,14 @@ import { initNoise, terrainNoise, noise3d } from "../util/noise.mjs";
 /**
  * Generate the procedural world
  *
+ * @param {number} seed
  * @param {GameConfig} gameConfig
  * @param {GameState} gameState
  */
-export function generateProceduralWorld(gameConfig, gameState) {
+export function generateProceduralWorld(seed, gameConfig, gameState) {
   const { blocks, blockNames } = gameConfig;
   const { world } = gameState;
 
-  // Use the seed from state or fallback
-  const seed = gameState.seed || Math.random();
   initNoise(seed);
 
   // Helper to find block IDs

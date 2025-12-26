@@ -1,3 +1,4 @@
+import { autoSaveGame } from "./src/dialog/storage.mjs";
 import { colors as gameColors } from "./src/state/config/colors.mjs";
 import { generateColorVars } from "./src/util/colors/generateColorVars.mjs";
 import { initGame } from "./src/init/game.mjs";
@@ -152,6 +153,110 @@ export class BlockGarden extends HTMLElement {
             max-width: 15.625rem;
           }
 
+          #stats,
+          #settings,
+          .seed-controls {
+            font-size: 0.5625rem;
+          }
+
+          #generateWithSeed {
+            background: var(--bg-color-blue-400);
+          }
+
+          #randomSeed {
+            background: var(--bg-color-amber-500);
+          }
+
+          #copySeed {
+            background: var(--bg-color-emerald-700);
+          }
+
+          .seed-controls button {
+            border-radius: 0.1875rem;
+            border: none;
+            color: var(--bg-color-white);
+            cursor: pointer;
+            font-size: 0.75rem;
+            padding: 0.3125rem 0.625rem;
+          }
+
+          .seed-controls button:hover {
+            opacity: 0.8;
+            transform: translateY(-0.0625rem);
+          }
+
+          .seed-controls button:active {
+            transform: translateY(0);
+          }
+
+          .current-seed {
+            color: var(--bg-color-gray-600);
+            font-size: 0.6875rem;
+            margin-top: 0.5rem;
+          }
+
+          .seed-controls {
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 0.3125rem;
+            bottom: 2rem;
+            color: var(--bg-color-white);
+            margin: 0.625rem 0;
+            padding: 0.625rem;
+            position: absolute;
+            z-index: 2;
+          }
+
+          .seed-controls__actions {
+            align-items: center;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.625rem;
+          }
+
+          .seed-controls__header {
+            display: flex;
+            gap: 0.625rem;
+            justify-content: space-between;
+            margin-bottom: 0.625rem;
+          }
+
+          .seed-controls h4, .seed-controls__header h4 {
+            color: var(--bg-color-white);
+            margin: 0 0 0.625rem 0;
+          }
+
+          .seed-controls__header button {
+            background: var(--bg-color-red-500);
+            border-radius: 0.25rem;
+            border: none;
+            color: white;
+            cursor: pointer;
+            margin: 0 0 0.625rem 0;
+            padding: 0.3125rem 0.625rem;
+          }
+
+          .seed-controls input {
+            font-size: 0.75rem;
+            margin-left: 0.3125rem;
+            padding: 0.125rem 0.3125rem;
+            width: 5rem;
+            font-size: 0.5rem;
+          }
+
+          .seed-controls input:focus {
+            outline: 0.125rem solid var(--bg-color-blue-400);
+          }
+
+          .seed-controls__save-load {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 0.5rem;
+          }
+
+          #saveModeToggle {
+            background: var(--bg-color-blue-500);
+          }
+
           /* Mobile Responsive */
           @media (min-width: 30rem) {
             .ui-grid__corner--heading {
@@ -224,10 +329,6 @@ export class BlockGarden extends HTMLElement {
             height: 50rem;
             margin: auto;
             width: 50rem;
-          }
-
-          #loadInput {
-            padding-top: 0.5rem;
           }
 
           /* Touch Controls */
@@ -416,9 +517,7 @@ export class BlockGarden extends HTMLElement {
                       <block-garden-option value="fullscreen">Fullscreen</block-garden-option>
                     </block-garden-select>
                   </div>
-                  <button
-                    id="generateWorldButton"
-                  >Generate World</button>
+                  <button id="worldState">🌍 World State</button>
                   <button
                     id="randomPlantButton"
                   >Plant randomly</button>
@@ -432,13 +531,10 @@ export class BlockGarden extends HTMLElement {
                     id="toggleTouchControls"
                   >Disable Touch Controls</button>
                   <button
-                    id="saveWorld"
-                  >💾 Save</button>
-                  <input
-                    accept=".json.gz"
-                    id="loadInput"
-                    type="file"
-                  />
+                    onclick="if (confirm('Reloading will lose unsaved progress. Do you want to continue?')) { window.location.reload(); }"
+                  >
+                    Reload Game
+                  </button>
                 </div>
               </div>
             </div>
@@ -454,6 +550,53 @@ export class BlockGarden extends HTMLElement {
             <div class="ui-grid__corner--heading">
               <div class="ui-grid__corner--container" hidden="hidden"></div>
             </div>
+          </div>
+        </div>
+
+        <div class="seed-controls" hidden="hidden">
+          <div class="seed-controls__header">
+            <h4>World Generation</h4>
+            <button id="closeWorldGeneration">
+              &times;
+            </button>
+          </div>
+          <div class="seed-controls__actions">
+            <label>
+              Seed:
+              <input
+                id="worldSeedInput"
+                placeholder="Enter seed..."
+                type="number"
+              />
+            </label>
+
+            <button id="generateWithSeed">Generate</button>
+            <button id="randomSeed">Random</button>
+            <button id="copySeed">Copy Seed</button>
+          </div>
+
+          <div class="current-seed">
+            <p>Current seed: <span id="currentSeed"></span></p>
+          </div>
+
+          <h4>Store / Save / Load</h4>
+
+          <div class="seed-controls__save-load">
+            <button id="openStorageBtn">🗄️ Open Game Storage</button>
+            <button id="saveExternalGameFile">🗃️ Save Game File To Disk</button>
+            <button id="loadExternalGameFile">💾 Load Game File From Disk</button>
+          </div>
+
+          <h4 class="seed-controls__header seed-controls--share" hidden>Share</h4>
+
+          <div class="seed-controls__save-load seed-controls--share" hidden>
+            <button id="shareExternalGameFile">🌍 Share Game File From Disk</button>
+          </div>
+
+          <h4>Mode</h4>
+
+          <div class="seed-controls__save-load">
+            <button id="saveModeToggle">Save Mode Auto</button>
           </div>
         </div>
 
@@ -508,7 +651,9 @@ export class BlockGarden extends HTMLElement {
   }
 
   /** @returns {Promise<void>} */
-  async disconnectedCallback() {}
+  async disconnectedCallback() {
+    await autoSaveGame(globalThis);
+  }
 }
 
 if (!globalThis.customElements?.get(tagName)) {

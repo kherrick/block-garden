@@ -1,3 +1,5 @@
+import extrasHandler from "konami-code-js";
+
 import { debounce } from "../util/debounce.mjs";
 import { effect } from "../util/effect.mjs";
 import { getBlock } from "../util/world.mjs";
@@ -9,6 +11,19 @@ import { createSaveState } from "../state/createSave.mjs";
 import { loadSaveState } from "../state/loadSave.mjs";
 
 import { generateProceduralWorld } from "../generate/world.mjs";
+
+import { copyToClipboard } from "../util/copyToClipboard.mjs";
+import { extractAttachments } from "../util/extractAttachments.mjs";
+import { extractJsonFromPng } from "../util/canvasToPngWithState.mjs";
+import { runCompress } from "../util/compression.mjs";
+
+import {
+  autoSaveGame,
+  getSaveMode,
+  setSaveMode,
+  showStorageDialog,
+} from "../dialog/storage.mjs";
+import { getRandomSeed } from "../util/getRandomSeed.mjs";
 
 /** @typedef {import('signal-polyfill').Signal.State} Signal.State */
 
@@ -64,6 +79,42 @@ let lastTouchTime = 0;
  * @returns {void}
  */
 export function initElementEventListeners(shadow, cnvs, currentResolution) {
+  const gameState = globalThis.blockGarden.state;
+
+  const host =
+    /** @type {CustomShadowHost} */
+    (shadow.host);
+
+  // Extras
+  new extrasHandler((handler) => {
+    shadow
+      .getElementById("customizeColorsBtnContainer")
+      ?.removeAttribute("hidden");
+
+    shadow
+      .querySelector('block-garden-option[value="fullscreen"]')
+      .removeAttribute("hidden");
+
+    const customizeColorsDialog = shadow.getElementById(
+      "customizeColorsDialog",
+    );
+
+    if (customizeColorsDialog) {
+      customizeColorsDialog
+        .querySelectorAll("[hidden]")
+        .forEach((node) => node.removeAttribute("hidden"));
+    }
+
+    const settingsContainer = shadow.querySelector(
+      '#settings > [class="ui-grid__corner--container"]',
+    );
+
+    settingsContainer.removeAttribute("hidden");
+
+    gameState.hasEnabledExtras.set(true);
+    handler.disable();
+  });
+
   // Fast Growth Button
   const fastGrowthButton = shadow.getElementById("fastGrowthButton");
   if (fastGrowthButton) {
@@ -86,14 +137,6 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
     fastGrowthButton.style.backgroundColor = "var(--bg-color-green-500)";
     fastGrowthButton.style.color = "var(--bg-color-white)";
   }
-
-  // Set isPrePlanted to true by default
-  const gameState = globalThis.blockGarden.state;
-  gameState.isPrePlanted = true;
-
-  const host =
-    /** @type {CustomShadowHost} */
-    (shadow.host);
 
   // Toggle Pre-Planting Button
   const togglePrePlanting = shadow.getElementById("togglePrePlanting");
@@ -130,6 +173,7 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
       }
     });
   }
+
   const backquote = shadow.querySelector('[data-key="backquote"]');
 
   backquote.addEventListener("click", handleBackquoteClick(gameState));
@@ -150,6 +194,78 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
       host.keys[e.key.toLowerCase()] = false;
 
       e.preventDefault();
+    },
+  );
+
+  const closeWorldGenerationBtn = shadow.getElementById("closeWorldGeneration");
+  if (closeWorldGenerationBtn) {
+    closeWorldGenerationBtn.addEventListener("click", () => {
+      shadow
+        .querySelector('[class="seed-controls"]')
+        .setAttribute("hidden", "hidden");
+    });
+  }
+
+  // Keyboard events
+  shadow.addEventListener(
+    "keydown",
+    /** @param {KeyboardEvent} e */
+    async (e) => {
+      const lowercaseKey = e.key.toLowerCase();
+
+      const host =
+        /** @type {CustomShadowHost} */
+        (shadow.host);
+      host.keys[lowercaseKey] = true;
+
+      // Allow digits 0-9, enter, and delete
+      if (lowercaseKey === "enter") {
+        if (
+          e.target instanceof HTMLInputElement &&
+          e.target.getAttribute("id") === "worldSeedInput"
+        ) {
+          handleGenerateButton();
+        }
+      }
+
+      // Always hide the world generation panel with escape
+      if (lowercaseKey === "escape") {
+        shadow
+          .querySelector('[class="seed-controls"]')
+          .setAttribute("hidden", "hidden");
+      }
+
+      // Add 'S' key to show / hide the world generation panel
+      if (lowercaseKey === "s" && e.ctrlKey) {
+        e.preventDefault();
+
+        shadow
+          .querySelector('[class="seed-controls"]')
+          .toggleAttribute("hidden");
+
+        globalThis.document.exitPointerLock();
+      }
+
+      if (
+        (lowercaseKey >= "0" && lowercaseKey <= "9") ||
+        lowercaseKey === "backspace" ||
+        lowercaseKey === "delete" ||
+        lowercaseKey === "escape"
+      ) {
+        return;
+      }
+
+      if (lowercaseKey === "`" || lowercaseKey === "~") {
+        e.preventDefault();
+        if (e.code === "Backquote" || e.code === "Accent") {
+          const blockCount = gameConfig.blocks.length;
+          const forward = !e.shiftKey;
+          const newIndex = forward
+            ? (gameState.curBlock.get() + 1) % blockCount
+            : (gameState.curBlock.get() - 1 + blockCount) % blockCount;
+          gameState.curBlock.set(newIndex);
+        }
+      }
     },
   );
 
@@ -264,6 +380,367 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
     }
   });
 
+  function handleWorldStateButton() {
+    shadow.querySelector('[class="seed-controls"]').toggleAttribute("hidden");
+  }
+
+  const worldStateBtn = shadow.getElementById("worldState");
+  worldStateBtn.addEventListener("click", handleWorldStateButton);
+
+  function handleGenerateButton() {
+    /** @type string | null */
+    let seedInputValue = null;
+    const seedInput = shadow.getElementById("worldSeedInput");
+    if (seedInput instanceof HTMLInputElement) {
+      seedInputValue = seedInput.value;
+    }
+
+    const currentSeedDisplay = shadow.getElementById("currentSeed");
+
+    generateProceduralWorld(
+      Number(seedInputValue),
+      globalThis.blockGarden.config,
+      globalThis.blockGarden.state,
+    );
+
+    console.log(`Generated new world with seed: ${seedInputValue}`);
+
+    currentSeedDisplay.textContent = seedInputValue;
+  }
+
+  function handleRandomSeedButton() {
+    const currentSeedDisplay = shadow.getElementById("currentSeed");
+    const seedInput = shadow.getElementById("worldSeedInput");
+    const randomSeed = getRandomSeed();
+
+    generateProceduralWorld(
+      randomSeed,
+      globalThis.blockGarden.config,
+      globalThis.blockGarden.state,
+    );
+
+    console.log(`Generated new world with random seed: ${randomSeed}`);
+
+    if (seedInput instanceof HTMLInputElement) {
+      seedInput.value = String(randomSeed);
+    }
+
+    currentSeedDisplay.textContent = String(randomSeed);
+  }
+
+  const generateBtn = shadow.getElementById("generateWithSeed");
+  generateBtn.addEventListener("click", handleGenerateButton);
+
+  const randomBtn = shadow.getElementById("randomSeed");
+  randomBtn.addEventListener("click", handleRandomSeedButton);
+
+  const copySeedBtn = shadow.getElementById("copySeed");
+  copySeedBtn.addEventListener("click", async function () {
+    const seedInput = shadow.getElementById("worldSeedInput");
+
+    if (seedInput instanceof HTMLInputElement) {
+      await copyToClipboard(globalThis, seedInput.value);
+    }
+  });
+
+  const saveMode = shadow.getElementById("saveModeToggle");
+  getSaveMode().then(async (mode) => {
+    const resolvedMode = mode === "auto" ? "auto" : "manual";
+
+    console.log("Save Mode:", resolvedMode);
+
+    if (resolvedMode === "auto") {
+      saveMode.innerText = "Save Mode Auto";
+      saveMode.style.backgroundColor = "var(--bg-color-green-500)";
+
+      return;
+    }
+
+    saveMode.innerText = "Save Mode Manual";
+    saveMode.style.backgroundColor = "var(--bg-color-red-500)";
+  });
+
+  saveMode.addEventListener("click", async function () {
+    const mode = await getSaveMode();
+    const resolvedMode = mode === "auto" ? "auto" : "manual";
+
+    if (resolvedMode === "manual") {
+      saveMode.innerText = "Save Mode Auto";
+      saveMode.style.backgroundColor = "var(--bg-color-green-500)";
+
+      await setSaveMode("auto");
+      await autoSaveGame(globalThis);
+
+      return;
+    }
+
+    if (resolvedMode === "auto") {
+      saveMode.innerText = "Save Mode Manual";
+      saveMode.style.backgroundColor = "var(--bg-color-red-500)";
+
+      await setSaveMode("manual");
+    }
+  });
+
+  const saveCompressedBtn = shadow.getElementById("saveExternalGameFile");
+  saveCompressedBtn.addEventListener("click", async function () {
+    try {
+      const saveState = createSaveState(globalThis.blockGarden.state.world);
+      const stateJSON = JSON.stringify(saveState);
+
+      await runCompress(globalThis, stateJSON);
+
+      console.log("Game state saved successfully");
+    } catch (error) {
+      console.error("Failed to save game state:", error);
+
+      alert("Failed to save game state. Check console for details.");
+    }
+  });
+
+  const loadExternalGameFileBtn = shadow.getElementById("loadExternalGameFile");
+  loadExternalGameFileBtn.addEventListener("click", async function () {
+    // try {
+    const currentSeedDisplay = shadow.getElementById("currentSeed");
+    const seedInput = shadow.getElementById("worldSeedInput");
+
+    let file;
+
+    // Feature detection for showOpenFilePicker
+    if (globalThis.showOpenFilePicker) {
+      const [fileHandle] = await globalThis.showOpenFilePicker({
+        types: [
+          {
+            description: "Block Garden Save Game Files",
+            accept: {
+              "application/*": [".bgs"],
+              "application/pdf": [".pdf"],
+              "text/plain": [".txt"],
+            },
+          },
+        ],
+      });
+
+      file = await fileHandle.getFile();
+    } else {
+      // Fallback for browsers without showOpenFilePicker
+      const input = globalThis.document.createElement("input");
+      input.type = "file";
+      input.accept =
+        ".bgs,.pdf,.txt,text/plain,application/pdf,application/gzip,application/*";
+      input.style.display = "none";
+
+      shadow.append(input);
+
+      const filePromise = new Promise((resolve) => {
+        input.onchange = () => resolve(input.files[0]);
+      });
+
+      input.click();
+
+      file = await filePromise;
+      shadow.removeChild(input);
+    }
+
+    let stateJSON = "{}";
+
+    if (file.name.endsWith(".txt")) {
+      stateJSON = (await file.text()).replace(/\s+/g, "");
+    }
+
+    if (file.name.endsWith(".pdf")) {
+      const [results] = await extractAttachments(file);
+      stateJSON = await extractJsonFromPng(new Blob([results.data]));
+    }
+
+    if (file.name.endsWith(".bgs")) {
+      const decompressedStream = file
+        .stream()
+        .pipeThrough(new globalThis.DecompressionStream("gzip"));
+
+      const decompressedBlob = await new globalThis.Response(
+        decompressedStream,
+      ).blob();
+
+      stateJSON = await decompressedBlob.text();
+    }
+
+    // Validate the file is a valid game state before sharing
+    /** @type {Object} */
+    let saveState;
+
+    try {
+      saveState = JSON.parse(stateJSON);
+    } catch (parseError) {
+      throw new Error("Invalid game state file: not valid JSON.");
+    }
+
+    await loadSaveState(globalThis, shadow, saveState);
+  });
+
+  let canShareFiles = false;
+  const shareExternalGameFileBtn = shadow.getElementById(
+    "shareExternalGameFile",
+  );
+
+  if (
+    typeof navigator !== "undefined" &&
+    typeof navigator.canShare !== "undefined"
+  ) {
+    // Test if we can actually share files
+    try {
+      canShareFiles = navigator.canShare({ files: [new File([], "test")] });
+    } catch (e) {
+      console.info(`File sharing is not enabled. ${JSON.stringify(e)}`);
+    }
+  }
+
+  if (canShareFiles) {
+    shadow
+      .querySelectorAll(".seed-controls--share")
+      .forEach((s) => s.removeAttribute("hidden"));
+
+    shareExternalGameFileBtn.addEventListener("click", async function () {
+      try {
+        let file;
+
+        if (globalThis.showOpenFilePicker) {
+          // Modern File System Access API
+          const [fileHandle] = await globalThis.showOpenFilePicker({
+            types: [
+              {
+                description: "Block Garden Save Game Files",
+                accept: {
+                  "application/octet-stream": [".bgs"],
+                  "application/pdf": [".pdf"],
+                  "text/plain": [".txt"],
+                },
+              },
+              {
+                description: "All files (*.*)",
+                accept: { "*/*": [] }, // Broad fallback
+              },
+            ],
+            excludeAcceptAllOption: false,
+          });
+
+          file = await fileHandle.getFile();
+        } else {
+          // Primary fallback: <input type="file">
+          const input = globalThis.document.createElement("input");
+          input.type = "file";
+          input.multiple = false;
+          input.style.display = "none";
+          input.accept =
+            ".bgs,.pdf,.txt,application/octet-stream,application/pdf,text/plain,*/*";
+
+          shadow.appendChild(input);
+
+          const filePromise = new Promise((resolve, reject) => {
+            input.onchange = () => {
+              if (input.files && input.files[0]) {
+                resolve(input.files[0]);
+              } else {
+                reject(new DOMException("No file selected", "AbortError"));
+              }
+            };
+            input.onerror = () => reject(new Error("File input failed"));
+          });
+
+          input.click();
+
+          file = await filePromise;
+          shadow.removeChild(input);
+        }
+
+        // Process file based on extension
+        let stateJSON = "{}";
+
+        if (file.name.toLowerCase().endsWith(".txt")) {
+          stateJSON = (await file.text()).replace(/\s+/g, "");
+        } else if (file.name.toLowerCase().endsWith(".pdf")) {
+          const [results] = await extractAttachments(file);
+          stateJSON = await extractJsonFromPng(new Blob([results.data]));
+        } else if (file.name.toLowerCase().endsWith(".bgs")) {
+          // Handle .bgs (gzip compressed)
+          const decompressedStream = file
+            .stream()
+            .pipeThrough(new globalThis.DecompressionStream("gzip"));
+          const decompressedBlob = await new globalThis.Response(
+            decompressedStream,
+          ).blob();
+          stateJSON = await decompressedBlob.text();
+        } else {
+          throw new Error(`Unsupported file type: ${file.name}`);
+        }
+
+        // Validate JSON structure
+        let saveState;
+        try {
+          saveState = JSON.parse(stateJSON);
+        } catch (parseError) {
+          throw new Error("Invalid game state file: not valid JSON.");
+        }
+
+        // Create shareable JSON file
+        const shareFile = new File(
+          [stateJSON],
+          `BlockGarden-${file.name.replace(/\.[^.]+$/, "")}-save.json.txt`,
+          {
+            type: "text/plain",
+            lastModified: Date.now(),
+          },
+        );
+
+        // Share via Web Share API
+        if (navigator.canShare && navigator.canShare({ files: [shareFile] })) {
+          await navigator.share({
+            files: [shareFile],
+            title: "Block Garden Game Save",
+            text: `Block Garden save from ${file.name}\nVisit https://kherrick.github.io/block-garden and click 'Load' to play!`,
+            url: "https://kherrick.github.io/block-garden",
+          });
+          console.log("Game state shared successfully");
+        } else {
+          // Download fallback
+          const url = URL.createObjectURL(shareFile);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = shareFile.name;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+
+          URL.revokeObjectURL(url);
+
+          console.log("Game state downloaded:", shareFile.name);
+        }
+      } catch (error) {
+        if (error.name !== "AbortError") {
+          console.error("Share failed:", error);
+
+          alert(`Share failed: ${error.message}`);
+        } else {
+          console.log("User cancelled file selection");
+        }
+      }
+    });
+  }
+
+  // Add event listener for storage dialog button
+  const openStorageBtn = shadow.getElementById("openStorageBtn");
+  if (openStorageBtn) {
+    openStorageBtn.addEventListener("click", async function () {
+      try {
+        await showStorageDialog(globalThis, globalThis.document, shadow);
+      } catch (error) {
+        console.error("Failed to open storage dialog:", error);
+
+        alert("Failed to open storage dialog. Check console for details.");
+      }
+    });
+  }
+
   const corners = shadow.querySelectorAll(".ui-grid__corner");
   corners.forEach((corner) => {
     const heading = corner.querySelector(".ui-grid__corner--heading");
@@ -276,73 +753,6 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
       ) => handleCornerClick(e),
     );
   });
-
-  const loadworldButton = shadow.getElementById("loadInput");
-  loadworldButton.addEventListener("change", async (e) => {
-    const file =
-      /**@type {HTMLInputElement} */
-      (e.target).files[0];
-
-    if (!file) {
-      return;
-    }
-
-    const world = await loadSaveState(globalThis, file, gameState.world);
-
-    // Reposition player to the top-most block
-    const { x, z, playerHeight } = gameState;
-    let foundY = -Infinity;
-
-    // Scan downwards from a high point to find the first solid block
-    for (let y = 255; y >= -64; y--) {
-      if (getBlock(world, x, y, z)) {
-        foundY = y;
-
-        break;
-      }
-    }
-
-    // Place player on top of the found block, at eye height
-    // foundY is the coordinate of the block, so foundY + 1 is the surface
-    gameState.y = foundY + 1 + 1.62;
-    gameState.dy = 0;
-
-    alert(`Loaded ${world.chunks.size} chunks!`);
-  });
-
-  const saveWorldButton = shadow.getElementById("saveWorld");
-  saveWorldButton.addEventListener("click", async () => {
-    const world = createSaveState(gameState.world);
-    const jsonStream = new globalThis.Blob([JSON.stringify(world)]).stream();
-    const gzipStream = jsonStream.pipeThrough(
-      new globalThis.CompressionStream("gzip"),
-    );
-    const blob = await new globalThis.Response(gzipStream).blob();
-
-    const a = globalThis.document.createElement("a");
-    a.href = globalThis.URL.createObjectURL(blob);
-    a.download = "block-garden.json.gz";
-    a.click();
-
-    URL.revokeObjectURL(a.href);
-  });
-
-  const generateWorldButton = shadow.getElementById("generateWorldButton");
-  if (generateWorldButton) {
-    generateWorldButton.addEventListener("click", () => {
-      if (!confirm("Are you sure you want to generate a new world?")) {
-        return;
-      }
-
-      // Set a new random seed
-      gameState.seed = Math.random();
-
-      // Use the current value of isPrePlanted
-      generateProceduralWorld(gameConfig, gameState);
-
-      alert("New world generated!");
-    });
-  }
 
   // planting logic for randomPlantButton ---
   function randomPlantSeeds() {
@@ -395,7 +805,10 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
               type: block.name,
               blocks: [spot.key],
             };
-            gameState.growthTimers[spot.key] = block.growthTime || 10.0;
+            const FAST_GROWTH_TIME = 30;
+            gameState.growthTimers[spot.key] = gameState.fastGrowth
+              ? FAST_GROWTH_TIME
+              : block.growthTime || 10.0;
           }
         }
       });
@@ -446,32 +859,6 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
  * @returns {void}
  */
 export function initCanvasEventListeners(shadow, cnvs, blocks, curBlock) {
-  // Keyboard events
-  cnvs.addEventListener(
-    "keydown",
-    /** @param {KeyboardEvent} e */
-    async (e) => {
-      const lowercaseKey = e.key.toLowerCase();
-
-      const host =
-        /** @type {CustomShadowHost} */
-        (shadow.host);
-      host.keys[lowercaseKey] = true;
-
-      if (lowercaseKey === "`" || lowercaseKey === "~") {
-        e.preventDefault();
-        if (e.code === "Backquote" || e.code === "Accent") {
-          const blockCount = gameConfig.blocks.length;
-          const forward = !e.shiftKey;
-          const newIndex = forward
-            ? (curBlock.get() + 1) % blockCount
-            : (curBlock.get() - 1 + blockCount) % blockCount;
-          curBlock.set(newIndex);
-        }
-      }
-    },
-  );
-
   cnvs.addEventListener("click", () => {
     cnvs?.requestPointerLock();
   });

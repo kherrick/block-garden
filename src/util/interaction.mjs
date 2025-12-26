@@ -59,7 +59,10 @@ export function placeBlock(gameState) {
       gameState.plantStructures = {};
     }
 
-    const growthTime = placedBlock.growthTime || 10.0;
+    const FAST_GROWTH_TIME = 30;
+    const growthTime = gameState.fastGrowth
+      ? FAST_GROWTH_TIME
+      : placedBlock.growthTime || 10.0;
     gameState.growthTimers[key] = growthTime;
     gameState.plantStructures[key] = {
       type: placedBlock.name,

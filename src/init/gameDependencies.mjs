@@ -17,7 +17,10 @@ import { createCube, createProgram, createVBO } from "../util/graphics.mjs";
  * }}
  */
 export function initGameDependencies(cnvs) {
-  const gl = cnvs.getContext("webgl2");
+  const gl = cnvs.getContext("webgl2", {
+    alpha: false,
+    preserveDrawingBuffer: true,
+  });
 
   if (!gl) {
     console.error("WebGL 2 not supported.");

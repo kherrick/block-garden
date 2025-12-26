@@ -7,7 +7,7 @@ grep -Rl 'fetch(' src/** | while IFS= read -r filename; do
   if [[ "$filename" == "src/init/game.mjs" ]]; then
     # shellcheck disable=SC2016
     base64Encoded="$(bin/urlToBase64.mjs http://localhost:8080/package.json)" \
-      && bin/file-search-replace.mjs 'fetch\("package.json"\)' "$filename" 'fetch("data:text/html;base64,' "$base64Encoded\")" \
+      && bin/file-search-replace.mjs 'fetch\("package.json"\)' "$filename" 'fetch("data:application/json;base64,' "$base64Encoded\")" \
       || exit 1
   fi
 done

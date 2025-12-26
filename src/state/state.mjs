@@ -2,6 +2,7 @@ import { Signal } from "signal-polyfill";
 
 import { gameConfig } from "./config/index.mjs";
 import { ChunkManager } from "./chunkManager.mjs";
+import { getRandomSeed } from "../util/getRandomSeed.mjs";
 
 /** @typedef {import("../util/ray.mjs").PointWithFace} PointWithFace */
 
@@ -10,34 +11,47 @@ import { ChunkManager } from "./chunkManager.mjs";
  *
  * @typedef {Object} GameState
  *
- * @property {Signal.State} curBlock
+ * @property {boolean} fastGrowth
+ * @property {boolean} flying
+ * @property {boolean} isPrePlanted
+ * @property {boolean} onGround
+ * @property {boolean} uiButtonActive
+ * @property {boolean} spacePressed
  * @property {ChunkManager} world
+ * @property {number} actionKeyPressTime
+ * @property {number} lastSpacePressTime
+ * @property {number} flySpeed
+ * @property {number} gameTime
+ * @property {number} playerHeight
+ * @property {number} playerWidth
  * @property {number} seed
- * @property {number} yaw
  * @property {number} pitch
- * @property {number} x
- * @property {number} y
- * @property {number} z
+ * @property {number} yaw
  * @property {number} dx
  * @property {number} dy
  * @property {number} dz
- * @property {number} playerHeight
- * @property {number} playerWidth
- * @property {number} flySpeed
- * @property {boolean} flying
- * @property {boolean} onGround
- * @property {PointWithFace} hit
- * @property {number} lastSpacePressTime
- * @property {boolean} spacePressed
- * @property {boolean} uiButtonActive
- * @property {Object.<string, Object>} plantStructures
+ * @property {number} x
+ * @property {number} y
+ * @property {number} z
  * @property {Object.<string, number>} growthTimers
- * @property {boolean} isPrePlanted
- * @property {boolean} fastGrowth
- * @property {Signal.State} shouldReset
+ * @property {Object.<string, Object>} plantStructures
+ * @property {PointWithFace} hit
  * @property {Signal.State} arrowsControlCamera
- * @property {number} actionKeyPressTime
+ * @property {Signal.State} curBlock
+ * @property {Signal.State} shouldReset
+ * @property {Signal.State} hasEnabledExtras
  */
+
+/** @type number */
+let initialWorldSeed;
+
+const params = new URLSearchParams(globalThis.location?.search);
+
+if (params.has("seed")) {
+  initialWorldSeed = Number(params.get("seed"));
+} else {
+  initialWorldSeed = getRandomSeed();
+}
 
 /**
  * Primary game state store using reactive Signals.
@@ -49,7 +63,7 @@ import { ChunkManager } from "./chunkManager.mjs";
 export const gameState = {
   curBlock: new Signal.State(2),
   world: new ChunkManager(),
-  seed: Math.random(),
+  seed: initialWorldSeed,
   yaw: 0,
   pitch: 0,
   x: 0,
@@ -58,6 +72,7 @@ export const gameState = {
   dx: 0,
   dy: 0,
   dz: 0,
+  gameTime: 0,
   playerHeight: 1.8,
   playerWidth: 0.6,
   flySpeed: 10,
@@ -74,6 +89,7 @@ export const gameState = {
   shouldReset: new Signal.State(false),
   arrowsControlCamera: new Signal.State(true),
   actionKeyPressTime: 0,
+  hasEnabledExtras: new Signal.State(false),
 };
 
 /**

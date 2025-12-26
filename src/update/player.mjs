@@ -13,6 +13,10 @@ import { placeBlock, removeBlock } from "../util/interaction.mjs";
  * @returns {void}
  */
 export function updatePlayer(shadow, state, dt) {
+  if (isKeyPressed(shadow, "control")) {
+    return;
+  }
+
   const { yaw, flying } = state;
   const speed = flying ? 12 : 8; // Faster when flying
 
@@ -90,7 +94,7 @@ export function updatePlayer(shadow, state, dt) {
   }
 
   // action key interaction
-  if (isKeyPressed(shadow, "enter") || isKeyPressed(shadow, "control")) {
+  if (isKeyPressed(shadow, "enter")) {
     if (state.actionKeyPressTime === 0) {
       // Just started pressing
       state.actionKeyPressTime = performance.now();

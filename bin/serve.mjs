@@ -29,7 +29,11 @@ if (port < 1024 || port > 65535) {
 }
 
 // enable CORS
-const allowedOrigins = ["http://localhost:3000", "http://localhost:4200"];
+const CORS_CONFIG = {
+  allowPrivateIPs: false, // Enables 127.*, 10.*, 172.16-31.*, 192.168.*
+  allowAllOrigins: false, // True = "*" (no credentials support)
+  allowLocalhostOnly: true, // Restricts to localhost:3000/4200 only
+};
 
 app.use(
   cors({
@@ -39,8 +43,37 @@ app.use(
         return callback(null, true);
       }
 
-      if (allowedOrigins.includes(origin)) {
+      // Flag: All origins (*)
+      if (CORS_CONFIG.allowAllOrigins) {
         return callback(null, true);
+      }
+
+      // Flag: Localhost only
+      if (CORS_CONFIG.allowLocalhostOnly) {
+        const hostname = new URL(origin).hostname;
+        if (hostname === "localhost" || hostname === "127.0.0.1") {
+          return callback(null, true);
+        }
+
+        return callback(new Error("Localhost only"));
+      }
+
+      // Flag: Private IP ranges
+      if (CORS_CONFIG.allowPrivateIPs) {
+        try {
+          const url = new URL(origin);
+          const ip = url.hostname;
+
+          // Fixed single-line regex for private IPs
+          const privateIPRegex =
+            /^(127\.|10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.)/;
+
+          if (privateIPRegex.test(ip)) {
+            return callback(null, true);
+          }
+        } catch {
+          // Invalid URL, skip
+        }
       }
 
       // Reject other origins

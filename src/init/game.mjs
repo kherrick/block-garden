@@ -3,13 +3,21 @@ import localForage from "localforage";
 
 import { initTouchControls } from "./touchControls.mjs";
 import { initHammerControls } from "./hammerControls.mjs";
-
+import { initNewWorld } from "./newWorld.mjs";
 import {
   initCanvasEventListeners,
   initElementEventListeners,
 } from "./eventListeners.mjs";
 import { initEffects } from "./effects.mjs";
 import { initGameDependencies } from "./gameDependencies.mjs";
+
+import {
+  AUTO_SAVE_INTERVAL,
+  autoSaveGame,
+  checkAutoSave,
+  checkSharedSave,
+  getSaveMode,
+} from "../dialog/storage.mjs";
 
 import { initState } from "../state/state.mjs";
 import { cancelGameLoop, gameLoop } from "../state/gameLoop.mjs";
@@ -78,8 +86,6 @@ export async function initGame(gThis, shadow, cnvs) {
     version,
   );
 
-  generateFlatWorld(gameConfig, gameState);
-
   const host =
     /** @type {CustomShadowHost} */
     (shadow.host);
@@ -97,6 +103,19 @@ export async function initGame(gThis, shadow, cnvs) {
   // Only pass cnvs to initGameDependencies, and call it once
   const { gl, cbuf, cube, uL, uM, uMVP } = initGameDependencies(cnvs);
 
+  // Check for shared save first (takes priority)
+  let sharedSaveLoaded = await checkSharedSave(gThis, shadow);
+
+  // If no shared save, check for auto-save
+  let autoSaveLoaded = false;
+  if (!sharedSaveLoaded) {
+    autoSaveLoaded = await checkAutoSave(gThis, shadow);
+  }
+
+  if (!autoSaveLoaded) {
+    initNewWorld(gameState.seed);
+  }
+
   // Get required UI buttons for flight controls
   const ui = {
     descendButton: shadow.getElementById("descend"),
@@ -105,6 +124,15 @@ export async function initGame(gThis, shadow, cnvs) {
 
   // Set current block to id of dirt
   gameState.curBlock.set(getBlockIdByName("Dirt"));
+
+  // Set up auto-save interval
+  setInterval(async () => {
+    const saveMode = await getSaveMode();
+
+    if (saveMode === "auto") {
+      await autoSaveGame(gThis);
+    }
+  }, AUTO_SAVE_INTERVAL);
 
   const ver = await localForage.setItem(`block-garden-version`, version);
 

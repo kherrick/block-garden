@@ -4,6 +4,10 @@ Block Garden - A 3D sandbox exploration and farming game. Explore procedurally g
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/kherrick/block-garden)
 
+## Demo
+
+[![Block Garden Screenshot](assets/screenshots/block-garden-screenshot-2266x1440.png)](https://kherrick.github.io/block-garden/)
+
 ## To play locally
 
 ```sh
@@ -16,23 +20,26 @@ npm i && npm start
 npm i && npm test
 ```
 
-## Screenshot
+## 🧩 Features include:
 
-[![Block Garden Screenshot](assets/screenshots/block-garden-screenshot-2266x1440.png)](https://kherrick.github.io/block-garden/)
+- Procedurally generated worlds
+- Local and downloadable saves
+- Cross-platform (desktop & mobile)
+- Installation and offline play supported
+- Privacy-respecting (no login or data collection)
 
-## Controls
+[![Block Garden Screenshot](assets/block-garden-animation.gif)](https://www.youtube.com/watch?v=eRDM5INHyKA)
 
-```
-Movement: W / A / S / D
-Camera: Arrow Keys
-Change Block: ~ / `
-Jump / Ascend: Space
-Descend: Shift
 
-Place / Remove Block: Enter / Control
-Use crosshair to center block placement
-Click Game Canvas To Lock Mouse
+## 🎮 Quick Start
 
-Left Click: Place Block
-Right Click: Remove Block
-```
+- **Movement:** `W` / `A` / `S` / `D`
+- **Camera:** `Arrow Keys`
+- **Change Block:** `~` / `` ` ``
+- **Jump / Ascend:** `Space`
+- **Descend:** `Shift`
+- **Place / Remove Block:** `Enter` / `Control`
+- Click Game Canvas To Lock Mouse
+  - **Use crosshair to center block placement**
+  - **Left Click:** Place Block
+  - **Right Click:** Remove Block

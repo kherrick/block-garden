@@ -1,15 +1,20 @@
 import { blockNames } from "../../state/config/blocks.mjs";
 
 /**
+ * @typedef {import('../../state/config/index.mjs').BlockDefinition} BlockDefinition
+ * @typedef {import('../../state/config/index.mjs').BlockPlacement} BlockPlacement
+ */
+
+/**
  * Generate 3D sunflower structure.
  *
- * @param {number} x
- * @param {number} y
- * @param {number} z
- * @param {number} progress (0.0 to 1.0)
- * @param {Array} blocks
+ * @param {number} x - World X coordinate
+ * @param {number} y - World Y coordinate
+ * @param {number} z - World Z coordinate
+ * @param {number} progress - Growth progress (0.0 to 1.0)
+ * @param {BlockDefinition[]} blocks - Block definitions array
  *
- * @returns {{ x: number, y: number, z: number, blockId: number }[]}
+ * @returns {BlockPlacement[]}
  */
 export function generateSunflowerStructure(x, y, z, progress, blocks) {
   const structure = [];
@@ -24,6 +29,7 @@ export function generateSunflowerStructure(x, y, z, progress, blocks) {
   // Early stage
   if (progress < 0.1) {
     structure.push({ x, y, z, blockId: GROWING });
+
     return structure;
   }
 
@@ -44,7 +50,6 @@ export function generateSunflowerStructure(x, y, z, progress, blocks) {
     const leafSpacing = 2;
     for (let i = leafSpacing; i < currentHeight; i += leafSpacing) {
       // 3D Spiral or alternating?
-      // Block Garden was: even->x-1, odd->x+1
       // Let's do:
       // i % 4 == 0 -> x-1
       // i % 4 == 1 -> z-1
@@ -64,14 +69,12 @@ export function generateSunflowerStructure(x, y, z, progress, blocks) {
     const topY = y + currentHeight - 1; // Top of stem
 
     // Replace top stem with center? Or add on top?
-    // Block Garden: `y - currentHeight` (top) -> Center.
     // Here we placed STEM at `y + currentHeight - 1` in loop (i goes 0 to currentHeight-1).
     // Actually loop is `< currentHeight`. Last index is `currentHeight - 1`.
     // So top stem block is at `y + currentHeight - 1`.
 
     // We should probably allow stem to go all the way, and put center on top?
     // Or center replaces top stem?
-    // Block Garden replaces.
 
     // Find index of top stem and replace, or just overwrite in array (last one wins usually if map/set, but this is array).
     // Let's just put Center at topY, effectively overwriting stem if we pushed it.
@@ -81,7 +84,6 @@ export function generateSunflowerStructure(x, y, z, progress, blocks) {
     // Petals
     if (progress > 0.85) {
       // Cross pattern in X/Z plane? Or a ring?
-      // Block Garden: x-1, x+1, y-1, y+1 (in 2D).
       // 3D: Surrounding the center.
       structure.push({ x: x - 1, y: topY, z, blockId: PETALS });
       structure.push({ x: x + 1, y: topY, z, blockId: PETALS });

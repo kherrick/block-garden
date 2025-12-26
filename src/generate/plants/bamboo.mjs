@@ -1,5 +1,21 @@
 import { blockNames } from "../../state/config/blocks.mjs";
 
+/**
+ * @typedef {import('../../state/config/index.mjs').BlockDefinition} BlockDefinition
+ * @typedef {import('../../state/config/index.mjs').BlockPlacement} BlockPlacement
+ */
+
+/**
+ * Generate 3D bamboo structure.
+ *
+ * @param {number} x - World X coordinate
+ * @param {number} y - World Y coordinate
+ * @param {number} z - World Z coordinate
+ * @param {number} progress - Growth progress (0.0 to 1.0)
+ * @param {BlockDefinition[]} blocks - Block definitions array
+ *
+ * @returns {BlockPlacement[]}
+ */
 export function generateBambooStructure(x, y, z, progress, blocks) {
   const structure = [];
   const getBlockId = (name) => blocks.findIndex((b) => b.name === name);
@@ -11,6 +27,7 @@ export function generateBambooStructure(x, y, z, progress, blocks) {
 
   if (progress < 0.1) {
     structure.push({ x, y, z, blockId: GROWING });
+
     return structure;
   }
 
@@ -18,8 +35,6 @@ export function generateBambooStructure(x, y, z, progress, blocks) {
   const height = Math.floor(maxHeight * progress);
 
   for (let i = 0; i < height; i++) {
-    // Every 3rd block is a joint? Or just random?
-    // Block Garden might have specific logic but let's do a pattern.
     const isJoint = i % 3 === 2;
     structure.push({ x, y: y + i, z, blockId: isJoint ? JOINT : STALK });
 

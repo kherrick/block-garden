@@ -10,6 +10,17 @@
  * @property {boolean} [gravity=false] - Whether a block falls
  */
 
+/**
+ * Block placement in a plant structure.
+ *
+ * @typedef {Object} BlockPlacement
+ *
+ * @property {number} x - World X coordinate
+ * @property {number} y - World Y coordinate
+ * @property {number} z - World Z coordinate
+ * @property {number} blockId - Block ID (index into blocks array)
+ */
+
 export const blockNames = {
   AIR: "Air",
   AGAVE_BASE: "Agave Base",

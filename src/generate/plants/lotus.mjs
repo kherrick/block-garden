@@ -1,5 +1,21 @@
 import { blockNames } from "../../state/config/blocks.mjs";
 
+/**
+ * @typedef {import('../../state/config/index.mjs').BlockDefinition} BlockDefinition
+ * @typedef {import('../../state/config/index.mjs').BlockPlacement} BlockPlacement
+ */
+
+/**
+ * Generate 3D lotus structure.
+ *
+ * @param {number} x - World X coordinate
+ * @param {number} y - World Y coordinate
+ * @param {number} z - World Z coordinate
+ * @param {number} progress - Growth progress (0.0 to 1.0)
+ * @param {BlockDefinition[]} blocks - Block definitions array
+ *
+ * @returns {BlockPlacement[]}
+ */
 export function generateLotusStructure(x, y, z, progress, blocks) {
   const structure = [];
   const getBlockId = (name) => blocks.findIndex((b) => b.name === name);
@@ -12,6 +28,7 @@ export function generateLotusStructure(x, y, z, progress, blocks) {
 
   if (progress < 0.2) {
     structure.push({ x, y, z, blockId: GROWING });
+
     // Usually on water surface.
     return structure;
   }

@@ -1,5 +1,6 @@
 /**
  * @typedef {object} AABB
+ *
  * @property {number} minX
  * @property {number} minY
  * @property {number} minZ
@@ -10,8 +11,10 @@
 
 /**
  * Checks if two AABBs intersect.
+ *
  * @param {AABB} a
  * @param {AABB} b
+ *
  * @returns {boolean}
  */
 export function intersects(a, b) {

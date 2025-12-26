@@ -1,7 +1,22 @@
-/* ================= Math ================= */
+/**
+ * Create a 4x4 identity matrix.
+ *
+ * @returns {Float32Array} 4x4 identity matrix (length 16)
+ */
 export const I = () =>
   new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
 
+/**
+ * Set a perspective projection matrix.
+ *
+ * @param {Float32Array} o - Output 4x4 matrix
+ * @param {number} f - Field of view (radians)
+ * @param {number} a - Aspect ratio
+ * @param {number} n - Near plane
+ * @param {number} fa - Far plane
+ *
+ * @returns {Float32Array} The output matrix
+ */
 export const persp = (o, f, a, n, fa) => {
   const t = 1 / Math.tan(f / 2),
     nf = 1 / (n - fa);
@@ -28,6 +43,16 @@ export const persp = (o, f, a, n, fa) => {
   return o;
 };
 
+/**
+ * Set a look-at view matrix.
+ *
+ * @param {Float32Array} o - Output 4x4 matrix
+ * @param {Array<number>} e - Eye position [x, y, z]
+ * @param {Array<number>} c - Center position [x, y, z]
+ * @param {Array<number>} u - Up vector [x, y, z]
+ *
+ * @returns {Float32Array} The output matrix
+ */
 export const look = (o, e, c, u) => {
   let zx = e[0] - c[0],
     zy = e[1] - c[1],
@@ -75,6 +100,15 @@ export const look = (o, e, c, u) => {
   return o;
 };
 
+/**
+ * Multiply two 4x4 matrices (column-major order).
+ *
+ * @param {Float32Array} o - Output 4x4 matrix
+ * @param {Float32Array} a - Left matrix (4x4)
+ * @param {Float32Array} b - Right matrix (4x4)
+ *
+ * @returns {Float32Array} The output matrix
+ */
 export const mul = (o, a, b) => {
   for (let i = 0; i < 16; i++) {
     const r = (i >> 2) << 2,
@@ -90,6 +124,15 @@ export const mul = (o, a, b) => {
   return o;
 };
 
+/**
+ * Translate a 4x4 matrix by a 3D vector.
+ *
+ * @param {Float32Array} o - Output 4x4 matrix
+ * @param {Float32Array} a - Input 4x4 matrix
+ * @param {Array<number>} v - Translation vector [x, y, z]
+ *
+ * @returns {Float32Array} The output matrix
+ */
 export const trans = (o, a, v) => {
   o.set(a);
 

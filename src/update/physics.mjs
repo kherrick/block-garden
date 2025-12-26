@@ -14,11 +14,13 @@ import { isKeyPressed } from "../util/isKeyPressed.mjs";
  * @param {number} z
  * @param {number} playerWidth
  * @param {number} playerHeight
+ *
  * @returns {AABB}
  */
 function getPlayerAABB(x, y, z, playerWidth, playerHeight) {
   const halfW = playerWidth / 2;
   const halfH = playerHeight / 2;
+
   return {
     minX: x - halfW,
     maxX: x + halfW,
@@ -33,6 +35,7 @@ function getPlayerAABB(x, y, z, playerWidth, playerHeight) {
  * Checks for collision at a given position.
  * @param {GameState} state
  * @param {AABB} playerAABB
+ *
  * @returns {boolean}
  */
 function isColliding(state, playerAABB) {

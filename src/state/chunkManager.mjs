@@ -13,8 +13,23 @@ import {
  * handles chunk loading/unloading, and maintains backward compatibility
  * with the Map-based world storage.
  *
+ * @class ChunkManager
+ *
+ * @example
+ * const manager = new ChunkManager();
+ * manager.setBlock(10, 50, 10, 1); // Set block at world coords
+ * const type = manager.getBlock(10, 50, 10); // Get block type
+ *
+ * // Map-compatible API for backward compatibility
+ * manager.set("10,50,10", 1);
+ * manager.get("10,50,10");
  */
 export class ChunkManager {
+  /**
+   * Creates a new ChunkManager instance.
+   *
+   * @constructor
+   */
   constructor() {
     /** @type {Map<string, Chunk>} Loaded chunks by "chunkX,chunkZ" key */
     this.chunks = new Map();

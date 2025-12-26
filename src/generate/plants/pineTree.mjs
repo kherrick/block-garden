@@ -1,5 +1,21 @@
 import { blockNames } from "../../state/config/blocks.mjs";
 
+/**
+ * @typedef {import('../../state/config/index.mjs').BlockDefinition} BlockDefinition
+ * @typedef {import('../../state/config/index.mjs').BlockPlacement} BlockPlacement
+ */
+
+/**
+ * Generate 3D pine tree structure.
+ *
+ * @param {number} x - World X coordinate
+ * @param {number} y - World Y coordinate
+ * @param {number} z - World Z coordinate
+ * @param {number} progress - Growth progress (0.0 to 1.0)
+ * @param {BlockDefinition[]} blocks - Block definitions array
+ *
+ * @returns {BlockPlacement[]}
+ */
 export function generatePineTreeStructure(x, y, z, progress, blocks) {
   const structure = [];
   const getBlockId = (name) => blocks.findIndex((b) => b.name === name);
@@ -7,10 +23,10 @@ export function generatePineTreeStructure(x, y, z, progress, blocks) {
   const GROWING = getBlockId(blockNames.PINE_TREE_GROWING);
   const TRUNK = getBlockId(blockNames.PINE_TRUNK);
   const NEEDLES = getBlockId(blockNames.PINE_NEEDLES);
-  // Pine cone? Block Garden uses it as drop.
 
   if (progress < 0.1) {
     structure.push({ x, y, z, blockId: GROWING });
+
     return structure;
   }
 
@@ -45,6 +61,7 @@ export function generatePineTreeStructure(x, y, z, progress, blocks) {
         }
       }
     }
+
     // Top
     structure.push({ x, y: y + height, z, blockId: NEEDLES });
   }

@@ -1,0 +1,65 @@
+# [Block Garden](https://kherrick.github.io/block-garden/)
+
+**Type:** 3D Sandbox Exploration and Farming Game
+**Platform:** Web (Playable offline, desktop and mobile)
+**Tech:** Custom Element, JavaScript, HTML Canvas, Service Worker
+**Play Now:** [https://kherrick.github.io/block-garden/](https://kherrick.github.io/block-garden/)
+
+---
+
+> **Block Garden** is a 3D sandbox exploration and farming game available at [https://kherrick.github.io/block-garden/](https://kherrick.github.io/block-garden/).
+> Players explore procedurally generated worlds, dig for resources, cultivate plants, and shape their environment.
+
+The game is fully playable without login, and all progress is stored locally or can be exported as downloadable save files.
+Gameplay supports keyboard and mouse controls on desktop, and touch controls on mobile.
+
+---
+
+## 🎮 Quick Start
+
+- **Move:** W, A, S, D or Arrow Keys
+- **Move Up:** Spacebar
+- **Move Down:** Shift
+- **Change Block:** ~ / &#96;
+- **Place Block:** Left Click
+- **Remove Block:** Right Click
+- **Touch Controls:** Tap to move and interact
+
+---
+
+## 🌱 Gameplay Overview
+
+Players begin by exploring their surroundings to gather materials, cultivate plants, and experiment with terrain.
+Worlds are **procedurally generated**, providing a fresh environment every session with varied resources.
+
+All progress remains local — no account or online storage is required. Installation and offline play are supported.
+
+---
+
+## 🧩 Features
+
+- Procedurally generated biomes
+- Local and downloadable saves
+- Cross-platform (desktop & mobile)
+- Installation and offline play supported
+- Privacy-respecting (no login or data collection)
+
+---
+
+## 📚 Documentation
+
+- [**Game README**](https://kherrick.github.io/block-garden/README.md) — Detailed overview, features, controls, and gameplay tips
+- [**Privacy Policy**](https://kherrick.github.io/block-garden/privacy/) — Information on data handling and user privacy
+- [**Source Code**](https://github.com/kherrick/block-garden) — Full project source for exploration and custom development
+
+---
+
+## 🚀 Try It Out
+
+- **Play Now:** [Block Garden](https://kherrick.github.io/block-garden/) — Main playable version
+- **Offline / Local Save:** Supported
+- **No Login Required:** All data stays on your device
+
+---
+
+**Tags:** progressive web app, PWA, sandbox game, web game, webgl, voxel art, farming sim, procedural generation, modding, open source, Canvas, JavaScript, HTML5, browser game

@@ -4,18 +4,18 @@
  */
 
 /**
- * Tile-specific color names mapped to hex codes for in-game assets.
+ * Block-specific color names mapped to hex codes for in-game assets.
  * @typedef {{ [key: string]: string }} UIColorMap
  */
 
 /**
- * Tile-specific color names mapped to hex codes for in-game assets.
- * @typedef {{ [key: string]: string }} TileColorMap
+ * Block-specific color names mapped to hex codes for in-game assets.
+ * @typedef {{ [key: string]: string }} BlockColorMap
  */
 
 /**
  * CSS Custom Properties Map
- * @typedef {{[key: string]: string} & ColorMap & TileColorMap} CombinedColorMap
+ * @typedef {{[key: string]: string} & ColorMap & BlockColorMap} CombinedColorMap
  */
 
 /**
@@ -24,14 +24,15 @@
  */
 
 /**
- * Tile-specific color names without prefixes ('--bg-tile-color').
- * @typedef {{ [key: string]: string }} TileColorMapWithoutPrefixes
+ * Block-specific color names without prefixes ('--bg-block-color').
+ * @typedef {{ [key: string]: string }} BlockColorMapWithoutPrefixes
  */
 
 /**
- * Colors used for styling game elements and tiles.
+ * Colors used for styling game elements and blocks.
  * @typedef {Object} Colors
  *
  * @property {ColorMapWithoutPrefixes} color - General UI colors as hex strings.
+ * @property {BlockColorMapWithoutPrefixes} block - Block colors as hex strings.
  * @property {UIColorMap} ui - UI colors applied.
  */

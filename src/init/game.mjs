@@ -10,6 +10,13 @@ import {
 } from "./eventListeners.mjs";
 import { initEffects } from "./effects.mjs";
 import { initGameDependencies } from "./gameDependencies.mjs";
+import { buildStyleMapByPropNamesWithoutPrefixesOrSuffixes } from "../util/colors/buildStyleMapByPropNamesWithoutPrefixesOrSuffixes.mjs";
+
+import { applyColorsToShadowHost } from "../util/colors/applyColorsToShadowHost.mjs";
+import { COLOR_STORAGE_KEY } from "../dialog/colors/index.mjs";
+import { getSavedColors } from "../dialog/colors/getSavedColors.mjs";
+import { getCustomProperties } from "../util/colors/getCustomProperties.mjs";
+import { colors as blockGardenColors } from "../state/config/colors.mjs";
 
 import {
   AUTO_SAVE_INTERVAL,
@@ -18,6 +25,10 @@ import {
   checkSharedSave,
   getSaveMode,
 } from "../dialog/storage.mjs";
+
+import { cssColorToRGB } from "../util/colors/cssColorToRGB.mjs";
+import { normalizeRGBToRGBA } from "../util/colors/normalizeRGB.mjs";
+import { transformStyleMap } from "../util/colors/transformStyleMap.mjs";
 
 import { initState } from "../state/state.mjs";
 import { cancelGameLoop, gameLoop } from "../state/gameLoop.mjs";
@@ -93,12 +104,41 @@ export async function initGame(gThis, shadow, cnvs) {
   host.keys = {};
   host.touchKeys = {};
 
-  initTouchControls(shadow);
-  initHammerControls(Hammer(shadow.host), shadow, gameState);
+  // init colors
+  const savedColors = await getSavedColors(COLOR_STORAGE_KEY);
+  const initialColors = getCustomProperties(gThis, shadow);
+  const colors = savedColors ?? initialColors;
+
+  applyColorsToShadowHost(shadow, colors);
+
+  // Build color maps
+  const styles = gThis.getComputedStyle(shadow.host);
+  const blockColorMap = Object.fromEntries(
+    Object.entries(
+      buildStyleMapByPropNamesWithoutPrefixesOrSuffixes(
+        styles,
+        Object.keys(blockGardenColors["block"]).map(
+          (v) => `--bg-block-${v}-color`,
+        ),
+        "--bg-block-",
+        "-color",
+      ),
+    ).map(([k, v]) => [
+      k
+        .replaceAll("-", " ")
+        .toLowerCase()
+        .split(" ")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" "),
+      normalizeRGBToRGBA(cssColorToRGB(gThis.document, v)),
+    ]),
+  );
 
   initEffects(shadow, computedSignals.currentBlock);
   initElementEventListeners(shadow, cnvs, gameConfig.currentResolution);
   initCanvasEventListeners(shadow, cnvs, gameConfig.blocks, gameState.curBlock);
+  initHammerControls(Hammer(shadow.host), shadow, gameState);
+  initTouchControls(shadow);
 
   // Only pass cnvs to initGameDependencies, and call it once
   const { gl, cbuf, cube, uL, uM, uMVP } = initGameDependencies(cnvs);
@@ -138,7 +178,7 @@ export async function initGame(gThis, shadow, cnvs) {
 
   console.log(`Block Garden version: ${ver}`);
 
-  shadow.addEventListener("block-garden-reset", () => {
+  shadow.addEventListener("block-garden-reset", (e) => {
     // Set all growthTimers to FAST_GROWTH_TIME if enabled else restore to block default
     const { blocks } = gameConfig;
     const { growthTimers, plantStructures } = gameState;
@@ -155,10 +195,37 @@ export async function initGame(gThis, shadow, cnvs) {
       }
     });
 
-    // Only call gameLoop, do not re-init dependencies
+    let colors;
+
+    if (e instanceof CustomEvent) {
+      colors = e?.detail?.colors ?? {};
+    }
+
+    // Build color map for blocks
+    let colorMap;
+    if (Object.keys(colors).length && colors.constructor === Object) {
+      colorMap = transformStyleMap(colors, "--bg-block-", "-color");
+    } else {
+      colorMap = transformStyleMap(initialColors, "--bg-block-", "-color");
+    }
+
+    // Build color maps
+    const bm = Object.fromEntries(
+      Object.entries(colorMap).map(([k, v]) => [
+        k
+          .replaceAll("-", " ")
+          .toLowerCase()
+          .split(" ")
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(" "),
+        normalizeRGBToRGBA(cssColorToRGB(gThis.document, v)),
+      ]),
+    );
+
     gameLoop(
       shadow,
       cnvs,
+      bm,
       gameState,
       gameConfig,
       ui,
@@ -176,6 +243,7 @@ export async function initGame(gThis, shadow, cnvs) {
   gameLoop(
     shadow,
     cnvs,
+    blockColorMap,
     gameState,
     gameConfig,
     ui,

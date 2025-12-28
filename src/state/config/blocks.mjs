@@ -4,7 +4,6 @@
  * @typedef {Object} BlockDefinition
  *
  * @property {string} name - Display name of the block
- * @property {[number, number, number, number]} color - RGBA color
  * @property {number} [growthTime] - Time in seconds for plant to grow
  * @property {boolean} [isSeed=false] - Whether this block is a seed/plant
  * @property {boolean} [gravity=false] - Whether a block falls
@@ -153,218 +152,402 @@ export const FAST_GROWTH_TIME = 30;
  * @type {BlockDefinition[]}
  */
 export const blocks = [
-  { name: blockNames.AIR, color: [0.0, 0.0, 0.0, 0.0] },
-  { name: blockNames.AGAVE_BASE, color: [0.4, 0.6, 0.5, 1.0] },
-  { name: blockNames.AGAVE_FLOWER_STALK, color: [0.5, 0.7, 0.5, 1.0] },
-  { name: blockNames.AGAVE_FLOWER, color: [0.9, 0.9, 0.6, 1.0] },
-  { name: blockNames.AGAVE_GROWING, color: [0.5, 0.7, 0.6, 1.0] },
-  { name: blockNames.AGAVE_SPIKE, color: [0.4, 0.6, 0.5, 1.0] },
+  {
+    name: blockNames.AIR,
+  },
+  {
+    name: blockNames.AGAVE_BASE,
+  },
+  {
+    name: blockNames.AGAVE_FLOWER_STALK,
+  },
+  {
+    name: blockNames.AGAVE_FLOWER,
+  },
+  {
+    name: blockNames.AGAVE_GROWING,
+  },
+  {
+    name: blockNames.AGAVE_SPIKE,
+  },
   {
     name: blockNames.AGAVE,
-    color: [0.4, 0.6, 0.5, 1.0],
     growthTime: 1920,
     isSeed: true,
   },
-  { name: blockNames.BAMBOO_GROWING, color: [0.4, 0.7, 0.4, 1.0] },
-  { name: blockNames.BAMBOO_JOINT, color: [0.35, 0.65, 0.25, 1.0] },
-  { name: blockNames.BAMBOO_LEAVES, color: [0.3, 0.6, 0.3, 1.0] },
-  { name: blockNames.BAMBOO_STALK, color: [0.4, 0.7, 0.3, 1.0] },
+  {
+    name: blockNames.BAMBOO_GROWING,
+  },
+  {
+    name: blockNames.BAMBOO_JOINT,
+  },
+  {
+    name: blockNames.BAMBOO_LEAVES,
+  },
+  {
+    name: blockNames.BAMBOO_STALK,
+  },
   {
     name: blockNames.BAMBOO,
-    color: [0.4, 0.7, 0.3, 1.0],
     growthTime: 180,
     isSeed: true,
   },
-  { name: blockNames.BEDROCK, color: [0.1, 0.1, 0.1, 1.0] },
-  { name: blockNames.BERRY_BUSH_BERRIES, color: [0.8, 0.2, 0.2, 1.0] },
-  { name: blockNames.BERRY_BUSH_BRANCH, color: [0.4, 0.3, 0.2, 1.0] },
-  { name: blockNames.BERRY_BUSH_GROWING, color: [0.4, 0.6, 0.4, 1.0] },
-  { name: blockNames.BERRY_BUSH_LEAVES, color: [0.2, 0.5, 0.2, 1.0] },
+  {
+    name: blockNames.BEDROCK,
+  },
+  {
+    name: blockNames.BERRY_BUSH_BERRIES,
+  },
+  {
+    name: blockNames.BERRY_BUSH_BRANCH,
+  },
+  {
+    name: blockNames.BERRY_BUSH_GROWING,
+  },
+  {
+    name: blockNames.BERRY_BUSH_LEAVES,
+  },
   {
     name: blockNames.BERRY_BUSH,
-    color: [0.3, 0.5, 0.3, 1.0],
     growthTime: 360,
     isSeed: true,
   },
-  { name: blockNames.BIRCH_BARK, color: [0.8, 0.8, 0.75, 1.0] },
-  { name: blockNames.BIRCH_BRANCHES, color: [0.85, 0.85, 0.8, 1.0] },
-  { name: blockNames.BIRCH_CATKINS, color: [0.7, 0.6, 0.3, 1.0] },
-  { name: blockNames.BIRCH_GROWING, color: [0.8, 0.9, 0.8, 1.0] },
-  { name: blockNames.BIRCH_LEAVES, color: [0.3, 0.7, 0.3, 1.0] },
-  { name: blockNames.BIRCH_TRUNK, color: [0.9, 0.9, 0.85, 1.0] },
+  {
+    name: blockNames.BIRCH_BARK,
+  },
+  {
+    name: blockNames.BIRCH_BRANCHES,
+  },
+  {
+    name: blockNames.BIRCH_CATKINS,
+  },
+  {
+    name: blockNames.BIRCH_GROWING,
+  },
+  {
+    name: blockNames.BIRCH_LEAVES,
+  },
+  {
+    name: blockNames.BIRCH_TRUNK,
+  },
   {
     name: blockNames.BIRCH,
-    color: [0.9, 0.9, 0.85, 1.0],
     growthTime: 1260,
     isSeed: true,
   },
-  { name: blockNames.CACTUS_BODY, color: [0.3, 0.6, 0.3, 1.0] },
-  { name: blockNames.CACTUS_FLOWER, color: [0.9, 0.3, 0.5, 1.0] },
-  { name: blockNames.CACTUS_GROWING, color: [0.4, 0.7, 0.4, 1.0] },
+  {
+    name: blockNames.CACTUS_BODY,
+  },
+  {
+    name: blockNames.CACTUS_FLOWER,
+  },
+  {
+    name: blockNames.CACTUS_GROWING,
+  },
   {
     name: blockNames.CACTUS,
-    color: [0.3, 0.6, 0.3, 1.0],
     growthTime: 2400,
     isSeed: true,
   },
-  { name: blockNames.CARROT_GROWING, color: [0.5, 0.7, 0.3, 1.0] },
-  { name: blockNames.CARROT_LEAVES, color: [0.3, 0.7, 0.3, 1.0] },
-  { name: blockNames.CARROT_ROOT, color: [0.9, 0.5, 0.1, 1.0] },
+  {
+    name: blockNames.CARROT_GROWING,
+  },
+  {
+    name: blockNames.CARROT_LEAVES,
+  },
+  {
+    name: blockNames.CARROT_ROOT,
+  },
   {
     name: blockNames.CARROT,
-    color: [0.9, 0.5, 0.1, 1.0],
     growthTime: 240,
     isSeed: true,
   },
-  { name: blockNames.CLAY, color: [0.7, 0.7, 0.75, 1.0] },
-  { name: blockNames.CLOUD, color: [0.9, 0.9, 0.9, 0.8] },
-  { name: blockNames.COAL, color: [0.15, 0.15, 0.15, 1.0] },
-  { name: blockNames.CORN_EAR, color: [0.8, 0.8, 0.2, 1.0] },
-  { name: blockNames.CORN_GROWING, color: [0.5, 0.7, 0.4, 1.0] },
-  { name: blockNames.CORN_LEAVES, color: [0.3, 0.5, 0.3, 1.0] },
-  { name: blockNames.CORN_SILK, color: [0.7, 0.6, 0.5, 1.0] },
-  { name: blockNames.CORN_STALK, color: [0.4, 0.6, 0.3, 1.0] },
+  {
+    name: blockNames.CLAY,
+  },
+  {
+    name: blockNames.CLOUD,
+  },
+  {
+    name: blockNames.COAL,
+  },
+  {
+    name: blockNames.CORN_EAR,
+  },
+  {
+    name: blockNames.CORN_GROWING,
+  },
+  {
+    name: blockNames.CORN_LEAVES,
+  },
+  {
+    name: blockNames.CORN_SILK,
+  },
+  {
+    name: blockNames.CORN_STALK,
+  },
   {
     name: blockNames.CORN,
-    color: [0.8, 0.8, 0.2, 1.0],
     growthTime: 420,
     isSeed: true,
   },
-  { name: blockNames.DIRT, color: [0.55, 0.4, 0.25, 1.0] },
-  { name: blockNames.FERN_FROND, color: [0.3, 0.6, 0.3, 1.0] },
-  { name: blockNames.FERN_GROWING, color: [0.4, 0.6, 0.4, 1.0] },
-  { name: blockNames.FERN_STEM, color: [0.3, 0.5, 0.3, 1.0] },
+  {
+    name: blockNames.DIRT,
+  },
+  {
+    name: blockNames.FERN_FROND,
+  },
+  {
+    name: blockNames.FERN_GROWING,
+  },
+  {
+    name: blockNames.FERN_STEM,
+  },
   {
     name: blockNames.FERN,
-    color: [0.3, 0.6, 0.3, 1.0],
     growthTime: 90,
     isSeed: true,
   },
-  { name: blockNames.GOLD, color: [0.9, 0.8, 0.1, 1.0] },
-  { name: blockNames.GRASS, color: [0.3, 0.8, 0.3, 1.0] },
-  { name: blockNames.ICE, color: [0.6, 0.8, 1.0, 0.7] },
-  { name: blockNames.IRON, color: [0.7, 0.6, 0.5, 1.0] },
-  { name: blockNames.KELP_BLADE, color: [0.2, 0.4, 0.2, 1.0] },
-  { name: blockNames.KELP_BULB, color: [0.3, 0.5, 0.2, 1.0] },
-  { name: blockNames.KELP_GROWING, color: [0.3, 0.5, 0.3, 1.0] },
+  {
+    name: blockNames.GOLD,
+  },
+  {
+    name: blockNames.GRASS,
+  },
+  {
+    name: blockNames.ICE,
+  },
+  {
+    name: blockNames.IRON,
+  },
+  {
+    name: blockNames.KELP_BLADE,
+  },
+  {
+    name: blockNames.KELP_BULB,
+  },
+  {
+    name: blockNames.KELP_GROWING,
+  },
   {
     name: blockNames.KELP,
-    color: [0.2, 0.4, 0.2, 1.0],
     growthTime: 150,
     isSeed: true,
   },
-  { name: blockNames.LAVA, color: [0.9, 0.3, 0.0, 1.0], gravity: true },
-  { name: blockNames.LAVENDER_BUSH, color: [0.4, 0.6, 0.4, 1.0] },
-  { name: blockNames.LAVENDER_FLOWERS, color: [0.55, 0.4, 0.6, 1.0] },
-  { name: blockNames.LAVENDER_GROWING, color: [0.45, 0.3, 0.45, 1.0] },
-  { name: blockNames.LAVENDER_STEM, color: [0.3, 0.4, 0.3, 1.0] },
+  {
+    name: blockNames.LAVA,
+    gravity: true,
+  },
+  {
+    name: blockNames.LAVENDER_BUSH,
+  },
+  {
+    name: blockNames.LAVENDER_FLOWERS,
+  },
+  {
+    name: blockNames.LAVENDER_GROWING,
+  },
+  {
+    name: blockNames.LAVENDER_STEM,
+  },
   {
     name: blockNames.LAVENDER,
-    color: [0.5, 0.3, 0.5, 1.0],
     growthTime: 200,
     isSeed: true,
   },
-  { name: blockNames.LOTUS_BUD, color: [0.6, 0.4, 0.4, 1.0] },
-  { name: blockNames.LOTUS_FLOWER, color: [0.7, 0.5, 0.5, 1.0] },
-  { name: blockNames.LOTUS_GROWING, color: [0.4, 0.5, 0.4, 1.0] },
-  { name: blockNames.LOTUS_PAD, color: [0.3, 0.5, 0.3, 1.0] },
-  { name: blockNames.LOTUS_STEM, color: [0.4, 0.6, 0.4, 1.0] },
+  {
+    name: blockNames.LOTUS_BUD,
+  },
+  {
+    name: blockNames.LOTUS_FLOWER,
+  },
+  {
+    name: blockNames.LOTUS_GROWING,
+  },
+  {
+    name: blockNames.LOTUS_PAD,
+  },
+  {
+    name: blockNames.LOTUS_STEM,
+  },
   {
     name: blockNames.LOTUS,
-    color: [0.8, 0.6, 0.7, 1.0],
     growthTime: 390,
     isSeed: true,
   },
-  { name: blockNames.MUSHROOM_CAP, color: [0.8, 0.2, 0.2, 1.0] },
-  { name: blockNames.MUSHROOM_GROWING, color: [0.6, 0.5, 0.5, 1.0] },
-  { name: blockNames.MUSHROOM_STEM, color: [0.9, 0.85, 0.8, 1.0] },
+  {
+    name: blockNames.MUSHROOM_CAP,
+  },
+  {
+    name: blockNames.MUSHROOM_GROWING,
+  },
+  {
+    name: blockNames.MUSHROOM_STEM,
+  },
   {
     name: blockNames.MUSHROOM,
-    color: [0.8, 0.6, 0.6, 1.0],
     growthTime: 120,
     isSeed: true,
   },
-  { name: blockNames.PINE_CONE, color: [0.4, 0.3, 0.2, 1.0] },
-  { name: blockNames.PINE_NEEDLES, color: [0.2, 0.4, 0.2, 1.0] },
-  { name: blockNames.PINE_TREE_GROWING, color: [0.4, 0.6, 0.4, 1.0] },
+  {
+    name: blockNames.PINE_CONE,
+  },
+  {
+    name: blockNames.PINE_NEEDLES,
+  },
+  {
+    name: blockNames.PINE_TREE_GROWING,
+  },
   {
     name: blockNames.PINE_TREE,
-    color: [0.2, 0.4, 0.2, 1.0],
     growthTime: 1440,
     isSeed: true,
   },
-  { name: blockNames.PINE_TRUNK, color: [0.3, 0.2, 0.1, 1.0] },
-  { name: blockNames.PUMICE, color: [0.7, 0.7, 0.7, 1.0] },
-  { name: blockNames.PUMPKIN_FRUIT, color: [0.9, 0.5, 0.1, 1.0] },
-  { name: blockNames.PUMPKIN_GROWING, color: [0.5, 0.7, 0.4, 1.0] },
-  { name: blockNames.PUMPKIN_LEAVES, color: [0.3, 0.6, 0.3, 1.0] },
-  { name: blockNames.PUMPKIN_STEM, color: [0.5, 0.6, 0.4, 1.0] },
-  { name: blockNames.PUMPKIN_VINE, color: [0.4, 0.6, 0.3, 1.0] },
+  {
+    name: blockNames.PINE_TRUNK,
+  },
+  {
+    name: blockNames.PUMICE,
+  },
+  {
+    name: blockNames.PUMPKIN_FRUIT,
+  },
+  {
+    name: blockNames.PUMPKIN_GROWING,
+  },
+  {
+    name: blockNames.PUMPKIN_LEAVES,
+  },
+  {
+    name: blockNames.PUMPKIN_STEM,
+  },
+  {
+    name: blockNames.PUMPKIN_VINE,
+  },
   {
     name: blockNames.PUMPKIN,
-    color: [0.9, 0.5, 0.1, 1.0],
     growthTime: 660,
     isSeed: true,
   },
-  { name: blockNames.ROSE_BLOOM, color: [0.9, 0.1, 0.2, 1.0] },
-  { name: blockNames.ROSE_BUD, color: [0.7, 0.2, 0.3, 1.0] },
-  { name: blockNames.ROSE_GROWING, color: [0.4, 0.7, 0.4, 1.0] },
-  { name: blockNames.ROSE_LEAVES, color: [0.2, 0.6, 0.2, 1.0] },
-  { name: blockNames.ROSE_STEM, color: [0.2, 0.5, 0.2, 1.0] },
-  { name: blockNames.ROSE_THORNS, color: [0.3, 0.4, 0.3, 1.0] },
+  {
+    name: blockNames.ROSE_BLOOM,
+  },
+  {
+    name: blockNames.ROSE_BUD,
+  },
+  {
+    name: blockNames.ROSE_GROWING,
+  },
+  {
+    name: blockNames.ROSE_LEAVES,
+  },
+  {
+    name: blockNames.ROSE_STEM,
+  },
+  {
+    name: blockNames.ROSE_THORNS,
+  },
   {
     name: blockNames.ROSE,
-    color: [0.9, 0.1, 0.2, 1.0],
     growthTime: 540,
     isSeed: true,
   },
-  { name: blockNames.SAND, color: [0.9, 0.85, 0.6, 1.0], gravity: true },
-  { name: blockNames.SNOW, color: [0.95, 0.95, 1.0, 1.0] },
-  { name: blockNames.STONE, color: [0.5, 0.5, 0.5, 1.0] },
-  { name: blockNames.SUNFLOWER_CENTER, color: [0.4, 0.3, 0.1, 1.0] },
-  { name: blockNames.SUNFLOWER_GROWING, color: [0.5, 0.7, 0.4, 1.0] },
-  { name: blockNames.SUNFLOWER_LEAVES, color: [0.3, 0.6, 0.3, 1.0] },
-  { name: blockNames.SUNFLOWER_PETALS, color: [0.9, 0.8, 0.1, 1.0] },
-  { name: blockNames.SUNFLOWER_STEM, color: [0.3, 0.5, 0.3, 1.0] },
+  {
+    name: blockNames.SAND,
+    gravity: true,
+  },
+  {
+    name: blockNames.SNOW,
+  },
+  {
+    name: blockNames.STONE,
+  },
+  {
+    name: blockNames.SUNFLOWER_CENTER,
+  },
+  {
+    name: blockNames.SUNFLOWER_GROWING,
+  },
+  {
+    name: blockNames.SUNFLOWER_LEAVES,
+  },
+  {
+    name: blockNames.SUNFLOWER_PETALS,
+  },
+  {
+    name: blockNames.SUNFLOWER_STEM,
+  },
   {
     name: blockNames.SUNFLOWER,
-    color: [0.9, 0.8, 0.1, 1.0],
     growthTime: 600,
     isSeed: true,
   },
-  { name: blockNames.TREE_GROWING, color: [0.4, 0.6, 0.3, 1.0] },
-  { name: blockNames.TREE_LEAVES, color: [0.2, 0.6, 0.2, 1.0] },
-  { name: blockNames.TREE_TRUNK, color: [0.45, 0.3, 0.15, 1.0] },
-  { name: blockNames.TULIP_BULB, color: [0.6, 0.5, 0.4, 1.0] },
-  { name: blockNames.TULIP_GROWING, color: [0.6, 0.8, 0.6, 1.0] },
-  { name: blockNames.TULIP_LEAVES, color: [0.4, 0.7, 0.4, 1.0] },
-  { name: blockNames.TULIP_PETALS, color: [0.8, 0.4, 0.8, 1.0] },
-  { name: blockNames.TULIP_STEM, color: [0.5, 0.8, 0.5, 1.0] },
+  {
+    name: blockNames.TREE_GROWING,
+  },
+  {
+    name: blockNames.TREE_LEAVES,
+  },
+  {
+    name: blockNames.TREE_TRUNK,
+  },
+  {
+    name: blockNames.TULIP_BULB,
+  },
+  {
+    name: blockNames.TULIP_GROWING,
+  },
+  {
+    name: blockNames.TULIP_LEAVES,
+  },
+  {
+    name: blockNames.TULIP_PETALS,
+  },
+  {
+    name: blockNames.TULIP_STEM,
+  },
   {
     name: blockNames.TULIP,
-    color: [0.8, 0.4, 0.8, 1.0],
     growthTime: 300,
     isSeed: true,
   },
-  { name: blockNames.WATER, color: [0.2, 0.4, 0.8, 0.6], gravity: true },
-  { name: blockNames.WHEAT_GRAIN, color: [0.9, 0.85, 0.4, 1.0] },
-  { name: blockNames.WHEAT_GROWING, color: [0.5, 0.7, 0.3, 1.0] },
-  { name: blockNames.WHEAT_STALK, color: [0.8, 0.8, 0.4, 1.0] },
+  {
+    name: blockNames.WATER,
+    gravity: true,
+  },
+  {
+    name: blockNames.WHEAT_GRAIN,
+  },
+  {
+    name: blockNames.WHEAT_GROWING,
+  },
+  {
+    name: blockNames.WHEAT_STALK,
+  },
   {
     name: blockNames.WHEAT,
-    color: [0.85, 0.8, 0.4, 1.0],
     growthTime: 480,
     isSeed: true,
   },
-  { name: blockNames.WILLOW_BRANCHES, color: [0.4, 0.6, 0.3, 1.0] },
-  { name: blockNames.WILLOW_LEAVES, color: [0.5, 0.7, 0.4, 1.0] },
-  { name: blockNames.WILLOW_TREE_GROWING, color: [0.5, 0.6, 0.4, 1.0] },
+  {
+    name: blockNames.WILLOW_BRANCHES,
+  },
+  {
+    name: blockNames.WILLOW_LEAVES,
+  },
+  {
+    name: blockNames.WILLOW_TREE_GROWING,
+  },
   {
     name: blockNames.WILLOW_TREE,
-    color: [0.5, 0.5, 0.3, 1.0],
     growthTime: 1800,
     isSeed: true,
   },
-  { name: blockNames.WILLOW_TRUNK, color: [0.5, 0.35, 0.2, 1.0] },
-  { name: blockNames.WOOD, color: [0.6, 0.45, 0.25, 1.0] },
+  {
+    name: blockNames.WILLOW_TRUNK,
+  },
+  {
+    name: blockNames.WOOD,
+  },
 ];

@@ -9,8 +9,8 @@ import { updatePhysics } from "../update/physics.mjs";
 import { updateWorld } from "../update/world.mjs";
 import { updatePlantGrowth } from "../update/plantGrowth.mjs";
 
-/** @typedef {import("../util/ray.mjs").PointWithFace} PointWithFace */
 /** @typedef {import("../util/chunk.mjs").Chunk} Chunk */
+/** @typedef {import("../util/ray.mjs").PointWithFace} PointWithFace */
 
 // Fixed timestep configuration
 const TARGET_FPS = 50;
@@ -116,6 +116,7 @@ function drawCrosshairs(gl, cnvs) {
 /**
  * @param {ShadowRoot} shadow
  * @param {HTMLCanvasElement} cnvs
+ * @param {{[k: string]: number[]}} colorMap
  * @param {Object} gameState
  * @param {Object} gameConfig
  * @param {Object} ui
@@ -129,6 +130,7 @@ function drawCrosshairs(gl, cnvs) {
 export function gameLoop(
   shadow,
   cnvs,
+  colorMap,
   gameState,
   gameConfig,
   ui,
@@ -139,6 +141,12 @@ export function gameLoop(
   uM,
   uMVP,
 ) {
+  if (gameState.shouldReset.get()) {
+    gameState.shouldReset.set(false);
+
+    return;
+  }
+
   // Initialize gameTime if missing
   if (typeof gameState.gameTime === "undefined") {
     gameState.gameTime = 0;
@@ -216,7 +224,10 @@ export function gameLoop(
 
   gl.viewport(0, 0, cnvs.width, cnvs.height);
   gl.enable(gl.DEPTH_TEST);
-  gl.clearColor(0.5, 0.8, 1, 1);
+
+  // Use sky color from config
+  const [r, g, b, a] = colorMap["Air"];
+  gl.clearColor(r, g, b, a);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
   const fx = Math.sin(yaw),
@@ -246,12 +257,7 @@ export function gameLoop(
   for (const chunk of visibleChunks) {
     // Rebuild mesh if dirty
     if (chunk.dirty) {
-      chunk.mesh = meshChunk(
-        chunk,
-        world,
-        /** @type {{ name: string; color: [number, number, number, number]; }[]} */
-        (blockTypes),
-      );
+      chunk.mesh = meshChunk(colorMap, chunk, world, blockTypes);
       chunk.dirty = false;
 
       uploadChunkMesh(gl, chunk);
@@ -270,6 +276,7 @@ export function gameLoop(
     gameLoop(
       shadow,
       cnvs,
+      colorMap,
       gameState,
       gameConfig,
       ui,

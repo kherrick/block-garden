@@ -39,6 +39,7 @@ export class BlockGarden extends HTMLElement {
             width: var(--bg-ui-host-width, 100dvw);
 
             ${generateColorVars("--bg-color-", gameColors["color"])}
+            ${generateColorVars("--bg-block-", gameColors["block"])}
             ${generateColorVars("--bg-ui-", gameColors["ui"])}
             touch-action: none;
           }
@@ -535,6 +536,11 @@ export class BlockGarden extends HTMLElement {
                   >
                     Reload Game
                   </button>
+                  <div id="customizeColorsBtnContainer" hidden="hidden">
+                    <div class="ui-grid__corner--sub-heading">🗺️ Colors</div>
+
+                    <button id="customizeColorsBtn">Customize</button>
+                  </div>
                 </div>
               </div>
             </div>

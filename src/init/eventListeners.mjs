@@ -12,6 +12,7 @@ import { loadSaveState } from "../state/loadSave.mjs";
 
 import { generateProceduralWorld } from "../generate/world.mjs";
 
+import { showColorCustomizationDialog } from "../util/customColors.mjs";
 import { copyToClipboard } from "../util/copyToClipboard.mjs";
 import { extractAttachments } from "../util/extractAttachments.mjs";
 import { extractJsonFromPng } from "../util/canvasToPngWithState.mjs";
@@ -89,7 +90,7 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
   new extrasHandler((handler) => {
     shadow
       .getElementById("customizeColorsBtnContainer")
-      ?.removeAttribute("hidden");
+      .removeAttribute("hidden");
 
     shadow
       .querySelector('block-garden-option[value="fullscreen"]')
@@ -203,6 +204,30 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
       shadow
         .querySelector('[class="seed-controls"]')
         .setAttribute("hidden", "hidden");
+    });
+  }
+
+  const customizeColors = shadow.getElementById("customizeColorsBtn");
+  if (customizeColors) {
+    const config = globalThis.blockGarden.config;
+    customizeColors.addEventListener("click", async () => {
+      const initialResolution = config.currentResolution.get();
+
+      if (initialResolution === "400") {
+        config.currentResolution.set("800");
+        resizeCanvas(shadow, config.currentResolution);
+
+        const colorDialog = await showColorCustomizationDialog(globalThis);
+        colorDialog.dialog.addEventListener("close", () => {
+          config.currentResolution.set(initialResolution);
+
+          resizeCanvas(shadow, config.currentResolution);
+        });
+
+        return;
+      }
+
+      await showColorCustomizationDialog(globalThis);
     });
   }
 
@@ -767,13 +792,13 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
     const MAX_Y = 24;
     const SEA_LEVEL = 4;
 
-    // Collect valid grass tiles
+    // Collect valid grass blocks
     const validSeedSpots = [];
     for (let x = -WORLD_RADIUS; x <= WORLD_RADIUS; x++) {
       for (let z = -WORLD_RADIUS; z <= WORLD_RADIUS; z++) {
         for (let y = MIN_Y; y <= MAX_Y; y++) {
           const key = `${x},${y},${z}`;
-          // Allow planting on any grass tile, regardless of y
+          // Allow planting on any grass block, regardless of y
           if (
             world.get(key) === GRASS &&
             (Math.abs(x) > 2 || Math.abs(z) > 2)

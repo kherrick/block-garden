@@ -54,7 +54,7 @@ export function generateProceduralWorld(seed, gameConfig, gameState) {
   let spawnY = MAX_Y;
 
   // --- Terrain and surface map generation ---
-  // We'll collect valid grass tiles for pre-planting
+  // We'll collect valid grass blocks for pre-planting
   const validSeedSpots = [];
   for (let x = -WORLD_RADIUS; x <= WORLD_RADIUS; x++) {
     for (let z = -WORLD_RADIUS; z <= WORLD_RADIUS; z++) {
@@ -87,7 +87,7 @@ export function generateProceduralWorld(seed, gameConfig, gameState) {
               ) {
                 placeTree(world, x, y + 1, z, WOOD, TREE_LEAVES);
               }
-              // Collect valid grass tiles for pre-planting
+              // Collect valid grass blocks for pre-planting
               if (
                 gameState.isPrePlanted &&
                 (Math.abs(x) > 2 || Math.abs(z) > 2)

@@ -7,8 +7,8 @@
  * @returns {string} A string containing CSS custom property declarations, one per color key.
  *
  * @example
- * generateColorVars('--bg-tile-', { air: "87ceeb" });
- * // returns "--bg-tile-air-color: #87ceeb;"
+ * generateColorVars('--bg-block-', { air: "87ceeb" });
+ * // returns "--bg-block-air-color: #87ceeb;"
  */
 export function generateColorVars(prefix, colors) {
   return Object.entries(colors)

@@ -1,4 +1,8 @@
 /**
+ * @typedef {import('../state/config/blocks.mjs').BlockDefinition} BlockDefinition
+ */
+
+/**
  * @typedef {import('./chunk.mjs').Chunk} Chunk
  */
 
@@ -96,12 +100,13 @@ const FACES = [
 /**
  * Check if a block type is transparent (allows neighbor face to render).
  *
+ * @param {{[k: string]: number[]}} colorMap
  * @param {number} blockType - Block type to check
- * @param {Array<{color: [number, number, number, number]}>} blockDefs - Block definitions
+ * @param {BlockDefinition[]} blockDefs - Block definitions
  *
  * @returns {boolean}
  */
-function isTransparent(blockType, blockDefs) {
+function isTransparent(colorMap, blockType, blockDefs) {
   if (blockType === 0) {
     // Air is transparent
     return true;
@@ -113,7 +118,7 @@ function isTransparent(blockType, blockDefs) {
     return true;
   }
 
-  return block.color[3] < 1.0; // Alpha < 1 = transparent
+  return Number(colorMap[block.name][3]) < 1.0; // Alpha < 1 = transparent
 }
 
 /**
@@ -160,13 +165,14 @@ function getNeighborBlock(chunk, chunkManager, localX, y, localZ) {
  * Generate mesh for a chunk with face culling. Only visible faces (adjacent to air or transparent
  * blocks) are included in the mesh, dramatically reducing vertex count.
  *
+ * @param {{[k: string]: number[]}} colorMap
  * @param {Chunk} chunk - Chunk to mesh
  * @param {ChunkManager} chunkManager - For neighbor lookups
- * @param {Array<{name: string, color: [number, number, number, number]}>} blockDefs - Block definitions
+ * @param {BlockDefinition[]} blockDefs - Block definitions
  *
  * @returns {ChunkMesh}
  */
-export function meshChunk(chunk, chunkManager, blockDefs) {
+export function meshChunk(colorMap, chunk, chunkManager, blockDefs) {
   const positions = [];
   const normals = [];
   const colors = [];
@@ -190,8 +196,8 @@ export function meshChunk(chunk, chunkManager, blockDefs) {
           continue;
         }
 
-        const [r, g, b, a] = block.color;
-        const isThisTransparent = a < 1.0;
+        const [r, g, b, a] = colorMap[block.name];
+        const isThisTransparent = Number(a) < 1.0;
 
         // World position of block
         const worldX = baseX + x;
@@ -210,7 +216,11 @@ export function meshChunk(chunk, chunkManager, blockDefs) {
 
           // Face is visible if neighbor is air or transparent and different
           const neighborIsAir = neighborType === 0;
-          const neighborTransparent = isTransparent(neighborType, blockDefs);
+          const neighborTransparent = isTransparent(
+            colorMap,
+            neighborType,
+            blockDefs,
+          );
 
           // Render face if:
           // - Neighbor is air (always visible)

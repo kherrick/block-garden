@@ -10,10 +10,13 @@ export const CHUNK_VOLUME = CHUNK_SIZE_X * CHUNK_SIZE_Y * CHUNK_SIZE_Z;
  * @property {Float32Array} positions - Vertex positions
  * @property {Float32Array} normals - Vertex normals
  * @property {Float32Array} colors - Vertex colors (RGBA)
+ * @property {Uint16Array} [indices] - Vertex indices for indexed geometry
  * @property {number} vertexCount - Number of vertices
+ * @property {number} [indexCount] - Number of indices (for indexed geometry)
  * @property {WebGLBuffer|null} positionBuffer - GPU buffer for positions
  * @property {WebGLBuffer|null} normalBuffer - GPU buffer for normals
  * @property {WebGLBuffer|null} colorBuffer - GPU buffer for colors
+ * @property {WebGLBuffer|null} [indexBuffer] - GPU buffer for indices
  */
 
 /**
@@ -39,6 +42,9 @@ export class Chunk {
 
     /** @type {boolean} Whether mesh needs rebuild */
     this.dirty = true;
+
+    /** @type {boolean} Whether terrain has been generated */
+    this.generated = false;
 
     /** @type {ChunkMesh|null} Cached mesh data */
     this.mesh = null;
@@ -157,6 +163,34 @@ export class Chunk {
    */
   get worldZ() {
     return this.chunkZ * CHUNK_SIZE_Z;
+  }
+
+  /**
+   * Serialize chunk to a transferable format for workers.
+   *
+   * @returns {{chunkX: number, chunkZ: number, blocks: ArrayBuffer}}
+   */
+  toTransferable() {
+    return {
+      chunkX: this.chunkX,
+      chunkZ: this.chunkZ,
+      blocks: /** @type {ArrayBuffer} */ (this.blocks.buffer.slice(0)),
+    };
+  }
+
+  /**
+   * Create a chunk from compressed/serialized data.
+   * Future: decompress gzip/brotli/custom RLE
+   *
+   * @param {{chunkX: number, chunkZ: number, blocks: ArrayBuffer}} data
+   *
+   * @returns {Chunk}
+   */
+  static fromCompressed(data) {
+    const chunk = new Chunk(data.chunkX, data.chunkZ);
+    chunk.blocks.set(new Uint8Array(data.blocks));
+
+    return chunk;
   }
 }
 

@@ -34,8 +34,14 @@ export class ChunkManager {
     /** @type {Map<string, Chunk>} Loaded chunks by "chunkX,chunkZ" key */
     this.chunks = new Map();
 
-    /** @type {number} Chunk load radius around player */
-    this.loadRadius = 4;
+    /** @type {number} Chunk render radius (generation distance) */
+    this.renderRadius = 16;
+
+    /** @type {number} Chunk cache radius (persistence distance) */
+    this.cacheRadius = 24;
+
+    /** @type {number|null} World radius limit in blocks (null = infinite) */
+    this.worldRadius = null;
   }
 
   /**
@@ -230,6 +236,7 @@ export class ChunkManager {
 
   /**
    * Get chunks within load radius of player.
+   * Creates and generates chunks as needed.
    *
    * @param {number} playerX - Player world X
    * @param {number} playerZ - Player world Z
@@ -248,12 +255,146 @@ export class ChunkManager {
       const dx = Math.abs(chunk.chunkX - playerChunkX);
       const dz = Math.abs(chunk.chunkZ - playerChunkZ);
 
-      if (dx <= this.loadRadius && dz <= this.loadRadius) {
+      if (dx <= this.renderRadius && dz <= this.renderRadius) {
         visible.push(chunk);
       }
     }
 
     return visible;
+  }
+
+  /**
+   * Update visible chunks around player position.
+   * Generates terrain for new chunks, unloads distant chunks.
+   * Returns chunks sorted by distance (nearest first).
+   *
+   * @param {number} playerX - Player world X
+   * @param {number} playerZ - Player world Z
+   * @param {number} seed - World seed
+   * @param {import('../state/config/blocks.mjs').BlockDefinition[]} blocks - Block definitions
+   * @param {{[key: string]: string}} blockNames - Block name mapping
+   * @param {(chunk: Chunk, seed: number, blocks: any, blockNames: any) => void} generateChunk - Chunk generator function
+   * @param {WebGL2RenderingContext} [gl] - WebGL context for cleanup
+   * @param {(gl: WebGL2RenderingContext, chunk: Chunk) => void} [deleteChunkMesh] - Mesh cleanup function
+   *
+   * @returns {Chunk[]} Visible chunks sorted by distance
+   */
+  updateVisibleChunks(
+    playerX,
+    playerZ,
+    seed,
+    blocks,
+    blockNames,
+    generateChunk,
+    gl,
+    deleteChunkMesh,
+  ) {
+    const { chunkX: playerChunkX, chunkZ: playerChunkZ } = worldToChunk(
+      playerX,
+      playerZ,
+    );
+
+    const visible = [];
+
+    // Generate chunks in spiral from player (nearest first) within renderRadius
+    for (let r = 0; r <= this.renderRadius; r++) {
+      if (r === 0) {
+        // Center chunk
+        const chunk = this.getOrCreateChunk(playerChunkX, playerChunkZ);
+        if (!chunk.generated) {
+          generateChunk(chunk, seed, blocks, blockNames);
+        }
+        visible.push(chunk);
+      } else {
+        // Ring at radius r
+        for (let dx = -r; dx <= r; dx++) {
+          for (let dz = -r; dz <= r; dz++) {
+            // Only process chunks at exactly radius r (the ring)
+            if (Math.abs(dx) !== r && Math.abs(dz) !== r) {
+              continue;
+            }
+
+            const cx = playerChunkX + dx;
+            const cz = playerChunkZ + dz;
+
+            // Check world bounds if worldRadius is set
+            if (this.worldRadius !== null) {
+              const minChunkX = Math.floor(-this.worldRadius / CHUNK_SIZE_X);
+              const maxChunkX = Math.floor(this.worldRadius / CHUNK_SIZE_X);
+              const minChunkZ = Math.floor(-this.worldRadius / CHUNK_SIZE_Z);
+              const maxChunkZ = Math.floor(this.worldRadius / CHUNK_SIZE_Z);
+
+              if (
+                cx < minChunkX ||
+                cx > maxChunkX ||
+                cz < minChunkZ ||
+                cz > maxChunkZ
+              ) {
+                continue;
+              }
+            }
+
+            const chunk = this.getOrCreateChunk(cx, cz);
+            if (!chunk.generated) {
+              generateChunk(chunk, seed, blocks, blockNames);
+            }
+            visible.push(chunk);
+          }
+        }
+      }
+    }
+
+    // Cleanup & Visibility Check
+    // We want to:
+    // 1. Unload chunks > cacheRadius
+    // 2. Keep visible chunks <= renderRadius
+    // 3. Keep visible chunks <= cacheRadius IF they already have a mesh (Persistence)
+
+    const toDelete = [];
+
+    // Reset visible list? No, we pushed generated chunks already.
+    // But we need to check existing chunks that WEREN'T generated this frame (buffer zone)
+
+    for (const [key, chunk] of this.chunks) {
+      const dx = Math.abs(chunk.chunkX - playerChunkX);
+      const dz = Math.abs(chunk.chunkZ - playerChunkZ);
+
+      if (dx > this.cacheRadius || dz > this.cacheRadius) {
+        // UNLOAD: Outside persistence zone
+        if (gl && deleteChunkMesh) {
+          deleteChunkMesh(gl, chunk);
+        }
+        toDelete.push(key);
+      } else {
+        // PERSIST: Inside persistence zone
+        // If it was already pushed to 'visible' (inside renderRadius loop), don't double push
+        // But the loop above only pushes NEW or updated chunks?
+        // Actually, the loop above iterates the spiral coordinates and does getOrCreate.
+        // So 'visible' contains everything in renderRadius.
+
+        // We just need to add chunks that are > renderRadius but <= cacheRadius AND have a mesh
+        if (
+          (dx > this.renderRadius || dz > this.renderRadius) &&
+          chunk.generated
+        ) {
+          visible.push(chunk);
+        }
+      }
+    }
+
+    for (const key of toDelete) {
+      this.chunks.delete(key);
+    }
+
+    // Return sorted by distance (nearest first for meshing priority)
+    return visible.sort((a, b) => {
+      const distA =
+        Math.abs(a.chunkX - playerChunkX) + Math.abs(a.chunkZ - playerChunkZ);
+      const distB =
+        Math.abs(b.chunkX - playerChunkX) + Math.abs(b.chunkZ - playerChunkZ);
+
+      return distA - distB;
+    });
   }
 
   /**

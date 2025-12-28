@@ -135,3 +135,85 @@ describe("meshChunk", () => {
     expect(mesh.vertexCount).toBe(66);
   });
 });
+
+import {
+  greedyMeshChunk,
+  setGreedyMeshing,
+  USE_GREEDY_MESHING,
+} from "./chunkMesher.mjs";
+
+describe("greedyMeshChunk", () => {
+  test("returns indexed geometry with indices array", () => {
+    const chunk = makeMockChunk(1); // stone
+    const colorMap = buildColorMap(blockDefs);
+    const mesh = greedyMeshChunk(colorMap, chunk, mockChunkManager, blockDefs);
+
+    // Should have indices array
+    expect(mesh.indices).toBeDefined();
+    expect(mesh.indices).toBeInstanceOf(Uint16Array);
+    expect(mesh.indexCount).toBeGreaterThan(0);
+
+    // Indexed geometry uses 4 vertices per quad instead of 6
+    // Single block has 5 visible faces (excluding -Y against bedrock)
+    // 5 faces * 4 vertices = 20 vertices
+    expect(mesh.vertexCount).toBe(20);
+
+    // 5 faces * 6 indices per face (2 triangles)
+    expect(mesh.indexCount).toBe(30);
+  });
+
+  test("returns empty mesh for all-air chunk", () => {
+    const chunk = {
+      worldX: 0,
+      worldZ: 0,
+      getBlock: () => 0,
+    };
+    const colorMap = buildColorMap(blockDefs);
+    const mesh = greedyMeshChunk(colorMap, chunk, mockChunkManager, blockDefs);
+    expect(mesh.vertexCount).toBe(0);
+    expect(mesh.indexCount).toBe(0);
+  });
+
+  test("merges adjacent faces of same block type", () => {
+    // Create a row of 4 stone blocks along X axis
+    const chunk = {
+      worldX: 0,
+      worldZ: 0,
+      getBlock: (x, y, z) => {
+        if (x >= 1 && x <= 4 && y === 1 && z === 1) return 1; // stone
+        return 0;
+      },
+    };
+    const colorMap = buildColorMap(blockDefs);
+    const mesh = greedyMeshChunk(colorMap, chunk, mockChunkManager, blockDefs);
+
+    // With greedy meshing, the +Y, -Y, +Z, -Z faces should merge into large quads
+    // +Y: 1 merged quad (4 blocks wide)
+    // -Y: not rendered (bedrock)
+    // +Z: 1 merged quad (4 blocks wide)
+    // -Z: 1 merged quad (4 blocks wide)
+    // +X: 1 quad (end cap)
+    // -X: 1 quad (end cap)
+    // Total: 5 quads = 5 * 4 = 20 vertices, 5 * 6 = 30 indices
+    expect(mesh.vertexCount).toBe(20);
+    expect(mesh.indexCount).toBe(30);
+  });
+
+  test("has correct buffer properties for GPU upload", () => {
+    const chunk = makeMockChunk(1);
+    const colorMap = buildColorMap(blockDefs);
+    const mesh = greedyMeshChunk(colorMap, chunk, mockChunkManager, blockDefs);
+
+    // Should have null buffers initially (before GPU upload)
+    expect(mesh.positionBuffer).toBeNull();
+    expect(mesh.normalBuffer).toBeNull();
+    expect(mesh.colorBuffer).toBeNull();
+    expect(mesh.indexBuffer).toBeNull();
+
+    // Should have typed arrays
+    expect(mesh.positions).toBeInstanceOf(Float32Array);
+    expect(mesh.normals).toBeInstanceOf(Float32Array);
+    expect(mesh.colors).toBeInstanceOf(Float32Array);
+    expect(mesh.indices).toBeInstanceOf(Uint16Array);
+  });
+});

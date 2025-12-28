@@ -29,16 +29,24 @@ export function updatePlayer(shadow, state, dt) {
   if (isKeyPressed(shadow, "w")) {
     targetDx += fx * speed;
     targetDz += fz * speed;
-  } else if (isKeyPressed(shadow, "a")) {
+  }
+
+  if (isKeyPressed(shadow, "a")) {
     targetDx += fz * speed;
     targetDz -= fx * speed;
-  } else if (isKeyPressed(shadow, "s")) {
+  }
+
+  if (isKeyPressed(shadow, "s")) {
     targetDx -= fx * speed;
     targetDz -= fz * speed;
-  } else if (isKeyPressed(shadow, "d")) {
+  }
+
+  if (isKeyPressed(shadow, "d")) {
     targetDx -= fz * speed;
     targetDz += fx * speed;
-  } else if (isKeyPressed(shadow, "upleft")) {
+  }
+
+  if (isKeyPressed(shadow, "upleft")) {
     // W + A
     targetDx += (fx + fz) * speed;
     targetDz += (fz - fx) * speed;

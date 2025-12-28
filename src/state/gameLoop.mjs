@@ -1,8 +1,13 @@
 import { I, look, mul, persp } from "../util/math.mjs";
 import { ray } from "../util/ray.mjs";
-import { meshChunk, uploadChunkMesh } from "../util/chunkMesher.mjs";
+import {
+  smartMeshChunk,
+  uploadChunkMesh,
+  deleteChunkMesh,
+} from "../util/chunkMesher.mjs";
+import { generateChunk } from "../generate/chunkGenerator.mjs";
 
-import { blocks as blockTypes } from "../state/config/blocks.mjs";
+import { blocks as blockTypes, blockNames } from "../state/config/blocks.mjs";
 
 import { updatePlayer } from "../update/player.mjs";
 import { updatePhysics } from "../update/physics.mjs";
@@ -73,8 +78,13 @@ function drawChunkMesh(gl, chunk, VP, uMVP, uM) {
   gl.uniformMatrix4fv(uMVP, false, VP);
   gl.uniformMatrix4fv(uM, false, M);
 
-  // Draw solid geometry
-  gl.drawArrays(gl.TRIANGLES, 0, mesh.vertexCount);
+  // Draw geometry - use indexed if available, otherwise non-indexed
+  if (mesh.indexBuffer && mesh.indexCount > 0) {
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, mesh.indexBuffer);
+    gl.drawElements(gl.TRIANGLES, mesh.indexCount, gl.UNSIGNED_SHORT, 0);
+  } else {
+    gl.drawArrays(gl.TRIANGLES, 0, mesh.vertexCount);
+  }
 }
 
 /**
@@ -250,20 +260,33 @@ export function gameLoop(
   gl.uniform3f(uL, -0.5, -1, -0.3);
 
   // Render chunks with face-culled meshes
-  // Note: getVisibleChunks might need consistent position.
-  // Using interpolated position for visibility culling is fine (prevents popping).
-  const visibleChunks = world.getVisibleChunks(renderX, renderZ);
+  // Progressive loading: generate chunks as player moves, unload distant ones
+  const visibleChunks = world.updateVisibleChunks(
+    renderX,
+    renderZ,
+    gameState.seed || 0,
+    blockTypes,
+    blockNames,
+    generateChunk,
+    gl,
+    deleteChunkMesh,
+  );
+
+  // Budgeted meshing: limit meshes built per frame to avoid stutter
+  const MESHES_PER_FRAME = 2;
+  let meshedThisFrame = 0;
 
   for (const chunk of visibleChunks) {
-    // Rebuild mesh if dirty
-    if (chunk.dirty) {
-      chunk.mesh = meshChunk(colorMap, chunk, world, blockTypes);
+    // Rebuild mesh if dirty (budget limited)
+    if (chunk.dirty && meshedThisFrame < MESHES_PER_FRAME) {
+      chunk.mesh = smartMeshChunk(colorMap, chunk, world, blockTypes);
       chunk.dirty = false;
 
       uploadChunkMesh(gl, chunk);
+      meshedThisFrame++;
     }
 
-    // Draw the chunk mesh
+    // Draw the chunk mesh (even if not yet meshed this frame)
     if (chunk.mesh && chunk.mesh.vertexCount > 0) {
       drawChunkMesh(gl, chunk, VP, uMVP, uM);
     }

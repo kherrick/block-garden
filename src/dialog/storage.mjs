@@ -61,11 +61,11 @@ export async function setSaveMode(mode) {
   }
 }
 
-// Track last auto-save timestamp
+// Track last auto save timestamp
 let lastAutoSaveTime = 0;
 
 /**
- * Auto-save functionality
+ * Auto save functionality
  *
  * @param {typeof globalThis} globalThis
  *
@@ -73,7 +73,7 @@ let lastAutoSaveTime = 0;
  */
 export async function autoSaveGame(globalThis) {
   try {
-    // Check if auto-save is enabled
+    // Check if auto save is enabled
     const saveMode = await getSaveMode();
 
     if (saveMode !== "auto") {
@@ -84,15 +84,22 @@ export async function autoSaveGame(globalThis) {
 
     // Check if we saved within the last 30 seconds
     if (now - lastAutoSaveTime < AUTO_SAVE_THROTTLE) {
-      console.info("Auto-save skipped (too soon since last save)");
+      console.info("Auto save skipped (too soon since last save)");
 
       return;
     }
 
-    const saveState = createSaveState(globalThis.blockGarden.state.world);
+    // Create save state
+    const saveState = createSaveState(
+      globalThis.blockGarden.state.world,
+      globalThis,
+    );
     const stateJSON = JSON.stringify(saveState);
+
+    // Compress to binary blob
     const compressedBlob = await compressToBinaryBlob(stateJSON);
 
+    // Convert to base64
     const arrayBuffer = await compressedBlob.arrayBuffer();
     const base64Data = arrayBufferToBase64(globalThis, arrayBuffer);
 
@@ -107,14 +114,14 @@ export async function autoSaveGame(globalThis) {
 
     lastAutoSaveTime = now; // Update last save time
 
-    console.info("Game auto-saved successfully");
+    console.info("Game auto saved successfully");
   } catch (error) {
-    console.error("Failed to auto-save game:", error);
+    console.error("Failed to auto save game:", error);
   }
 }
 
 /**
- * Check for auto-save on load
+ * Check for auto save on load
  *
  * @param {typeof globalThis} globalThis
  * @param {ShadowRoot} shadow
@@ -131,7 +138,7 @@ export async function checkAutoSave(globalThis, shadow) {
       return false;
     }
 
-    // Create and show auto-save dialog
+    // Create and show auto save dialog
     const dialog = globalThis.document.createElement("dialog");
     dialog.style.cssText = `
       background: var(--bg-color-gray-50);
@@ -188,12 +195,14 @@ export async function checkAutoSave(globalThis, shadow) {
             "application/gzip",
           );
 
+          // Decompress
           let stateJSON;
 
           if ("DecompressionStream" in globalThis) {
             const decompressedStream = compressedBlob
               .stream()
               .pipeThrough(new globalThis.DecompressionStream("gzip"));
+
             const decompressedBlob = await new globalThis.Response(
               decompressedStream,
             ).blob();
@@ -203,7 +212,13 @@ export async function checkAutoSave(globalThis, shadow) {
             throw new Error("DecompressionStream not supported");
           }
 
+          // Parse and load save state
           const saveState = JSON.parse(stateJSON);
+
+          // Set the seed before loading the rest of the state (for proper world init)
+          if (saveState.config && saveState.config.seed) {
+            globalThis.blockGarden.state.seed = saveState.config.seed;
+          }
 
           await loadSaveState(globalThis, shadow, saveState);
 
@@ -220,7 +235,7 @@ export async function checkAutoSave(globalThis, shadow) {
 
           console.log("Auto save loaded successfully");
         } catch (error) {
-          console.error("Failed to load auto-save:", error);
+          console.error("Failed to load auto save:", error);
         }
 
         dialog.close();
@@ -243,7 +258,7 @@ export async function checkAutoSave(globalThis, shadow) {
       });
     });
   } catch (error) {
-    console.error("Failed to check for auto-save:", error);
+    console.error("Failed to check for auto save:", error);
 
     return false;
   }
@@ -613,7 +628,7 @@ export class StorageDialog {
 
     const keys = await localForage.keys();
 
-    // Load auto-save first
+    // Load auto save first
     const autoSave = await localForage.getItem(AUTO_SAVE_KEY);
 
     if (autoSave) {
@@ -1048,13 +1063,15 @@ export class StorageDialog {
 
     if (!worldName) {
       alert("Please enter a world name");
-
       return;
     }
 
     try {
       // Create save state
-      const saveState = createSaveState(globalThis.blockGarden.state.world);
+      const saveState = createSaveState(
+        globalThis.blockGarden.state.world,
+        globalThis,
+      );
       const stateJSON = JSON.stringify(saveState);
 
       // Compress to binary blob

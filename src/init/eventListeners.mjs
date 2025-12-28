@@ -2,7 +2,6 @@ import extrasHandler from "konami-code-js";
 
 import { debounce } from "../util/debounce.mjs";
 import { effect } from "../util/effect.mjs";
-import { getBlock } from "../util/world.mjs";
 import { placeBlock, removeBlock } from "../util/interaction.mjs";
 import { resizeCanvas } from "../util/resizeCanvas.mjs";
 
@@ -17,6 +16,8 @@ import { copyToClipboard } from "../util/copyToClipboard.mjs";
 import { extractAttachments } from "../util/extractAttachments.mjs";
 import { extractJsonFromPng } from "../util/canvasToPngWithState.mjs";
 import { runCompress } from "../util/compression.mjs";
+
+import { showToast } from "../dialog/showToast.mjs";
 
 import {
   autoSaveGame,
@@ -139,29 +140,6 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
     fastGrowthButton.style.color = "var(--bg-color-white)";
   }
 
-  // Toggle Pre-Planting Button
-  const togglePrePlanting = shadow.getElementById("togglePrePlanting");
-  if (togglePrePlanting) {
-    togglePrePlanting.addEventListener("click", () => {
-      gameState.isPrePlanted = !gameState.isPrePlanted;
-      togglePrePlanting.textContent = gameState.isPrePlanted
-        ? "Disable Pre-Planting"
-        : "Enable Pre-Planting";
-      togglePrePlanting.style.backgroundColor = gameState.isPrePlanted
-        ? "var(--bg-color-red-500)"
-        : "var(--bg-color-green-500)";
-      togglePrePlanting.style.color = "var(--bg-color-white)";
-    });
-    // Set initial button state
-    togglePrePlanting.textContent = gameState.isPrePlanted
-      ? "Disable Pre-Planting"
-      : "Enable Pre-Planting";
-    togglePrePlanting.style.backgroundColor = gameState.isPrePlanted
-      ? "var(--bg-color-red-500)"
-      : "var(--bg-color-green-500)";
-    togglePrePlanting.style.color = "var(--bg-color-white)";
-  }
-
   // Random Plant Again Button
   const randomPlantButton = shadow.getElementById("randomPlantButton");
   if (randomPlantButton) {
@@ -170,7 +148,8 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
       if (typeof randomPlantSeeds === "function") {
         randomPlantSeeds();
 
-        alert("Random planting complete!");
+        // alert("Random planting at spawn point complete!");
+        showToast(shadow, "Random planting at spawn point complete!");
       }
     });
   }
@@ -438,6 +417,12 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
     const seedInput = shadow.getElementById("worldSeedInput");
     const randomSeed = getRandomSeed();
 
+    if (seedInput instanceof HTMLInputElement) {
+      seedInput.value = String(randomSeed);
+    }
+
+    currentSeedDisplay.textContent = String(randomSeed);
+
     generateProceduralWorld(
       randomSeed,
       globalThis.blockGarden.config,
@@ -445,12 +430,6 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
     );
 
     console.log(`Generated new world with random seed: ${randomSeed}`);
-
-    if (seedInput instanceof HTMLInputElement) {
-      seedInput.value = String(randomSeed);
-    }
-
-    currentSeedDisplay.textContent = String(randomSeed);
   }
 
   const generateBtn = shadow.getElementById("generateWithSeed");
@@ -784,20 +763,21 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
     // Reuse the logic from generateProceduralWorld, but only the pre-planting part
     const { blocks, blockNames } = gameConfig;
     const { world } = gameState;
+
     // Helper to find block IDs
     const getBlockId = (name) => blocks.findIndex((b) => b.name === name);
     const GRASS = getBlockId(blockNames.GRASS);
-    const WORLD_RADIUS = 16;
+    const RANDOM_PLANT_RADIUS = 32;
     const MIN_Y = 1;
     const MAX_Y = 24;
-    const SEA_LEVEL = 4;
 
     // Collect valid grass blocks
     const validSeedSpots = [];
-    for (let x = -WORLD_RADIUS; x <= WORLD_RADIUS; x++) {
-      for (let z = -WORLD_RADIUS; z <= WORLD_RADIUS; z++) {
+    for (let x = -RANDOM_PLANT_RADIUS; x <= RANDOM_PLANT_RADIUS; x++) {
+      for (let z = -RANDOM_PLANT_RADIUS; z <= RANDOM_PLANT_RADIUS; z++) {
         for (let y = MIN_Y; y <= MAX_Y; y++) {
           const key = `${x},${y},${z}`;
+
           // Allow planting on any grass block, regardless of y
           if (
             world.get(key) === GRASS &&

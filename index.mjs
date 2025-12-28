@@ -366,6 +366,114 @@ export class BlockGarden extends HTMLElement {
             transform: scale(0.95);
           }
 
+          #toastContainer {
+            align-items: center;
+            bottom: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            left: 50%;
+            max-height: var(--bg-ui-toast-container-max-height);
+            max-width: 90vw;
+            max-width: 90dvw;
+            overflow-y: var(--bg-ui-toast-container-overflow-y);
+            pointer-events: none;
+            position: fixed;
+            transform: translateX(-50%);
+            z-index: 9999;
+          }
+
+          .toast {
+            align-items: flex-start;
+            animation: toastSlideIn 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            backdrop-filter: blur(0.5rem);
+            background: var(--bg-color-black-alpha-80);
+            border-radius: 0.5rem;
+            border: 0.125rem solid var(--bg-color-gray-alpha-30);
+            box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.3);
+            color: var(--bg-color-white);
+            display: flex;
+            font-family: monospace;
+            font-size: 0.875rem;
+            gap: 0.75rem;
+            justify-content: space-between;
+            max-width: 25rem;
+            min-width: 15rem;
+            padding: 0.75rem 1rem;
+            pointer-events: auto;
+            position: relative;
+            text-align: center;
+          }
+
+          .toast--fade-out {
+            animation: toastFadeOut 0.2s ease-out forwards;
+          }
+
+          .toast--slide-out {
+            animation: toastSlideOut 0.2s ease-out forwards;
+          }
+
+          .toast__content {
+            flex: 1;
+            line-height: 1.4;
+          }
+
+          .toast__close-btn {
+            background: var(--bg-color-red-500);
+            border-radius: 0.25rem;
+            border: none;
+            color: var(--bg-color-white);
+            cursor: pointer;
+            font-size: 1rem;
+            height: 1.5rem;
+            line-height: 1;
+            padding: 0;
+            transition: background 0.2s;
+            width: 1.5rem;
+          }
+
+          .toast__close-btn:hover {
+            background: var(--bg-color-red-500);
+            opacity: 0.8;
+          }
+
+          .toast__close-btn:active {
+            transform: scale(0.95);
+          }
+
+          @keyframes toastSlideIn {
+            from {
+              opacity: 0;
+              transform: translateY(100%);
+            }
+
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+
+          @keyframes toastFadeOut {
+            from {
+              opacity: 1;
+            }
+
+            to {
+              opacity: 0;
+            }
+          }
+
+          @keyframes toastSlideOut {
+            from {
+              opacity: 1;
+              transform: translateY(0);
+            }
+
+            to {
+              opacity: 0;
+              transform: translateY(100%);
+            }
+          }
 
           .dpad-container {
             display: flex;
@@ -448,13 +556,6 @@ export class BlockGarden extends HTMLElement {
             z-index: 4;
           }
 
-          .action-buttons {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.625rem;
-            justify-content: end;
-          }
-
           /* Button Styles */
           button {
             background: var(--bg-color-green-500);
@@ -525,9 +626,6 @@ export class BlockGarden extends HTMLElement {
                   <button
                     id="fastGrowthButton"
                   >Enable Fast Growth</button>
-                  <button
-                    id="togglePrePlanting"
-                  >Disable Pre-Planting</button>
                   <button
                     id="toggleTouchControls"
                   >Disable Touch Controls</button>
@@ -638,6 +736,8 @@ export class BlockGarden extends HTMLElement {
             </div>
           </div>
         </div>
+
+        <div id="toastContainer"></div>
       `;
 
       // Attach open shadow root

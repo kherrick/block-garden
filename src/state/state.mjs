@@ -13,7 +13,6 @@ import { getRandomSeed } from "../util/getRandomSeed.mjs";
  *
  * @property {boolean} fastGrowth
  * @property {boolean} flying
- * @property {boolean} isPrePlanted
  * @property {boolean} onGround
  * @property {boolean} uiButtonActive
  * @property {boolean} spacePressed
@@ -84,7 +83,6 @@ export const gameState = {
   uiButtonActive: false,
   plantStructures: {},
   growthTimers: {},
-  isPrePlanted: false,
   fastGrowth: false,
   shouldReset: new Signal.State(false),
   arrowsControlCamera: new Signal.State(true),

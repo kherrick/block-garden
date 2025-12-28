@@ -165,6 +165,7 @@ export function updatePhysics(shadow, ui, state, dt) {
     y = newY;
     z = newZ;
   } else {
+    // Collision detected
     // Axis-by-axis fallback
     if (
       !isColliding(state, getPlayerAABB(newX, y, z, playerWidth, playerHeight))

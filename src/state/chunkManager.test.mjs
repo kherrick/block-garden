@@ -93,8 +93,9 @@ describe("ChunkManager", () => {
       expect(manager.chunks.size).toBe(0);
     });
 
-    test("sets default load radius", () => {
-      expect(manager.loadRadius).toBe(4);
+    test("sets default render and cache radii", () => {
+      expect(manager.renderRadius).toBe(16);
+      expect(manager.cacheRadius).toBe(24);
     });
   });
 
@@ -283,11 +284,11 @@ describe("ChunkManager", () => {
   });
 
   describe("getVisibleChunks", () => {
-    test("returns chunks within load radius", () => {
+    test("returns chunks within render radius", () => {
       // Create chunks at various positions
       manager.getOrCreateChunk(0, 0);
       manager.getOrCreateChunk(1, 0);
-      manager.getOrCreateChunk(10, 10); // Far away
+      manager.getOrCreateChunk(30, 30); // Far away
 
       // Player at origin
       const visible = manager.getVisibleChunks(8, 8);
@@ -364,5 +365,148 @@ describe("ChunkManager", () => {
       manager.delete("5,50,5");
       expect(manager.has("5,50,5")).toBe(false);
     });
+    describe("updateVisibleChunks", () => {
+      test("generates chunks within render radius", () => {
+        const generateChunk = jest.fn((chunk) => {
+          chunk.generated = true;
+        });
+        const deleteChunkMesh = jest.fn();
+
+        // Reduce radius for testing
+        manager.renderRadius = 2;
+        manager.cacheRadius = 4;
+
+        const visible = manager.updateVisibleChunks(
+          0,
+          0,
+          123,
+          [],
+          {},
+          generateChunk,
+          {},
+          deleteChunkMesh,
+        );
+
+        // (2*2+1)^2 = 25 chunks
+        expect(visible.length).toBe(25);
+        expect(generateChunk).toHaveBeenCalled();
+      });
+
+      test("unloads chunks outside cache radius", () => {
+        const generateChunk = jest.fn();
+        const deleteChunkMesh = jest.fn();
+
+        manager.renderRadius = 2;
+        manager.cacheRadius = 4;
+
+        // Create a far chunk
+        const farChunk = manager.getOrCreateChunk(10, 10);
+        farChunk.mesh = { vertexCount: 100 };
+
+        manager.updateVisibleChunks(
+          0,
+          0,
+          123,
+          [],
+          {},
+          generateChunk,
+          {},
+          deleteChunkMesh,
+        );
+
+        // Should be removed
+        expect(manager.getChunk(10, 10)).toBeUndefined();
+        // Should call deleteChunkMesh
+        expect(deleteChunkMesh).toHaveBeenCalledWith(
+          expect.anything(),
+          farChunk,
+        );
+      });
+
+      test("keeps cached chunks visible if they have a mesh", () => {
+        const generateChunk = jest.fn();
+        const deleteChunkMesh = jest.fn();
+
+        manager.renderRadius = 2;
+        manager.cacheRadius = 4;
+
+        // Create a chunk in "cache zone" (dist 3) with a mesh
+        const cachedChunk = manager.getOrCreateChunk(3, 0);
+        cachedChunk.mesh = { vertexCount: 100 };
+        cachedChunk.generated = true;
+
+        const visible = manager.updateVisibleChunks(
+          0,
+          0,
+          123,
+          [],
+          {},
+          generateChunk,
+          {},
+          deleteChunkMesh,
+        );
+
+        // Should still exist
+        expect(manager.getChunk(3, 0)).toBeDefined();
+        // Should NOT have cleared mesh
+        expect(cachedChunk.mesh).not.toBeNull();
+        // Should be in visible list
+        expect(visible).toContain(cachedChunk);
+
+        expect(deleteChunkMesh).not.toHaveBeenCalled();
+      });
+    });
+  });
+});
+
+describe("ChunkManager World Limits", () => {
+  let manager;
+
+  beforeEach(() => {
+    manager = new ChunkManager();
+    manager.loadRadius = 2; // Check small radius
+  });
+
+  test("should respect world radius when generating chunks", () => {
+    manager.worldRadius = 16; // Limit to 16 blocks (1 chunk radius effectively)
+
+    // Mock dependencies
+    const generateChunk = jest.fn();
+    const deleteChunkMesh = jest.fn();
+    const blocks = [];
+    const blockNames = {};
+    const gl = {};
+
+    // Player at 0,0
+    // Expected: Center chunk (0,0) valid.
+    // Chunk (-1, 0) valid (x=-16..-1).
+    // Chunk (1, 0) valid (x=16..31). Wait.
+    // Logic: floor(-16/16) = -1, floor(16/16) = 1.
+    // So chunks -1, 0, 1 in X and Z should be valid.
+
+    const chunks = manager.updateVisibleChunks(
+      0,
+      0,
+      123,
+      blocks,
+      blockNames,
+      generateChunk,
+      gl,
+      deleteChunkMesh,
+    );
+
+    // Visible chunks should be within bounds
+    // loadRadius is 2. So spiral checks -2 to 2.
+    // Bounds are -1 to 1.
+    // So chunks at 2 or -2 should be excluded.
+
+    const chunkCoords = chunks.map((c) => `${c.chunkX},${c.chunkZ}`);
+
+    expect(chunkCoords).toContain("0,0");
+    expect(chunkCoords).toContain("1,0");
+    expect(chunkCoords).toContain("-1,0");
+
+    expect(chunkCoords).not.toContain("2,0");
+    expect(chunkCoords).not.toContain("-2,0");
   });
 });

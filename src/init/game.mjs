@@ -143,41 +143,13 @@ export async function initGame(gThis, shadow, cnvs) {
   // Only pass cnvs to initGameDependencies, and call it once
   const { gl, cbuf, cube, uL, uM, uMVP } = initGameDependencies(cnvs);
 
-  // Check for shared save first (takes priority)
-  let sharedSaveLoaded = await checkSharedSave(gThis, shadow);
-
-  // If no shared save, check for auto-save
-  let autoSaveLoaded = false;
-  if (!sharedSaveLoaded) {
-    autoSaveLoaded = await checkAutoSave(gThis, shadow);
-  }
-
-  if (!autoSaveLoaded) {
-    initNewWorld(gameState.seed);
-  }
-
   // Get required UI buttons for flight controls
   const ui = {
     descendButton: shadow.getElementById("descend"),
     flyButton: shadow.getElementById("fly"),
   };
 
-  // Set current block to id of dirt
-  gameState.curBlock.set(getBlockIdByName("Dirt"));
-
-  // Set up auto-save interval
-  setInterval(async () => {
-    const saveMode = await getSaveMode();
-
-    if (saveMode === "auto") {
-      await autoSaveGame(gThis);
-    }
-  }, AUTO_SAVE_INTERVAL);
-
-  const ver = await localForage.setItem(`block-garden-version`, version);
-
-  console.log(`Block Garden version: ${ver}`);
-
+  // Attach reset event listener loading saves so it is ready for auto-save loading
   shadow.addEventListener("block-garden-reset", (e) => {
     // Set all growthTimers to FAST_GROWTH_TIME if enabled else restore to block default
     const { blocks } = gameConfig;
@@ -239,6 +211,35 @@ export async function initGame(gThis, shadow, cnvs) {
 
     gameState.shouldReset.set(true);
   });
+
+  // Check for shared save first (takes priority)
+  let sharedSaveLoaded = await checkSharedSave(gThis, shadow);
+
+  // If no shared save, check for auto-save
+  let autoSaveLoaded = false;
+  if (!sharedSaveLoaded) {
+    autoSaveLoaded = await checkAutoSave(gThis, shadow);
+  }
+
+  if (!sharedSaveLoaded && !autoSaveLoaded) {
+    initNewWorld(gameState.seed);
+  }
+
+  // Set current block to id of dirt
+  gameState.curBlock.set(getBlockIdByName("Dirt"));
+
+  // Set up auto-save interval
+  setInterval(async () => {
+    const saveMode = await getSaveMode();
+
+    if (saveMode === "auto") {
+      await autoSaveGame(gThis);
+    }
+  }, AUTO_SAVE_INTERVAL);
+
+  const ver = await localForage.setItem(`block-garden-version`, version);
+
+  console.log(`Block Garden version: ${ver}`);
 
   gameLoop(
     shadow,

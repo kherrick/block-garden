@@ -9,22 +9,63 @@
  *
  * @returns {Object} Serializable save file
  */
-export function createSaveState(world) {
-  const saveData = {};
-
-  // Use the Map-compatible forEach to iterate all blocks
+export function createSaveState(world, gThis) {
+  // Save world blocks
+  const worldData = {};
   world.forEach((type, key) => {
     const [x, y, z] = key.split(",").map(Number);
-    if (!saveData[x]) {
-      saveData[x] = {};
+
+    if (!worldData[x]) {
+      worldData[x] = {};
     }
 
-    if (!saveData[x][z]) {
-      saveData[x][z] = {};
+    if (!worldData[x][z]) {
+      worldData[x][z] = {};
     }
 
-    saveData[x][z][y] = type;
+    worldData[x][z][y] = type;
   });
 
-  return saveData;
+  // Try to get state/config from gThis, fallback to globalThis, fallback to empty
+  let state = gThis?.blockGarden?.state;
+  let config = gThis?.blockGarden?.config;
+  if (
+    !state &&
+    typeof globalThis !== "undefined" &&
+    globalThis.blockGarden?.state
+  ) {
+    state = globalThis.blockGarden.state;
+  }
+
+  if (
+    !config &&
+    typeof globalThis !== "undefined" &&
+    globalThis.blockGarden?.config
+  ) {
+    config = globalThis.blockGarden.config;
+  }
+
+  // Only use state/config for seed
+  const seed = state?.seed ?? config?.seed ?? null;
+
+  return {
+    config: {
+      seed: seed,
+      version: config?.version ?? null,
+    },
+    state: {
+      x: state?.x ?? null,
+      y: state?.y ?? null,
+      z: state?.z ?? null,
+      dx: state?.dx ?? null,
+      dy: state?.dy ?? null,
+      dz: state?.dz ?? null,
+      onGround: state?.onGround ?? null,
+      inventory: state?.inventory ?? null,
+      curBlock: state?.curBlock?.get
+        ? state.curBlock.get()
+        : (state?.curBlock ?? null),
+    },
+    world: worldData,
+  };
 }

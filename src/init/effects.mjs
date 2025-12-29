@@ -1,6 +1,7 @@
 import { gameConfig } from "../state/config/index.mjs";
 import { effect } from "../util/effect.mjs";
 import { getRandomSeed } from "../util/getRandomSeed.mjs";
+import { colors as gameColors } from "../state/config/colors.mjs";
 
 /** @typedef {import('signal-polyfill').Signal.State} Signal.State */
 
@@ -46,5 +47,35 @@ export function initEffects(shadow, currentBlock) {
 
       currentSeedDisplay.textContent = randomSeed;
     }
+  });
+}
+
+/**
+ * Initialize material bar rendering effects.
+ *
+ * @param {ShadowRoot} shadow
+ * @param {Function} renderCallback - Callback to render material bar
+ *
+ * @returns {void}
+ */
+export function initMaterialBarEffects(shadow, renderCallback) {
+  const gameState = globalThis.blockGarden?.state;
+  const config = globalThis.blockGarden?.config;
+
+  if (!gameState || !config) {
+    console.error(
+      "Game state or config not initialized for material bar effects",
+    );
+    return;
+  }
+
+  // Material bar effect to re-render when state changes
+  effect(() => {
+    renderCallback(
+      shadow,
+      gameState.materialBar.get(),
+      gameState.activeMaterialBarSlot.get(),
+      config.blocks,
+    );
   });
 }

@@ -154,6 +154,128 @@ export class BlockGarden extends HTMLElement {
             max-width: 15.625rem;
           }
 
+          /* Center position for material button */
+          .ui-grid__corner--center {
+            align-self: start;
+            grid-column: 1 / 3;
+            grid-row: 1 / 3;
+            justify-self: center;
+            max-height: 80dvh;
+            max-height: 80vh;
+            max-width: 90dvw;
+            max-width: 90vw;
+            z-index: 100;
+          }
+
+          /* Material Button */
+          #material {
+            backdrop-filter: blur(0.3125rem);
+            background: var(--sg-color-black-alpha-80);
+            border-radius: 0.5rem;
+            border: 0.0625rem solid var(--sg-color-gray-alpha-10);
+            color: var(--sg-color-white);
+            font-size: 0.5625rem;
+          }
+
+          .materialBar {
+            backdrop-filter: blur(0.3125rem);
+            background: var(--bg-color-black-alpha-60);
+            border-radius: 0.3125rem;
+            border: 0.125rem solid var(--bg-color-gray-alpha-30);
+            bottom: 1rem;
+            display: flex;
+            gap: 0.3125rem;
+            left: 50%;
+            max-width: 95%;
+            overflow: hidden;
+            padding: 0.3125rem;
+            pointer-events: auto;
+            position: absolute;
+            transform: translateX(-50%);
+            z-index: 50;
+          }
+
+          .materialBar-slot {
+            align-items: center;
+            background-color: var(--bg-color-black-alpha-60);
+            border: 0.125rem solid var(--bg-color-gray-600);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            font-size: 0.5rem;
+            gap: 0.25rem;
+            height: 3rem;
+            justify-content: center;
+            padding: 0.25rem;
+            position: relative;
+            transition: all 0.1s;
+            width: 3rem;
+          }
+
+          .materialBar-slot-cube {
+            height: 1.5rem;
+            perspective: 1000px;
+            position: relative;
+            transform-style: preserve-3d;
+            transform: rotateX(20deg) rotateY(-30deg);
+            width: 1.5rem;
+          }
+
+          .materialBar-cube-face {
+            border: 0.0625rem solid rgba(0, 0, 0, 0.3);
+            height: 1.5rem;
+            position: absolute;
+            width: 1.5rem;
+          }
+
+          .materialBar-cube-front {
+            transform: translateZ(0.75rem);
+          }
+
+          .materialBar-cube-top {
+            filter: brightness(1.2);
+            transform: rotateX(90deg) translateZ(0.75rem);
+          }
+
+          .materialBar-cube-right {
+            filter: brightness(0.8);
+            transform: rotateY(90deg) translateZ(0.75rem);
+          }
+
+          .materialBar-slot-name {
+            color: var(--bg-color-white);
+            font-size: 0.5rem;
+            line-height: 1;
+            max-width: 2.5rem;
+            text-align: center;
+            text-shadow: 0 0 2px black;
+            word-break: break-word;
+          }
+
+          .materialBar-slot.active {
+            border-color: var(--bg-color-white);
+            box-shadow: 0 0 0.625rem rgba(255, 255, 255, 0.2);
+            transform: scale(1.15);
+            z-index: 10;
+          }
+
+          .materialBar-slot:hover {
+            border-color: var(--bg-color-gray-400);
+          }
+
+          .materialBar-slot-number {
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 0.125rem;
+            color: white;
+            font-size: 0.375rem;
+            padding: 0.0625rem 0.125rem;
+            position: absolute;
+            right: 0.125rem;
+            text-shadow: 0 0 2px black;
+            top: 0.125rem;
+            z-index: 1;
+          }
+
           #stats,
           #settings,
           .seed-controls {
@@ -590,12 +712,15 @@ export class BlockGarden extends HTMLElement {
               <div class="ui-grid__corner--container" hidden="hidden">
                 Block: <span id="blockName"></span><br /><br />
 
-                [ <b>~ / &#96;</b> ]: Change Block<br />
                 [ w / a / s / d ]: Move<br />
                 [ arrow keys ]: Camera<br />
                 [ shift ]: Descend<br />
                 [ space ]: Jump / Ascend<br />
                 [ enter / control ]: Place / Remove Block<br /><br />
+
+                [ <b>~ / &#96;</b> ]: Change Block<br />
+                [ e ]: Open Inventory<br /><br />
+
                 Use crosshair to center block placement<br />
                 Click Game Canvas To Lock Mouse<br /><br />
 
@@ -604,6 +729,12 @@ export class BlockGarden extends HTMLElement {
 
                 <a id="privacy" href="privacy/index.html" target="_blank">Privacy Policy</a>
               </div>
+            </div>
+          </div>
+
+          <div class="ui-grid__corner ui-grid__corner--center" id="materialsPanel">
+            <div id="material">
+              <div class="ui-grid__corner--heading">🔍 Material</div>
             </div>
           </div>
 
@@ -620,18 +751,11 @@ export class BlockGarden extends HTMLElement {
                     </block-garden-select>
                   </div>
                   <button id="worldState">🌍 World State</button>
+                  <button id="randomPlantButton">Plant randomly</button>
+                  <button id="fastGrowthButton">Enable Fast Growth</button>
+                  <button id="toggleTouchControls">Disable Touch Controls</button>
                   <button
-                    id="randomPlantButton"
-                  >Plant randomly</button>
-                  <button
-                    id="fastGrowthButton"
-                  >Enable Fast Growth</button>
-                  <button
-                    id="toggleTouchControls"
-                  >Disable Touch Controls</button>
-                  <button
-                    onclick="if (confirm('Reloading will lose unsaved progress. Do you want to continue?')) { window.location.reload(); }"
-                  >
+                    onclick="if (confirm('Reloading will lose unsaved progress. Do you want to continue?')) { window.location.reload(); }">
                     Reload Game
                   </button>
                   <div id="customizeColorsBtnContainer" hidden="hidden">
@@ -667,11 +791,7 @@ export class BlockGarden extends HTMLElement {
           <div class="seed-controls__actions">
             <label>
               Seed:
-              <input
-                id="worldSeedInput"
-                placeholder="Enter seed..."
-                type="number"
-              />
+              <input id="worldSeedInput" placeholder="Enter seed..." type="number" />
             </label>
 
             <button id="generateWithSeed">Generate</button>
@@ -712,7 +832,7 @@ export class BlockGarden extends HTMLElement {
               <div class="touch-btn up-right" data-key="upright">↗</div>
 
               <div class="touch-btn left" data-key="a">←</div>
-              <div class="touch-btn middle" data-key="backquote">📦</div>
+              <div class="touch-btn middle" data-key="e">📦</div>
               <div class="touch-btn right" data-key="d">→</div>
 
               <div class="touch-btn down-left" data-key="downleft">↙</div>
@@ -736,6 +856,8 @@ export class BlockGarden extends HTMLElement {
             </div>
           </div>
         </div>
+
+        <div id="materialBar" class="materialBar" hidden="hidden"></div>
 
         <div id="toastContainer"></div>
       `;

@@ -28,8 +28,9 @@ async function extractRawAttachments(pdfDoc, PDFArray, PDFDict, PDFName) {
  * @returns {Promise<{ name: string, data: any }[]>}
  */
 export async function extractAttachments(payload) {
-  // @ts-ignore
-  const pdfLib = await import("https://cdn.jsdelivr.net/npm/pdf-lib/+esm");
+  const pdfLib =
+    // @ts-ignore
+    await import("https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/+esm");
   const {
     PDFDocument,
     PDFName,

@@ -7,6 +7,7 @@
  * @property {number} [growthTime] - Time in seconds for plant to grow
  * @property {boolean} [isSeed=false] - Whether this block is a seed/plant
  * @property {boolean} [gravity=false] - Whether a block falls
+ * @property {boolean} [crop=false] - Whether this block is a crop
  */
 
 /**
@@ -166,6 +167,7 @@ export const blocks = [
   },
   {
     name: blockNames.AGAVE_GROWING,
+    crop: true,
   },
   {
     name: blockNames.AGAVE_SPIKE,
@@ -174,9 +176,11 @@ export const blocks = [
     name: blockNames.AGAVE,
     growthTime: 1920,
     isSeed: true,
+    crop: true,
   },
   {
     name: blockNames.BAMBOO_GROWING,
+    crop: true,
   },
   {
     name: blockNames.BAMBOO_JOINT,
@@ -191,6 +195,7 @@ export const blocks = [
     name: blockNames.BAMBOO,
     growthTime: 180,
     isSeed: true,
+    crop: true,
   },
   {
     name: blockNames.BEDROCK,
@@ -203,6 +208,7 @@ export const blocks = [
   },
   {
     name: blockNames.BERRY_BUSH_GROWING,
+    crop: true,
   },
   {
     name: blockNames.BERRY_BUSH_LEAVES,
@@ -211,6 +217,7 @@ export const blocks = [
     name: blockNames.BERRY_BUSH,
     growthTime: 360,
     isSeed: true,
+    crop: true,
   },
   {
     name: blockNames.BIRCH_BARK,
@@ -223,6 +230,7 @@ export const blocks = [
   },
   {
     name: blockNames.BIRCH_GROWING,
+    crop: true,
   },
   {
     name: blockNames.BIRCH_LEAVES,
@@ -234,6 +242,7 @@ export const blocks = [
     name: blockNames.BIRCH,
     growthTime: 1260,
     isSeed: true,
+    crop: true,
   },
   {
     name: blockNames.CACTUS_BODY,
@@ -243,14 +252,17 @@ export const blocks = [
   },
   {
     name: blockNames.CACTUS_GROWING,
+    crop: true,
   },
   {
     name: blockNames.CACTUS,
     growthTime: 2400,
     isSeed: true,
+    crop: true,
   },
   {
     name: blockNames.CARROT_GROWING,
+    crop: true,
   },
   {
     name: blockNames.CARROT_LEAVES,
@@ -262,6 +274,7 @@ export const blocks = [
     name: blockNames.CARROT,
     growthTime: 240,
     isSeed: true,
+    crop: true,
   },
   {
     name: blockNames.CLAY,
@@ -277,6 +290,7 @@ export const blocks = [
   },
   {
     name: blockNames.CORN_GROWING,
+    crop: true,
   },
   {
     name: blockNames.CORN_LEAVES,
@@ -291,6 +305,7 @@ export const blocks = [
     name: blockNames.CORN,
     growthTime: 420,
     isSeed: true,
+    crop: true,
   },
   {
     name: blockNames.DIRT,
@@ -300,6 +315,7 @@ export const blocks = [
   },
   {
     name: blockNames.FERN_GROWING,
+    crop: true,
   },
   {
     name: blockNames.FERN_STEM,
@@ -308,6 +324,7 @@ export const blocks = [
     name: blockNames.FERN,
     growthTime: 90,
     isSeed: true,
+    crop: true,
   },
   {
     name: blockNames.GOLD,
@@ -329,11 +346,13 @@ export const blocks = [
   },
   {
     name: blockNames.KELP_GROWING,
+    crop: true,
   },
   {
     name: blockNames.KELP,
     growthTime: 150,
     isSeed: true,
+    crop: true,
   },
   {
     name: blockNames.LAVA,
@@ -347,6 +366,7 @@ export const blocks = [
   },
   {
     name: blockNames.LAVENDER_GROWING,
+    crop: true,
   },
   {
     name: blockNames.LAVENDER_STEM,
@@ -355,6 +375,7 @@ export const blocks = [
     name: blockNames.LAVENDER,
     growthTime: 200,
     isSeed: true,
+    crop: true,
   },
   {
     name: blockNames.LOTUS_BUD,
@@ -364,6 +385,7 @@ export const blocks = [
   },
   {
     name: blockNames.LOTUS_GROWING,
+    crop: true,
   },
   {
     name: blockNames.LOTUS_PAD,
@@ -375,12 +397,14 @@ export const blocks = [
     name: blockNames.LOTUS,
     growthTime: 390,
     isSeed: true,
+    crop: true,
   },
   {
     name: blockNames.MUSHROOM_CAP,
   },
   {
     name: blockNames.MUSHROOM_GROWING,
+    crop: true,
   },
   {
     name: blockNames.MUSHROOM_STEM,
@@ -389,6 +413,7 @@ export const blocks = [
     name: blockNames.MUSHROOM,
     growthTime: 120,
     isSeed: true,
+    crop: true,
   },
   {
     name: blockNames.PINE_CONE,
@@ -398,11 +423,13 @@ export const blocks = [
   },
   {
     name: blockNames.PINE_TREE_GROWING,
+    crop: true,
   },
   {
     name: blockNames.PINE_TREE,
     growthTime: 1440,
     isSeed: true,
+    crop: true,
   },
   {
     name: blockNames.PINE_TRUNK,
@@ -415,6 +442,7 @@ export const blocks = [
   },
   {
     name: blockNames.PUMPKIN_GROWING,
+    crop: true,
   },
   {
     name: blockNames.PUMPKIN_LEAVES,
@@ -429,6 +457,7 @@ export const blocks = [
     name: blockNames.PUMPKIN,
     growthTime: 660,
     isSeed: true,
+    crop: true,
   },
   {
     name: blockNames.ROSE_BLOOM,
@@ -438,6 +467,7 @@ export const blocks = [
   },
   {
     name: blockNames.ROSE_GROWING,
+    crop: true,
   },
   {
     name: blockNames.ROSE_LEAVES,
@@ -452,6 +482,7 @@ export const blocks = [
     name: blockNames.ROSE,
     growthTime: 540,
     isSeed: true,
+    crop: true,
   },
   {
     name: blockNames.SAND,
@@ -468,6 +499,7 @@ export const blocks = [
   },
   {
     name: blockNames.SUNFLOWER_GROWING,
+    crop: true,
   },
   {
     name: blockNames.SUNFLOWER_LEAVES,
@@ -482,21 +514,26 @@ export const blocks = [
     name: blockNames.SUNFLOWER,
     growthTime: 600,
     isSeed: true,
+    crop: true,
   },
   {
     name: blockNames.TREE_GROWING,
+    crop: true,
   },
   {
     name: blockNames.TREE_LEAVES,
+    crop: true,
   },
   {
     name: blockNames.TREE_TRUNK,
+    crop: true,
   },
   {
     name: blockNames.TULIP_BULB,
   },
   {
     name: blockNames.TULIP_GROWING,
+    crop: true,
   },
   {
     name: blockNames.TULIP_LEAVES,
@@ -511,6 +548,7 @@ export const blocks = [
     name: blockNames.TULIP,
     growthTime: 300,
     isSeed: true,
+    crop: true,
   },
   {
     name: blockNames.WATER,
@@ -521,6 +559,7 @@ export const blocks = [
   },
   {
     name: blockNames.WHEAT_GROWING,
+    crop: true,
   },
   {
     name: blockNames.WHEAT_STALK,
@@ -529,6 +568,7 @@ export const blocks = [
     name: blockNames.WHEAT,
     growthTime: 480,
     isSeed: true,
+    crop: true,
   },
   {
     name: blockNames.WILLOW_BRANCHES,
@@ -538,16 +578,19 @@ export const blocks = [
   },
   {
     name: blockNames.WILLOW_TREE_GROWING,
+    crop: true,
   },
   {
     name: blockNames.WILLOW_TREE,
     growthTime: 1800,
     isSeed: true,
+    crop: true,
   },
   {
     name: blockNames.WILLOW_TRUNK,
   },
   {
     name: blockNames.WOOD,
+    crop: true,
   },
 ];

@@ -26,6 +26,8 @@ import {
   showStorageDialog,
 } from "../dialog/storage.mjs";
 import { getRandomSeed } from "../util/getRandomSeed.mjs";
+import { selectMaterialBarSlot, setMaterialBarItem } from "../state/state.mjs";
+import { InventoryDialog } from "../dialog/inventory.mjs";
 
 /** @typedef {import('signal-polyfill').Signal.State} Signal.State */
 
@@ -43,24 +45,35 @@ function handleCornerClick(e) {
   const heading = e.currentTarget;
   if (heading instanceof HTMLDivElement) {
     const cornerContainer = heading.nextElementSibling;
-
-    if (cornerContainer.getAttribute("hidden") !== null) {
+    const isCornerContainerHidden = cornerContainer?.getAttribute("hidden");
+    if (isCornerContainerHidden && isCornerContainerHidden !== null) {
       cornerContainer.removeAttribute("hidden");
 
       return;
     }
 
-    cornerContainer.setAttribute("hidden", "hidden");
+    cornerContainer?.setAttribute("hidden", "hidden");
   }
 }
 
-function handleBackquoteClick(gameState) {
-  return () => {
-    gameState.curBlock.set(
-      (gameState.curBlock.get() + 1) % gameConfig.blocks.length,
-    );
-  };
+/**
+ *
+ * @param {number} currentBlock
+ * @param {number} blockCount
+ * @param {boolean} isForward
+ *
+ * @returns {number}
+ */
+function getNewIndex(currentBlock, blockCount, isForward) {
+  return isForward
+    ? currentBlock === blockCount - 1
+      ? 1
+      : currentBlock + 1
+    : currentBlock === 1
+      ? blockCount - 1
+      : currentBlock - 1;
 }
+
 /**
  *
  * @param {ShadowRoot} shadow
@@ -86,6 +99,12 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
   const host =
     /** @type {CustomShadowHost} */
     (shadow.host);
+
+  const inventoryDialog = new InventoryDialog(
+    globalThis,
+    globalThis.document,
+    shadow,
+  );
 
   // Extras
   new extrasHandler((handler) => {
@@ -115,6 +134,17 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
 
     gameState.hasEnabledExtras.set(true);
     handler.disable();
+  });
+
+  const material = shadow.querySelector("#material .ui-grid__corner--heading");
+  material.addEventListener("click", (e) => {
+    shadow.getElementById("materialBar").toggleAttribute("hidden");
+
+    if (shadow.getElementById("materialBar").hasAttribute("hidden")) {
+      material.textContent = "🔍 Material";
+    } else {
+      material.textContent = "❌ Material";
+    }
   });
 
   // Fast Growth Button
@@ -154,18 +184,16 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
     });
   }
 
-  const backquote = shadow.querySelector('[data-key="backquote"]');
+  function handleInventoryClick() {
+    return () => {
+      inventoryDialog.toggle();
+    };
+  }
 
-  backquote.addEventListener("click", handleBackquoteClick(gameState));
-  backquote.addEventListener("touchstart", handleBackquoteClick(gameState));
+  const inventoryButton = shadow.querySelector('[data-key="e"]');
 
-  shadow
-    .querySelector('[data-key="backquote"]')
-    .addEventListener("click", () => {
-      gameState.curBlock.set(
-        (gameState.curBlock.get() + 1) % gameConfig.blocks.length,
-      );
-    });
+  inventoryButton.addEventListener("click", handleInventoryClick());
+  inventoryButton.addEventListener("touchstart", handleInventoryClick());
 
   shadow.addEventListener(
     "keyup",
@@ -251,7 +279,6 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
       }
 
       if (
-        (lowercaseKey >= "0" && lowercaseKey <= "9") ||
         lowercaseKey === "backspace" ||
         lowercaseKey === "delete" ||
         lowercaseKey === "escape"
@@ -259,15 +286,35 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
         return;
       }
 
+      if (lowercaseKey === "e") {
+        e.preventDefault();
+
+        inventoryDialog.toggle();
+
+        return;
+      }
+
+      if (lowercaseKey >= "1" && lowercaseKey <= "9") {
+        e.preventDefault();
+
+        selectMaterialBarSlot(parseInt(lowercaseKey) - 1);
+
+        return;
+      }
+
       if (lowercaseKey === "`" || lowercaseKey === "~") {
         e.preventDefault();
+
         if (e.code === "Backquote" || e.code === "Accent") {
-          const blockCount = gameConfig.blocks.length;
-          const forward = !e.shiftKey;
-          const newIndex = forward
-            ? (gameState.curBlock.get() + 1) % blockCount
-            : (gameState.curBlock.get() - 1 + blockCount) % blockCount;
+          const newIndex = getNewIndex(
+            gameState.curBlock.get(),
+            gameConfig.blocks.length,
+            !e.shiftKey,
+          );
+
           gameState.curBlock.set(newIndex);
+
+          setMaterialBarItem(newIndex);
         }
       }
     },
@@ -894,6 +941,33 @@ export function initCanvasEventListeners(shadow, cnvs, blocks, curBlock) {
 
     if (e.button === 2) {
       removeBlock(gameState);
+    }
+  });
+}
+
+/**
+ * Initialize material bar event listeners.
+ *
+ * @param {ShadowRoot} shadow
+ *
+ * @returns {void}
+ */
+export function initMaterialBarEventListeners(shadow) {
+  const materialBarEl = shadow.getElementById("materialBar");
+  if (!materialBarEl) {
+    return;
+  }
+
+  // Add click listeners to material bar slots
+  materialBarEl.addEventListener("click", (e) => {
+    const slot =
+      e.target instanceof Element
+        ? e.target.closest(".materialBar-slot")
+        : null;
+
+    if (slot instanceof HTMLElement) {
+      const index = parseInt(slot.dataset.index);
+      selectMaterialBarSlot(index);
     }
   });
 }

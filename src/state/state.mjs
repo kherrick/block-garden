@@ -1,8 +1,11 @@
 import { Signal } from "signal-polyfill";
 
 import { gameConfig } from "./config/index.mjs";
-import { ChunkManager } from "./chunkManager.mjs";
+import { getBlockIdByName } from "./config/getBlockIdByName.mjs";
+
 import { getRandomSeed } from "../util/getRandomSeed.mjs";
+
+import { ChunkManager } from "./chunkManager.mjs";
 
 /** @typedef {import("../util/ray.mjs").PointWithFace} PointWithFace */
 
@@ -35,10 +38,14 @@ import { getRandomSeed } from "../util/getRandomSeed.mjs";
  * @property {Object.<string, number>} growthTimers
  * @property {Object.<string, Object>} plantStructures
  * @property {PointWithFace} hit
+ * @property {Signal.State} materialsInventory
  * @property {Signal.State} arrowsControlCamera
  * @property {Signal.State} curBlock
  * @property {Signal.State} shouldReset
+ * @property {Signal.State} shouldReset
  * @property {Signal.State} hasEnabledExtras
+ * @property {Signal.State} materialBar
+ * @property {Signal.State} activeMaterialBarSlot
  */
 
 /** @type number */
@@ -53,6 +60,36 @@ if (params.has("seed")) {
 }
 
 /**
+ * Selects a slot in the materialBar.
+ *
+ * @param {number} index - Index of the slot (0-8)
+ */
+export function selectMaterialBarSlot(index) {
+  if (index < 0 || index >= 9) {
+    return;
+  }
+
+  gameState.activeMaterialBarSlot.set(index);
+
+  const materialBar = gameState.materialBar.get();
+  gameState.curBlock.set(materialBar[index]);
+}
+
+/**
+ * Sets the item in the active materialBar slot.
+ *
+ * @param {number} blockId - ID of the block
+ */
+export function setMaterialBarItem(blockId) {
+  const index = gameState.activeMaterialBarSlot.get();
+  const materialBar = [...gameState.materialBar.get()];
+  materialBar[index] = blockId;
+
+  gameState.materialBar.set(materialBar);
+  gameState.curBlock.set(blockId);
+}
+
+/**
  * Primary game state store using reactive Signals.
  *
  * @type {GameState}
@@ -60,7 +97,7 @@ if (params.has("seed")) {
  * @constant
  */
 export const gameState = {
-  curBlock: new Signal.State(2),
+  curBlock: new Signal.State(getBlockIdByName("Dirt")),
   world: new ChunkManager(),
   seed: initialWorldSeed,
   yaw: 0,
@@ -88,6 +125,20 @@ export const gameState = {
   arrowsControlCamera: new Signal.State(true),
   actionKeyPressTime: 0,
   hasEnabledExtras: new Signal.State(false),
+  materialsInventory: new Signal.State([]),
+  // Default blocks
+  materialBar: new Signal.State([
+    getBlockIdByName("Dirt"),
+    getBlockIdByName("Sand"),
+    getBlockIdByName("Mushroom"),
+    getBlockIdByName("Sunflower"),
+    getBlockIdByName("Lotus"),
+    getBlockIdByName("Rose"),
+    getBlockIdByName("Pine Tree"),
+    getBlockIdByName("Gold"),
+    getBlockIdByName("Stone"),
+  ]),
+  activeMaterialBarSlot: new Signal.State(0),
 };
 
 /**
@@ -210,6 +261,13 @@ export function getState(key) {
  */
 export async function initState(gThis, version) {
   gameConfig.version.set(version);
+
+  // Initialize materials inventory with all block IDs, except for air
+  const allBlockIds = gameConfig.blocks
+    .filter((block) => block.name !== "Air")
+    .map((_, index) => index);
+
+  gameState.materialsInventory.set(allBlockIds);
 
   // Expose reactive state through globalThis
   gThis.blockGarden = {

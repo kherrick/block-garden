@@ -1,22 +1,12 @@
 import Hammer from "hammerjs";
 import localForage from "localforage";
 
-import { initTouchControls } from "./touchControls.mjs";
-import { initHammerControls } from "./hammerControls.mjs";
-import { initNewWorld } from "./newWorld.mjs";
-import {
-  initCanvasEventListeners,
-  initElementEventListeners,
-} from "./eventListeners.mjs";
-import { initEffects } from "./effects.mjs";
-import { initGameDependencies } from "./gameDependencies.mjs";
-import { buildStyleMapByPropNamesWithoutPrefixesOrSuffixes } from "../util/colors/buildStyleMapByPropNamesWithoutPrefixesOrSuffixes.mjs";
-
 import { applyColorsToShadowHost } from "../util/colors/applyColorsToShadowHost.mjs";
-import { COLOR_STORAGE_KEY } from "../dialog/colors/index.mjs";
-import { getSavedColors } from "../dialog/colors/getSavedColors.mjs";
+import { buildStyleMapByPropNamesWithoutPrefixesOrSuffixes } from "../util/colors/buildStyleMapByPropNamesWithoutPrefixesOrSuffixes.mjs";
+import { cssColorToRGB } from "../util/colors/cssColorToRGB.mjs";
 import { getCustomProperties } from "../util/colors/getCustomProperties.mjs";
-import { colors as blockGardenColors } from "../state/config/colors.mjs";
+import { normalizeRGBToRGBA } from "../util/colors/normalizeRGB.mjs";
+import { transformStyleMap } from "../util/colors/transformStyleMap.mjs";
 
 import {
   AUTO_SAVE_INTERVAL,
@@ -26,15 +16,25 @@ import {
   getSaveMode,
 } from "../dialog/storage.mjs";
 
-import { cssColorToRGB } from "../util/colors/cssColorToRGB.mjs";
-import { normalizeRGBToRGBA } from "../util/colors/normalizeRGB.mjs";
-import { transformStyleMap } from "../util/colors/transformStyleMap.mjs";
+import { COLOR_STORAGE_KEY } from "../dialog/colors/index.mjs";
+import { getSavedColors } from "../dialog/colors/getSavedColors.mjs";
 
-import { initState } from "../state/state.mjs";
 import { cancelGameLoop, gameLoop } from "../state/gameLoop.mjs";
-import { getBlockIdByName } from "../state/config/getBlockIdByName.mjs";
+import { colors as gameColors } from "../state/config/colors.mjs";
+import { initState } from "../state/state.mjs";
 
-import { generateFlatWorld } from "../generate/world.mjs";
+import {
+  initCanvasEventListeners,
+  initElementEventListeners,
+  initMaterialBarEventListeners,
+} from "./eventListeners.mjs";
+
+import { initEffects, initMaterialBarEffects } from "./effects.mjs";
+import { initGameDependencies } from "./gameDependencies.mjs";
+import { initHammerControls } from "./hammerControls.mjs";
+import { initMaterialBar } from "./materialBar.mjs";
+import { initNewWorld } from "./newWorld.mjs";
+import { initTouchControls } from "./touchControls.mjs";
 
 /**
  * @typedef {Element & { keys: object, touchKeys: object }} CustomShadowHost
@@ -117,9 +117,7 @@ export async function initGame(gThis, shadow, cnvs) {
     Object.entries(
       buildStyleMapByPropNamesWithoutPrefixesOrSuffixes(
         styles,
-        Object.keys(blockGardenColors["block"]).map(
-          (v) => `--bg-block-${v}-color`,
-        ),
+        Object.keys(gameColors["block"]).map((v) => `--bg-block-${v}-color`),
         "--bg-block-",
         "-color",
       ),
@@ -139,6 +137,10 @@ export async function initGame(gThis, shadow, cnvs) {
   initCanvasEventListeners(shadow, cnvs, gameConfig.blocks, gameState.curBlock);
   initHammerControls(Hammer(shadow.host), shadow, gameState);
   initTouchControls(shadow);
+
+  initMaterialBarEffects(shadow, initMaterialBar(gameColors));
+
+  initMaterialBarEventListeners(shadow);
 
   // Only pass cnvs to initGameDependencies, and call it once
   const { gl, cbuf, cube, uL, uM, uMVP } = initGameDependencies(cnvs);
@@ -224,9 +226,6 @@ export async function initGame(gThis, shadow, cnvs) {
   if (!sharedSaveLoaded && !autoSaveLoaded) {
     initNewWorld(gameState.seed);
   }
-
-  // Set current block to id of dirt
-  gameState.curBlock.set(getBlockIdByName("Dirt"));
 
   // Set up auto-save interval
   setInterval(async () => {

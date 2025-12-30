@@ -57,8 +57,21 @@ export function initHammerControls(stage, shadow, gameState) {
     }
 
     return (
-      target.closest(".ui-grid__corner") !== null ||
-      target.closest(".touch-btn") !== null
+      globalThis.blockGarden.state.isCanvasActionDisabled ||
+      target.closest(`
+        dialog,
+        #materialBar,
+        .touch-btn,
+        .seed-controls,
+        .settings-menu,
+        .ui-grid__corner,
+        .ui-grid__corner--container
+      `) !== null ||
+      (target.closest("block-garden") &&
+        /** @type {any} */
+        (ev).type !== "panstart" &&
+        /** @type {any} */
+        (ev).type !== "panmove")
     );
   };
 
@@ -67,6 +80,7 @@ export function initHammerControls(stage, shadow, gameState) {
     if (isUIInteraction(ev)) {
       return;
     }
+
     lastDeltaX = 0;
     lastDeltaY = 0;
   });
@@ -106,6 +120,11 @@ export function initHammerControls(stage, shadow, gameState) {
       return;
     }
 
+    // Skip if a UI button is active (e.g., jump/dig buttons)
+    if (gameState.uiButtonActive) {
+      return;
+    }
+
     // Prevent native click/mousedown from firing
     if (ev.srcEvent && ev.srcEvent.cancelable) {
       ev.srcEvent.preventDefault();
@@ -115,17 +134,12 @@ export function initHammerControls(stage, shadow, gameState) {
       return;
     }
 
-    // Skip if a UI button is active (e.g., jump/dig buttons)
-    if (gameState.uiButtonActive) {
-      return;
-    }
-
     let hit = gameState.hit;
 
     if (!gameConfig.useSplitControls.get()) {
-      const canvas = /** @type {HTMLCanvasElement} */ (
-        shadow.getElementById("canvas")
-      );
+      const canvas =
+        /** @type {HTMLCanvasElement} */
+        (shadow.getElementById("canvas"));
 
       const eyeY = gameState.y - gameState.playerHeight / 2 + 1.62;
 

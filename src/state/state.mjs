@@ -19,6 +19,7 @@ import { ChunkManager } from "./chunkManager.mjs";
  * @property {boolean} onGround
  * @property {boolean} uiButtonActive
  * @property {boolean} spacePressed
+ * @property {boolean} isCanvasActionDisabled
  * @property {ChunkManager} world
  * @property {number} actionKeyPressTime
  * @property {number} lastSpacePressTime
@@ -117,6 +118,7 @@ export const gameState = {
   hit: null,
   lastSpacePressTime: 0,
   spacePressed: false,
+  isCanvasActionDisabled: false,
   uiButtonActive: false,
   plantStructures: {},
   growthTimers: {},

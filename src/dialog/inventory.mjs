@@ -172,6 +172,16 @@ export class InventoryDialog {
 
   handleBlockClick(blockId) {
     setMaterialBarItem(blockId);
+
+    this.close();
+  }
+
+  handleClose() {
+    setTimeout(() => {
+      globalThis.blockGarden.state.isCanvasActionDisabled = false;
+
+      this.dialog.removeEventListener("close", this.handleClose.bind(this));
+    }, 500);
   }
 
   open() {
@@ -185,6 +195,10 @@ export class InventoryDialog {
     if (this.doc.pointerLockElement) {
       this.doc.exitPointerLock();
     }
+
+    globalThis.blockGarden.state.isCanvasActionDisabled = true;
+
+    this.dialog.addEventListener("close", this.handleClose.bind(this));
   }
 
   close() {

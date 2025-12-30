@@ -138,6 +138,8 @@ export async function checkAutoSave(globalThis, shadow) {
       return false;
     }
 
+    globalThis.blockGarden.state.isCanvasActionDisabled = true;
+
     // Create and show auto save dialog
     const dialog = globalThis.document.createElement("dialog");
     dialog.style.cssText = `
@@ -176,6 +178,12 @@ export async function checkAutoSave(globalThis, shadow) {
         ">Yes</button>
       </div>
     `;
+
+    dialog.addEventListener("close", () => {
+      setTimeout(() => {
+        globalThis.blockGarden.state.isCanvasActionDisabled = false;
+      }, 500);
+    });
 
     shadow.append(dialog);
 
@@ -422,7 +430,6 @@ export class StorageDialog {
     this.deleteSelectedGame = this.deleteSelectedGame.bind(this);
     this.getPDFGameStateAttachment = this.getPDFGameStateAttachment.bind(this);
     this.getSelectedGameAsPNG = this.getSelectedGameAsPNG.bind(this);
-    this.handleDialogClick = this.handleDialogClick.bind(this);
     this.handleDragLeave = this.handleDragLeave.bind(this);
     this.handleDragOver = this.handleDragOver.bind(this);
     this.handleFileDrop = this.handleFileDrop.bind(this);
@@ -829,17 +836,6 @@ export class StorageDialog {
     }
   }
 
-  /**
-   * @param {MouseEvent} e
-   *
-   * @returns {void}
-   */
-  handleDialogClick(e) {
-    if (e.target === this.dialog) {
-      this.close();
-    }
-  }
-
   /** @returns {void} */
   initEventListeners() {
     const closeBtn = this.dialog.querySelector("#closeStorageDialog");
@@ -867,9 +863,6 @@ export class StorageDialog {
 
     // File input change event
     fileInput.addEventListener("change", this.handleFileSelect);
-
-    // Close on outside click
-    this.dialog.addEventListener("click", this.handleDialogClick);
   }
 
   /** @returns {void} */
@@ -899,9 +892,6 @@ export class StorageDialog {
 
     // File input
     fileInput.removeEventListener("change", this.handleFileSelect);
-
-    // Close on outside click
-    this.dialog.removeEventListener("click", this.handleDialogClick);
   }
 
   /** @returns {void} */

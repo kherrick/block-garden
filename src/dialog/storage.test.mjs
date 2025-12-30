@@ -419,7 +419,6 @@ describe("Storage Dialog Module", () => {
       expect(typeof dialog.deleteSelectedGame).toBe("function");
       expect(typeof dialog.loadSelectedGame).toBe("function");
       expect(typeof dialog.saveCurrentGame).toBe("function");
-      expect(typeof dialog.handleDialogClick).toBe("function");
       expect(typeof dialog.handleWorldNameInput).toBe("function");
     });
 
@@ -713,19 +712,6 @@ describe("Storage Dialog Module", () => {
 
       // After close, the dialog should still exist but listeners removed
       expect(dialog.dialog).not.toBeNull();
-    });
-
-    test("closes dialog on outside click", async () => {
-      await dialog.createDialog();
-
-      // Simulate outside click
-      const closeHandler = jest.spyOn(dialog, "close");
-
-      dialog.dialog.dispatchEvent(new MouseEvent("click"));
-
-      expect(closeHandler).toHaveBeenCalled();
-
-      closeHandler.mockRestore();
     });
   });
 

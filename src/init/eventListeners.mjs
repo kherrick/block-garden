@@ -237,6 +237,10 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
       shadow
         .querySelector('[class="seed-controls"]')
         .setAttribute("hidden", "hidden");
+
+      setTimeout(() => {
+        globalThis.blockGarden.state.isCanvasActionDisabled = false;
+      }, 500);
     });
   }
 
@@ -297,9 +301,16 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
       if (lowercaseKey === "s" && e.ctrlKey) {
         e.preventDefault();
 
-        shadow
-          .querySelector('[class="seed-controls"]')
-          .toggleAttribute("hidden");
+        const seedControls = shadow.querySelector('[class="seed-controls"]');
+        seedControls.toggleAttribute("hidden");
+
+        if (seedControls.hasAttribute("hidden")) {
+          setTimeout(() => {
+            globalThis.blockGarden.state.isCanvasActionDisabled = false;
+          }, 500);
+        } else {
+          globalThis.blockGarden.state.isCanvasActionDisabled = true;
+        }
 
         globalThis.document.exitPointerLock();
       }

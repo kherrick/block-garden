@@ -134,6 +134,11 @@ export async function loadSaveState(gThis, shadow, state) {
     });
   });
 
+  // Mark all loaded chunks as generated so they won't be overwritten by terrain generation
+  for (const chunk of world.getAllChunks()) {
+    chunk.generated = true;
+  }
+
   const t1 = performance.now();
   console.log(
     `World loaded in ${(t1 - t0).toFixed(2)} ms. World size: ${worldKeys.length} columns.`,

@@ -1,3 +1,5 @@
+import { CHUNK_SIZE_X, CHUNK_SIZE_Y, CHUNK_SIZE_Z } from "../util/chunk.mjs";
+
 /**
  * @typedef {import('./chunkManager.mjs').ChunkManager} ChunkManager
  */
@@ -10,21 +12,39 @@
  * @returns {Object} Serializable save file
  */
 export function createSaveState(world, gThis) {
-  // Save world blocks
+  // Save world blocks from all loaded chunks (including air blocks where player dug)
   const worldData = {};
-  world.forEach((type, key) => {
-    const [x, y, z] = key.split(",").map(Number);
 
-    if (!worldData[x]) {
-      worldData[x] = {};
+  for (const chunk of world.getAllChunks()) {
+    const baseX = chunk.worldX;
+    const baseZ = chunk.worldZ;
+
+    // Iterate through all blocks in the chunk
+    for (let y = 1; y < CHUNK_SIZE_Y; y++) {
+      for (let z = 0; z < CHUNK_SIZE_Z; z++) {
+        for (let x = 0; x < CHUNK_SIZE_X; x++) {
+          const type = chunk.getBlock(x, y, z);
+          const worldX = baseX + x;
+          const worldZ = baseZ + z;
+
+          // Skip air blocks to keep save file small
+          if (type === 0) {
+            continue;
+          }
+
+          if (!worldData[worldX]) {
+            worldData[worldX] = {};
+          }
+
+          if (!worldData[worldX][worldZ]) {
+            worldData[worldX][worldZ] = {};
+          }
+
+          worldData[worldX][worldZ][y] = type;
+        }
+      }
     }
-
-    if (!worldData[x][z]) {
-      worldData[x][z] = {};
-    }
-
-    worldData[x][z][y] = type;
-  });
+  }
 
   // Try to get state/config from gThis, fallback to globalThis, fallback to empty
   let state = gThis?.blockGarden?.state;

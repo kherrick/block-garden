@@ -7,11 +7,12 @@ import { gameConfig } from "../state/config/index.mjs";
  * Attempts to place a block at the current hit position.
  *
  * @param {GameState} gameState
+ * @param {import('../util/ray.mjs').PointWithFace} [targetHit] - Optional hit target. If not provided, uses gameState.hit
  *
  * @returns {boolean} True if block was placed, false otherwise
  */
-export function placeBlock(gameState) {
-  const hit = gameState.hit;
+export function placeBlock(gameState, targetHit) {
+  const hit = targetHit || gameState.hit;
   if (!hit || !hit.face) {
     return false;
   }
@@ -77,11 +78,12 @@ export function placeBlock(gameState) {
  * Attempts to remove a block at the current hit position.
  *
  * @param {GameState} gameState
+ * @param {import('../util/ray.mjs').PointWithFace} [targetHit] - Optional hit target. If not provided, uses gameState.hit
  *
  * @returns {boolean} True if block was removed, false otherwise
  */
-export function removeBlock(gameState) {
-  const hit = gameState.hit;
+export function removeBlock(gameState, targetHit) {
+  const hit = targetHit || gameState.hit;
   if (!hit) {
     return false;
   }

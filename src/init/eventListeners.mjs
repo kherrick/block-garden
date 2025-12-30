@@ -16,6 +16,7 @@ import { copyToClipboard } from "../util/copyToClipboard.mjs";
 import { extractAttachments } from "../util/extractAttachments.mjs";
 import { extractJsonFromPng } from "../util/canvasToPngWithState.mjs";
 import { runCompress } from "../util/compression.mjs";
+import { raycastFromCanvasCoords } from "../util/raycastFromCanvasCoords.mjs";
 
 import { showToast } from "../dialog/showToast.mjs";
 
@@ -168,6 +169,31 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
     fastGrowthButton.textContent = "Enable Fast Growth";
     fastGrowthButton.style.backgroundColor = "var(--bg-color-green-500)";
     fastGrowthButton.style.color = "var(--bg-color-white)";
+  }
+
+  // Split Controls Toggle
+  const toggleSplitControls = shadow.getElementById("toggleSplitControls");
+  if (toggleSplitControls) {
+    const config = globalThis.blockGarden.config;
+
+    const updateButtonState = () => {
+      const isEnabled = config.useSplitControls.get();
+      toggleSplitControls.textContent = isEnabled
+        ? "Disable Split Controls"
+        : "Enable Split Controls";
+      toggleSplitControls.style.backgroundColor = isEnabled
+        ? "var(--bg-color-red-500)"
+        : "var(--bg-color-green-500)";
+      toggleSplitControls.style.color = "var(--bg-color-white)";
+    };
+
+    toggleSplitControls.addEventListener("click", () => {
+      config.useSplitControls.set(!config.useSplitControls.get());
+      updateButtonState();
+    });
+
+    // Initial state
+    updateButtonState();
   }
 
   // Random Plant Again Button
@@ -912,7 +938,11 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
  */
 export function initCanvasEventListeners(shadow, cnvs, blocks, curBlock) {
   cnvs.addEventListener("click", () => {
-    cnvs?.requestPointerLock();
+    // @ts-ignore
+    const gameConfig = globalThis.blockGarden.config;
+    if (gameConfig.useSplitControls.get()) {
+      cnvs?.requestPointerLock();
+    }
   });
 
   cnvs.addEventListener("contextmenu", (e) => {
@@ -926,21 +956,80 @@ export function initCanvasEventListeners(shadow, cnvs, blocks, curBlock) {
     }
 
     const gameState = globalThis.blockGarden.state;
-    const hit = gameState.hit;
+    // @ts-ignore
+    const gameConfig = globalThis.blockGarden.config;
 
-    if (!hit) {
-      return;
+    let hit = gameState.hit;
+    const useSplit = gameConfig.useSplitControls.get();
+
+    if (!useSplit) {
+      const eyeY = gameState.y - gameState.playerHeight / 2 + 1.62;
+
+      const { hit: rayHit } = raycastFromCanvasCoords(
+        cnvs,
+        e.clientX,
+        e.clientY,
+        gameState.world,
+        {
+          x: gameState.x,
+          y: eyeY,
+          z: gameState.z,
+        },
+        {
+          yaw: gameState.yaw,
+          pitch: gameState.pitch,
+        },
+      );
+      hit = rayHit;
     }
 
-    const k = `${hit.x},${hit.y},${hit.z}`;
-    const world = gameState.world;
+    // If split controls are OFF...
+    if (!useSplit) {
+      // If we clicked, we probably want to interact with what is under cursor.
+      // If we missed (hit is null), we do NOTHING.
+      // We definitely do NOT want to use 'gameState.hit' (center).
+      if (!hit) return;
 
+      // Also, if we are clicking to interact, we might NOT want to lock the pointer immediately?
+      // But standard implementation usually locks pointer to look around.
+      // If user sets "useSplitControls: false", they likely want an unlocked cursor to point at things.
+      // If we lock pointer, cursor centers.
+      // But we have a 'click' listener that requests pointer lock:
+      // cnvs.addEventListener("click", () => { cnvs?.requestPointerLock(); });
+      // We should probably BLOCK that if we successfully interacted? Or just always block it if useSplitControls is false?
+      // Let's stop propagation if we successfully placed/removed a block?
+      // placeBlock returns boolean (true if placed).
+
+      // Actually, let's stop propagation of the click event if we handle it here (mousedown).
+      // But requestPointerLock is on 'click'. mousedown happens first.
+      // We can't easily stop a future event from here unless we stop immediate propagation and the other is on mousedown too? No.
+      // We should update the 'click' listener to check the config.
+    } else {
+      // Split controls ON.
+      // If hit (center) is null, we return.
+      if (!hit) return;
+    }
+
+    // Perform action
     if (e.button === 0) {
-      placeBlock(gameState);
+      // If split controls are disabled, we defer to HammerJS for "Tap" (Place) vs "Press" (Break) logic.
+      // This prevents immediate placement on "hold to break" or "drag to look".
+      if (!useSplit) {
+        return;
+      }
+
+      // Pass 'hit' explicitly.
+      // Note: placeBlock has a fallback `targetHit || gameState.hit`.
+      // If useSplit is FALSE, and hit is valid, we pass it.
+      // If useSplit is TRUE, hit IS gameState.hit. We pass it.
+      // So placeBlock will use it.
+      // The dangerous case was: useSplit=FALSE, hit=NULL.
+      // We handled that above by returning early.
+      placeBlock(gameState, hit);
     }
 
     if (e.button === 2) {
-      removeBlock(gameState);
+      removeBlock(gameState, hit);
     }
   });
 }

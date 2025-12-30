@@ -1,6 +1,9 @@
 import Hammer from "hammerjs";
 import { intersects } from "../util/aabb.mjs";
 import { blocks as blockDefs, blockNames } from "../state/config/blocks.mjs";
+import { raycastFromCanvasCoords } from "../util/raycastFromCanvasCoords.mjs";
+import { placeBlock, removeBlock } from "../util/interaction.mjs";
+import { gameConfig } from "../state/config/index.mjs";
 
 /** @typedef {import('./game.mjs').CustomShadowHost} CustomShadowHost */
 
@@ -25,12 +28,24 @@ export function initHammerControls(stage, shadow, gameState) {
 
   // Setup Tap for Placing
   // Tap should only fire if we didn't pan or press
-  tap.set({ interval: 150, threshold: 5 });
+  tap.set({ interval: 50, threshold: 5 });
   tap.requireFailure(press);
   tap.requireFailure(pan);
 
   let lastDeltaX = 0;
   let lastDeltaY = 0;
+
+  let lastPointerPos = { x: 0, y: 0 };
+
+  shadow.addEventListener(
+    "pointermove",
+    (e) => {
+      const pointerEvent = /** @type {PointerEvent} */ (e);
+      lastPointerPos.x = pointerEvent.clientX;
+      lastPointerPos.y = pointerEvent.clientY;
+    },
+    { passive: true },
+  );
 
   const isUIInteraction = (ev) => {
     // Robust check: determine element at the center of the gesture
@@ -96,7 +111,7 @@ export function initHammerControls(stage, shadow, gameState) {
       ev.srcEvent.preventDefault();
     }
 
-    if (ev.pointerType === "mouse") {
+    if (ev.pointerType === "mouse" && gameConfig.useSplitControls.get()) {
       return;
     }
 
@@ -105,58 +120,68 @@ export function initHammerControls(stage, shadow, gameState) {
       return;
     }
 
-    // Use the ray-cast hit target (crosshairs aim point)
-    const hit = gameState.hit;
+    let hit = gameState.hit;
 
-    if (hit && hit.face) {
-      const newBlockX = hit.x + hit.face.x;
-      const newBlockY = hit.y + hit.face.y;
-      const newBlockZ = hit.z + hit.face.z;
+    if (!gameConfig.useSplitControls.get()) {
+      const canvas = /** @type {HTMLCanvasElement} */ (
+        shadow.getElementById("canvas")
+      );
 
-      // Collision check
-      const playerAABB = {
-        minX: gameState.x - gameState.playerWidth / 2,
-        maxX: gameState.x + gameState.playerWidth / 2,
-        minY: gameState.y - gameState.playerHeight / 2,
-        maxY: gameState.y + gameState.playerHeight / 2,
-        minZ: gameState.z - gameState.playerWidth / 2,
-        maxZ: gameState.z + gameState.playerWidth / 2,
-      };
+      const eyeY = gameState.y - gameState.playerHeight / 2 + 1.62;
 
-      const newBlockAABB = {
-        minX: newBlockX,
-        maxX: newBlockX + 1,
-        minY: newBlockY,
-        maxY: newBlockY + 1,
-        minZ: newBlockZ,
-        maxZ: newBlockZ + 1,
-      };
+      const { hit: rayHit } = raycastFromCanvasCoords(
+        canvas,
+        ev.center.x,
+        ev.center.y,
+        gameState.world,
+        {
+          x: gameState.x,
+          y: eyeY,
+          z: gameState.z,
+        },
+        {
+          yaw: gameState.yaw,
+          pitch: gameState.pitch,
+        },
+      );
+      // If we raycast from touch, we ONLY use the touch result.
+      // If it's null (miss), we pass null.
+      hit = rayHit;
+    }
 
-      if (!intersects(playerAABB, newBlockAABB)) {
-        const curBlockId = gameState.curBlock.get();
-        gameState.world.set(
-          `${newBlockX},${newBlockY},${newBlockZ}`,
-          curBlockId,
-        );
+    // Pass the specific hit target. If hit is null (and we are in non-split mode),
+    // placeBlock will receive null.
+    // However, placeBlock still has: const hit = targetHit || gameState.hit;
+    // We need to prevent placeBlock from using the fallback if we INTENDED to use a specific hit (even if null).
+    // Or simpler: only call placeBlock if hit is valid?
+    // If I tap the sky, interaction should happen with sky (nothing).
+    // So if hit is null, we do NOTHING.
+    // This differs from "Split Controls ON" where hit is always gameState.hit (which might be null).
+    // If Split ON, gameState.hit is passed. if null, nothing happens.
+    // If Split OFF, rayHit is passed. If null, nothing happens.
+    // The issue was placeBlock's fallback: `targetHit || gameState.hit`.
+    // If rayHit is null, placeBlock sees null, and falls back to gameState.hit.
 
-        // seed growth logic
-        const placedBlock = blockDefs[curBlockId];
-        if (placedBlock && placedBlock.isSeed) {
-          if (!gameState.growthTimers) gameState.growthTimers = {};
-          if (!gameState.plantStructures) gameState.plantStructures = {};
+    // Changing placeBlock is risky for other calls (if any).
+    // Better to handle it here: call placeBlock only if hit is valid, OR pass a non-null object that signifies "Miss" if needed?
+    // Actually, placeBlock returns false if (!hit ...).
+    // So if I pass null, and it falls back, that's bad.
+    // If I pass {hit: null}? No.
+    // I should simply pass `hit` but ensure I don't call it if I missed?
+    // Or I modify placeBlock to accept `useFallback`?
+    // Or I check here.
 
-          const key = `${newBlockX},${newBlockY},${newBlockZ}`;
-          const FAST_GROWTH_TIME = 30;
-          const growthTime = gameState.fastGrowth
-            ? FAST_GROWTH_TIME
-            : placedBlock.growthTime || 10.0;
-          gameState.growthTimers[key] = growthTime;
-          gameState.plantStructures[key] = {
-            type: placedBlock.name,
-            blocks: [],
-          };
-        }
+    if (gameConfig.useSplitControls.get()) {
+      // Split controls active: use center hit (gameState.hit)
+      placeBlock(gameState);
+    } else {
+      // Split controls inactive: use rayHit
+      if (hit) {
+        // We have a direct hit, use it
+        // We pass it as targetHit. placeBlock uses it.
+        placeBlock(gameState, hit);
       }
+      // If no hit, do nothing. Do not fallback to center.
     }
   });
 
@@ -175,20 +200,76 @@ export function initHammerControls(stage, shadow, gameState) {
       return;
     }
 
-    // Break immediately
-    const hit = gameState.hit;
+    let hit = gameState.hit;
+
+    if (!gameConfig.useSplitControls.get()) {
+      const canvas = /** @type {HTMLCanvasElement} */ (
+        shadow.getElementById("canvas")
+      );
+
+      const eyeY = gameState.y - gameState.playerHeight / 2 + 1.62;
+
+      const { hit: rayHit } = raycastFromCanvasCoords(
+        canvas,
+        ev.center.x,
+        ev.center.y,
+        gameState.world,
+        {
+          x: gameState.x,
+          y: eyeY,
+          z: gameState.z,
+        },
+        {
+          yaw: gameState.yaw,
+          pitch: gameState.pitch,
+        },
+      );
+      hit = rayHit;
+    }
+
     if (hit) {
-      gameState.world.delete(`${hit.x},${hit.y},${hit.z}`);
+      removeBlock(gameState, hit);
     }
 
     // Start continuous breaking
     stopBreaking();
     breakInterval = setInterval(() => {
-      const currentHit = gameState.hit;
-      if (currentHit) {
-        gameState.world.delete(
-          `${currentHit.x},${currentHit.y},${currentHit.z}`,
+      // Re-calculate raycast if split controls are off
+      let currentHit = gameState.hit;
+
+      if (!gameConfig.useSplitControls.get()) {
+        const canvas = /** @type {HTMLCanvasElement} */ (
+          shadow.getElementById("canvas")
         );
+
+        // Use the latest tracked pointer position
+        const pointerX =
+          ev.pointerType === "mouse" ? lastPointerPos.x : ev.center.x;
+        const pointerY =
+          ev.pointerType === "mouse" ? lastPointerPos.y : ev.center.y;
+
+        const eyeY = gameState.y - gameState.playerHeight / 2 + 1.62;
+
+        const { hit: rayHit } = raycastFromCanvasCoords(
+          canvas,
+          pointerX,
+          pointerY,
+          gameState.world,
+          {
+            x: gameState.x,
+            y: eyeY,
+            z: gameState.z,
+          },
+          {
+            yaw: gameState.yaw,
+            pitch: gameState.pitch,
+          },
+        );
+        currentHit = rayHit;
+      }
+
+      if (currentHit) {
+        removeBlock(gameState, currentHit);
       }
     }, 500); // 500ms delay between breaks
   });

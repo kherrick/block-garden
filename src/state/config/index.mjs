@@ -17,6 +17,7 @@ import { blockNames, blocks } from "./blocks.mjs";
  * @property {Signal.State} currentResolution - Signal State for current resolution
  * @property {Signal.State} version - Signal State for game version string
  * @property {Signal.State} useTouchControls - Use touch controls toggle state
+ * @property {Signal.State} useSplitControls - Use split controls toggle state
  */
 
 /**
@@ -31,5 +32,6 @@ export const gameConfig = {
   blocks,
   currentResolution: new Signal.State("400"),
   version: new Signal.State("1"),
-  useTouchControls: new Signal.State(true),
+  useTouchControls: new Signal.State(false),
+  useSplitControls: new Signal.State(false),
 };

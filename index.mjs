@@ -754,6 +754,7 @@ export class BlockGarden extends HTMLElement {
                   <button id="randomPlantButton">Plant randomly</button>
                   <button id="fastGrowthButton">Enable Fast Growth</button>
                   <button id="toggleTouchControls">Disable Touch Controls</button>
+                  <button id="toggleSplitControls">Enable Split Controls</button>
                   <button
                     onclick="if (confirm('Reloading will lose unsaved progress. Do you want to continue?')) { window.location.reload(); }">
                     Reload Game

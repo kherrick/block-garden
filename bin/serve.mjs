@@ -30,9 +30,9 @@ if (port < 1024 || port > 65535) {
 
 // enable CORS
 const CORS_CONFIG = {
-  allowPrivateIPs: false, // Enables 127.*, 10.*, 172.16-31.*, 192.168.*
-  allowAllOrigins: false, // True = "*" (no credentials support)
-  allowLocalhostOnly: true, // Restricts to localhost:3000/4200 only
+  allowPrivateIPs: true, // Enables 127.*, 10.*, 172.16-31.*, 192.168.*
+  allowAllOrigins: true, // True = "*" (no credentials support)
+  allowLocalhostOnly: false, // Restricts to localhost:3000/4200 only
 };
 
 app.use(

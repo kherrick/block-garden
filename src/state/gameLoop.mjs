@@ -292,8 +292,10 @@ export function gameLoop(
     }
   }
 
-  // Draw crosshairs overlay
-  drawCrosshairs(gl, cnvs);
+  // Draw crosshairs overlay only if split controls are enabled
+  if (gameConfig.useSplitControls.get()) {
+    drawCrosshairs(gl, cnvs);
+  }
 
   animationFrameId = requestAnimationFrame(() =>
     gameLoop(

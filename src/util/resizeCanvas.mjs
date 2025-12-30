@@ -22,6 +22,7 @@ export function resizeCanvas(shadow, currentResolution) {
       shadow.host.classList.remove(
         "resolution",
         "resolution-400",
+        "resolution-600",
         "resolution-800",
       );
 
@@ -37,7 +38,11 @@ export function resizeCanvas(shadow, currentResolution) {
 
     // Fixed resolution mode
     shadow.host.classList.add("resolution");
-    shadow.host.classList.remove("resolution-400", "resolution-800");
+    shadow.host.classList.remove(
+      "resolution-400",
+      "resolution-600",
+      "resolution-800",
+    );
 
     const size = parseInt(resolution);
     cnvs.width = size;

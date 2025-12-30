@@ -30,8 +30,8 @@ import { blockNames, blocks } from "./blocks.mjs";
 export const gameConfig = {
   blockNames,
   blocks,
-  currentResolution: new Signal.State("400"),
+  currentResolution: new Signal.State("600"),
   version: new Signal.State("1"),
-  useTouchControls: new Signal.State(false),
+  useTouchControls: new Signal.State(true),
   useSplitControls: new Signal.State(false),
 };

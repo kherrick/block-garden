@@ -190,6 +190,7 @@ export class BlockGardenSelect extends HTMLElement {
     if (this.querySelectorAll("block-garden-option").length === 0) {
       this.innerHTML = `
         <block-garden-option value="400">400x400</block-garden-option>
+        <block-garden-option value="600">600x600</block-garden-option>
         <block-garden-option value="800">800x800</block-garden-option>
         <block-garden-option hidden="hidden" value="fullscreen">Fullscreen</block-garden-option>
       `;

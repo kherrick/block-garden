@@ -42,7 +42,7 @@ describe("block-garden-select", () => {
 
     const shadow = el.shadowRoot;
     const list = shadow.querySelectorAll(".select-item");
-    expect(list.length).toBe(2);
+    expect(list.length).toBe(3);
   });
 
   test("changing value updates display and emits change event", async () => {
@@ -68,7 +68,7 @@ describe("block-garden-select", () => {
 
     // Query items AFTER opening since openList() refreshes the DOM
     const items = Array.from(shadow.querySelectorAll(".select-item"));
-    expect(items.length).toBe(2);
+    expect(items.length).toBe(3);
 
     // Find first option and click it (400x400)
     const first = items[0];

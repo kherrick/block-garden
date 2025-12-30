@@ -744,8 +744,9 @@ export class BlockGarden extends HTMLElement {
               <div class="ui-grid__corner--container" hidden="hidden">
                 <div class="settings-actions">
                   <div id="resolution">
-                    <block-garden-select id="resolutionSelect" value="400">
+                    <block-garden-select id="resolutionSelect" value="600">
                       <block-garden-option value="400">400x400</block-garden-option>
+                      <block-garden-option value="600">600x600</block-garden-option>
                       <block-garden-option value="800">800x800</block-garden-option>
                       <block-garden-option value="fullscreen">Fullscreen</block-garden-option>
                     </block-garden-select>

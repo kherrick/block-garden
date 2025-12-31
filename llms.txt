@@ -51,6 +51,20 @@ All progress remains local — no account or online storage is required. Install
 
 ---
 
+## 🧠 Modding and API Support
+
+*Block Garden* is designed for openness and experimentation. Players and developers can extend gameplay through **bookmarklet scripts** or modular JavaScript examples located in:
+
+[`/src/api/examples/`](https://kherrick.github.io/block-garden/src/api/examples/)
+
+Below are some example modules demonstrating various extensions:
+
+| Example | Description | Demo Link |
+|----------|--------------|-----------|
+| **Messaging** | Draw text on the map | [Messaging.mjs](https://kherrick.github.io/block-garden/src/api/examples/Messaging.mjs) |
+
+---
+
 ## 📚 Documentation
 
 - [**Game README**](https://kherrick.github.io/block-garden/README.md) — Detailed overview, features, controls, and gameplay tips

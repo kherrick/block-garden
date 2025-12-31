@@ -170,10 +170,10 @@ export class BlockGarden extends HTMLElement {
           /* Material Button */
           #material {
             backdrop-filter: blur(0.3125rem);
-            background: var(--sg-color-black-alpha-80);
+            background: var(--bg-color-black-alpha-80);
             border-radius: 0.5rem;
-            border: 0.0625rem solid var(--sg-color-gray-alpha-10);
-            color: var(--sg-color-white);
+            border: 0.0625rem solid var(--bg-color-gray-alpha-10);
+            color: var(--bg-color-white);
             font-size: 0.5625rem;
           }
 
@@ -378,6 +378,48 @@ export class BlockGarden extends HTMLElement {
 
           #saveModeToggle {
             background: var(--bg-color-blue-500);
+          }
+
+          .examples {
+            background: var(--bg-color-white);
+            line-height: 1.5;
+            overflow: auto;
+            padding: 0.5rem 1rem 1rem 2rem;
+          }
+
+          dialog.examples-content {
+            background: var(--bg-color-gray-50);
+            border-radius: 0.5rem;
+            border: 0.125rem solid var(--bg-color-gray-900);
+            color: var(--bg-color-gray-900);
+            font-family: monospace;
+            line-height: 1.5;
+            max-height: 80vh;
+            max-height: 80dvh;
+            max-width: 50rem;
+            width: 90%;
+          }
+
+          .examples-content li {
+            margin: 0.25rem 0;
+          }
+
+          .examples-content_header {
+            align-items: center;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            padding-top: 1rem;
+          }
+
+          .examples-content_close-btn {
+            background: var(--bg-color-red-500);
+            border-radius: 0.25rem;
+            border: none;
+            color: var(--bg-color-white);
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 0.5rem 1rem;
           }
 
           /* Mobile Responsive */
@@ -764,6 +806,12 @@ export class BlockGarden extends HTMLElement {
                     <div class="ui-grid__corner--sub-heading">🗺️ Colors</div>
 
                     <button id="customizeColorsBtn">Customize</button>
+                  </div>
+                  <div id="examplesBtnContainer" hidden="hidden">
+                    <div class="ui-grid__corner--sub-heading">🗺️ Examples</div>
+                    <button id="examplesBtn">
+                      📝 <span id="examplesBtnText">Open</span>
+                    </button>
                   </div>
                 </div>
               </div>

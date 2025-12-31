@@ -18,6 +18,8 @@ import { extractJsonFromPng } from "../util/canvasToPngWithState.mjs";
 import { runCompress } from "../util/compression.mjs";
 import { raycastFromCanvasCoords } from "../util/raycastFromCanvasCoords.mjs";
 
+import { showExamplesDialog } from "../dialog/examples.mjs";
+
 import { showToast } from "../dialog/showToast.mjs";
 
 import {
@@ -113,6 +115,8 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
       .getElementById("customizeColorsBtnContainer")
       .removeAttribute("hidden");
 
+    shadow.getElementById("examplesBtnContainer").removeAttribute("hidden");
+
     shadow
       .querySelector('block-garden-option[value="fullscreen"]')
       .removeAttribute("hidden");
@@ -204,7 +208,6 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
       if (typeof randomPlantSeeds === "function") {
         randomPlantSeeds();
 
-        // alert("Random planting at spawn point complete!");
         showToast(shadow, "Random planting at spawn point complete!");
       }
     });
@@ -241,6 +244,20 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
       setTimeout(() => {
         globalThis.blockGarden.state.isCanvasActionDisabled = false;
       }, 500);
+    });
+  }
+
+  // Examples button
+  const examplesBtn = shadow.getElementById("examplesBtn");
+  if (examplesBtn) {
+    examplesBtn.addEventListener("click", async function () {
+      try {
+        await showExamplesDialog(globalThis.document, shadow);
+      } catch (error) {
+        console.error("Failed to open examples dialog:", error);
+
+        alert("Failed to open examples dialog. Check console for details.");
+      }
     });
   }
 

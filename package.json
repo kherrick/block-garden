@@ -1,6 +1,6 @@
 {
   "name": "block-garden",
-  "version": "1.0.7",
+  "version": "1.1.0",
   "description": "Block Garden - A 3D sandbox exploration and farming game. Explore procedurally generated worlds, dig for resources, and cultivate a variety of plants.",
   "homepage": "https://github.com/kherrick/block-garden/#block-garden",
   "license": "AGPL-3.0",
@@ -16,6 +16,8 @@
   "scripts": {
     "build:base:index:unbundled": "bin/build-html.mjs dist/index_unbundled.html base href /block-garden/",
     "build:base:index": "bin/build-html.mjs dist/index.html base href /block-garden/",
+    "build:base:examples": "bin/build-html.mjs dist/src/api/examples/index.html base href /block-garden/",
+    "build:base:share-target": "bin/build-html.mjs dist/share/share-target.html base href /block-garden/",
     "build:base:privacy": "bin/build-html.mjs dist/privacy/index.html base href /block-garden/",
     "build:ci": "npx concurrently --kill-others --success first \"npm run build single\" \"npm run start:dev\"",
     "build:gh-pages:nojekyll": "node bin/touch-nojekyll.mjs",
@@ -46,6 +48,7 @@
     "copy:pkg": "node bin/ncp.mjs package.json dist/package.json",
     "copy:privacy": "node bin/ncp.mjs privacy/index.html dist/privacy/index.html",
     "copy:service-worker": "node bin/ncp.mjs service-worker/workbox-config.cjs dist/service-worker/workbox-config.cjs",
+    "copy:share-target": "node bin/ncp.mjs share dist/share",
     "copy:src:index": "node bin/ncp.mjs index.mjs dist/index.mjs",
     "copy:src": "node bin/ncp.mjs src dist/src",
     "deploy:gh-pages": "gh-pages --no-history --dotfiles --dist dist --repo git@github.com:kherrick/block-garden.git --remote upstream",
@@ -53,6 +56,7 @@
     "minify:404": "posthtml dist/404.html -u htmlnano",
     "minify:index": "posthtml dist/index.html -u htmlnano",
     "minify:privacy": "posthtml dist/privacy/*.html -u htmlnano",
+    "minify:share-target": "posthtml dist/share/*.html -u htmlnano",
     "start:dev": "npm start 8080",
     "start": "node bin/serve.mjs",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest"

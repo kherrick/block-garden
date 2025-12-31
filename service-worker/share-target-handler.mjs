@@ -52,7 +52,7 @@ async function handleShareTarget(request) {
       throw new Error("No gameState file in form data");
     }
 
-    // Handle .sgs (gzip), .txt (non compressed), and .pdf (pdf with game card (picture + game state)) game save files
+    // Handle .bgs (gzip), .txt (non compressed), and .pdf (pdf with game card (picture + game state)) game save files
     let stateJSON = "{}";
 
     if (file.name.endsWith(".txt")) {
@@ -72,7 +72,7 @@ async function handleShareTarget(request) {
       });
     }
 
-    if (file.name.endsWith(".sgs")) {
+    if (file.name.endsWith(".bgs")) {
       const decompressedStream = file
         .stream()
         .pipeThrough(new DecompressionStream("gzip"));

@@ -18,6 +18,7 @@ npm run clean \
   && npm run copy:index:llms \
   && npm run copy:index:sitemap \
   && npm run copy:index:unbundled \
+  && npm run copy:share-target \
   || exit 1
 
 if [[ "$isSingle" == "true" ]]; then
@@ -58,11 +59,14 @@ fi
 
 npm run build:base:index \
   && npm run build:base:index:unbundled \
+  && npm run build:base:examples \
   && npm run build:base:privacy \
+  && npm run build:base:share-target \
   && npm run build:gh-pages:nojekyll \
   && npm run minify:index \
   && npm run minify:404 \
   && npm run minify:privacy \
+  && npm run minify:share-target \
   && npm run build:service-worker \
   && npm run clean:service-worker \
   || exit 1

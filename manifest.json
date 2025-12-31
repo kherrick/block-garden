@@ -78,5 +78,18 @@
       "src": "https://kherrick.github.io/block-garden/assets/screenshots/block-garden-screenshot-743x883.png",
       "type": "image/png"
     }
-  ]
+  ],
+  "share_target": {
+    "action": "share/share-target.html",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "files": [
+        {
+          "name": "gameState",
+          "accept": [".bgs", ".pdf", ".txt", "text/plain", "application/pdf", "application/gzip", "application/*"]
+        }
+      ]
+    }
+  }
 }

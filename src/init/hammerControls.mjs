@@ -130,10 +130,6 @@ export function initHammerControls(stage, shadow, gameState) {
       ev.srcEvent.preventDefault();
     }
 
-    if (ev.pointerType === "mouse" && gameConfig.useSplitControls.get()) {
-      return;
-    }
-
     let hit = gameState.hit;
 
     if (!gameConfig.useSplitControls.get()) {

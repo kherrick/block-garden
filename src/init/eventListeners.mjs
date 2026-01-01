@@ -1043,17 +1043,21 @@ export function initCanvasEventListeners(shadow, cnvs, blocks, curBlock) {
       // If split controls are disabled, we defer to HammerJS for "Tap" (Place) vs "Press" (Break) logic.
       // This prevents immediate placement on "hold to break" or "drag to look".
       if (!useSplit) {
-        return;
+        // Pass 'hit' explicitly.
+        // Note: placeBlock has a fallback `targetHit || gameState.hit`.
+        // If useSplit is FALSE, and hit is valid, we pass it.
+        // If useSplit is TRUE, hit IS gameState.hit. We pass it.
+        // So placeBlock will use it.
+        // The dangerous case was: useSplit=FALSE, hit=NULL.
+        // We handled that above by returning early.
+        placeBlock(gameState, hit);
+      } else {
+        // When using Split Controls, we defer to HammerJS "Tap" event for placement.
+        // This ensures consistent behavior:
+        // - Tap (short click) -> Place
+        // - Press (long click) -> Break (without placing first)
+        // See: initHammerControls 'tap' handler.
       }
-
-      // Pass 'hit' explicitly.
-      // Note: placeBlock has a fallback `targetHit || gameState.hit`.
-      // If useSplit is FALSE, and hit is valid, we pass it.
-      // If useSplit is TRUE, hit IS gameState.hit. We pass it.
-      // So placeBlock will use it.
-      // The dangerous case was: useSplit=FALSE, hit=NULL.
-      // We handled that above by returning early.
-      placeBlock(gameState, hit);
     }
 
     if (e.button === 2) {

@@ -2,8 +2,7 @@ import extrasHandler from "konami-code-js";
 
 import { debounce } from "../util/debounce.mjs";
 import { effect } from "../util/effect.mjs";
-import { placeBlock, removeBlock } from "../util/interaction.mjs";
-import { resizeCanvas } from "../util/resizeCanvas.mjs";
+import { resizeCanvas } from "../api/ui/resizeCanvas.mjs";
 
 import { gameConfig } from "../state/config/index.mjs";
 import { createSaveState } from "../state/createSave.mjs";
@@ -16,11 +15,12 @@ import { copyToClipboard } from "../util/copyToClipboard.mjs";
 import { extractAttachments } from "../util/extractAttachments.mjs";
 import { extractJsonFromPng } from "../util/canvasToPngWithState.mjs";
 import { runCompress } from "../util/compression.mjs";
-import { raycastFromCanvasCoords } from "../util/raycastFromCanvasCoords.mjs";
 
+import { showAboutDialog } from "../dialog/about.mjs";
 import { showExamplesDialog } from "../dialog/examples.mjs";
+import { showPrivacyDialog } from "../dialog/privacy.mjs";
 
-import { showToast } from "../dialog/showToast.mjs";
+import { showToast } from "../api/ui/toast.mjs";
 
 import {
   autoSaveGame,
@@ -247,6 +247,20 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
     });
   }
 
+  // About button
+  const aboutBtn = shadow.getElementById("aboutBtn");
+
+  if (aboutBtn) {
+    aboutBtn.addEventListener("click", async function () {
+      try {
+        await showAboutDialog(globalThis.document, shadow);
+      } catch (error) {
+        console.error("Failed to open about dialog:", error);
+
+        alert("Failed to open about dialog. Check console for details.");
+      }
+    });
+  }
   // Examples button
   const examplesBtn = shadow.getElementById("examplesBtn");
   if (examplesBtn) {
@@ -257,6 +271,20 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
         console.error("Failed to open examples dialog:", error);
 
         alert("Failed to open examples dialog. Check console for details.");
+      }
+    });
+  }
+
+  // Privacy button
+  const privacyBtn = shadow.getElementById("privacyBtn");
+  if (privacyBtn) {
+    privacyBtn.addEventListener("click", async function () {
+      try {
+        await showPrivacyDialog(globalThis.document, shadow);
+      } catch (error) {
+        console.error("Failed to open privacy dialog:", error);
+
+        alert("Failed to open privacy dialog. Check console for details.");
       }
     });
   }
@@ -975,94 +1003,6 @@ export function initCanvasEventListeners(shadow, cnvs, blocks, curBlock) {
 
   cnvs.addEventListener("contextmenu", (e) => {
     e.preventDefault();
-  });
-
-  cnvs.addEventListener("mousedown", (e) => {
-    // Ignore mousedown if it happened shortly after a touch event
-    if (Date.now() - lastTouchTime < 1000) {
-      return;
-    }
-
-    const gameState = globalThis.blockGarden.state;
-    // @ts-ignore
-    const gameConfig = globalThis.blockGarden.config;
-
-    let hit = gameState.hit;
-    const useSplit = gameConfig.useSplitControls.get();
-
-    if (!useSplit) {
-      const eyeY = gameState.y - gameState.playerHeight / 2 + 1.62;
-
-      const { hit: rayHit } = raycastFromCanvasCoords(
-        cnvs,
-        e.clientX,
-        e.clientY,
-        gameState.world,
-        {
-          x: gameState.x,
-          y: eyeY,
-          z: gameState.z,
-        },
-        {
-          yaw: gameState.yaw,
-          pitch: gameState.pitch,
-        },
-      );
-      hit = rayHit;
-    }
-
-    // If split controls are OFF...
-    if (!useSplit) {
-      // If we clicked, we probably want to interact with what is under cursor.
-      // If we missed (hit is null), we do NOTHING.
-      // We definitely do NOT want to use 'gameState.hit' (center).
-      if (!hit) return;
-
-      // Also, if we are clicking to interact, we might NOT want to lock the pointer immediately?
-      // But standard implementation usually locks pointer to look around.
-      // If user sets "useSplitControls: false", they likely want an unlocked cursor to point at things.
-      // If we lock pointer, cursor centers.
-      // But we have a 'click' listener that requests pointer lock:
-      // cnvs.addEventListener("click", () => { cnvs?.requestPointerLock(); });
-      // We should probably BLOCK that if we successfully interacted? Or just always block it if useSplitControls is false?
-      // Let's stop propagation if we successfully placed/removed a block?
-      // placeBlock returns boolean (true if placed).
-
-      // Actually, let's stop propagation of the click event if we handle it here (mousedown).
-      // But requestPointerLock is on 'click'. mousedown happens first.
-      // We can't easily stop a future event from here unless we stop immediate propagation and the other is on mousedown too? No.
-      // We should update the 'click' listener to check the config.
-    } else {
-      // Split controls ON.
-      // If hit (center) is null, we return.
-      if (!hit) return;
-    }
-
-    // Perform action
-    if (e.button === 0) {
-      // If split controls are disabled, we defer to HammerJS for "Tap" (Place) vs "Press" (Break) logic.
-      // This prevents immediate placement on "hold to break" or "drag to look".
-      if (!useSplit) {
-        // Pass 'hit' explicitly.
-        // Note: placeBlock has a fallback `targetHit || gameState.hit`.
-        // If useSplit is FALSE, and hit is valid, we pass it.
-        // If useSplit is TRUE, hit IS gameState.hit. We pass it.
-        // So placeBlock will use it.
-        // The dangerous case was: useSplit=FALSE, hit=NULL.
-        // We handled that above by returning early.
-        placeBlock(gameState, hit);
-      } else {
-        // When using Split Controls, we defer to HammerJS "Tap" event for placement.
-        // This ensures consistent behavior:
-        // - Tap (short click) -> Place
-        // - Press (long click) -> Break (without placing first)
-        // See: initHammerControls 'tap' handler.
-      }
-    }
-
-    if (e.button === 2) {
-      removeBlock(gameState, hit);
-    }
   });
 }
 

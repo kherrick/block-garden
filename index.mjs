@@ -387,7 +387,18 @@ export class BlockGarden extends HTMLElement {
             padding: 0.5rem 1rem 1rem 2rem;
           }
 
-          dialog.examples-content {
+          .about,
+          .examples,
+          .privacy {
+            background: var(--bg-color-white);
+            line-height: 1.5;
+            overflow: auto;
+            padding: 0.5rem 1rem 1rem 2rem;
+          }
+
+          dialog.about-content,
+          dialog.examples-content,
+          dialog.privacy-content {
             background: var(--bg-color-gray-50);
             border-radius: 0.5rem;
             border: 0.125rem solid var(--bg-color-gray-900);
@@ -400,11 +411,15 @@ export class BlockGarden extends HTMLElement {
             width: 90%;
           }
 
-          .examples-content li {
+          .about-content li,
+          .examples-content li,
+          .privacy-content li {
             margin: 0.25rem 0;
           }
 
-          .examples-content_header {
+          .about-content_header,
+          .examples-content_header,
+          .privacy-content_header {
             align-items: center;
             display: flex;
             justify-content: space-between;
@@ -412,7 +427,9 @@ export class BlockGarden extends HTMLElement {
             padding-top: 1rem;
           }
 
-          .examples-content_close-btn {
+          .about-content_close-btn,
+          .examples-content_close-btn,
+          .privacy-content_close-btn {
             background: var(--bg-color-red-500);
             border-radius: 0.25rem;
             border: none;
@@ -420,6 +437,15 @@ export class BlockGarden extends HTMLElement {
             cursor: pointer;
             font-size: 1.2rem;
             padding: 0.5rem 1rem;
+          }
+
+          .about-controls {
+            background: var(--bg-color-gray-300);
+            border-radius: 0.25rem;
+            list-style-type: none;
+            margin-bottom: 1.5rem;
+            margin-top: 0.5rem;
+            padding: 1rem;
           }
 
           /* Mobile Responsive */
@@ -473,6 +499,31 @@ export class BlockGarden extends HTMLElement {
 
           #settings button {
             width: 100%;
+          }
+
+          .info-buttons-container {
+            border-top: 0.0625rem solid var(--bg-color-gray-500);
+            margin-top: 0.9375rem;
+            padding-top: 0.625rem;
+          }
+
+          #aboutBtn,
+          #privacyBtn {
+            border-radius: 0.25rem;
+            border: none;
+            color: var(--bg-color-white);
+            cursor: pointer;
+            margin: 0.25rem;
+            padding: 0.5rem 1rem;
+            width: calc(100% - 0.5rem);
+          }
+
+          #aboutBtn {
+            background: var(--bg-color-green-500);
+          }
+
+          #privacyBtn {
+            background: var(--bg-color-blue-500);
           }
 
           #resolution {
@@ -758,7 +809,7 @@ export class BlockGarden extends HTMLElement {
                 [ arrow keys ]: Camera<br />
                 [ shift ]: Descend<br />
                 [ space ]: Jump / Ascend<br />
-                [ enter / control ]: Place / Remove Block<br /><br />
+                [ enter ]: Place / Remove Block<br /><br />
 
                 [ <b>~ / &#96;</b> ]: Change Block<br />
                 [ e ]: Open Inventory<br /><br />
@@ -769,7 +820,10 @@ export class BlockGarden extends HTMLElement {
                 Left Click: Place Block<br />
                 Right Click: Remove Block<br /><br />
 
-                <a id="privacy" href="privacy/index.html" target="_blank">Privacy Policy</a>
+                <div class="info-buttons-container">
+                  <button id="aboutBtn">ℹ️ About</button>
+                  <button id="privacyBtn">🔒 Privacy</button>
+                </div>
               </div>
             </div>
           </div>

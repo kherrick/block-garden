@@ -33,12 +33,13 @@ npm i && npm test
 
 ## 🎮 Quick Start
 
-- **Movement:** `W` / `A` / `S` / `D`
+- **Movement:** `w` / `a` / `s` / `d`
+- **Inventory:** `e`
 - **Camera:** `Arrow Keys`
 - **Change Block:** `~` / `` ` ``
 - **Jump / Ascend:** `Space`
 - **Descend:** `Shift`
-- **Place / Remove Block:** `Enter` / `Control`
+- **Place / Remove Block:** `Enter`
 - Click Game Canvas To Lock Mouse
   - **Use crosshair to center block placement**
   - **Left Click:** Place Block

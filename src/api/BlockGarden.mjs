@@ -1,7 +1,11 @@
-import { getShadowRoot } from "../util/getShadowRoot.mjs";
-import { resizeCanvas } from "../util/resizeCanvas.mjs";
 import { characters as Characters } from "./misc/characters.mjs";
 import { sleep } from "./misc/sleep.mjs";
+
+import { getShadowRoot } from "../util/getShadowRoot.mjs";
+import { resizeCanvas } from "./ui/resizeCanvas.mjs";
+
+import { createKeyEvent } from "./player/createKeyEvent.mjs";
+import { pressKey } from "./player/pressKey.mjs";
 
 /**
  * @typedef {import('../state/config/blocks.mjs').BlockDefinition} BlockDefinition
@@ -252,6 +256,76 @@ export class BlockGarden {
     this.batchSetBlocks(updates);
 
     return { x, y, z, width: size, height: size, data: qr.createDataURL() };
+  }
+
+  /**
+   * Dispatches a 'keydown' event with the given keyCode to the shadow DOM root.
+   *
+   * @param {number} keyCode - The keyCode to dispatch a keydown event for.
+   *
+   * @returns {Promise<void>}
+   */
+  async holdKey(keyCode) {
+    this.shadow.dispatchEvent(createKeyEvent("keydown", keyCode));
+  }
+
+  /**
+   * Dispatches a 'keyup' event with the given keyCode to the shadow DOM root.
+   *
+   * @param {number} keyCode - The keyCode to dispatch a keyup event for.
+   *
+   * @returns {Promise<void>}
+   */
+  async releaseKey(keyCode) {
+    this.shadow.dispatchEvent(createKeyEvent("keyup", keyCode));
+  }
+
+  /**
+   * Release all provided keys.
+   *
+   * @returns {Promise<void>}
+   */
+  async releaseAllKeys(keys, delay = 50) {
+    for (const k of keys) {
+      await this.releaseKey(k);
+    }
+
+    await sleep(delay);
+  }
+
+  /**
+   * Performs multiple repeated key presses with a delay between presses.
+   *
+   * @param {number} keyCode - The keyCode of the key to press repeatedly.
+   * @param {number} times - Number of times to press the key.
+   * @param {number} [delay=100] - Delay in milliseconds between presses.
+   * @returns {Promise<void>}
+   */
+  async pressKeyRepeat(keyCode, times, delay = 100) {
+    for (let i = 0; i < times; i++) {
+      await pressKey(this.shadow, keyCode, delay / 2);
+      await sleep(delay);
+    }
+  }
+
+  /**
+   * Sequentially presses a series of keys, each followed by a delay.
+   *
+   * @param {number[]} keyCodes - Array of key codes to press in sequence.
+   * @param {number} [delay=100] - Delay in milliseconds between key presses.
+   * @param {Function} [cb] - callback function if supplied
+   *
+   * @returns {Promise<void>}
+   */
+  async pressKeySequence(keyCodes, delay = 100, cb = undefined) {
+    for (const keyCode of keyCodes) {
+      if (cb) {
+        cb(keyCode);
+      }
+
+      await pressKey(this.shadow, keyCode, delay / 2);
+      await sleep(delay);
+    }
   }
 
   /**

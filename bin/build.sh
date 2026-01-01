@@ -10,6 +10,7 @@ fi
 
 npm run clean \
   && npm run copy:404 \
+  && npm run copy:about \
   && npm run copy:index:assets \
   && npm run copy:index:license \
   && npm run copy:index:manifest \
@@ -59,12 +60,14 @@ fi
 
 npm run build:base:index \
   && npm run build:base:index:unbundled \
+  && npm run build:base:about \
   && npm run build:base:examples \
   && npm run build:base:privacy \
   && npm run build:base:share-target \
   && npm run build:gh-pages:nojekyll \
   && npm run minify:index \
   && npm run minify:404 \
+  && npm run minify:about \
   && npm run minify:privacy \
   && npm run minify:share-target \
   && npm run build:service-worker \

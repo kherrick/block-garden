@@ -17,13 +17,14 @@ Gameplay supports keyboard and mouse controls on desktop, and touch controls on 
 
 ## 🎮 Quick Start
 
-- **Movement:** W / A / S / D
+- **Movement:** w / a / s / d
+- **Inventory:** e
 - **Camera:** Arrow Keys
 - **Change Block:** ~ / `
 - **Jump / Ascend:** Space
 - **Descend:** Shift
 
-- **Place / Remove Block:** Enter / Control
+- **Place / Remove Block:** Enter
 - **Use crosshair to center block placement**
 - **Click Game Canvas To Lock Mouse**
 

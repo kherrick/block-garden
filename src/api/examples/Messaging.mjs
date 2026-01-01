@@ -1,6 +1,6 @@
 import { BlockGarden } from "../BlockGarden.mjs";
 import { characters } from "../misc/characters.mjs";
-import { showToast } from "../../dialog/showToast.mjs";
+import { showToast } from "../ui/toast.mjs";
 
 export class Messaging extends BlockGarden {
   constructor() {

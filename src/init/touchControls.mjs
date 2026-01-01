@@ -116,16 +116,6 @@ export function initTouchControls(shadow) {
     });
   });
 
-  shadow.addEventListener(
-    "keyup",
-    /** @param {KeyboardEvent} e */
-    (e) => {
-      host.keys[e.key.toLowerCase()] = false;
-
-      e.preventDefault();
-    },
-  );
-
   // Prevent default touch behaviors
   shadow.addEventListener(
     "touchstart",

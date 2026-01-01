@@ -1,6 +1,6 @@
 /** @typedef {import('signal-polyfill').Signal.State} Signal.State */
 
-/** @typedef {import('../state/config/index.mjs').GameConfig} GameConfig */
+/** @typedef {import('../../state/config/index.mjs').GameConfig} GameConfig */
 
 /**
  * Resizes the game canvas based on the configured resolution setting.

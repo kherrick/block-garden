@@ -1,3 +1,12 @@
+import { demo as FireworksDemo, Fireworks } from "./Fireworks.mjs";
+import { demo as KonamiCodeDemo, KonamiCode } from "./KonamiCode.mjs";
 import { demo as MessagingDemo, Messaging } from "./Messaging.mjs";
 
-export { Messaging, MessagingDemo };
+export {
+  Fireworks,
+  FireworksDemo,
+  KonamiCode,
+  KonamiCodeDemo,
+  Messaging,
+  MessagingDemo,
+};

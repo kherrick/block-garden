@@ -18,7 +18,8 @@ export function updatePlayer(shadow, state, dt) {
   }
 
   const { yaw, flying } = state;
-  const speed = flying ? 12 : 8; // Faster when flying
+  const isFlying = flying.get();
+  const speed = isFlying ? 12 : 8; // Faster when flying
 
   const fx = Math.sin(yaw);
   const fz = Math.cos(yaw);
@@ -140,11 +141,11 @@ export function updatePlayer(shadow, state, dt) {
   }
 
   // Smooth acceleration
-  state.dx += (targetDx - state.dx) * (flying ? 15 : 10) * dt;
-  state.dz += (targetDz - state.dz) * (flying ? 15 : 10) * dt;
+  state.dx += (targetDx - state.dx) * (isFlying ? 15 : 10) * dt;
+  state.dz += (targetDz - state.dz) * (isFlying ? 15 : 10) * dt;
 
   // Friction (less in air/flying)
-  const friction = flying ? 0.95 : 0.92;
+  const friction = isFlying ? 0.95 : 0.92;
   state.dx *= friction;
   state.dz *= friction;
 }

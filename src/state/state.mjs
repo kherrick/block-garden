@@ -15,7 +15,6 @@ import { ChunkManager } from "./chunkManager.mjs";
  * @typedef {Object} GameState
  *
  * @property {boolean} fastGrowth
- * @property {boolean} flying
  * @property {boolean} onGround
  * @property {boolean} uiButtonActive
  * @property {boolean} spacePressed
@@ -45,6 +44,7 @@ import { ChunkManager } from "./chunkManager.mjs";
  * @property {Signal.State} shouldReset
  * @property {Signal.State} shouldReset
  * @property {Signal.State} hasEnabledExtras
+ * @property {Signal.State} flying
  * @property {Signal.State} materialBar
  * @property {Signal.State} activeMaterialBarSlot
  */
@@ -113,7 +113,7 @@ export const gameState = {
   playerHeight: 1.8,
   playerWidth: 0.6,
   flySpeed: 10,
-  flying: false,
+  flying: new Signal.State(false),
   onGround: false,
   hit: null,
   lastSpacePressTime: 0,

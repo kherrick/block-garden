@@ -147,8 +147,8 @@ export async function initGame(gThis, shadow, cnvs) {
 
   // Get required UI buttons for flight controls
   const ui = {
-    descendButton: shadow.getElementById("descend"),
-    flyButton: shadow.getElementById("fly"),
+    // descendButton: shadow.getElementById("descend"),
+    // flyButton: shadow.getElementById("fly"),
   };
 
   // Attach reset event listener loading saves so it is ready for auto-save loading

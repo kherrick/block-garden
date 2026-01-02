@@ -80,6 +80,28 @@ function getNewIndex(currentBlock, blockCount, isForward) {
 }
 
 /**
+ * Update the flight toggle when flying or not
+ *
+ * @param {HTMLElement} flightToggle
+ * @param {boolean} isFlying
+ *
+ * @returns {void}
+ */
+export function updateFlightToggleButton(flightToggle, isFlying) {
+  flightToggle.style.color = "var(--bg-color-white)";
+
+  if (isFlying) {
+    flightToggle.textContent = "🪽 Disable Flight";
+    flightToggle.style.backgroundColor = "var(--bg-color-red-500)";
+
+    return;
+  }
+
+  flightToggle.textContent = "🪽 Enable Flight";
+  flightToggle.style.backgroundColor = "var(--bg-color-green-500)";
+}
+
+/**
  *
  * @param {ShadowRoot} shadow
  * @param {HTMLCanvasElement} cnvs
@@ -182,7 +204,7 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
   if (toggleSplitControls) {
     const config = globalThis.blockGarden.config;
 
-    const updateButtonState = () => {
+    const updateToggleSplitControlsButton = () => {
       const isEnabled = config.useSplitControls.get();
       toggleSplitControls.textContent = isEnabled
         ? "Disable Split Controls"
@@ -195,11 +217,26 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
 
     toggleSplitControls.addEventListener("click", () => {
       config.useSplitControls.set(!config.useSplitControls.get());
-      updateButtonState();
+
+      updateToggleSplitControlsButton();
     });
 
     // Initial state
-    updateButtonState();
+    updateToggleSplitControlsButton();
+  }
+
+  // Flight Toggle
+  /** @type {HTMLElement} */
+  const flightToggle = shadow.querySelector("#toggleFlight");
+  if (flightToggle) {
+    flightToggle.addEventListener("click", () => {
+      const isFlying = gameState.flying.get();
+      gameState.flying.set(!isFlying);
+
+      updateFlightToggleButton(flightToggle, !isFlying);
+    });
+
+    updateFlightToggleButton(flightToggle, gameState.flying.get());
   }
 
   // Random Plant Again Button

@@ -3,6 +3,8 @@
  */
 import { jest } from "@jest/globals";
 
+import { Signal } from "signal-polyfill";
+
 // Mock modules before importing
 jest.unstable_mockModule("../util/world.mjs", () => ({
   getBlock: jest.fn(() => false),
@@ -33,7 +35,7 @@ const makeState = (overrides = {}) => ({
   playerWidth: 1,
   playerHeight: 2,
   onGround: false,
-  flying: false,
+  flying: new Signal.State(false),
   flySpeed: 10,
   spacePressed: false,
   lastSpacePressTime: 0,
@@ -82,7 +84,7 @@ describe("updatePhysics", () => {
   });
 
   test("sets dy to flySpeed when flying and space pressed", () => {
-    state.flying = true;
+    state.flying.set(true);
 
     isKeyPressed.mockImplementation((_, key) => key === " ");
     updatePhysics(shadow, ui, state, 0.1);
@@ -90,7 +92,7 @@ describe("updatePhysics", () => {
   });
 
   test("sets dy to -flySpeed when flying and shift pressed", () => {
-    state.flying = true;
+    state.flying.set(true);
 
     isKeyPressed.mockImplementation((_, key) => key === "shift");
     updatePhysics(shadow, ui, state, 0.1);
@@ -98,7 +100,7 @@ describe("updatePhysics", () => {
   });
 
   test("sets dy to 0 when flying and no vertical input", () => {
-    state.flying = true;
+    state.flying.set(true);
 
     isKeyPressed.mockReturnValue(false);
     updatePhysics(shadow, ui, state, 0.1);
@@ -120,11 +122,11 @@ describe("updatePhysics", () => {
 
     isKeyPressed.mockImplementation((_, key) => key === " ");
     updatePhysics(shadow, ui, state, 0.1);
-    expect(state.flying).toBe(true);
+    expect(state.flying.get()).toBe(true);
   });
 
   test("updates position if no collision", () => {
-    state.flying = true; // Disable gravity
+    state.flying.set(true);
 
     state.dx = 1;
     state.dy = 2;

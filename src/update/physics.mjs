@@ -99,12 +99,12 @@ export function updatePhysics(shadow, ui, state, dt) {
   // INPUT HANDLING
   const space = isKeyPressed(shadow, " ");
   const now = performance.now();
-
+  const isFlying = flying.get();
   // RISING EDGE: SPACE
   if (space && !state.spacePressed) {
     if (now - state.lastSpacePressTime < 300) {
       // Double tap detected
-      flying = !flying;
+      flying.set(!isFlying);
       state.lastSpacePressTime = 0; // Reset
     } else {
       state.lastSpacePressTime = now;
@@ -112,22 +112,14 @@ export function updatePhysics(shadow, ui, state, dt) {
   }
 
   // Jump if space is pressed and on ground
-  if (space && !flying && onGround) {
+  if (space && !isFlying && onGround) {
     dy = 12;
   }
 
   state.spacePressed = space;
 
   // FLIGHT MOVEMENT
-  if (flying) {
-    if (
-      ui.descendButton.hasAttribute("hidden") ||
-      ui.flyButton.hasAttribute("hidden")
-    ) {
-      ui.descendButton.removeAttribute("hidden");
-      ui.flyButton.removeAttribute("hidden");
-    }
-
+  if (isFlying) {
     if (isKeyPressed(shadow, "shift")) {
       dy = -flySpeed; // Descend
     } else if (space) {
@@ -136,13 +128,6 @@ export function updatePhysics(shadow, ui, state, dt) {
       dy = 0; // Hover
     }
   } else {
-    if (
-      !ui.descendButton.hasAttribute("hidden") ||
-      ui.flyButton.hasAttribute("hidden")
-    ) {
-      ui.descendButton.setAttribute("hidden", "hidden");
-      ui.flyButton.setAttribute("hidden", "hidden");
-    }
     // Normal gravity
     dy -= 45 * dt;
   }
@@ -194,7 +179,6 @@ export function updatePhysics(shadow, ui, state, dt) {
   state.dy = dy;
   state.dz = dz;
   state.onGround = newOnGround;
-  state.flying = flying;
 
   return { x, y, z };
 }

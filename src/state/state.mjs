@@ -271,6 +271,9 @@ export async function initState(gThis, version) {
 
   gameState.materialsInventory.set(allBlockIds);
 
+  // Set block types on ChunkManager for gravity queue
+  gameState.world.blockTypes = gameConfig.blocks;
+
   // Expose reactive state through globalThis
   gThis.blockGarden = {
     ...gThis?.blockGarden,

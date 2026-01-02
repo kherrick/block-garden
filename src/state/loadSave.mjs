@@ -113,10 +113,6 @@ export async function loadSaveState(gThis, shadow, state) {
   const world = gThis.blockGarden.state.world;
   world.clear();
 
-  // Set world radius limit (required for chunk generation bounds)
-  const WORLD_RADIUS = 16;
-  world.worldRadius = WORLD_RADIUS;
-
   // Validate world data size
   const worldKeys = Object.keys(worldData);
   if (worldKeys.length > 1000) {
@@ -133,11 +129,6 @@ export async function loadSaveState(gThis, shadow, state) {
       });
     });
   });
-
-  // Mark all loaded chunks as generated so they won't be overwritten by terrain generation
-  for (const chunk of world.getAllChunks()) {
-    chunk.generated = true;
-  }
 
   const t1 = performance.now();
   console.log(

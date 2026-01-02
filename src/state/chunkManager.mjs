@@ -6,6 +6,8 @@ import {
   worldToChunk,
 } from "../util/chunk.mjs";
 
+import { GravityQueue } from "../update/gravity.mjs";
+
 /**
  * ChunkManager - Manages chunk lifecycle and world access.
  *
@@ -42,6 +44,12 @@ export class ChunkManager {
 
     /** @type {number|null} World radius limit in blocks (null = infinite) */
     this.worldRadius = null;
+
+    /** @type {GravityQueue} Queue for gravity block processing */
+    this.gravityQueue = new GravityQueue();
+
+    /** @type {import('../state/config/blocks.mjs').BlockDefinition[]|null} Block definitions */
+    this.blockTypes = null;
   }
 
   /**
@@ -148,6 +156,14 @@ export class ChunkManager {
     // Mark neighboring chunks dirty if block is at edge
     if (result) {
       this.markNeighborsDirty(chunkX, chunkZ, localX, localZ);
+
+      // Enqueue gravity block if applicable
+      if (this.blockTypes && type !== 0) {
+        const blockDef = this.blockTypes[type];
+        if (blockDef && blockDef.gravity) {
+          this.gravityQueue.enqueue(floorX, floorY, floorZ);
+        }
+      }
     }
 
     return result;
@@ -215,7 +231,24 @@ export class ChunkManager {
    * @returns {boolean}
    */
   deleteBlock(x, y, z) {
-    return this.setBlock(x, y, z, 0);
+    const floorX = Math.floor(x);
+    const floorY = Math.floor(y);
+    const floorZ = Math.floor(z);
+
+    const result = this.setBlock(floorX, floorY, floorZ, 0);
+
+    // Check block above - if it has gravity, enqueue it
+    if (result && this.blockTypes) {
+      const aboveType = this.getBlock(floorX, floorY + 1, floorZ);
+      if (aboveType !== 0) {
+        const blockDef = this.blockTypes[aboveType];
+        if (blockDef && blockDef.gravity) {
+          this.gravityQueue.enqueue(floorX, floorY + 1, floorZ);
+        }
+      }
+    }
+
+    return result;
   }
 
   /**

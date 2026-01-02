@@ -1,10 +1,8 @@
 # [Block Garden](https://kherrick.github.io/block-garden/)
 
-Block Garden - A 3D sandbox exploration and farming game. Explore procedurally generated worlds, dig for resources, and cultivate a variety of plants.
-
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/kherrick/block-garden)
 
-## Demo
+Block Garden - A 3D sandbox exploration and farming game. Explore procedurally generated worlds, dig for resources, and cultivate a variety of plants.
 
 [![Block Garden Screenshot](assets/screenshots/block-garden-screenshot-2266x1440.png)](https://kherrick.github.io/block-garden/)
 
@@ -12,6 +10,7 @@ Block Garden - A 3D sandbox exploration and farming game. Explore procedurally g
 
 ```sh
 npm i && npm start
+
 ```
 
 ## To run Jest unit tests
@@ -22,14 +21,15 @@ npm i && npm test
 
 ## 🧩 Features include:
 
-- Procedurally generated worlds
-- Local and downloadable saves
-- Cross-platform (desktop & mobile)
-- Installation and offline play supported
+- Procedural World Generation - Each world is unique, generated from a shareable seed
+- Building - Use collected materials to place blocks and shape the world
+- Clouds - Continue building and farming while in the sky
+- Planting System - Plant different seed types with realistic growth cycles
+- Resource Management - Dig for resources like stone, dirt, and sand.
+- Save & Load - Your progress can be saved on device or as a file to share
 - Privacy-respecting (no login or data collection)
-
-[![Block Garden Screenshot](assets/block-garden-animation.gif)](https://www.youtube.com/watch?v=eRDM5INHyKA)
-
+- Installation and offline play supported
+- Cross-platform (desktop & mobile)
 
 ## 🎮 Quick Start
 
@@ -44,3 +44,13 @@ npm i && npm test
   - **Use crosshair to center block placement**
   - **Left Click:** Place Block
   - **Right Click:** Remove Block
+
+## Demos
+
+### Fireworks
+
+[![Block Garden Fireworks](assets/block-garden-fireworks.gif)](https://www.youtube.com/watch?v=1aW5C7A9wSk)
+
+### Random Planting
+
+[![Block Garden Animation](assets/block-garden-animation.gif)](https://www.youtube.com/watch?v=eRDM5INHyKA)

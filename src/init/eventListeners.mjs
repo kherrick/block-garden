@@ -1,25 +1,28 @@
 import extrasHandler from "konami-code-js";
 
+import { copyToClipboard } from "../util/copyToClipboard.mjs";
 import { debounce } from "../util/debounce.mjs";
 import { effect } from "../util/effect.mjs";
-import { resizeCanvas } from "../api/ui/resizeCanvas.mjs";
+import { extractAttachments } from "../util/extractAttachments.mjs";
+import { extractJsonFromPng } from "../util/canvasToPngWithState.mjs";
+import { getRandomSeed } from "../util/getRandomSeed.mjs";
+import { raycastFromCanvasCoords } from "../util/raycastFromCanvasCoords.mjs";
+import { removeBlock } from "../util/interaction.mjs";
+import { runCompress } from "../util/compression.mjs";
+import { showColorCustomizationDialog } from "../util/customColors.mjs";
 
 import { gameConfig } from "../state/config/index.mjs";
 import { createSaveState } from "../state/createSave.mjs";
 import { loadSaveState } from "../state/loadSave.mjs";
+import { selectMaterialBarSlot, setMaterialBarItem } from "../state/state.mjs";
 
 import { generateProceduralWorld } from "../generate/world.mjs";
-
-import { showColorCustomizationDialog } from "../util/customColors.mjs";
-import { copyToClipboard } from "../util/copyToClipboard.mjs";
-import { extractAttachments } from "../util/extractAttachments.mjs";
-import { extractJsonFromPng } from "../util/canvasToPngWithState.mjs";
-import { runCompress } from "../util/compression.mjs";
 
 import { showAboutDialog } from "../dialog/about.mjs";
 import { showExamplesDialog } from "../dialog/examples.mjs";
 import { showPrivacyDialog } from "../dialog/privacy.mjs";
 
+import { resizeCanvas } from "../api/ui/resizeCanvas.mjs";
 import { showToast } from "../api/ui/toast.mjs";
 
 import {
@@ -28,8 +31,7 @@ import {
   setSaveMode,
   showStorageDialog,
 } from "../dialog/storage.mjs";
-import { getRandomSeed } from "../util/getRandomSeed.mjs";
-import { selectMaterialBarSlot, setMaterialBarItem } from "../state/state.mjs";
+
 import { InventoryDialog } from "../dialog/inventory.mjs";
 
 /** @typedef {import('signal-polyfill').Signal.State} Signal.State */
@@ -499,6 +501,49 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
       e.target === shadow.getElementById("canvas")
     ) {
       e.preventDefault();
+    }
+  });
+
+  cnvs.addEventListener("mousedown", (e) => {
+    // Ignore mousedown if it happened shortly after a touch event
+    if (Date.now() - lastTouchTime < 1000) {
+      return;
+    }
+
+    const gameState = globalThis.blockGarden.state;
+    // @ts-ignore
+    const gameConfig = globalThis.blockGarden.config;
+
+    let hit = gameState.hit;
+    const useSplit = gameConfig.useSplitControls.get();
+
+    if (!useSplit) {
+      const eyeY = gameState.y - gameState.playerHeight / 2 + 1.62;
+
+      const { hit: rayHit } = raycastFromCanvasCoords(
+        cnvs,
+        e.clientX,
+        e.clientY,
+        gameState.world,
+        {
+          x: gameState.x,
+          y: eyeY,
+          z: gameState.z,
+        },
+        {
+          yaw: gameState.yaw,
+          pitch: gameState.pitch,
+        },
+      );
+      hit = rayHit;
+    }
+
+    /**
+     * Perform action -- defer to hammer.js "tap" event for placement, and "press" event
+     * for removal. Here, removal with button 2 from mousedown event
+     */
+    if (e.button === 2) {
+      removeBlock(gameState, hit);
     }
   });
 

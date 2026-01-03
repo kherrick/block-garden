@@ -264,12 +264,13 @@ export function getState(key) {
 export async function initState(gThis, version) {
   gameConfig.version.set(version);
 
-  // Initialize materials inventory with all block IDs, except for air
-  const allBlockIds = gameConfig.blocks
+  // Until we have a proper inventory we will intialize
+  // materials inventory with all blocks, except for air
+  const allMaterialBlocks = gameConfig.blocks
     .filter((block) => block.name !== "Air")
     .map((_, index) => index);
 
-  gameState.materialsInventory.set(allBlockIds);
+  gameState.materialsInventory.set(allMaterialBlocks);
 
   // Set block types on ChunkManager for gravity queue
   gameState.world.blockTypes = gameConfig.blocks;

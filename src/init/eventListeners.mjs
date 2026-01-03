@@ -16,7 +16,7 @@ import { createSaveState } from "../state/createSave.mjs";
 import { loadSaveState } from "../state/loadSave.mjs";
 import { selectMaterialBarSlot, setMaterialBarItem } from "../state/state.mjs";
 
-import { generateProceduralWorld } from "../generate/world.mjs";
+import { generateWorld } from "../generate/world.mjs";
 
 import { showAboutDialog } from "../dialog/about.mjs";
 import { showExamplesDialog } from "../dialog/examples.mjs";
@@ -138,6 +138,8 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
     shadow
       .getElementById("customizeColorsBtnContainer")
       .removeAttribute("hidden");
+
+    shadow.getElementById("fastGrowthButton").removeAttribute("hidden");
 
     shadow.getElementById("examplesBtnContainer").removeAttribute("hidden");
 
@@ -618,10 +620,7 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
 
     const currentSeedDisplay = shadow.getElementById("currentSeed");
 
-    generateProceduralWorld(
-      Number(seedInputValue),
-      globalThis.blockGarden.state,
-    );
+    generateWorld(Number(seedInputValue), globalThis.blockGarden.state);
 
     console.log(`Generated new world with seed: ${seedInputValue}`);
 
@@ -639,7 +638,7 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
 
     currentSeedDisplay.textContent = String(randomSeed);
 
-    generateProceduralWorld(randomSeed, globalThis.blockGarden.state);
+    generateWorld(randomSeed, globalThis.blockGarden.state);
 
     console.log(`Generated new world with random seed: ${randomSeed}`);
   }
@@ -972,7 +971,7 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
 
   // planting logic for randomPlantButton ---
   function randomPlantSeeds() {
-    // Reuse the logic from generateProceduralWorld, but only the pre-planting part
+    // Reuse the logic from generateWorld, but only the pre-planting part
     const { blocks, blockNames } = gameConfig;
     const { world } = gameState;
 

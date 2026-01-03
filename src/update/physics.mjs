@@ -3,7 +3,7 @@
  * @typedef {import('../util/aabb.mjs').AABB} AABB
  */
 
-import { getBlock } from "../util/world.mjs";
+import { isSolid } from "../util/isSolid.mjs";
 import { intersects } from "../util/aabb.mjs";
 import { isKeyPressed } from "../util/isKeyPressed.mjs";
 
@@ -51,7 +51,7 @@ function isColliding(state, playerAABB) {
   for (let y = minY; y < maxY; y++) {
     for (let x = minX; x < maxX; x++) {
       for (let z = minZ; z < maxZ; z++) {
-        if (getBlock(world, x, y, z)) {
+        if (isSolid(world, x, y, z)) {
           const blockAABB = {
             minX: x,
             minY: y,

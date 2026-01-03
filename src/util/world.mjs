@@ -1,10 +1,11 @@
-/**
- * @typedef {import('../state/chunkManager.mjs').ChunkManager} ChunkManager
- */
+/** @typedef {import('../state/chunkManager.mjs').ChunkManager} ChunkManager */
+
+import { isSolid } from "./isSolid.mjs";
 
 /**
- * Checks if a block exists at the given coordinates.
- * The ground is considered to be at y<=0.
+ * Checks if a solid block exists at the given coordinates.
+ * Non-solid blocks (water, flowers, leaves, etc.) are not considered obstacles.
+ * The ground is considered to be solid at y<=0.
  *
  * @param {ChunkManager} world
  * @param {number} x
@@ -14,10 +15,5 @@
  * @returns {boolean}
  */
 export function getBlock(world, x, y, z) {
-  if (y <= 0) {
-    return true;
-  }
-
-  // Use ChunkManager's hasBlock method
-  return world.hasBlock(Math.floor(x), Math.floor(y), Math.floor(z));
+  return isSolid(world, x, y, z);
 }

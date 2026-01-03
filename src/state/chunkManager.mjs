@@ -376,16 +376,54 @@ export class ChunkManager {
               console.log(
                 `[Persistence] Restoring ${Object.keys(structures).length} structures`,
               );
-              Object.assign(plantStructures, structures);
+              // Restore structures and sync their blocks with actual world state
+              for (const [structureKey, structure] of Object.entries(
+                structures,
+              )) {
+                plantStructures[structureKey] = structure;
+
+                // Sync structure blocks with actual world state
+                // (remove references to blocks that don't exist in world anymore)
+                if (structure.blocks && structure.blocks.length > 0) {
+                  const syncedBlocks = structure.blocks.filter((block) => {
+                    const worldKey = `${block.x},${block.y},${block.z}`;
+                    // Keep block if it still exists in the world
+                    return (
+                      chunk.getBlock(
+                        block.x - chunk.worldX,
+                        block.y,
+                        block.z - chunk.worldZ,
+                      ) !== 0
+                    );
+                  });
+
+                  structure.blocks = syncedBlocks;
+
+                  // If all blocks were harvested, clean up the structure
+                  if (syncedBlocks.length === 0) {
+                    console.log(
+                      `[Persistence] Plant at ${structureKey} has no blocks remaining, marking for cleanup`,
+                    );
+                    delete plantStructures[structureKey];
+                    if (growthTimers) {
+                      delete growthTimers[structureKey];
+                    }
+                  }
+                }
+              }
             }
             this.storedPlantStates.delete(storedKey);
 
             if (onPlantsRestored && plantStructures) {
+              // Only trigger refresh for structures that still have blocks
+              const validStructures = Object.keys(structures).filter(
+                (key) => plantStructures[key],
+              );
               console.log(
-                `[Persistence] Triggering visual refresh for ${Object.keys(structures).length} plants`,
+                `[Persistence] Triggering visual refresh for ${validStructures.length} plants (${Object.keys(structures).length - validStructures.length} were fully harvested)`,
               );
               // Invoke callback with the restored structure keys
-              onPlantsRestored(Object.keys(structures));
+              onPlantsRestored(validStructures);
             }
           }
         }
@@ -450,16 +488,53 @@ export class ChunkManager {
                   console.log(
                     `[Persistence] Restoring ${Object.keys(structures).length} structures`,
                   );
-                  Object.assign(plantStructures, structures);
+                  // Restore structures and sync their blocks with actual world state
+                  for (const [structureKey, structure] of Object.entries(
+                    structures,
+                  )) {
+                    plantStructures[structureKey] = structure;
+
+                    // Sync structure blocks with actual world state
+                    // (remove references to blocks that don't exist in world anymore)
+                    if (structure.blocks && structure.blocks.length > 0) {
+                      const syncedBlocks = structure.blocks.filter((block) => {
+                        // Check if block exists in the world
+                        return (
+                          chunk.getBlock(
+                            block.x - chunk.worldX,
+                            block.y,
+                            block.z - chunk.worldZ,
+                          ) !== 0
+                        );
+                      });
+
+                      structure.blocks = syncedBlocks;
+
+                      // If all blocks were harvested, clean up the structure
+                      if (syncedBlocks.length === 0) {
+                        console.log(
+                          `[Persistence] Plant at ${structureKey} has no blocks remaining, marking for cleanup`,
+                        );
+                        delete plantStructures[structureKey];
+                        if (growthTimers) {
+                          delete growthTimers[structureKey];
+                        }
+                      }
+                    }
+                  }
                 }
                 this.storedPlantStates.delete(storedKey);
 
                 if (onPlantsRestored && plantStructures) {
+                  // Only trigger refresh for structures that still have blocks
+                  const validStructures = Object.keys(structures).filter(
+                    (key) => plantStructures[key],
+                  );
                   console.log(
-                    `[Persistence] Triggering visual refresh for ${Object.keys(structures).length} plants`,
+                    `[Persistence] Triggering visual refresh for ${validStructures.length} plants (${Object.keys(structures).length - validStructures.length} were fully harvested)`,
                   );
                   // Invoke callback with the restored structure keys
-                  onPlantsRestored(Object.keys(structures));
+                  onPlantsRestored(validStructures);
                 }
               }
             }

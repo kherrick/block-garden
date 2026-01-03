@@ -6,8 +6,8 @@ import { jest } from "@jest/globals";
 import { Signal } from "signal-polyfill";
 
 // Mock modules before importing
-jest.unstable_mockModule("../util/world.mjs", () => ({
-  getBlock: jest.fn(() => false),
+jest.unstable_mockModule("../util/isSolid.mjs", () => ({
+  isSolid: jest.fn(() => false),
 }));
 
 jest.unstable_mockModule("../util/aabb.mjs", () => ({
@@ -21,7 +21,7 @@ jest.unstable_mockModule("../util/isKeyPressed.mjs", () => ({
 // Dynamic imports after mocking
 const { updatePhysics } = await import("./physics.mjs");
 const { isKeyPressed } = await import("../util/isKeyPressed.mjs");
-const { getBlock } = await import("../util/world.mjs");
+const { isSolid } = await import("../util/isSolid.mjs");
 const { intersects } = await import("../util/aabb.mjs");
 
 // Mocks for dependencies
@@ -39,7 +39,7 @@ const makeState = (overrides = {}) => ({
   flySpeed: 10,
   spacePressed: false,
   lastSpacePressTime: 0,
-  world: { hasBlock: () => false },
+  world: { getBlock: jest.fn(() => 0) },
   ...overrides,
 });
 
@@ -72,8 +72,8 @@ describe("updatePhysics", () => {
     intersects.mockReset();
     intersects.mockReturnValue(false);
 
-    getBlock.mockReset();
-    getBlock.mockReturnValue(false);
+    isSolid.mockReset();
+    isSolid.mockReturnValue(false);
   });
 
   test("applies gravity when not flying", () => {
@@ -146,8 +146,8 @@ describe("updatePhysics", () => {
   test("sets onGround true if collision while falling", () => {
     state.dy = -1;
 
-    // Mock getBlock to return a block, which triggers collision check
-    getBlock.mockReturnValue(true);
+    // Mock isSolid to return true, which triggers collision check
+    isSolid.mockReturnValue(true);
     intersects.mockReturnValue(true);
     updatePhysics({}, ui, state, 1);
     expect(state.onGround).toBe(true);

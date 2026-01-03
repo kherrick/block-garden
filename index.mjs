@@ -853,7 +853,7 @@ export class BlockGarden extends HTMLElement {
                     <button id="worldState">🌍 World State</button>
                     <button id="toggleTouchControls">Disable Touch Controls</button>
                     <button id="randomPlantButton">Plant randomly</button>
-                    <button id="fastGrowthButton">Enable Fast Growth</button>
+                    <button id="fastGrowthButton" hidden="hidden">Enable Fast Growth</button>
                     <button id="toggleSplitControls">Enable Split Controls</button>
                     <button id="toggleFlight">🪽 Enable Flight</button>
                     <button

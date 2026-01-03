@@ -306,37 +306,28 @@ export function gameLoop(
     (restoredKeys) => {
       // Force visual refresh for restored plants
       for (const key of restoredKeys) {
-        // Assume fully grown if no timer exists? Or just always update structure to be safe.
-        // updateStructure uses 'progress' to determine growth stage.
-        // If timer exists, it will be updated in next game loop anyway.
-        // If NO timer exists, it's mature, progress should be 1.0.
+        // Skip if structure no longer exists (was fully harvested)
+        const structure = gameState.plantStructures[key];
+        if (!structure) {
+          continue;
+        }
 
         const timer = gameState.growthTimers
           ? gameState.growthTimers[key]
           : undefined;
-        // If timer exists, let the loop handle it.
-        // If timer does NOT exist, force update with progress 1.0.
-        // Actually, even if timer exists, the visual blocks are gone (procedural wipe).
-        // So we MUST regenerate visual blocks regardless of timer.
 
         // Calculate progress
         let progress = 1.0;
         if (timer !== undefined) {
           // Re-calculate progress if timer is active
-          const structure = gameState.plantStructures[key];
           const plantDef = blockTypes.find((b) => b.name === structure.type);
           const totalTime = gameState.fastGrowth
             ? 30 // hardcoded FAST_GROWTH_TIME import issue, can define or import
             : plantDef?.growthTime || 10.0;
-          progress = 1.0 - timer / totalTime;
+          progress = Math.max(0, 1.0 - timer / totalTime);
         }
 
-        updateStructure(
-          gameState,
-          key,
-          progress,
-          gameState.plantStructures[key].type,
-        );
+        updateStructure(gameState, key, progress, structure.type);
       }
     },
   );

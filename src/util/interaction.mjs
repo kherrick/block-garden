@@ -91,5 +91,44 @@ export function removeBlock(gameState, targetHit) {
   const key = `${hit.x},${hit.y},${hit.z}`;
   gameState.world.delete(key, true);
 
+  // Check if this block removal completed a plant harvest
+  if (gameState.plantStructures) {
+    for (const [structureKey, structure] of Object.entries(
+      gameState.plantStructures,
+    )) {
+      if (!structure || !structure.blocks) continue;
+
+      // Check if this block was part of this structure
+      const blockInStructure = structure.blocks.find(
+        (block) => block.x === hit.x && block.y === hit.y && block.z === hit.z,
+      );
+
+      if (blockInStructure) {
+        // Block was part of this structure - check if now fully harvested
+        let allBlocksRemoved = true;
+        for (const block of structure.blocks) {
+          const blockKey = `${block.x},${block.y},${block.z}`;
+          const currentId = gameState.world.get(blockKey);
+          if (currentId !== undefined) {
+            allBlocksRemoved = false;
+            break;
+          }
+        }
+
+        if (allBlocksRemoved) {
+          // Structure is completely harvested
+          console.log(
+            `[Interaction] Plant at ${structureKey} fully harvested, removing structure`,
+          );
+          delete gameState.plantStructures[structureKey];
+          if (gameState.growthTimers) {
+            delete gameState.growthTimers[structureKey];
+          }
+        }
+        break; // Found the structure, no need to check others
+      }
+    }
+  }
+
   return true;
 }

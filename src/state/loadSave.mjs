@@ -39,6 +39,10 @@ export async function loadSaveState(gThis, shadow, state) {
     gameState.seed = config.seed;
   }
 
+  if (config.version !== undefined) {
+    gameState.version = config.version;
+  }
+
   if (stateData.x !== undefined) {
     gameState.x = stateData.x;
   }
@@ -100,8 +104,6 @@ export async function loadSaveState(gThis, shadow, state) {
   if (gameState.seed !== undefined) {
     initNoise(gameState.seed);
 
-    initNoise(gameState.seed);
-
     // Restore plant structures and timers provided in save, or clear if new
     gameState.plantStructures = stateData.plantStructures || {};
     gameState.growthTimers = stateData.growthTimers || {};
@@ -126,8 +128,9 @@ export async function loadSaveState(gThis, shadow, state) {
   // Populate chunks from save data
   globalThis.Object.entries(worldData).forEach(([x, xz]) => {
     globalThis.Object.entries(xz).forEach(([z, ys]) => {
-      globalThis.Object.entries(ys).forEach(([y, type]) => {
-        world.set(`${x},${y},${z}`, Number(type));
+      globalThis.Object.entries(ys).forEach(([y, blockId]) => {
+        // Load block by its ID, not by array index
+        world.set(`${x},${y},${z}`, Number(blockId));
       });
     });
   });

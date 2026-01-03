@@ -1,4 +1,4 @@
-import { generateProceduralWorld } from "../generate/world.mjs";
+import { generateWorld } from "../generate/world.mjs";
 
 /**
  * @param {number} seed
@@ -18,5 +18,5 @@ export function initNewWorld(seed, newSeed = null) {
 
   globalThis.blockGarden.gameTime = 0;
 
-  generateProceduralWorld(currentSeed, globalThis.blockGarden.state);
+  generateWorld(currentSeed, globalThis.blockGarden.state);
 }

@@ -19,7 +19,7 @@ import { initNoise, terrainNoise } from "../util/noise.mjs";
  * @param {number} seed
  * @param {GameState} gameState
  */
-export function generateProceduralWorld(seed, gameState) {
+export function generateWorld(seed, gameState) {
   const { world } = gameState;
 
   // Initialize noise generator with seed
@@ -47,66 +47,4 @@ export function generateProceduralWorld(seed, gameState) {
   gameState.z = 0;
   gameState.dy = 0;
   gameState.onGround = false;
-}
-
-/**
- * Generate a flat world (dirt + grass)
- *
- * @param {GameConfig} gameConfig
- * @param {GameState} gameState
- */
-export function generateFlatWorld(gameConfig, gameState) {
-  const { blocks, blockNames } = gameConfig;
-  const { world } = gameState;
-
-  // Helper to find block IDs
-  const getBlockId = (name) => blocks.findIndex((b) => b.name === name);
-
-  const GRASS = getBlockId(blockNames.GRASS);
-  const DIRT = getBlockId(blockNames.DIRT);
-
-  world.clear();
-
-  const WORLD_RADIUS = gameState.worldRadius;
-
-  for (let x = -WORLD_RADIUS; x <= WORLD_RADIUS; x++) {
-    for (let z = -WORLD_RADIUS; z <= WORLD_RADIUS; z++) {
-      // Layer 1: Dirt (y=0 is bedrock, handled by ChunkManager)
-      world.set(`${x},1,${z}`, DIRT);
-      // Layer 2: Grass
-      world.set(`${x},2,${z}`, GRASS);
-    }
-  }
-
-  // Set spawn position on top of grass
-  gameState.y = 4;
-  gameState.x = 0;
-  gameState.z = 0;
-  gameState.dy = 0;
-  gameState.onGround = false;
-}
-
-function placeTree(world, x, y, z, woodId, leavesId) {
-  const height = 4 + Math.floor(Math.random() * 2);
-  // Trunk
-  for (let i = 0; i < height; i++) {
-    world.set(`${x},${y + i},${z}`, woodId);
-  }
-  // Leaves
-  for (let lx = x - 2; lx <= x + 2; lx++) {
-    for (let lz = z - 2; lz <= z + 2; lz++) {
-      for (let ly = y + height - 2; ly <= y + height + 1; ly++) {
-        // Simple sphere/box approximation
-        if (
-          Math.abs(lx - x) + Math.abs(lz - z) + Math.abs(ly - (y + height)) <=
-          3
-        ) {
-          const key = `${lx},${ly},${lz}`;
-          if (!world.has(key)) {
-            world.set(key, leavesId);
-          }
-        }
-      }
-    }
-  }
 }

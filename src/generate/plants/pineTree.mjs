@@ -33,6 +33,12 @@ export function generatePineTreeStructure(x, y, z, progress, blocks) {
   const maxHeight = 7;
   const height = Math.floor(maxHeight * progress);
 
+  // If no height yet, show growing block
+  if (height === 0) {
+    structure.push({ x, y, z, blockId: GROWING });
+    return structure;
+  }
+
   // Trunk
   for (let i = 0; i < height; i++) {
     structure.push({ x, y: y + i, z, blockId: TRUNK });

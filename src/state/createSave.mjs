@@ -23,12 +23,12 @@ export function createSaveState(world, gThis) {
     for (let y = 1; y < CHUNK_SIZE_Y; y++) {
       for (let z = 0; z < CHUNK_SIZE_Z; z++) {
         for (let x = 0; x < CHUNK_SIZE_X; x++) {
-          const type = chunk.getBlock(x, y, z);
+          const blockId = chunk.getBlock(x, y, z);
           const worldX = baseX + x;
           const worldZ = baseZ + z;
 
-          // Skip air blocks to keep save file small
-          if (type === 0) {
+          // Skip air blocks (id 0) to keep save file small
+          if (blockId === 0) {
             continue;
           }
 
@@ -40,7 +40,8 @@ export function createSaveState(world, gThis) {
             worldData[worldX][worldZ] = {};
           }
 
-          worldData[worldX][worldZ][y] = type;
+          // Save block ID for later restoration
+          worldData[worldX][worldZ][y] = blockId;
         }
       }
     }
@@ -94,7 +95,10 @@ export function createSaveState(world, gThis) {
   return {
     config: {
       seed: seed,
-      version: config?.version ?? null,
+      version:
+        typeof config?.version?.get === "function"
+          ? config.version.get()
+          : (config?.version ?? null),
     },
     state: {
       x: state?.x ?? null,

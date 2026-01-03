@@ -48,6 +48,58 @@ export class Chunk {
 
     /** @type {ChunkMesh|null} Cached mesh data */
     this.mesh = null;
+
+    /** @type {Map<number, number>} Index -> block type for player-modified blocks */
+    this.modifiedBlocks = new Map();
+  }
+
+  /**
+   * Mark a block as player-modified.
+   * Stores the modification for persistence across chunk unload/reload.
+   *
+   * @param {number} x - Local X (0-15)
+   * @param {number} y - Local Y (0-127)
+   * @param {number} z - Local Z (0-15)
+   * @param {number} type - Block type (0 = air for deletions)
+   */
+  markModified(x, y, z, type) {
+    if (!this.inBounds(x, y, z)) {
+      return;
+    }
+    const idx = this.index(x, y, z);
+    this.modifiedBlocks.set(idx, type);
+  }
+
+  /**
+   * Get all player modifications for this chunk.
+   *
+   * @returns {Map<number, number>} Index -> block type map
+   */
+  getModifications() {
+    return this.modifiedBlocks;
+  }
+
+  /**
+   * Apply stored modifications to chunk data.
+   * Used when restoring a chunk after it was unloaded.
+   *
+   * @param {Map<number, number>} mods - Index -> block type map
+   */
+  applyModifications(mods) {
+    for (const [idx, type] of mods) {
+      this.blocks[idx] = type;
+    }
+    this.modifiedBlocks = new Map(mods);
+    this.dirty = true;
+  }
+
+  /**
+   * Check if chunk has any player modifications.
+   *
+   * @returns {boolean}
+   */
+  hasModifications() {
+    return this.modifiedBlocks.size > 0;
   }
 
   /**

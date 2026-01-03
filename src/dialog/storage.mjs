@@ -179,6 +179,12 @@ export async function checkAutoSave(globalThis, shadow) {
       </div>
     `;
 
+    dialog.addEventListener("cancel", () => {
+      setTimeout(() => {
+        globalThis.blockGarden.state.isCanvasActionDisabled = false;
+      }, 500);
+    });
+
     dialog.addEventListener("close", () => {
       setTimeout(() => {
         globalThis.blockGarden.state.isCanvasActionDisabled = false;
@@ -262,6 +268,10 @@ export async function checkAutoSave(globalThis, shadow) {
       });
 
       dialog.addEventListener("cancel", () => {
+        setTimeout(() => {
+          globalThis.blockGarden.state.isCanvasActionDisabled = false;
+        }, 500);
+
         resolve(false);
       });
     });
@@ -398,6 +408,10 @@ export async function checkSharedSave(globalThis, shadow) {
         });
 
       dialog.addEventListener("cancel", async () => {
+        setTimeout(() => {
+          globalThis.blockGarden.state.isCanvasActionDisabled = false;
+        }, 500);
+
         // Delete the shared save if dialog is cancelled
         await deleteSharedSave();
         resolve(false);
@@ -1331,8 +1345,6 @@ export class StorageDialog {
       height: imgHeight,
     });
 
-    // Add link annotation to image with seed parameter
-    // @todo, include seed in save state
     const seed = gameState?.config?.seed || "";
     const imageLink = seed
       ? `https://kherrick.github.io/block-garden/?seed=${seed}`

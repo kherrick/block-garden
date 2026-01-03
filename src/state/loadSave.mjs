@@ -100,9 +100,11 @@ export async function loadSaveState(gThis, shadow, state) {
   if (gameState.seed !== undefined) {
     initNoise(gameState.seed);
 
-    // Clear plant structures and growth timers but preserve world data
-    gameState.plantStructures = {};
-    gameState.growthTimers = {};
+    initNoise(gameState.seed);
+
+    // Restore plant structures and timers provided in save, or clear if new
+    gameState.plantStructures = stateData.plantStructures || {};
+    gameState.growthTimers = stateData.growthTimers || {};
     console.log("Noise initialized for saved world with seed:", gameState.seed);
   }
 
@@ -129,6 +131,33 @@ export async function loadSaveState(gThis, shadow, state) {
       });
     });
   });
+
+  // Restore stored chunks modifications
+  if (saveState.storedChunks) {
+    world.storedChunks = new Map();
+    globalThis.Object.entries(saveState.storedChunks).forEach(
+      ([key, modsObj]) => {
+        const mods = new Map();
+        globalThis.Object.entries(modsObj).forEach(([idx, type]) => {
+          mods.set(Number(idx), Number(type));
+        });
+        world.storedChunks.set(key, mods);
+      },
+    );
+    console.log(
+      `Restored ${world.storedChunks.size} chunks with player modifications.`,
+    );
+  }
+
+  // Restore stored plant states
+  if (saveState.storedPlantStates) {
+    world.storedPlantStates = new Map();
+    globalThis.Object.entries(saveState.storedPlantStates).forEach(
+      ([key, state]) => {
+        world.storedPlantStates.set(key, state);
+      },
+    );
+  }
 
   const t1 = performance.now();
   console.log(

@@ -48,7 +48,7 @@ export function updatePlantGrowth(gameState) {
   }
 }
 
-function updateStructure(gameState, key, progress, type) {
+export function updateStructure(gameState, key, progress, type) {
   const structure = gameState.plantStructures[key];
   if (!structure) return;
 
@@ -71,6 +71,10 @@ function updateStructure(gameState, key, progress, type) {
   const generator = generators[type];
   if (generator) {
     newBlocks = generator(rootX, rootY, rootZ, progress, blockDefs);
+    // Debug logging is causing performance issues -- enable a flag to sample
+    // // console.debug(`[PlantGrowth] Updated ${type} at ${key} (progress ${progress.toFixed(2)}): ${newBlocks.length} blocks generated`);
+  } else {
+    console.warn(`[PlantGrowth] Generator not found for type: ${type}`);
   }
 
   // Place new blocks

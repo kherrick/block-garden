@@ -45,7 +45,7 @@ export function initTouchControls(shadow) {
         const hit = gameState.hit;
 
         if (hit) {
-          gameState.world.delete(`${hit.x},${hit.y},${hit.z}`);
+          gameState.world.delete(`${hit.x},${hit.y},${hit.z}`, true);
         }
       }
     }

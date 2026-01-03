@@ -18,6 +18,7 @@ jest.unstable_mockModule("../util/chunk.mjs", () => {
       this.chunkZ = chunkZ;
       this.blocks = new Map();
       this.dirty = true;
+      this.modifiedBlocks = new Map();
     }
 
     /**
@@ -49,6 +50,35 @@ jest.unstable_mockModule("../util/chunk.mjs", () => {
 
       this.dirty = true;
       return true;
+    }
+
+    markModified(x, y, z, type) {
+      // For mock, just track it. Simplified key or whatever.
+      // But let's use the implementation's logic roughly:
+      // index() isn't implemented?
+      // The mock uses Map for blocks with string keys.
+      // ModifiedBlocks needs to return something getModifications understands.
+      // The implementation expects Map<number, number> (index -> type).
+      // Mock doesn't use indices.
+      // So let's fake it or implement index.
+      // Easiest is to implement index() or just mock getModifications to return empty map if unused.
+      // BUT ChunkManager reads it!
+      // 'const mods = chunk.getModifications();'
+      // If we just return empty map, it works for existing tests (they don't test persistence).
+      return;
+    }
+
+    getModifications() {
+      // Return empty map to avoid crashing unload logic in existing tests
+      return new Map();
+    }
+
+    applyModifications(mods) {
+      // No-op for existing tests
+    }
+
+    hasModifications() {
+      return false;
     }
 
     get worldX() {

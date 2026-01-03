@@ -381,6 +381,10 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
         shadow
           .querySelector('[class="seed-controls"]')
           .setAttribute("hidden", "hidden");
+
+        setTimeout(() => {
+          globalThis.blockGarden.state.isCanvasActionDisabled = false;
+        }, 500);
       }
 
       // Add 'S' key to show / hide the world generation panel
@@ -1013,7 +1017,7 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
             attempts++;
           }
           if (spot) {
-            world.set(spot.key, blockId);
+            world.set(spot.key, blockId, true);
             gameState.plantStructures[spot.key] = {
               type: block.name,
               blocks: [spot.key],

@@ -68,6 +68,29 @@ export function createSaveState(world, gThis) {
   // Only use state/config for seed
   const seed = state?.seed ?? config?.seed ?? null;
 
+  // Prepare stored chunks for save (merge currently loaded chunks' modifications)
+  const storedChunksData = {};
+
+  // 1. Add modifications from unloaded chunks
+  for (const [key, mods] of world.storedChunks) {
+    storedChunksData[key] = Object.fromEntries(mods);
+  }
+
+  // 2. Add modifications from loaded chunks
+  for (const chunk of world.getAllChunks()) {
+    const mods = chunk.getModifications();
+    if (mods.size > 0) {
+      const key = world.getChunkKey(chunk.chunkX, chunk.chunkZ);
+      storedChunksData[key] = Object.fromEntries(mods);
+    }
+  }
+
+  // 3. Add stored plant states
+  const storedPlantStatesData = {};
+  for (const [key, state] of world.storedPlantStates) {
+    storedPlantStatesData[key] = state;
+  }
+
   return {
     config: {
       seed: seed,
@@ -85,7 +108,11 @@ export function createSaveState(world, gThis) {
       curBlock: state?.curBlock?.get
         ? state.curBlock.get()
         : (state?.curBlock ?? null),
+      growthTimers: state?.growthTimers ?? null,
+      plantStructures: state?.plantStructures ?? null,
     },
     world: worldData,
+    storedChunks: storedChunksData,
+    storedPlantStates: storedPlantStatesData,
   };
 }

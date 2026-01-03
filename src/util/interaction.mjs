@@ -47,7 +47,7 @@ export function placeBlock(gameState, targetHit) {
   const curBlockId = gameState.curBlock.get();
   const key = `${newBlockX},${newBlockY},${newBlockZ}`;
 
-  gameState.world.set(key, curBlockId);
+  gameState.world.set(key, curBlockId, true);
 
   // Plant growth logic
   const placedBlock = gameConfig.blocks[curBlockId];
@@ -89,7 +89,7 @@ export function removeBlock(gameState, targetHit) {
   }
 
   const key = `${hit.x},${hit.y},${hit.z}`;
-  gameState.world.delete(key);
+  gameState.world.delete(key, true);
 
   return true;
 }

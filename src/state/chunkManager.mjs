@@ -281,10 +281,7 @@ export class ChunkManager {
       const dx = Math.abs(chunk.chunkX - playerChunkX);
       const dz = Math.abs(chunk.chunkZ - playerChunkZ);
 
-      if (
-        dx <= renderRadius &&
-        dz <= renderRadius
-      ) {
+      if (dx <= renderRadius && dz <= renderRadius) {
         visible.push(chunk);
       }
     }
@@ -349,7 +346,6 @@ export class ChunkManager {
             const cx = playerChunkX + dx;
             const cz = playerChunkZ + dz;
 
-
             const WORLD_RADIUS =
               currentWorldRadius > 1024 ? null : currentWorldRadius;
             // Check world bounds if worldRadius is set
@@ -395,10 +391,7 @@ export class ChunkManager {
       const dx = Math.abs(chunk.chunkX - playerChunkX);
       const dz = Math.abs(chunk.chunkZ - playerChunkZ);
 
-      if (
-        dx > cachedRadius ||
-        dz > cachedRadius
-      ) {
+      if (dx > cachedRadius || dz > cachedRadius) {
         // UNLOAD: Outside persistence zone
         if (gl && deleteChunkMesh) {
           deleteChunkMesh(gl, chunk);
@@ -413,11 +406,7 @@ export class ChunkManager {
         // So 'visible' contains everything in renderRadius.
 
         // We just need to add chunks that are > renderRadius but <= cacheRadius AND have a mesh
-        if (
-          (dx > renderRadius ||
-            dz > renderRadius) &&
-          chunk.generated
-        ) {
+        if ((dx > renderRadius || dz > renderRadius) && chunk.generated) {
           visible.push(chunk);
         }
       }

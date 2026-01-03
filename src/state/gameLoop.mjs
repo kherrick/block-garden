@@ -123,6 +123,12 @@ function drawCrosshairs(gl, cnvs) {
   gl.enable(gl.DEPTH_TEST);
 }
 
+const UI_UPDATE_MS = 200;
+let lastUIUpdateTime = 0;
+let lastRenderX = 0;
+let lastRenderY = 0;
+let lastRenderZ = 0;
+
 /**
  * @param {ShadowRoot} shadow
  * @param {HTMLCanvasElement} cnvs
@@ -216,6 +222,30 @@ export function gameLoop(
   const renderX = lerp(previousState.x, gameState.x, alpha);
   const renderY = lerp(previousState.y, gameState.y, alpha);
   const renderZ = lerp(previousState.z, gameState.z, alpha);
+
+  const now = performance.now();
+  if (now - lastUIUpdateTime >= UI_UPDATE_MS) {
+    const roundedRenderX = Math.round(renderX);
+    const roundedRenderY = Math.round(renderY);
+    const roundedRenderZ = Math.round(renderZ);
+
+    if (lastRenderX !== roundedRenderX) {
+      lastRenderX = roundedRenderX;
+      ui.playerX.textContent = roundedRenderX;
+    }
+
+    if (lastRenderY !== roundedRenderY) {
+      lastRenderY = roundedRenderY;
+      ui.playerY.textContent = roundedRenderY;
+    }
+
+    if (lastRenderZ !== roundedRenderZ) {
+      lastRenderZ = roundedRenderZ;
+      ui.playerZ.textContent = roundedRenderZ;
+    }
+
+    lastUIUpdateTime = now;
+  }
 
   // Calculate eye position for rendering (approx 1.62m above feet)
   // gameState.playerHeight usually around 1.8? Assuming feet position logic

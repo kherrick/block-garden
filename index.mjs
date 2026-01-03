@@ -804,8 +804,16 @@ export class BlockGarden extends HTMLElement {
             <div id="stats">
               <div class="ui-grid__corner--heading">🌱 Block Garden</div>
               <div class="ui-grid__corner--container" hidden="hidden">
-                Block: <span id="blockName"></span><br /><br />
+                <div class="ui-grid__corner--sub-heading">Selected Block: <span id="blockName"></span></div>
 
+                <div class="ui-grid__corner--sub-heading">Player Position:</div>
+                <ul style="list-style-type: none; margin-bottom: 0; margin-top: 0; padding-left: 1rem;">
+                  <li>x: <span id="playerX">0</span></li>
+                  <li>y: <span id="playerY">0</span></li>
+                  <li>z: <span id="playerZ">0</span></li>
+                </ul>
+
+                <br />
                 [ w / a / s / d ]: Move<br />
                 [ arrow keys ]: Camera<br />
                 [ shift ]: Descend<br />

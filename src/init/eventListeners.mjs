@@ -165,6 +165,8 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
     handler.disable();
   });
 
+  initRadiusControlListeners(shadow);
+
   const material = shadow.querySelector("#material .ui-grid__corner--heading");
   material.addEventListener("click", (e) => {
     shadow.getElementById("materialBar").toggleAttribute("hidden");
@@ -614,7 +616,6 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
 
     generateProceduralWorld(
       Number(seedInputValue),
-      globalThis.blockGarden.config,
       globalThis.blockGarden.state,
     );
 
@@ -634,11 +635,7 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
 
     currentSeedDisplay.textContent = String(randomSeed);
 
-    generateProceduralWorld(
-      randomSeed,
-      globalThis.blockGarden.config,
-      globalThis.blockGarden.state,
-    );
+    generateProceduralWorld(randomSeed, globalThis.blockGarden.state);
 
     console.log(`Generated new world with random seed: ${randomSeed}`);
   }
@@ -1111,6 +1108,47 @@ export function initMaterialBarEventListeners(shadow) {
     if (slot instanceof HTMLElement) {
       const index = parseInt(slot.dataset.index);
       selectMaterialBarSlot(index);
+    }
+  });
+}
+
+/**
+ * Initialize radius control listeners
+ *
+ * @param {ShadowRoot} shadow
+ */
+function initRadiusControlListeners(shadow) {
+  const gameConfig = globalThis.blockGarden.config;
+
+  const radiusSettings = [
+    { id: "viewRadius", signal: gameConfig.viewRadius },
+    { id: "cacheRadius", signal: gameConfig.cacheRadius },
+    { id: "renderRadius", signal: gameConfig.renderRadius },
+    { id: "worldRadius", signal: gameConfig.worldRadius },
+  ];
+
+  radiusSettings.forEach(({ id, signal }) => {
+    const input = shadow.getElementById(`${id}Input`);
+    const display = shadow.getElementById(`${id}Display`);
+
+    if (input instanceof HTMLInputElement && display) {
+      // Initialize value
+      input.value = String(signal.get());
+      const currentVal = signal.get();
+      display.textContent = String(
+        currentVal === null || currentVal > 2048 ? "∞" : currentVal,
+      );
+
+      // Update on change
+      input.addEventListener("input", (e) => {
+        if (e.target instanceof HTMLInputElement) {
+          const newValue = parseInt(e.target.value, 10);
+          signal.set(newValue);
+          display.textContent = String(
+            newValue === null || newValue > 2048 ? "∞" : newValue,
+          );
+        }
+      });
     }
   });
 }

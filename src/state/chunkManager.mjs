@@ -7,6 +7,7 @@ import {
 } from "../util/chunk.mjs";
 
 import { GravityQueue } from "../update/gravity.mjs";
+import { gameConfig } from "./config/index.mjs";
 
 /**
  * ChunkManager - Manages chunk lifecycle and world access.
@@ -35,15 +36,6 @@ export class ChunkManager {
   constructor() {
     /** @type {Map<string, Chunk>} Loaded chunks by "chunkX,chunkZ" key */
     this.chunks = new Map();
-
-    /** @type {number} Chunk render radius (generation distance) */
-    this.renderRadius = 16;
-
-    /** @type {number} Chunk cache radius (persistence distance) */
-    this.cacheRadius = 24;
-
-    /** @type {number|null} World radius limit in blocks (null = infinite) */
-    this.worldRadius = null;
 
     /** @type {GravityQueue} Queue for gravity block processing */
     this.gravityQueue = new GravityQueue();
@@ -283,12 +275,16 @@ export class ChunkManager {
     );
 
     const visible = [];
+    const renderRadius = gameConfig.renderRadius.get();
 
     for (const chunk of this.chunks.values()) {
       const dx = Math.abs(chunk.chunkX - playerChunkX);
       const dz = Math.abs(chunk.chunkZ - playerChunkZ);
 
-      if (dx <= this.renderRadius && dz <= this.renderRadius) {
+      if (
+        dx <= renderRadius &&
+        dz <= renderRadius
+      ) {
         visible.push(chunk);
       }
     }
@@ -328,9 +324,12 @@ export class ChunkManager {
     );
 
     const visible = [];
+    const cachedRadius = gameConfig.cacheRadius.get();
+    const currentWorldRadius = gameConfig.worldRadius.get();
+    const renderRadius = gameConfig.renderRadius.get();
 
     // Generate chunks in spiral from player (nearest first) within renderRadius
-    for (let r = 0; r <= this.renderRadius; r++) {
+    for (let r = 0; r <= renderRadius; r++) {
       if (r === 0) {
         // Center chunk
         const chunk = this.getOrCreateChunk(playerChunkX, playerChunkZ);
@@ -350,12 +349,15 @@ export class ChunkManager {
             const cx = playerChunkX + dx;
             const cz = playerChunkZ + dz;
 
+
+            const WORLD_RADIUS =
+              currentWorldRadius > 1024 ? null : currentWorldRadius;
             // Check world bounds if worldRadius is set
-            if (this.worldRadius !== null) {
-              const minChunkX = Math.floor(-this.worldRadius / CHUNK_SIZE_X);
-              const maxChunkX = Math.floor(this.worldRadius / CHUNK_SIZE_X);
-              const minChunkZ = Math.floor(-this.worldRadius / CHUNK_SIZE_Z);
-              const maxChunkZ = Math.floor(this.worldRadius / CHUNK_SIZE_Z);
+            if (WORLD_RADIUS !== null) {
+              const minChunkX = Math.floor(-WORLD_RADIUS / CHUNK_SIZE_X);
+              const maxChunkX = Math.floor(WORLD_RADIUS / CHUNK_SIZE_X);
+              const minChunkZ = Math.floor(-WORLD_RADIUS / CHUNK_SIZE_Z);
+              const maxChunkZ = Math.floor(WORLD_RADIUS / CHUNK_SIZE_Z);
 
               if (
                 cx < minChunkX ||
@@ -371,6 +373,7 @@ export class ChunkManager {
             if (!chunk.generated) {
               generateChunk(chunk, seed, blocks, blockNames);
             }
+
             visible.push(chunk);
           }
         }
@@ -392,11 +395,15 @@ export class ChunkManager {
       const dx = Math.abs(chunk.chunkX - playerChunkX);
       const dz = Math.abs(chunk.chunkZ - playerChunkZ);
 
-      if (dx > this.cacheRadius || dz > this.cacheRadius) {
+      if (
+        dx > cachedRadius ||
+        dz > cachedRadius
+      ) {
         // UNLOAD: Outside persistence zone
         if (gl && deleteChunkMesh) {
           deleteChunkMesh(gl, chunk);
         }
+
         toDelete.push(key);
       } else {
         // PERSIST: Inside persistence zone
@@ -407,7 +414,8 @@ export class ChunkManager {
 
         // We just need to add chunks that are > renderRadius but <= cacheRadius AND have a mesh
         if (
-          (dx > this.renderRadius || dz > this.renderRadius) &&
+          (dx > renderRadius ||
+            dz > renderRadius) &&
           chunk.generated
         ) {
           visible.push(chunk);

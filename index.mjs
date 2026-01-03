@@ -779,6 +779,7 @@ export class BlockGarden extends HTMLElement {
             color: var(--bg-color-white);
             cursor: pointer;
             font-size: 0.625rem;
+            height: 2.125rem;
             margin: 0.125rem;
             padding: 0.375rem 0.75rem;
             transition: background 0.2s;
@@ -839,31 +840,58 @@ export class BlockGarden extends HTMLElement {
               <div class="ui-grid__corner--heading">⚙️ Settings</div>
               <div class="ui-grid__corner--container" hidden="hidden">
                 <div class="settings-actions">
-                  <div id="resolution">
-                    <block-garden-select id="resolutionSelect" value="600">
-                      <block-garden-option value="400">400x400</block-garden-option>
-                      <block-garden-option value="600">600x600</block-garden-option>
-                      <block-garden-option value="800">800x800</block-garden-option>
-                      <block-garden-option value="fullscreen">Fullscreen</block-garden-option>
-                    </block-garden-select>
+                  <div>
+                    <div class="ui-grid__corner--sub-heading">Game</div>
+                    <button id="worldState">🌍 World State</button>
+                    <button id="toggleTouchControls">Disable Touch Controls</button>
+                    <button id="randomPlantButton">Plant randomly</button>
+                    <button id="fastGrowthButton">Enable Fast Growth</button>
+                    <button id="toggleSplitControls">Enable Split Controls</button>
+                    <button id="toggleFlight">🪽 Enable Flight</button>
+                    <button
+                      onclick="if (confirm('Reloading will lose unsaved progress. Do you want to continue?')) { window.location.reload(); }">
+                      Reload Game
+                    </button>
                   </div>
-                  <button id="worldState">🌍 World State</button>
-                  <button id="randomPlantButton">Plant randomly</button>
-                  <button id="fastGrowthButton">Enable Fast Growth</button>
-                  <button id="toggleTouchControls">Disable Touch Controls</button>
-                  <button id="toggleSplitControls">Enable Split Controls</button>
-                  <button id="toggleFlight">🪽 Enable Flight</button>
-                  <button
-                    onclick="if (confirm('Reloading will lose unsaved progress. Do you want to continue?')) { window.location.reload(); }">
-                    Reload Game
-                  </button>
+
+                  <div>
+                    <div class="ui-grid__corner--sub-heading">Resolution</div>
+
+                    <div id="resolution">
+                      <block-garden-select id="resolutionSelect" value="600">
+                        <block-garden-option value="400">400x400</block-garden-option>
+                        <block-garden-option value="600">600x600</block-garden-option>
+                        <block-garden-option value="800">800x800</block-garden-option>
+                        <block-garden-option value="fullscreen">Fullscreen</block-garden-option>
+                      </block-garden-select>
+                    </div>
+                    <div id="rendering">
+                      <div style="margin-top: 0.625rem; margin-bottom: 0.625rem;">
+                        <label for="worldRadiusInput">World Radius: <span id="worldRadiusDisplay"></span></label>
+                        <input type="range" id="worldRadiusInput" min="0" max="2072" step="16" style="width: 100%;">
+                      </div>
+                      <div style="margin-top: 0.625rem;">
+                        <label for="viewRadiusInput">View Radius: <span id="viewRadiusDisplay"></span></label>
+                        <input type="range" id="viewRadiusInput" min="0" max="2048" step="16" style="width: 100%;">
+                      </div>
+                      <div style="margin-top: 0.625rem;">
+                        <label for="renderRadiusInput">Render Radius: <span id="renderRadiusDisplay"></span></label>
+                        <input type="range" id="renderRadiusInput" min="0" max="256" step="8" style="width: 100%;">
+                      </div>
+                      <div style="margin-top: 0.625rem;">
+                        <label for="cacheRadiusInput">Cache Radius: <span id="cacheRadiusDisplay"></span></label>
+                        <input type="range" id="cacheRadiusInput" min="0" max="256" step="8" style="width: 100%;">
+                      </div>
+                    </div>
+                  </div>
+
                   <div id="customizeColorsBtnContainer" hidden="hidden">
                     <div class="ui-grid__corner--sub-heading">🗺️ Colors</div>
 
                     <button id="customizeColorsBtn">Customize</button>
                   </div>
                   <div id="examplesBtnContainer" hidden="hidden">
-                    <div class="ui-grid__corner--sub-heading">🗺️ Examples</div>
+                    <div class="ui-grid__corner--sub-heading">💡 Examples</div>
                     <button id="examplesBtn">
                       📝 <span id="examplesBtnText">Open</span>
                     </button>

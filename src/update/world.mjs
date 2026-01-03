@@ -81,10 +81,10 @@ export function updateWorld(state) {
     const { x, y, z, type } = change;
 
     // Delete from current position (don't trigger player-modified)
-    world.setBlock(x, y, z, 0, false);
+    world.setBlock(x, y, z, 0);
 
     // Set at new position (don't trigger player-modified)
-    world.setBlock(x, y - 1, z, type, false);
+    world.setBlock(x, y - 1, z, type);
 
     // Re-enqueue at new position for continued falling
     gravityQueue.enqueue(x, y - 1, z);

@@ -18,9 +18,5 @@ export function initNewWorld(seed, newSeed = null) {
 
   globalThis.blockGarden.gameTime = 0;
 
-  generateProceduralWorld(
-    currentSeed,
-    globalThis.blockGarden.config,
-    globalThis.blockGarden.state,
-  );
+  generateProceduralWorld(currentSeed, globalThis.blockGarden.state);
 }

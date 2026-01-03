@@ -244,9 +244,10 @@ export function gameLoop(
     fz = Math.cos(yaw);
   const cosPitch = Math.cos(pitch);
 
+  const VIEW_DISTANCE = gameConfig.viewRadius.get();
   // Use client dimensions for aspect ratio to handle CSS scaling vs internal resolution
   const aspect = cnvs.clientWidth / cnvs.clientHeight;
-  const P = persp(I(), Math.PI / 3, aspect, 0.1, 100);
+  const P = persp(I(), Math.PI / 3, aspect, 0.1, VIEW_DISTANCE);
 
   const V = look(
     I(),

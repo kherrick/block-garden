@@ -17,12 +17,10 @@ import { initNoise, terrainNoise } from "../util/noise.mjs";
  * Terrain is generated lazily per-chunk as player moves.
  *
  * @param {number} seed
- * @param {GameConfig} gameConfig
  * @param {GameState} gameState
  */
-export function generateProceduralWorld(seed, gameConfig, gameState) {
+export function generateProceduralWorld(seed, gameState) {
   const { world } = gameState;
-  const WORLD_RADIUS = 16;
 
   // Initialize noise generator with seed
   initNoise(seed);
@@ -36,9 +34,6 @@ export function generateProceduralWorld(seed, gameConfig, gameState) {
   // Clear plant structures and growth timers
   gameState.plantStructures = {};
   gameState.growthTimers = {};
-
-  // Set world radius limit
-  world.worldRadius = WORLD_RADIUS;
 
   // Calculate spawn height at origin
   const SEA_LEVEL = 4;
@@ -72,7 +67,7 @@ export function generateFlatWorld(gameConfig, gameState) {
 
   world.clear();
 
-  const WORLD_RADIUS = 16;
+  const WORLD_RADIUS = gameState.worldRadius;
 
   for (let x = -WORLD_RADIUS; x <= WORLD_RADIUS; x++) {
     for (let z = -WORLD_RADIUS; z <= WORLD_RADIUS; z++) {

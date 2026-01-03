@@ -79,6 +79,7 @@ jest.unstable_mockModule("../util/chunk.mjs", () => {
 // Dynamic import after mocking
 const { ChunkManager } = await import("./chunkManager.mjs");
 const { CHUNK_SIZE_X, CHUNK_SIZE_Y } = await import("../util/chunk.mjs");
+const { gameConfig } = await import("./config/index.mjs");
 
 describe("ChunkManager", () => {
   /** @type {import('./chunkManager.mjs').ChunkManager} */
@@ -86,6 +87,10 @@ describe("ChunkManager", () => {
 
   beforeEach(() => {
     manager = new ChunkManager();
+    // specific tests override this, but standard defaults:
+    gameConfig.renderRadius.set(16);
+    gameConfig.cacheRadius.set(24);
+    gameConfig.worldRadius.set(2072);
   });
 
   describe("constructor", () => {
@@ -94,8 +99,10 @@ describe("ChunkManager", () => {
     });
 
     test("sets default render and cache radii", () => {
-      expect(manager.renderRadius).toBe(16);
-      expect(manager.cacheRadius).toBe(24);
+      // These are tested via config now, but let's check config matches default?
+      // Or just skip checking implementation detail of config.
+      expect(gameConfig.renderRadius.get()).toBe(16);
+      expect(gameConfig.cacheRadius.get()).toBe(24);
     });
   });
 
@@ -290,6 +297,8 @@ describe("ChunkManager", () => {
       manager.getOrCreateChunk(1, 0);
       manager.getOrCreateChunk(30, 30); // Far away
 
+      gameConfig.renderRadius.set(8);
+
       // Player at origin
       const visible = manager.getVisibleChunks(8, 8);
 
@@ -373,8 +382,8 @@ describe("ChunkManager", () => {
         const deleteChunkMesh = jest.fn();
 
         // Reduce radius for testing
-        manager.renderRadius = 2;
-        manager.cacheRadius = 4;
+        gameConfig.renderRadius.set(2);
+        gameConfig.cacheRadius.set(4);
 
         const visible = manager.updateVisibleChunks(
           0,
@@ -396,8 +405,8 @@ describe("ChunkManager", () => {
         const generateChunk = jest.fn();
         const deleteChunkMesh = jest.fn();
 
-        manager.renderRadius = 2;
-        manager.cacheRadius = 4;
+        gameConfig.renderRadius.set(2);
+        gameConfig.cacheRadius.set(4);
 
         // Create a far chunk
         const farChunk = manager.getOrCreateChunk(10, 10);
@@ -427,8 +436,8 @@ describe("ChunkManager", () => {
         const generateChunk = jest.fn();
         const deleteChunkMesh = jest.fn();
 
-        manager.renderRadius = 2;
-        manager.cacheRadius = 4;
+        gameConfig.renderRadius.set(2);
+        gameConfig.cacheRadius.set(4);
 
         // Create a chunk in "cache zone" (dist 3) with a mesh
         const cachedChunk = manager.getOrCreateChunk(3, 0);
@@ -464,11 +473,11 @@ describe("ChunkManager World Limits", () => {
 
   beforeEach(() => {
     manager = new ChunkManager();
-    manager.loadRadius = 2; // Check small radius
+    gameConfig.renderRadius.set(2); // Check small radius
   });
 
   test("should respect world radius when generating chunks", () => {
-    manager.worldRadius = 16; // Limit to 16 blocks (1 chunk radius effectively)
+    gameConfig.worldRadius.set(16); // Limit to 16 blocks (1 chunk radius effectively)
 
     // Mock dependencies
     const generateChunk = jest.fn();

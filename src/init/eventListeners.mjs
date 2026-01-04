@@ -144,6 +144,10 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
       .getElementById("customizeColorsBtnContainer")
       .removeAttribute("hidden");
 
+    shadow.getElementById("randomPlantButton").removeAttribute("hidden");
+
+    shadow.getElementById("toggleAODebug").removeAttribute("hidden");
+
     shadow.getElementById("fastGrowthButton").removeAttribute("hidden");
 
     shadow.getElementById("examplesBtnContainer").removeAttribute("hidden");
@@ -173,6 +177,7 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
   });
 
   initRadiusControlListeners(shadow);
+  initGenerationControlListeners(shadow);
 
   const material = shadow.querySelector("#material .ui-grid__corner--heading");
   material.addEventListener("click", (e) => {
@@ -194,18 +199,15 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
       fastGrowthButton.textContent = gameState.fastGrowth
         ? "Disable Fast Growth"
         : "Enable Fast Growth";
+
       fastGrowthButton.style.backgroundColor = gameState.fastGrowth
         ? "var(--bg-color-red-500)"
         : "var(--bg-color-green-500)";
+
       fastGrowthButton.style.color = "var(--bg-color-white)";
 
       shadow.dispatchEvent(new CustomEvent("block-garden-reset"));
     });
-
-    // Set initial button state
-    fastGrowthButton.textContent = "Enable Fast Growth";
-    fastGrowthButton.style.backgroundColor = "var(--bg-color-green-500)";
-    fastGrowthButton.style.color = "var(--bg-color-white)";
   }
 
   // Split Controls Toggle
@@ -213,7 +215,11 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
   if (toggleSplitControls) {
     const config = globalThis.blockGarden.config;
 
-    const updateToggleSplitControlsButton = () => {
+    toggleSplitControls.addEventListener("click", () => {
+      config.useSplitControls.set(!config.useSplitControls.get());
+    });
+
+    effect(() => {
       const isEnabled = config.useSplitControls.get();
       toggleSplitControls.textContent = isEnabled
         ? "Disable Split Controls"
@@ -222,16 +228,7 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
         ? "var(--bg-color-red-500)"
         : "var(--bg-color-green-500)";
       toggleSplitControls.style.color = "var(--bg-color-white)";
-    };
-
-    toggleSplitControls.addEventListener("click", () => {
-      config.useSplitControls.set(!config.useSplitControls.get());
-
-      updateToggleSplitControlsButton();
     });
-
-    // Initial state
-    updateToggleSplitControlsButton();
   }
 
   // Flight Toggle
@@ -241,12 +238,57 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
     flightToggle.addEventListener("click", () => {
       const isFlying = gameState.flying.get();
       gameState.flying.set(!isFlying);
-
-      updateFlightToggleButton(flightToggle, !isFlying);
     });
 
-    updateFlightToggleButton(flightToggle, gameState.flying.get());
+    // Use effect to update UI whenever flying state changes
+    effect(() => {
+      updateFlightToggleButton(flightToggle, gameState.flying.get());
+    });
   }
+
+  // Visual Effect Toggles
+  const config = globalThis.blockGarden.config;
+
+  const setupToggle = (id, signal, labelPrefix) => {
+    const btn = shadow.getElementById(id);
+    if (btn) {
+      const update = () => {
+        const val = signal.get();
+        btn.textContent = val
+          ? `Disable ${labelPrefix}`
+          : `Enable ${labelPrefix}`;
+        btn.style.backgroundColor = val
+          ? "var(--bg-color-red-500)"
+          : "var(--bg-color-green-500)";
+        btn.style.color = "var(--bg-color-white)";
+      };
+      // Use effect to ensure UI updates when signal changes externally (e.g., from presets)
+      effect(() => {
+        update();
+      });
+      btn.addEventListener("click", () => {
+        signal.set(!signal.get());
+        if (id === "toggleAO" || id === "toggleTextures") {
+          // Meshing currently doesn't re-run on these toggles if done via uniform,
+          // but keeping it consistent with other toggles.
+        }
+      });
+    }
+  };
+
+  setupToggle("toggleTextures", config.useTextureAtlas, "Textures");
+  setupToggle("toggleAO", config.useAmbientOcclusion, "Ambient Occlusion");
+  setupToggle(
+    "toggleDynamicLighting",
+    config.useDynamicLighting,
+    "Light Cycle",
+  );
+  setupToggle(
+    "togglePerFaceLighting",
+    config.usePerFaceLighting,
+    "Per-Face Lighting",
+  );
+  setupToggle("toggleAODebug", config.useAODebug, "AO Debug");
 
   // Random Plant Again Button
   const randomPlantButton = shadow.getElementById("randomPlantButton");
@@ -733,7 +775,7 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
           {
             description: "Block Garden Save Game Files",
             accept: {
-              "application/*": [".bgs"],
+              "application/gzip": [".bgs"],
               "application/pdf": [".pdf"],
               "text/plain": [".txt"],
             },
@@ -1140,23 +1182,121 @@ function initRadiusControlListeners(shadow) {
     const display = shadow.getElementById(`${id}Display`);
 
     if (input instanceof HTMLInputElement && display) {
-      // Initialize value
-      input.value = String(signal.get());
-      const currentVal = signal.get();
-      display.textContent = String(
-        currentVal === null || currentVal > 2048 ? "∞" : currentVal,
-      );
+      // Synchronize slider and display with signal
+      effect(() => {
+        const currentVal = signal.get();
+        input.value = String(currentVal);
+        display.textContent = String(
+          currentVal === null || currentVal > 2048 ? "∞" : currentVal,
+        );
+      });
 
-      // Update on change
+      // Update signal on change
       input.addEventListener("input", (e) => {
         if (e.target instanceof HTMLInputElement) {
-          const newValue = parseInt(e.target.value, 10);
-          signal.set(newValue);
-          display.textContent = String(
-            newValue === null || newValue > 2048 ? "∞" : newValue,
-          );
+          signal.set(parseInt(e.target.value, 10));
         }
       });
     }
   });
+}
+
+/**
+ * Initializes listeners for granular world generation controls.
+ *
+ * @param {ShadowRoot} shadow
+ */
+function initGenerationControlListeners(shadow) {
+  const gameConfig = globalThis.blockGarden.config;
+
+  const generationSettings = [
+    { id: "terrainOctaves", signal: gameConfig.terrainOctaves, unit: "" },
+    { id: "mountainScale", signal: gameConfig.mountainScale, unit: "%" },
+    {
+      id: "caveThreshold",
+      signal: gameConfig.caveThreshold,
+      unit: "%",
+      displayId: "caveDensity",
+    },
+    {
+      id: "decorationDensity",
+      signal: gameConfig.decorationDensity,
+      unit: "%",
+    },
+    { id: "cloudDensity", signal: gameConfig.cloudDensity, unit: "%" },
+  ];
+
+  generationSettings.forEach(({ id, signal, unit, displayId }) => {
+    const input = shadow.getElementById(`${id}Input`);
+    const display = shadow.getElementById(`${displayId || id}Display`);
+
+    if (input instanceof HTMLInputElement && display) {
+      // Synchronize slider and display with signal
+      effect(() => {
+        const val = signal.get();
+        input.value = String(val);
+        display.textContent = `${val}${unit}`;
+      });
+
+      input.addEventListener("input", (e) => {
+        if (e.target instanceof HTMLInputElement) {
+          signal.set(parseInt(e.target.value, 10));
+        }
+      });
+    }
+  });
+
+  const toggleCaves = shadow.getElementById("toggleCaves");
+  const caveThresholdInput = shadow.getElementById("caveThresholdInput");
+  const caveThresholdInputContainer = shadow.getElementById(
+    "caveThresholdInputContainer",
+  );
+  if (toggleCaves) {
+    effect(() => {
+      const val = gameConfig.useCaves.get();
+      toggleCaves.textContent = val ? "Disable Caves" : "Enable Caves";
+      toggleCaves.style.backgroundColor = val
+        ? "var(--bg-color-red-500)"
+        : "var(--bg-color-green-500)";
+      toggleCaves.style.color = "var(--bg-color-white)";
+
+      if (val) {
+        caveThresholdInput.removeAttribute("disabled");
+        caveThresholdInputContainer.removeAttribute("hidden");
+      } else {
+        caveThresholdInput.setAttribute("disabled", "disabled");
+        caveThresholdInputContainer.setAttribute("hidden", "hidden");
+      }
+    });
+
+    toggleCaves.addEventListener("click", () => {
+      const val = gameConfig.useCaves.get();
+      gameConfig.useCaves.set(!val);
+
+      if (val) {
+        caveThresholdInput.removeAttribute("disabled");
+        caveThresholdInputContainer.removeAttribute("hidden");
+      } else {
+        caveThresholdInput.setAttribute("disabled", "disabled");
+        caveThresholdInputContainer.setAttribute("hidden", "hidden");
+      }
+    });
+  }
+
+  const applyLowDetailPreset = shadow.getElementById("applyLowDetailPreset");
+  if (applyLowDetailPreset) {
+    applyLowDetailPreset.addEventListener("click", () => {
+      gameConfig.terrainOctaves.set(1);
+      gameConfig.mountainScale.set(0);
+      gameConfig.decorationDensity.set(10);
+      gameConfig.caveThreshold.set(100); // 100% threshold means almost no caves
+      gameConfig.useCaves.set(false);
+      gameConfig.cloudDensity.set(0);
+      gameConfig.useTextureAtlas.set(false);
+      gameConfig.useAmbientOcclusion.set(false);
+      gameConfig.useDynamicLighting.set(false);
+
+      showToast(shadow, "Applied Low Detail Preset");
+    });
+  }
 }

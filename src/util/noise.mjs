@@ -125,15 +125,18 @@ export function noise3d(
 }
 
 /**
- * Specialized terrain noise for height maps
+ * Specialized terrain noise for height maps.
  *
  * @param {number} x
+ * @param {number} y
  * @param {number} [seed=0]
+ * @param {boolean} [lowDetail=false]
  *
  * @returns {number}
  */
-export function terrainNoise(x, y, seed = 0) {
-  return noise(x, y, seed, 4, 0.5, 0.01);
+export function terrainNoise(x, y, seed = 0, lowDetail = false) {
+  // Reduce complexity for low detail mode (2 octaves instead of 4)
+  return noise(x, y, seed, lowDetail ? 2 : 4, 0.5, 0.01);
 }
 
 /**

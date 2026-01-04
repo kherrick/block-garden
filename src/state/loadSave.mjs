@@ -46,6 +46,21 @@ export async function loadSaveState(gThis, shadow, state) {
     gameState.version = config.version;
   }
 
+  // Restore granular generation settings to gameConfig Signals
+  const configSignals = gThis.blockGarden.config;
+  if (config.terrainOctaves !== undefined)
+    configSignals.terrainOctaves.set(config.terrainOctaves);
+  if (config.mountainScale !== undefined)
+    configSignals.mountainScale.set(config.mountainScale);
+  if (config.decorationDensity !== undefined)
+    configSignals.decorationDensity.set(config.decorationDensity);
+  if (config.caveThreshold !== undefined)
+    configSignals.caveThreshold.set(config.caveThreshold);
+  if (config.useCaves !== undefined)
+    configSignals.useCaves.set(config.useCaves);
+  if (config.cloudDensity !== undefined)
+    configSignals.cloudDensity.set(config.cloudDensity);
+
   if (stateData.x !== undefined) {
     gameState.x = stateData.x;
   }

@@ -72,6 +72,44 @@ function drawChunkMesh(gl, chunk, VP, uMVP, uM) {
   gl.enableVertexAttribArray(2);
   gl.vertexAttribPointer(2, 4, gl.FLOAT, false, 0, 0);
 
+  // Bind UV buffer
+  if (mesh.uvBuffer) {
+    gl.bindBuffer(gl.ARRAY_BUFFER, mesh.uvBuffer);
+    gl.enableVertexAttribArray(3);
+    gl.vertexAttribPointer(3, 2, gl.FLOAT, false, 0, 0);
+  } else {
+    gl.disableVertexAttribArray(3);
+  }
+
+  // Bind AO buffer
+  if (mesh.aoBuffer) {
+    gl.bindBuffer(gl.ARRAY_BUFFER, mesh.aoBuffer);
+    gl.enableVertexAttribArray(4);
+    gl.vertexAttribPointer(4, 1, gl.FLOAT, false, 0, 0);
+  } else {
+    // Default to 1.0 (no occlusion) if buffer missing
+    gl.disableVertexAttribArray(4);
+    gl.vertexAttrib1f(4, 1.0);
+  }
+
+  // Bind local UV buffer for Radial AO
+  if (mesh.localUVBuffer) {
+    gl.bindBuffer(gl.ARRAY_BUFFER, mesh.localUVBuffer);
+    gl.enableVertexAttribArray(5);
+    gl.vertexAttribPointer(5, 2, gl.FLOAT, false, 0, 0);
+  } else {
+    gl.disableVertexAttribArray(5);
+  }
+
+  // Bind corner AO buffer for Radial AO bilinear interpolation
+  if (mesh.cornerAOBuffer) {
+    gl.bindBuffer(gl.ARRAY_BUFFER, mesh.cornerAOBuffer);
+    gl.enableVertexAttribArray(6);
+    gl.vertexAttribPointer(6, 4, gl.FLOAT, false, 0, 0);
+  } else {
+    gl.disableVertexAttribArray(6);
+  }
+
   // Set uniforms - identity model matrix since positions are in world space
   const M = I();
   gl.uniformMatrix4fv(uMVP, false, VP);
@@ -137,10 +175,17 @@ let lastRenderZ = 0;
  * @param {Object} ui
  * @param {WebGL2RenderingContext} gl
  * @param {Object} cbuf
+ * @param {Object} uvbuf
+ * @param {Object} aobuf
  * @param {Object} cube
  * @param {Object} uL
  * @param {Object} uM
  * @param {Object} uMVP
+ * @param {Object} uT
+ * @param {Object} uUT
+ * @param {Object} uUAO
+ * @param {Object} uULG
+ * @param {Object} uUAOD
  */
 export function gameLoop(
   shadow,
@@ -151,10 +196,17 @@ export function gameLoop(
   ui,
   gl,
   cbuf,
+  uvbuf,
+  aobuf,
   cube,
   uL,
   uM,
   uMVP,
+  uT,
+  uUT,
+  uUAO,
+  uULG,
+  uUAOD,
 ) {
   if (gameState.shouldReset.get()) {
     gameState.shouldReset.set(false);
@@ -287,7 +339,23 @@ export function gameLoop(
 
   const VP = mul(I(), P, V);
 
-  gl.uniform3f(uL, -0.5, -1, -0.3);
+  // Set visual enhancement toggles via uniforms
+  gl.uniform1f(uUT, gameConfig.useTextureAtlas.get() ? 1.0 : 0.0);
+  gl.uniform1f(uUAO, gameConfig.useAmbientOcclusion.get() ? 1.0 : 0.0);
+  gl.uniform1f(uULG, gameConfig.usePerFaceLighting.get() ? 1.0 : 0.0);
+  gl.uniform1f(uUAOD, gameConfig.useAODebug.get() ? 1.0 : 0.0);
+
+  // Dynamic light direction follows a day/night cycle based on gameTime
+  if (gameConfig.useDynamicLighting.get()) {
+    const sunAngle = gameState.gameTime * 0.01; // Slow rotation
+    const lx = Math.cos(sunAngle);
+    const ly = -Math.abs(Math.sin(sunAngle)) - 0.2; // Always coming from above, but varying
+    const lz = Math.sin(sunAngle);
+    gl.uniform3f(uL, lx, ly, lz);
+  } else {
+    // Default "high noon" fixed light
+    gl.uniform3f(uL, -0.5, -1.0, -0.3);
+  }
 
   // Render chunks with face-culled meshes
   // Progressive loading: generate chunks as player moves, unload distant ones
@@ -364,10 +432,17 @@ export function gameLoop(
       ui,
       gl,
       cbuf,
+      uvbuf,
+      aobuf,
       cube,
       uL,
       uM,
       uMVP,
+      uT,
+      uUT,
+      uUAO,
+      uULG,
+      uUAOD,
     ),
   );
 }

@@ -18,11 +18,20 @@ jest.unstable_mockModule("../util/isKeyPressed.mjs", () => ({
   isKeyPressed: jest.fn(() => false),
 }));
 
+jest.unstable_mockModule("../state/config/index.mjs", () => ({
+  gameConfig: {
+    worldRadius: {
+      get: jest.fn(() => 2072), // Default infinity
+    },
+  },
+}));
+
 // Dynamic imports after mocking
 const { updatePhysics } = await import("./physics.mjs");
 const { isKeyPressed } = await import("../util/isKeyPressed.mjs");
 const { isSolid } = await import("../util/isSolid.mjs");
 const { intersects } = await import("../util/aabb.mjs");
+const { gameConfig } = await import("../state/config/index.mjs");
 
 // Mocks for dependencies
 const makeState = (overrides = {}) => ({
@@ -74,6 +83,9 @@ describe("updatePhysics", () => {
 
     isSolid.mockReset();
     isSolid.mockReturnValue(false);
+
+    gameConfig.worldRadius.get.mockReset();
+    gameConfig.worldRadius.get.mockReturnValue(2072); // Default infinity
   });
 
   test("applies gravity when not flying", () => {
@@ -151,5 +163,21 @@ describe("updatePhysics", () => {
     intersects.mockReturnValue(true);
     updatePhysics({}, ui, state, 1);
     expect(state.onGround).toBe(true);
+  });
+
+  test("clamps position to world boundaries", () => {
+    gameConfig.worldRadius.get.mockReturnValue(16); // Small world test
+    state.x = 15;
+    state.dx = 10; // Moving outside
+    state.z = 15;
+    state.dz = 10; // Moving outside
+    state.flying.set(true); // Easier to test movement
+
+    const result = updatePhysics(shadow, ui, state, 1);
+
+    expect(result.x).toBe(16); // Clamped
+    expect(result.z).toBe(16); // Clamped
+    expect(state.dx).toBe(0); // Velocity halted
+    expect(state.dz).toBe(0); // Velocity halted
   });
 });

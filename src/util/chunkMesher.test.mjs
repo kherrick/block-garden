@@ -9,10 +9,12 @@ const CHUNK_SIZE_X = 16;
 const CHUNK_SIZE_Y = 128;
 const CHUNK_SIZE_Z = 16;
 
-function makeMockChunk(blockType = 1) {
+function makeMockChunk(blockType = 1, chunkX = 0, chunkZ = 0) {
   return {
-    worldX: 0,
-    worldZ: 0,
+    worldX: chunkX * CHUNK_SIZE_X,
+    worldZ: chunkZ * CHUNK_SIZE_Z,
+    chunkX,
+    chunkZ,
     getBlock: (x, y, z) => {
       // Only fill a single block at (1,1,1) for test
       if (x === 1 && y === 1 && z === 1) {
@@ -42,6 +44,7 @@ function buildColorMap(defs) {
 
 const mockChunkManager = {
   getBlock: (x, y, z) => 0, // Always air for neighbor
+  getChunk: (cx, cz) => undefined, // Standard mock: no neighbors
 };
 
 const blockDefs = Object.assign(

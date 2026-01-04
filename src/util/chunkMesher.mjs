@@ -134,7 +134,26 @@ function isTransparent(colorMap, blockType, blockDefs) {
  *
  * @returns {number} Block type
  */
-function getNeighborBlock(chunk, chunkManager, localX, y, localZ) {
+/**
+ * Get block type at coordinates, handling cross-chunk lookups with cached neighbors.
+ *
+ * @param {Chunk} chunk - Current chunk
+ * @param {ChunkManager} chunkManager - Chunk manager for neighbor lookups
+ * @param {number} localX - Local X (may be out of bounds)
+ * @param {number} y - Y coordinate
+ * @param {number} localZ - Local Z (may be out of bounds)
+ * @param {Object} neighbors - Cached neighbors
+ *
+ * @returns {number} Block type
+ */
+function getNeighborBlock(
+  chunk,
+  chunkManager,
+  localX,
+  y,
+  localZ,
+  neighbors = {},
+) {
   // Handle Y bounds
   if (y <= 0) {
     // Bedrock
@@ -156,7 +175,24 @@ function getNeighborBlock(chunk, chunkManager, localX, y, localZ) {
     return chunk.getBlock(localX, y, localZ);
   }
 
-  // Cross-chunk lookup - convert to world coords
+  // Handle neighbors using cache if available
+  if (localX < 0) {
+    if (neighbors.nx)
+      return neighbors.nx.getBlock(localX + CHUNK_SIZE_X, y, localZ);
+  } else if (localX >= CHUNK_SIZE_X) {
+    if (neighbors.px)
+      return neighbors.px.getBlock(localX - CHUNK_SIZE_X, y, localZ);
+  }
+
+  if (localZ < 0) {
+    if (neighbors.nz)
+      return neighbors.nz.getBlock(localX, y, localZ + CHUNK_SIZE_Z);
+  } else if (localZ >= CHUNK_SIZE_Z) {
+    if (neighbors.pz)
+      return neighbors.pz.getBlock(localX, y, localZ - CHUNK_SIZE_Z);
+  }
+
+  // Fallback to slow lookup if neighbor not in cache (corners or beyond 1 chunk)
   const worldX = chunk.worldX + localX;
   const worldZ = chunk.worldZ + localZ;
 
@@ -174,13 +210,346 @@ function getNeighborBlock(chunk, chunkManager, localX, y, localZ) {
  *
  * @returns {ChunkMesh}
  */
+/**
+ * Vertex corner offsets for AO calculation for each face.
+ */
+const FACE_CORNERS = [
+  {
+    // +X
+    uvs: [
+      [0, 0],
+      [1, 0],
+      [1, 1],
+      [0, 0],
+      [1, 1],
+      [0, 1],
+    ],
+    aoOffsets: [
+      [
+        [0, -1, 0],
+        [0, 0, -1],
+        [0, -1, -1],
+      ], // 1,0,0
+      [
+        [0, 1, 0],
+        [0, 0, -1],
+        [0, 1, -1],
+      ], // 1,1,0
+      [
+        [0, 1, 0],
+        [0, 0, 1],
+        [0, 1, 1],
+      ], // 1,1,1
+      [
+        [0, -1, 0],
+        [0, 0, -1],
+        [0, -1, -1],
+      ], // 1,0,0
+      [
+        [0, 1, 0],
+        [0, 0, 1],
+        [0, 1, 1],
+      ], // 1,1,1
+      [
+        [0, -1, 0],
+        [0, 0, 1],
+        [0, -1, 1],
+      ], // 1,0,1
+    ],
+  },
+  {
+    // -X
+    uvs: [
+      [0, 1],
+      [1, 1],
+      [1, 0],
+      [0, 1],
+      [1, 0],
+      [0, 0],
+    ],
+    aoOffsets: [
+      [
+        [0, -1, 0],
+        [0, 0, 1],
+        [0, -1, 1],
+      ], // 0,0,1
+      [
+        [0, 1, 0],
+        [0, 0, 1],
+        [0, 1, 1],
+      ], // 0,1,1
+      [
+        [0, 1, 0],
+        [0, 0, -1],
+        [0, 1, -1],
+      ], // 0,1,0
+      [
+        [0, -1, 0],
+        [0, 0, 1],
+        [0, -1, 1],
+      ], // 0,0,1
+      [
+        [0, 1, 0],
+        [0, 0, -1],
+        [0, 1, -1],
+      ], // 0,1,0
+      [
+        [0, -1, 0],
+        [0, 0, -1],
+        [0, -1, -1],
+      ], // 0,0,0
+    ],
+  },
+  {
+    // +Y
+    uvs: [
+      [0, 0],
+      [0, 1],
+      [1, 1],
+      [0, 0],
+      [1, 1],
+      [1, 0],
+    ],
+    aoOffsets: [
+      [
+        [-1, 0, 0],
+        [0, 0, -1],
+        [-1, 0, -1],
+      ], // 0,1,0
+      [
+        [-1, 0, 0],
+        [0, 0, 1],
+        [-1, 0, 1],
+      ], // 0,1,1
+      [
+        [1, 0, 0],
+        [0, 0, 1],
+        [1, 0, 1],
+      ], // 1,1,1
+      [
+        [-1, 0, 0],
+        [0, 0, -1],
+        [-1, 0, -1],
+      ], // 0,1,0
+      [
+        [1, 0, 0],
+        [0, 0, 1],
+        [1, 0, 1],
+      ], // 1,1,1
+      [
+        [1, 0, 0],
+        [0, 0, -1],
+        [1, 0, -1],
+      ], // 1,1,0
+    ],
+  },
+  {
+    // -Y
+    uvs: [
+      [0, 1],
+      [0, 0],
+      [1, 0],
+      [0, 1],
+      [1, 0],
+      [1, 1],
+    ],
+    aoOffsets: [
+      [
+        [-1, 0, 0],
+        [0, 0, 1],
+        [-1, 0, 1],
+      ], // 0,0,1
+      [
+        [-1, 0, 0],
+        [0, 0, -1],
+        [-1, 0, -1],
+      ], // 0,0,0
+      [
+        [1, 0, 0],
+        [0, 0, -1],
+        [1, 0, -1],
+      ], // 1,0,0
+      [
+        [-1, 0, 0],
+        [0, 0, 1],
+        [-1, 0, 1],
+      ], // 0,0,1
+      [
+        [1, 0, 0],
+        [0, 0, -1],
+        [1, 0, -1],
+      ], // 1,0,0
+      [
+        [1, 0, 0],
+        [0, 0, 1],
+        [1, 0, 1],
+      ], // 1,0,1
+    ],
+  },
+  {
+    // +Z
+    uvs: [
+      [0, 0],
+      [0, 1],
+      [1, 1],
+      [0, 0],
+      [1, 1],
+      [1, 0],
+    ],
+    aoOffsets: [
+      [
+        [-1, 0, 0],
+        [0, -1, 0],
+        [-1, -1, 0],
+      ], // 0,0,1
+      [
+        [-1, 0, 0],
+        [0, 1, 0],
+        [-1, 1, 0],
+      ], // 0,1,1
+      [
+        [1, 0, 0],
+        [0, 1, 0],
+        [1, 1, 0],
+      ], // 1,1,1
+      [
+        [-1, 0, 0],
+        [0, -1, 0],
+        [-1, -1, 0],
+      ], // 0,0,1
+      [
+        [1, 0, 0],
+        [0, 1, 0],
+        [1, 1, 0],
+      ], // 1,1,1
+      [
+        [1, 0, 0],
+        [0, -1, 0],
+        [1, -1, 0],
+      ], // 1,0,1
+    ],
+  },
+  {
+    // -Z
+    uvs: [
+      [1, 0],
+      [1, 1],
+      [0, 1],
+      [1, 0],
+      [0, 1],
+      [0, 0],
+    ],
+    aoOffsets: [
+      [
+        [1, 0, 0],
+        [0, -1, 0],
+        [1, -1, 0],
+      ], // 1,0,0
+      [
+        [1, 0, 0],
+        [0, 1, 0],
+        [1, 1, 0],
+      ], // 1,1,0
+      [
+        [-1, 0, 0],
+        [0, 1, 0],
+        [-1, 1, 0],
+      ], // 0,1,0
+      [
+        [1, 0, 0],
+        [0, -1, 0],
+        [1, -1, 0],
+      ], // 1,0,0
+      [
+        [-1, 0, 0],
+        [0, 1, 0],
+        [-1, 1, 0],
+      ], // 0,1,0
+      [
+        [-1, 0, 0],
+        [0, -1, 0],
+        [-1, -1, 0],
+      ], // 0,0,0
+    ],
+  },
+];
+
+/**
+ * Calculate Ambient Occlusion for a vertex.
+ */
+function getAO(chunk, chunkManager, x, y, z, offsets, blockDefs, neighbors) {
+  let occlusion = 0;
+
+  const side1 = getNeighborBlock(
+    chunk,
+    chunkManager,
+    x + offsets[0][0],
+    y + offsets[0][1],
+    z + offsets[0][2],
+    neighbors,
+  );
+  const side2 = getNeighborBlock(
+    chunk,
+    chunkManager,
+    x + offsets[1][0],
+    y + offsets[1][1],
+    z + offsets[1][2],
+    neighbors,
+  );
+  const corner = getNeighborBlock(
+    chunk,
+    chunkManager,
+    x + offsets[2][0],
+    y + offsets[2][1],
+    z + offsets[2][2],
+    neighbors,
+  );
+
+  const s1 = side1 !== 0 && blockDefs.getById(side1)?.solid ? 1 : 0;
+  const s2 = side2 !== 0 && blockDefs.getById(side2)?.solid ? 1 : 0;
+  const c = corner !== 0 && blockDefs.getById(corner)?.solid ? 1 : 0;
+
+  if (s1 === 1 && s2 === 1) {
+    occlusion = 3;
+  } else {
+    occlusion = s1 + s2 + c;
+  }
+
+  return [1.0, 0.7, 0.5, 0.3][occlusion];
+}
+
+/**
+ * Generate mesh for a chunk with face culling. Only visible faces (adjacent to air or transparent
+ * blocks) are included in the mesh, dramatically reducing vertex count.
+ *
+ * @param {{[k: string]: number[]}} colorMap
+ * @param {Chunk} chunk - Chunk to mesh
+ * @param {ChunkManager} chunkManager - For neighbor lookups
+ * @param {BlockArray} blockDefs - Block definitions
+ *
+ * @returns {ChunkMesh}
+ */
 export function meshChunk(colorMap, chunk, chunkManager, blockDefs) {
   const positions = [];
   const normals = [];
   const colors = [];
+  const uvs = [];
+  const ao = [];
+  const localUVs = [];
+  const cornerAO = [];
 
   const baseX = chunk.worldX;
   const baseZ = chunk.worldZ;
+
+  // Cache neighbor chunks for faster lookup
+  const neighbors = {
+    nx: chunkManager.getChunk(chunk.chunkX - 1, chunk.chunkZ),
+    px: chunkManager.getChunk(chunk.chunkX + 1, chunk.chunkZ),
+    nz: chunkManager.getChunk(chunk.chunkX, chunk.chunkZ - 1),
+    pz: chunkManager.getChunk(chunk.chunkX, chunk.chunkZ + 1),
+  };
+
+  const tileSize = 1 / 16;
 
   // Iterate all blocks in chunk
   for (let y = 1; y < CHUNK_SIZE_Y; y++) {
@@ -199,15 +568,20 @@ export function meshChunk(colorMap, chunk, chunkManager, blockDefs) {
           continue;
         }
 
-        const [r, g, b, a] = colorMap[block.name];
-        const isThisTransparent = Number(a) < 1.0;
+        const [r, g, b, a_val] = colorMap[block.name] || [1, 1, 1, 1];
+        const isThisTransparent = Number(a_val) < 1.0;
 
         // World position of block
         const worldX = baseX + x;
         const worldZ = baseZ + z;
 
+        // Atlas coordinates
+        const uBase = (type % 16) * tileSize;
+        const vBase = Math.floor(type / 16) * tileSize;
+
         // Check each face for visibility
-        for (const face of FACES) {
+        for (let i = 0; i < FACES.length; i++) {
+          const face = FACES[i];
           const [dx, dy, dz] = face.dir;
           const neighborType = getNeighborBlock(
             chunk,
@@ -215,6 +589,7 @@ export function meshChunk(colorMap, chunk, chunkManager, blockDefs) {
             x + dx,
             y + dy,
             z + dz,
+            neighbors,
           );
 
           // Face is visible if neighbor is air or transparent and different
@@ -225,32 +600,76 @@ export function meshChunk(colorMap, chunk, chunkManager, blockDefs) {
             blockDefs,
           );
 
-          // Render face if:
-          // - Neighbor is air (always visible)
-          // - Neighbor is transparent and this block is solid
-          // - Both transparent but different types (e.g., water next to leaves)
           let shouldRender = false;
           if (neighborIsAir) {
             shouldRender = true;
           } else if (!isThisTransparent && neighborTransparent) {
-            // Solid block next to transparent block
             shouldRender = true;
           } else if (isThisTransparent && neighborType !== type) {
-            // Two different transparent blocks
             shouldRender = true;
           }
 
           if (shouldRender) {
+            const faceExtra = FACE_CORNERS[i];
+
+            // Radial AO: Get AO for all 4 canonical corners
+            // These correspond to (0,0), (1,0), (1,1), (0,1) in relative UV space
+            const ao4 = [1.0, 1.0, 1.0, 1.0];
+            if (block.solid) {
+              const cornersToFetch = [0, 1, 2, 5];
+              for (let c = 0; c < 4; c++) {
+                ao4[c] = getAO(
+                  chunk,
+                  chunkManager,
+                  x + dx,
+                  y + dy,
+                  z + dz,
+                  faceExtra.aoOffsets[cornersToFetch[c]],
+                  blockDefs,
+                  neighbors,
+                );
+              }
+            }
+
             // Add 6 vertices for this face
-            for (const corner of face.corners) {
+            for (let v = 0; v < 6; v++) {
+              const corner = face.corners[v];
               positions.push(
                 worldX + corner[0],
-                y + corner[1], // Aligned with logical grid [y, y+1]
+                y + corner[1],
                 worldZ + corner[2],
               );
 
               normals.push(dx, dy, dz);
-              colors.push(r, g, b, a);
+              colors.push(r, g, b, a_val);
+
+              const uvCoord = faceExtra.uvs[v];
+              uvs.push(
+                uBase + uvCoord[0] * tileSize,
+                vBase + uvCoord[1] * tileSize,
+              );
+
+              // Local coords and 4-corner AO for Radial AO
+              localUVs.push(uvCoord[0], uvCoord[1]);
+              cornerAO.push(...ao4);
+
+              // AO calculation (only for solid blocks)
+              if (block.solid) {
+                ao.push(
+                  getAO(
+                    chunk,
+                    chunkManager,
+                    x + dx,
+                    y + dy,
+                    z + dz,
+                    faceExtra.aoOffsets[v],
+                    blockDefs,
+                    neighbors,
+                  ),
+                );
+              } else {
+                ao.push(1.0);
+              }
             }
           }
         }
@@ -262,19 +681,26 @@ export function meshChunk(colorMap, chunk, chunkManager, blockDefs) {
     positions: new Float32Array(positions),
     normals: new Float32Array(normals),
     colors: new Float32Array(colors),
+    uvs: new Float32Array(uvs),
+    ao: new Float32Array(ao),
+    localUVs: new Float32Array(localUVs),
+    cornerAO: new Float32Array(cornerAO),
     vertexCount: positions.length / 3,
     positionBuffer: null,
     normalBuffer: null,
     colorBuffer: null,
+    uvBuffer: null,
+    aoBuffer: null,
+    localUVBuffer: null,
+    cornerAOBuffer: null,
   };
 }
 
 /**
  * Feature flag to enable greedy meshing.
  * Set to true for optimized meshing, false for naive fallback.
- * NOTE: Currently disabled due to face winding bugs - will be fixed in future update
  */
-export let USE_GREEDY_MESHING = false;
+export let USE_GREEDY_MESHING = true;
 
 /**
  * Toggle greedy meshing on/off.
@@ -318,6 +744,10 @@ export function greedyMeshChunk(colorMap, chunk, chunkManager, blockDefs) {
   const positions = [];
   const normals = [];
   const colors = [];
+  const uvs = [];
+  const ao = [];
+  const localUVs = [];
+  const cornerAO = [];
   const indices = [];
 
   let vertexIndex = 0;
@@ -325,41 +755,40 @@ export function greedyMeshChunk(colorMap, chunk, chunkManager, blockDefs) {
   const baseX = chunk.worldX;
   const baseZ = chunk.worldZ;
 
+  const tileSize = 1 / 16;
+
+  // Cache neighbor chunks
+  const neighbors = {
+    nx: chunkManager.getChunk(chunk.chunkX - 1, chunk.chunkZ),
+    px: chunkManager.getChunk(chunk.chunkX + 1, chunk.chunkZ),
+    nz: chunkManager.getChunk(chunk.chunkX, chunk.chunkZ - 1),
+    pz: chunkManager.getChunk(chunk.chunkX, chunk.chunkZ + 1),
+  };
+
   // For each face direction
-  for (const { axis, dir, u, v } of AXES) {
+  for (let i = 0; i < AXES.length; i++) {
+    const { axis, dir, u, v } = AXES[i];
     const axisSize = AXIS_SIZES[axis];
     const uSize = AXIS_SIZES[u];
     const vSize = AXIS_SIZES[v];
 
-    // Create mask for this slice
-    // mask[u + v * uSize] = blockType if face should render, 0 otherwise
-    const mask = new Int32Array(uSize * vSize);
-    const maskColor = new Array(uSize * vSize);
-
     // Sweep through slices along this axis
     for (let d = 0; d < axisSize; d++) {
-      // Build the mask for this slice
+      // Create mask for this slice: mask[u + v * uSize] = blockType if face should render
+      const mask = new Int32Array(uSize * vSize);
+
       for (let vPos = 0; vPos < vSize; vPos++) {
         for (let uPos = 0; uPos < uSize; uPos++) {
-          // Convert u, v, d to x, y, z
           const coords = [0, 0, 0];
           coords[axis] = d;
           coords[u] = uPos;
           coords[v] = vPos;
 
           const [x, y, z] = coords;
-
-          // Skip y=0 (bedrock)
-          if (y === 0) {
-            mask[uPos + vPos * uSize] = 0;
-            continue;
-          }
+          if (y === 0) continue; // bedrock check
 
           const type = chunk.getBlock(x, y, z);
-          if (type === 0) {
-            mask[uPos + vPos * uSize] = 0;
-            continue;
-          }
+          if (type === 0) continue;
 
           // Check neighbor in the face direction
           const neighborCoords = [x, y, z];
@@ -371,27 +800,22 @@ export function greedyMeshChunk(colorMap, chunk, chunkManager, blockDefs) {
             neighborCoords[0],
             neighborCoords[1],
             neighborCoords[2],
+            neighbors,
           );
 
           const block = blockDefs.getById(type);
-
-          if (!block) {
-            mask[uPos + vPos * uSize] = 0;
-            continue;
-          }
+          if (!block) continue;
 
           const [r, g, b, a] = colorMap[block.name] || [1, 1, 1, 1];
           const isThisTransparent = Number(a) < 1.0;
-          const neighborIsAir = neighborType === 0;
           const neighborTransparent = isTransparent(
             colorMap,
             neighborType,
             blockDefs,
           );
 
-          // Determine if face should render
           let shouldRender = false;
-          if (neighborIsAir) {
+          if (neighborType === 0) {
             shouldRender = true;
           } else if (!isThisTransparent && neighborTransparent) {
             shouldRender = true;
@@ -401,77 +825,76 @@ export function greedyMeshChunk(colorMap, chunk, chunkManager, blockDefs) {
 
           if (shouldRender) {
             mask[uPos + vPos * uSize] = type;
-            maskColor[uPos + vPos * uSize] = [r, g, b, a];
-          } else {
-            mask[uPos + vPos * uSize] = 0;
           }
         }
       }
 
-      // Greedy merge: scan mask and create quads
+      // Greedy merge for this slice
       for (let vPos = 0; vPos < vSize; vPos++) {
         for (let uPos = 0; uPos < uSize; ) {
-          const maskIdx = uPos + vPos * uSize;
-          const type = mask[maskIdx];
-
+          const type = mask[uPos + vPos * uSize];
           if (type === 0) {
             uPos++;
             continue;
           }
 
-          const color = maskColor[maskIdx];
-
-          // Find width (extend in u direction)
+          // Find width
           let width = 1;
           while (
             uPos + width < uSize &&
-            mask[uPos + width + vPos * uSize] === type &&
-            colorsEqual(maskColor[uPos + width + vPos * uSize], color)
+            mask[uPos + width + vPos * uSize] === type
           ) {
             width++;
           }
 
-          // Find height (extend in v direction)
+          // Find height
           let height = 1;
           let canExtend = true;
           while (vPos + height < vSize && canExtend) {
             for (let w = 0; w < width; w++) {
-              const checkIdx = uPos + w + (vPos + height) * uSize;
-              if (
-                mask[checkIdx] !== type ||
-                !colorsEqual(maskColor[checkIdx], color)
-              ) {
+              if (mask[uPos + w + (vPos + height) * uSize] !== type) {
                 canExtend = false;
                 break;
               }
             }
-            if (canExtend) {
-              height++;
-            }
+            if (canExtend) height++;
           }
 
-          // Generate quad for this merged face
-          const quadCoords = [0, 0, 0];
-          quadCoords[axis] = d + (dir > 0 ? 1 : 0); // Offset for positive direction
-          quadCoords[u] = uPos;
-          quadCoords[v] = vPos;
+          const block = blockDefs.getById(type);
+          const [r, g, b, a_val] = colorMap[block?.name] || [1, 1, 1, 1];
+          const uBase = (type % 16) * tileSize;
+          const vBase = Math.floor(type / 16) * tileSize;
 
-          // Calculate world position
-          const worldX =
-            baseX + (axis === 0 ? quadCoords[0] : quadCoords[u === 0 ? u : 0]);
-          const worldY =
-            axis === 1
-              ? quadCoords[1]
-              : v === 1
-                ? quadCoords[v]
-                : u === 1
-                  ? quadCoords[u]
-                  : quadCoords[1];
-          const worldZ =
-            baseZ +
-            (axis === 2
-              ? quadCoords[2]
-              : quadCoords[u === 2 ? u : v === 2 ? v : 2]);
+          // Calculate AO values for the 4 canonical quad corners once
+          const ao4 = [1.0, 1.0, 1.0, 1.0];
+          if (block.solid) {
+            const faceExtra = FACE_CORNERS[i];
+            const cornersToFetch = [0, 1, 2, 5];
+            const cornerQuadPositions = [
+              [0, 0],
+              [width, 0],
+              [width, height],
+              [0, height],
+            ];
+            for (let c = 0; c < 4; c++) {
+              const qc = cornerQuadPositions[c];
+              const aoPos = [0, 0, 0];
+              aoPos[axis] = d + dir;
+              aoPos[u] = uPos + qc[0];
+              aoPos[v] = vPos + qc[1];
+
+              ao4[c] = getAO(
+                chunk,
+                chunkManager,
+                aoPos[0],
+                aoPos[1],
+                aoPos[2],
+                faceExtra.aoOffsets[cornersToFetch[c]],
+                blockDefs,
+                neighbors,
+              );
+            }
+          }
 
           // Generate 4 vertices for this quad
           const quadVerts = generateQuadVertices(
@@ -488,18 +911,43 @@ export function greedyMeshChunk(colorMap, chunk, chunkManager, blockDefs) {
             height,
           );
 
-          // Add vertices
-          for (const vert of quadVerts) {
+          // Push all attributes for each vertex, once
+          for (let j = 0; j < 4; j++) {
+            const vert = quadVerts[j];
             positions.push(vert.x, vert.y, vert.z);
 
-            const normal = [0, 0, 0];
-            normal[axis] = dir;
-            normals.push(normal[0], normal[1], normal[2]);
+            const norm = [0, 0, 0];
+            norm[axis] = dir;
+            normals.push(...norm);
+            colors.push(r, g, b, a_val);
 
-            colors.push(color[0], color[1], color[2], color[3]);
+            // UVs: map quad corners to atlas tile corners
+            // Corner order: 0=(0,0), 1=(w,0), 2=(w,h), 3=(0,h) in UV space
+            const uvCoords = [
+              [0, 0],
+              [width, 0],
+              [width, height],
+              [0, height],
+            ][j];
+            uvs.push(
+              uBase + (uvCoords[0] / width) * tileSize,
+              vBase + (uvCoords[1] / height) * tileSize,
+            );
+
+            // Local coordinates for Radial AO interpolation (0,0 to 1,1)
+            const lu = j === 1 || j === 2 ? 1 : 0;
+            const lv = j === 2 || j === 3 ? 1 : 0;
+            localUVs.push(lu, lv);
+
+            // Pack 4 AO values (corner AO for bilinear interpolation)
+            cornerAO.push(...ao4);
+
+            // Legacy AO (single value per vertex)
+            ao.push(ao4[j]);
           }
 
-          // Add indices for two triangles (CCW winding)
+          // CCW winding: 0-1-2, 0-2-3
+          // Adjust winding based on face direction
           if (dir > 0) {
             indices.push(
               vertexIndex,
@@ -510,7 +958,6 @@ export function greedyMeshChunk(colorMap, chunk, chunkManager, blockDefs) {
               vertexIndex + 3,
             );
           } else {
-            // Reverse winding for negative direction faces
             indices.push(
               vertexIndex,
               vertexIndex + 2,
@@ -522,13 +969,12 @@ export function greedyMeshChunk(colorMap, chunk, chunkManager, blockDefs) {
           }
           vertexIndex += 4;
 
-          // Clear the mask for the merged region
+          // Clear mask for merged region
           for (let h = 0; h < height; h++) {
             for (let w = 0; w < width; w++) {
               mask[uPos + w + (vPos + h) * uSize] = 0;
             }
           }
-
           uPos += width;
         }
       }
@@ -539,28 +985,22 @@ export function greedyMeshChunk(colorMap, chunk, chunkManager, blockDefs) {
     positions: new Float32Array(positions),
     normals: new Float32Array(normals),
     colors: new Float32Array(colors),
+    uvs: new Float32Array(uvs),
+    ao: new Float32Array(ao),
+    localUVs: new Float32Array(localUVs),
+    cornerAO: new Float32Array(cornerAO),
     indices: new Uint16Array(indices),
     vertexCount: positions.length / 3,
     indexCount: indices.length,
     positionBuffer: null,
     normalBuffer: null,
     colorBuffer: null,
+    uvBuffer: null,
+    aoBuffer: null,
+    localUVBuffer: null,
+    cornerAOBuffer: null,
     indexBuffer: null,
   };
-}
-
-/**
- * Compare two color arrays for equality.
- *
- * @param {number[]} a
- * @param {number[]} b
- *
- * @returns {boolean}
- */
-function colorsEqual(a, b) {
-  if (!a || !b) return false;
-
-  return a[0] === b[0] && a[1] === b[1] && a[2] === b[2] && a[3] === b[3];
 }
 
 /**
@@ -597,17 +1037,16 @@ function generateQuadVertices(
 
   // Calculate the 4 corners of the quad
   // Corner order: 0=origin, 1=+u, 2=+u+v, 3=+v
+  // This matches the UV mapping [0,0], [width,0], [width,height], [0,height]
   for (let corner = 0; corner < 4; corner++) {
     const du = corner === 1 || corner === 2 ? width : 0;
     const dv = corner === 2 || corner === 3 ? height : 0;
 
-    // Build coordinates in axis space
     const coords = [0, 0, 0];
     coords[axis] = d + (dir > 0 ? 1 : 0);
     coords[u] = uPos + du;
     coords[v] = vPos + dv;
 
-    // coords[0] = x local, coords[1] = y, coords[2] = z local
     verts.push({
       x: baseX + coords[0],
       y: coords[1],
@@ -672,6 +1111,42 @@ export function uploadChunkMesh(gl, chunk) {
   gl.bindBuffer(gl.ARRAY_BUFFER, mesh.colorBuffer);
   gl.bufferData(gl.ARRAY_BUFFER, mesh.colors, gl.STATIC_DRAW);
 
+  // UV buffer
+  if (mesh.uvs) {
+    if (!mesh.uvBuffer) {
+      mesh.uvBuffer = gl.createBuffer();
+    }
+    gl.bindBuffer(gl.ARRAY_BUFFER, mesh.uvBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, mesh.uvs, gl.STATIC_DRAW);
+  }
+
+  // AO buffer
+  if (mesh.ao) {
+    if (!mesh.aoBuffer) {
+      mesh.aoBuffer = gl.createBuffer();
+    }
+    gl.bindBuffer(gl.ARRAY_BUFFER, mesh.aoBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, mesh.ao, gl.STATIC_DRAW);
+  }
+
+  // Local UV buffer (Radial AO)
+  if (mesh.localUVs) {
+    if (!mesh.localUVBuffer) {
+      mesh.localUVBuffer = gl.createBuffer();
+    }
+    gl.bindBuffer(gl.ARRAY_BUFFER, mesh.localUVBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, mesh.localUVs, gl.STATIC_DRAW);
+  }
+
+  // Corner AO buffer (Radial AO)
+  if (mesh.cornerAO) {
+    if (!mesh.cornerAOBuffer) {
+      mesh.cornerAOBuffer = gl.createBuffer();
+    }
+    gl.bindBuffer(gl.ARRAY_BUFFER, mesh.cornerAOBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, mesh.cornerAO, gl.STATIC_DRAW);
+  }
+
   // Index buffer (for indexed geometry)
   if (mesh.indices && mesh.indices.length > 0) {
     if (!mesh.indexBuffer) {
@@ -709,6 +1184,22 @@ export function deleteChunkMesh(gl, chunk) {
     gl.deleteBuffer(mesh.colorBuffer);
 
     mesh.colorBuffer = null;
+  }
+  if (mesh.uvBuffer) {
+    gl.deleteBuffer(mesh.uvBuffer);
+    mesh.uvBuffer = null;
+  }
+  if (mesh.aoBuffer) {
+    gl.deleteBuffer(mesh.aoBuffer);
+    mesh.aoBuffer = null;
+  }
+  if (mesh.localUVBuffer) {
+    gl.deleteBuffer(mesh.localUVBuffer);
+    mesh.localUVBuffer = null;
+  }
+  if (mesh.cornerAOBuffer) {
+    gl.deleteBuffer(mesh.cornerAOBuffer);
+    mesh.cornerAOBuffer = null;
   }
   if (mesh.indexBuffer) {
     gl.deleteBuffer(mesh.indexBuffer);

@@ -528,7 +528,7 @@ export class BlockGarden extends HTMLElement {
 
           #resolution {
             display: block;
-            margin: 0 0  0.25rem 0.125rem;
+            margin: 0.125rem;
             width: 100%;
             position: relative;
           }
@@ -852,7 +852,7 @@ export class BlockGarden extends HTMLElement {
                     <div class="ui-grid__corner--sub-heading">Game</div>
                     <button id="worldState">🌍 World State</button>
                     <button id="toggleTouchControls">Disable Touch Controls</button>
-                    <button id="randomPlantButton">Plant randomly</button>
+                    <button id="randomPlantButton" hidden="hidden">Plant randomly</button>
                     <button id="fastGrowthButton" hidden="hidden">Enable Fast Growth</button>
                     <button id="toggleSplitControls">Enable Split Controls</button>
                     <button id="toggleFlight">🪽 Enable Flight</button>
@@ -863,7 +863,7 @@ export class BlockGarden extends HTMLElement {
                   </div>
 
                   <div>
-                    <div class="ui-grid__corner--sub-heading">Resolution</div>
+                    <div class="ui-grid__corner--sub-heading">Visuals</div>
 
                     <div id="resolution">
                       <block-garden-select id="resolutionSelect" value="600">
@@ -873,6 +873,14 @@ export class BlockGarden extends HTMLElement {
                         <block-garden-option value="fullscreen">Fullscreen</block-garden-option>
                       </block-garden-select>
                     </div>
+                    <button id="toggleTextures">Disable Textures</button>
+                    <button id="toggleAO">Disable Ambient Occlusion</button>
+                    <button id="toggleAODebug" hidden="hidden">Enable AO Debug</button>
+                    <button id="toggleDynamicLighting">Disable Light Cycle</button>
+                    <button id="togglePerFaceLighting">Disable Per-Face Lighting</button>
+                  </div>
+
+                  <div>
                     <div id="rendering">
                       <div style="margin-top: 0.625rem; margin-bottom: 0.625rem;">
                         <label for="worldRadiusInput">World Radius: <span id="worldRadiusDisplay"></span></label>
@@ -890,6 +898,34 @@ export class BlockGarden extends HTMLElement {
                         <label for="cacheRadiusInput">Cache Radius: <span id="cacheRadiusDisplay"></span></label>
                         <input type="range" id="cacheRadiusInput" min="0" max="256" step="8" style="width: 100%;">
                       </div>
+                    </div>
+
+                    <div id="generation">
+                      <div class="ui-grid__corner--sub-heading">Generation (affects new chunks)</div>
+                      <div style="margin-top: 0.625rem;">
+                        <label for="terrainOctavesInput">Terrain Octaves: <span id="terrainOctavesDisplay"></span></label>
+                        <input type="range" id="terrainOctavesInput" min="1" max="8" step="1" style="width: 100%;">
+                      </div>
+                      <div style="margin-top: 0.625rem;">
+                        <label for="mountainScaleInput">Mountain Scale: <span id="mountainScaleDisplay"></span></label>
+                        <input type="range" id="mountainScaleInput" min="0" max="100" step="1" style="width: 100%;">
+                      </div>
+                      <div style="margin-top: 0.625rem;">
+                        <label for="decorationDensityInput">Decoration Density: <span id="decorationDensityDisplay"></span></label>
+                        <input type="range" id="decorationDensityInput" min="0" max="100" step="1" style="width: 100%;">
+                      </div>
+                      <div style="margin-top: 0.625rem;">
+                        <label for="cloudDensityInput">Cloud Density: <span id="cloudDensityDisplay"></span></label>
+                        <input type="range" id="cloudDensityInput" min="0" max="100" step="1" style="width: 100%;">
+                      </div>
+                      <div id="caveThresholdInputContainer" style="margin-top: 0.625rem;">
+                        <label for="caveThresholdInput">Cave Density (higher number is fewer caves): <span id="caveDensityDisplay"></span></label>
+                        <input type="range" id="caveThresholdInput" min="0" max="100" step="1" style="width: 100%;">
+                      </div>
+                      <div style="margin-top: 0.625rem;">
+                        <button id="toggleCaves">Disable Caves</button>
+                      </div>
+                      <button id="applyLowDetailPreset" title="Use low detail defaults.">Apply Low Detail Defaults</button>
                     </div>
                   </div>
 

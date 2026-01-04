@@ -30,6 +30,12 @@ jest.unstable_mockModule("./config/index.mjs", () => ({
     renderRadius: { get: () => 1 },
     cacheRadius: { get: () => 2 },
     worldRadius: { get: () => 1000 },
+    terrainOctaves: { get: () => 4, set: jest.fn() },
+    mountainScale: { get: () => 50, set: jest.fn() },
+    decorationDensity: { get: () => 100, set: jest.fn() },
+    caveThreshold: { get: () => 55, set: jest.fn() },
+    useCaves: { get: () => true, set: jest.fn() },
+    cloudDensity: { get: () => 100, set: jest.fn() },
   },
 }));
 
@@ -196,7 +202,17 @@ describe("Deep Reproduction: Plant Restoration", () => {
     // Mock shadow for reset event
     const shadow = { dispatchEvent: jest.fn() };
     const gThis = {
-      blockGarden: { state: gameState },
+      blockGarden: {
+        state: gameState,
+        config: {
+          terrainOctaves: { set: jest.fn() },
+          mountainScale: { set: jest.fn() },
+          decorationDensity: { set: jest.fn() },
+          caveThreshold: { set: jest.fn() },
+          useCaves: { set: jest.fn() },
+          cloudDensity: { set: jest.fn() },
+        },
+      },
       document: { createElement: () => ({ style: {} }) },
     };
 

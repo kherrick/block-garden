@@ -153,7 +153,21 @@ export async function initGame(gThis, shadow, cnvs) {
   await new Promise((r) => setTimeout(r, 0));
 
   // Only pass cnvs to initGameDependencies, and call it once
-  const { gl, cbuf, cube, uL, uM, uMVP } = initGameDependencies(cnvs);
+  const {
+    gl,
+    cbuf,
+    uvbuf,
+    aobuf,
+    cube,
+    uL,
+    uM,
+    uMVP,
+    uT,
+    uUT,
+    uUAO,
+    uULG,
+    uUAOD,
+  } = initGameDependencies(cnvs, gameConfig.blocks);
 
   // Get required UI buttons for flight controls
   const ui = {
@@ -216,10 +230,17 @@ export async function initGame(gThis, shadow, cnvs) {
       ui,
       gl,
       cbuf,
+      uvbuf,
+      aobuf,
       cube,
       uL,
       uM,
       uMVP,
+      uT,
+      uUT,
+      uUAO,
+      uULG,
+      uUAOD,
     );
 
     gameState.shouldReset.set(true);
@@ -263,10 +284,17 @@ export async function initGame(gThis, shadow, cnvs) {
     ui,
     gl,
     cbuf,
+    uvbuf,
+    aobuf,
     cube,
     uL,
     uM,
     uMVP,
+    uT,
+    uUT,
+    uUAO,
+    uULG,
+    uUAOD,
   );
 
   shadow.dispatchEvent(

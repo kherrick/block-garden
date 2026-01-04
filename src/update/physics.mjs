@@ -6,6 +6,7 @@
 import { isSolid } from "../util/isSolid.mjs";
 import { intersects } from "../util/aabb.mjs";
 import { isKeyPressed } from "../util/isKeyPressed.mjs";
+import { gameConfig } from "../state/config/index.mjs";
 
 /**
  * Creates an AABB for the player at a given position.
@@ -133,9 +134,31 @@ export function updatePhysics(shadow, ui, state, dt) {
   }
 
   // Integrate movement
-  const newX = x + dx * dt;
+  let newX = x + dx * dt;
   const newY = y + dy * dt;
-  const newZ = z + dz * dt;
+  let newZ = z + dz * dt;
+
+  // WORLD BOUNDARIES
+  // Apply clamping if worldRadius is finite (less than 2048 as per user preference for infinite)
+  const worldRadius = gameConfig.worldRadius.get();
+  if (worldRadius < 2048) {
+    // Clamp to ±worldRadius
+    if (newX > worldRadius) {
+      newX = worldRadius;
+      dx = 0;
+    } else if (newX < -worldRadius) {
+      newX = -worldRadius;
+      dx = 0;
+    }
+
+    if (newZ > worldRadius) {
+      newZ = worldRadius;
+      dz = 0;
+    } else if (newZ < -worldRadius) {
+      newZ = -worldRadius;
+      dz = 0;
+    }
+  }
 
   let newOnGround = false;
 

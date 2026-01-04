@@ -12,11 +12,12 @@
  */
 
 import {
-  initNoise,
-  terrainNoise,
+  noise,
   noise3d,
+  terrainNoise,
   caveNoise,
   oreNoise,
+  initNoise,
 } from "../util/noise.mjs";
 
 import { getBiome } from "../util/getBiome.mjs";
@@ -79,8 +80,18 @@ const CAVE_MAX_Y_OFFSET = 20; // Don't carve caves closer than this to surface
  *
  * @param {Chunk} chunk - The chunk to generate
  * @param {number} seed - World seed
+ * @param {Object} [settings={}] - Generation settings
  */
-export function generateChunk(chunk, seed) {
+export function generateChunk(chunk, seed, settings = {}) {
+  const {
+    terrainOctaves = 4,
+    mountainScale = 50,
+    decorationDensity = 100,
+    caveThreshold = 55,
+    useCaves = true,
+    cloudDensity = 100,
+  } = settings;
+
   // Skip if already generated
   if (chunk.generated) {
     return;
@@ -98,19 +109,22 @@ export function generateChunk(chunk, seed) {
       // Get biome for this column
       const biome = getBiome(worldX, worldZ, seed);
 
-      // Calculate terrain height using noise - taller terrain for 128-block world
-      const n = terrainNoise(worldX, worldZ, seed);
-      // Base terrain between 30-60, with variation up to 80 for mountains
+      // Calculate terrain height using noise
+      const n = noise(worldX, worldZ, seed, terrainOctaves, 0.5, 0.01);
+      // Base terrain between 30-60
       let surfaceHeight = Math.floor(((n + 1) / 2) * 30 + 30);
 
-      // Add mountain peaks with sharper features
-      const mountainNoise = terrainNoise(
-        worldX * 0.5,
-        worldZ * 0.5,
-        seed + 100,
-      );
-      if (mountainNoise > 0.6) {
-        surfaceHeight += Math.floor((mountainNoise - 0.6) * 50);
+      if (mountainScale > 0) {
+        // Add mountain peaks with granular amplitude control
+        const mountainNoise = terrainNoise(
+          worldX * 0.5,
+          worldZ * 0.5,
+          seed + 100,
+          false, // Don't use terrainNoise's internal lowDetail logic anymore
+        );
+        if (mountainNoise > 0.6) {
+          surfaceHeight += Math.floor((mountainNoise - 0.6) * mountainScale);
+        }
       }
 
       // Ensure spawn area has solid ground
@@ -150,39 +164,42 @@ export function generateChunk(chunk, seed) {
             // Deep stone layer with ore distribution
             blockType = STONE;
 
-            // Ore generation based on depth
-            const oreValue = oreNoise(worldX, y, worldZ, seed);
+            if (terrainOctaves > 2) {
+              // Ore generation based on depth (disabled at very low detail)
+              const oreValue = oreNoise(worldX, y, worldZ, seed);
 
-            if (
-              depth >= GOLD_MIN_DEPTH &&
-              depth <= GOLD_MAX_DEPTH &&
-              oreValue > 0.8
-            ) {
-              blockType = GOLD;
-            } else if (
-              depth >= IRON_MIN_DEPTH &&
-              depth <= IRON_MAX_DEPTH &&
-              oreValue > 0.65
-            ) {
-              blockType = IRON;
-            } else if (
-              depth >= COAL_MIN_DEPTH &&
-              depth <= COAL_MAX_DEPTH &&
-              oreValue > 0.55
-            ) {
-              blockType = COAL;
+              if (
+                depth >= GOLD_MIN_DEPTH &&
+                depth <= GOLD_MAX_DEPTH &&
+                oreValue > 0.8
+              ) {
+                blockType = GOLD;
+              } else if (
+                depth >= IRON_MIN_DEPTH &&
+                depth <= IRON_MAX_DEPTH &&
+                oreValue > 0.65
+              ) {
+                blockType = IRON;
+              } else if (
+                depth >= COAL_MIN_DEPTH &&
+                depth <= COAL_MAX_DEPTH &&
+                oreValue > 0.55
+              ) {
+                blockType = COAL;
+              }
             }
           }
 
           // Cave carving (don't carve near surface or in lava/bedrock)
           if (
+            useCaves &&
             y > CAVE_MIN_Y &&
             y < surfaceHeight - CAVE_MAX_Y_OFFSET &&
             blockType !== BEDROCK &&
             blockType !== LAVA
           ) {
             const caveValue = caveNoise(worldX, y, worldZ, seed);
-            if (caveValue > CAVE_THRESHOLD) {
+            if (caveValue > caveThreshold / 100) {
               blockType = 0; // Air (cave)
             }
           }
@@ -197,8 +214,18 @@ export function generateChunk(chunk, seed) {
             y <= CLOUD_HEIGHT_MAX
           ) {
             // Cloud generation
-            const cn = noise3d(worldX, y, worldZ, seed, 2, 0.5, 0.05);
-            if (cn > 0.45) {
+            const cloudOctaves = cloudDensity > 50 ? 2 : 1;
+            const cn = noise3d(
+              worldX,
+              y,
+              worldZ,
+              seed,
+              cloudOctaves,
+              0.5,
+              0.05,
+            );
+            if (cn > 1.0 - cloudDensity / 200 - 0.05) {
+              // Heuristic for cloud density
               blockType = CLOUD;
             }
           }
@@ -215,7 +242,8 @@ export function generateChunk(chunk, seed) {
         if (
           biome.trees &&
           (Math.abs(worldX) > 4 || Math.abs(worldZ) > 4) &&
-          seededRandom(worldX, worldZ, seed) < 0.02 &&
+          seededRandom(worldX, worldZ, seed) <
+            0.02 * (decorationDensity / 100) &&
           worldX % 3 !== 0 &&
           worldZ % 3 !== 0
         ) {
@@ -232,7 +260,8 @@ export function generateChunk(chunk, seed) {
         // Crop/resource dispersal - drastically reduced density
         if (
           biome.cropBlockIds.length > 0 &&
-          seededRandom(worldX, worldZ, seed + 500) < 0.002 &&
+          seededRandom(worldX, worldZ, seed + 500) <
+            0.002 * (decorationDensity / 100) &&
           !biome.trees
         ) {
           placeResource(
@@ -247,7 +276,8 @@ export function generateChunk(chunk, seed) {
           );
         } else if (
           biome.cropBlockIds.length > 0 &&
-          seededRandom(worldX, worldZ, seed + 1000) < 0.0005
+          seededRandom(worldX, worldZ, seed + 1000) <
+            0.0005 * (decorationDensity / 100)
         ) {
           placeResource(
             chunk,
@@ -363,15 +393,18 @@ function placeTree(chunk, localX, y, localZ, woodId, leavesId) {
  *
  * @returns {number} Surface Y coordinate
  */
-export function getSurfaceHeight(worldX, worldZ, seed) {
+export function getSurfaceHeight(worldX, worldZ, seed, settings = {}) {
+  const { terrainOctaves = 4, mountainScale = 50 } = settings;
   initNoise(seed);
-  const n = terrainNoise(worldX, worldZ, seed);
+  const n = noise(worldX, worldZ, seed, terrainOctaves, 0.5, 0.01);
   let surfaceHeight = Math.floor(((n + 1) / 2) * 30 + 30);
 
-  // Add mountain peaks
-  const mountainNoise = terrainNoise(worldX * 0.5, worldZ * 0.5, seed + 100);
-  if (mountainNoise > 0.6) {
-    surfaceHeight += Math.floor((mountainNoise - 0.6) * 50);
+  if (mountainScale > 0) {
+    // Add mountain peaks
+    const mountainNoise = terrainNoise(worldX * 0.5, worldZ * 0.5, seed + 100);
+    if (mountainNoise > 0.6) {
+      surfaceHeight += Math.floor((mountainNoise - 0.6) * mountainScale);
+    }
   }
 
   if (Math.abs(worldX) < 3 && Math.abs(worldZ) < 3) {

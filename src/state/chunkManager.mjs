@@ -399,6 +399,14 @@ export class ChunkManager {
           chunkX: chunk.chunkX,
           chunkZ: chunk.chunkZ,
           seed,
+          settings: {
+            terrainOctaves: gameConfig.terrainOctaves.get(),
+            mountainScale: gameConfig.mountainScale.get(),
+            decorationDensity: gameConfig.decorationDensity.get(),
+            caveThreshold: gameConfig.caveThreshold.get(),
+            useCaves: gameConfig.useCaves.get(),
+            cloudDensity: gameConfig.cloudDensity.get(),
+          },
         });
 
         return;

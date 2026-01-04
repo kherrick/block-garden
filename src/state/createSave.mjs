@@ -99,6 +99,20 @@ export function createSaveState(world, gThis) {
         typeof config?.version?.get === "function"
           ? config.version.get()
           : (config?.version ?? null),
+      terrainOctaves: config.terrainOctaves?.get
+        ? config.terrainOctaves.get()
+        : 4,
+      mountainScale: config.mountainScale?.get
+        ? config.mountainScale.get()
+        : 50,
+      decorationDensity: config.decorationDensity?.get
+        ? config.decorationDensity.get()
+        : 100,
+      caveThreshold: config.caveThreshold?.get
+        ? config.caveThreshold.get()
+        : 55,
+      useCaves: config.useCaves?.get ? config.useCaves.get() : true,
+      cloudDensity: config.cloudDensity?.get ? config.cloudDensity.get() : 100,
     },
     state: {
       x: state?.x ?? null,

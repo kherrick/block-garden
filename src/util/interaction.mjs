@@ -1,5 +1,6 @@
 import { intersects } from "./aabb.mjs";
 import { gameConfig } from "../state/config/index.mjs";
+import { getBlockById } from "../state/config/blocks.mjs";
 
 /** @typedef {import('../state/state.mjs').GameState} GameState */
 
@@ -50,7 +51,7 @@ export function placeBlock(gameState, targetHit) {
   gameState.world.set(key, curBlockId, true);
 
   // Plant growth logic
-  const placedBlock = gameConfig.blocks[curBlockId];
+  const placedBlock = getBlockById(curBlockId);
   if (placedBlock && placedBlock.isSeed) {
     if (!gameState.growthTimers) {
       gameState.growthTimers = {};

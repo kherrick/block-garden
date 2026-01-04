@@ -1,9 +1,15 @@
-import { createNoise3D } from "simplex-noise";
-import alea from "alea";
+// noise is used in chunk generator, also consumed in terrain.worker
+// get dependencies from 'deps' folder to avoid bundling issues
+import { createNoise3D } from "../../deps/simplex-noise.mjs";
+import alea from "../../deps/alea.mjs";
 
 // Global noise function with seeded generator
 let noise3D = null;
 let currentSeed = null;
+
+// Cache of noise functions by seed to avoid re-initialization overhead
+const noiseCache = new Map();
+const MAX_CACHE_SIZE = 20;
 
 /**
  * @param {number} seed
@@ -11,9 +17,27 @@ let currentSeed = null;
  * @returns {void}
  */
 export function initNoise(seed) {
-  if (seed !== currentSeed) {
-    currentSeed = seed;
-    noise3D = createNoise3D(alea(seed));
+  if (seed === currentSeed && noise3D) {
+    return;
+  }
+
+  currentSeed = seed;
+
+  if (noiseCache.has(seed)) {
+    noise3D = noiseCache.get(seed);
+    return;
+  }
+
+  // Create new noise generator
+  noise3D = createNoise3D(alea(seed));
+
+  // Add to cache
+  noiseCache.set(seed, noise3D);
+
+  // Maintain cache size
+  if (noiseCache.size > MAX_CACHE_SIZE) {
+    const firstKey = noiseCache.keys().next().value;
+    noiseCache.delete(firstKey);
   }
 }
 
@@ -38,7 +62,6 @@ export function noise(
   scale = 0.02,
 ) {
   // Initialize noise if not already done or seed changed
-  // const seedString = seed.toString();
   if (!noise3D || currentSeed !== seed) {
     initNoise(seed);
   }
@@ -111,4 +134,47 @@ export function noise3d(
  */
 export function terrainNoise(x, y, seed = 0) {
   return noise(x, y, seed, 4, 0.5, 0.01);
+}
+
+/**
+ * Biome noise for determining biome types (temperature/humidity).
+ * Uses slower variation for larger biome regions.
+ *
+ * @param {number} x
+ * @param {number} z
+ * @param {number} [seed=500]
+ *
+ * @returns {number} -1 to 1 range
+ */
+export function biomeNoise(x, z, seed = 500) {
+  return noise(x, z, seed, 2, 0.8, 0.005);
+}
+
+/**
+ * Cave noise for 3D underground carving.
+ * Higher frequency for cave tunnels.
+ *
+ * @param {number} x
+ * @param {number} y
+ * @param {number} z
+ * @param {number} [seed=1000]
+ *
+ * @returns {number} -1 to 1 range
+ */
+export function caveNoise(x, y, z, seed = 1000) {
+  return noise3d(x, y, z, seed, 2, 0.5, 0.04);
+}
+
+/**
+ * Ore distribution noise for placing minerals.
+ *
+ * @param {number} x
+ * @param {number} y
+ * @param {number} z
+ * @param {number} [seed=3000]
+ *
+ * @returns {number} -1 to 1 range
+ */
+export function oreNoise(x, y, z, seed = 3000) {
+  return noise3d(x, y, z, seed, 2, 0.4, 0.08);
 }

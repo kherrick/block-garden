@@ -6,12 +6,27 @@
  * @property {number} [id] - Unique identifier for the block
  * @property {string} name - Display name of the block
  * @property {boolean} [crop=false] - Whether this block is a crop
- * @property {boolean} [solid=false] - Wheather a block is solid
+ * @property {boolean} [solid=false] - Whether a block is solid
  * @property {boolean} [isSeed=false] - Whether this block is a seed/plant
  * @property {string|string[]|null} [drops=null] - What material(s) drop when harvested
  * @property {boolean} [gravity=false] - Whether a block falls
  * @property {number} [growthTime] - Time in seconds for plant to grow
  * @property {number} [friction=0] - Friction value when player moves through block (0-1). 0=no friction, 1=full stop. Future use for water, lava, leaves, etc.
+ */
+
+/**
+ * Custom methods added to the blocks array.
+ *
+ * @typedef {Object} BlockArrayExtensions
+ *
+ * @property {function(number): (BlockDefinition|undefined)} getById - Get a block definition by its ID
+ * @property {function(string): (BlockDefinition|undefined)} getByName - Get a block definition by its name
+ */
+
+/**
+ * Augmented array of block definitions with lookup methods.
+ *
+ * @typedef {BlockDefinition[] & BlockArrayExtensions} BlockArray
  */
 
 /**
@@ -156,12 +171,12 @@ export const FAST_GROWTH_TIME = 30;
  *
  * @type {BlockDefinition[]}
  */
-export const blocks = [
+const blockDefinitionsArray = [
   {
     name: blockNames.AIR,
     id: 0,
     drops: null,
-    solid: true,
+    solid: false,
   },
   {
     name: blockNames.AGAVE_BASE,
@@ -957,14 +972,48 @@ export const blocks = [
 ];
 
 /**
+ * Build a lookup array for blocks by ID (max ID is 120, using 256 for buffer)
+ */
+const blockDefinitionsById = new Array(256).fill(undefined);
+
+/**
+ * Build a lookup map for blocks by name.
+ */
+const blockDefinitionsByName = new Map();
+
+/**
  * Build a map of block ID to array index.
  *
  * @type {Map<number, number>}
  */
 const blockIdToIndexMap = new Map();
-blocks.forEach((block, index) => {
+blockDefinitionsArray.forEach((block, index) => {
   blockIdToIndexMap.set(block.id, index);
+  if (block.id !== undefined && block.id < 256) {
+    blockDefinitionsById[block.id] = block;
+  }
+  if (block.name) {
+    blockDefinitionsByName.set(block.name, block);
+  }
 });
+
+// Augment blocks array with fast lookup methods for performance
+/** @type {BlockArray} */
+const blocks = Object.assign(blockDefinitionsArray, {
+  getById: (id) => blockDefinitionsById[id],
+  getByName: (name) => blockDefinitionsByName.get(name),
+});
+
+/**
+ * Get a block definition by its name.
+ *
+ * @param {string} name - The block name
+ *
+ * @returns {BlockDefinition|undefined}
+ */
+export function getBlockByName(name) {
+  return blockDefinitionsByName.get(name);
+}
 
 /**
  * Get the array index of a block by its ID.
@@ -985,8 +1034,7 @@ export function getBlockIndexById(blockId) {
  * @returns {BlockDefinition|undefined} The block definition, or undefined if not found
  */
 export function getBlockById(blockId) {
-  const index = blockIdToIndexMap.get(blockId);
-  return index !== undefined ? blocks[index] : undefined;
+  return blockDefinitionsById[blockId];
 }
 
 /**
@@ -999,3 +1047,6 @@ export function getBlockById(blockId) {
 export function getBlockByIndex(index) {
   return blocks[index];
 }
+
+/** @type {BlockArray} */
+export { blocks };

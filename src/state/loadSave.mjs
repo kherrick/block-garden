@@ -2,6 +2,7 @@ import { base64toBlob } from "../util/conversion.mjs";
 import { extractAttachments } from "../util/extractAttachments.mjs";
 import { extractJsonFromPng } from "../util/canvasToPngWithState.mjs";
 import { initNoise } from "../util/noise.mjs";
+import { worldToChunk } from "../util/chunk.mjs";
 
 /**
  * Restores game state and config from a save file.
@@ -32,6 +33,8 @@ export async function loadSaveState(gThis, shadow, state) {
   const worldData = saveState.world || saveState;
   const config = saveState.config || {};
   const stateData = saveState.state || {};
+
+  const world = gThis.blockGarden.state.world;
 
   // Restore config/state values
   const gameState = gThis.blockGarden.state;
@@ -99,23 +102,53 @@ export async function loadSaveState(gThis, shadow, state) {
     globalThis.cancelGameLoop();
   }
 
+  // Clear existing world
+  world.clear();
+
   // Initialize noise generator with seed for proper chunk generation
   // This does NOT regenerate the world - it only sets up the noise for async chunk generation
   if (gameState.seed !== undefined) {
     initNoise(gameState.seed);
 
-    // Restore plant structures and timers provided in save, or clear if new
-    gameState.plantStructures = stateData.plantStructures || {};
-    gameState.growthTimers = stateData.growthTimers || {};
+    // Instead of restoring plants directly to active state,
+    // we move them to storedPlantStates so they are handled
+    // by the chunk restoration logic during generation.
+    const structures = stateData.plantStructures || {};
+    const timers = stateData.growthTimers || {};
+
+    // Clear existing active state
+    gameState.plantStructures = {};
+    gameState.growthTimers = {};
+
+    // Partition by chunk and add to storedPlantStates
+    const partitioned = new Map();
+
+    for (const key of Object.keys(structures)) {
+      const [x, y, z] = key.split(",").map(Number);
+      const { chunkX, chunkZ } = worldToChunk(x, z);
+      const chunkKey = `${chunkX},${chunkZ}`;
+
+      if (!partitioned.has(chunkKey)) {
+        partitioned.set(chunkKey, { timers: {}, structures: {} });
+      }
+
+      const chunkData = partitioned.get(chunkKey);
+      chunkData.structures[key] = structures[key];
+      if (timers[key] !== undefined) {
+        chunkData.timers[key] = timers[key];
+      }
+    }
+
+    // Apply to world
+    for (const [key, data] of partitioned) {
+      world.storedPlantStates.set(key, data);
+    }
+
     console.log("Noise initialized for saved world with seed:", gameState.seed);
   }
 
   // Profile world loading
   const t0 = performance.now();
-
-  // Clear existing world
-  const world = gThis.blockGarden.state.world;
-  world.clear();
 
   // Validate world data size
   const worldKeys = Object.keys(worldData);
@@ -154,7 +187,9 @@ export async function loadSaveState(gThis, shadow, state) {
 
   // Restore stored plant states
   if (saveState.storedPlantStates) {
-    world.storedPlantStates = new Map();
+    if (!world.storedPlantStates) {
+      world.storedPlantStates = new Map();
+    }
     globalThis.Object.entries(saveState.storedPlantStates).forEach(
       ([key, state]) => {
         world.storedPlantStates.set(key, state);

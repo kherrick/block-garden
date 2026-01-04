@@ -1,9 +1,16 @@
 import { blockNames } from "../../state/config/blocks.mjs";
+import { getBlockIdByName } from "../../state/config/getBlockIdByName.mjs";
 
 /**
- * @typedef {import('../../state/config/index.mjs').BlockDefinition} BlockDefinition
- * @typedef {import('../../state/config/index.mjs').BlockPlacement} BlockPlacement
+ * @typedef {import('../../state/config/blocks.mjs').BlockDefinition} BlockDefinition
+ * @typedef {import('../../state/config/blocks.mjs').BlockPlacement} BlockPlacement
  */
+
+const GROWING = getBlockIdByName(blockNames.AGAVE_GROWING);
+const BASE = getBlockIdByName(blockNames.AGAVE_BASE);
+const SPIKE = getBlockIdByName(blockNames.AGAVE_SPIKE);
+const STALK = getBlockIdByName(blockNames.AGAVE_FLOWER_STALK);
+const FLOWER = getBlockIdByName(blockNames.AGAVE_FLOWER);
 
 /**
  * Generate 3D agave structure.
@@ -12,19 +19,11 @@ import { blockNames } from "../../state/config/blocks.mjs";
  * @param {number} y - World Y coordinate
  * @param {number} z - World Z coordinate
  * @param {number} progress - Growth progress (0.0 to 1.0)
- * @param {BlockDefinition[]} blocks - Block definitions array
  *
  * @returns {BlockPlacement[]}
  */
-export function generateAgaveStructure(x, y, z, progress, blocks) {
+export function generateAgaveStructure(x, y, z, progress) {
   const structure = [];
-  const getBlockId = (name) => blocks.findIndex((b) => b.name === name);
-
-  const GROWING = getBlockId(blockNames.AGAVE_GROWING);
-  const BASE = getBlockId(blockNames.AGAVE_BASE);
-  const SPIKE = getBlockId(blockNames.AGAVE_SPIKE);
-  const STALK = getBlockId(blockNames.AGAVE_FLOWER_STALK);
-  const FLOWER = getBlockId(blockNames.AGAVE_FLOWER);
 
   if (progress < 0.2) {
     structure.push({ x, y, z, blockId: GROWING });

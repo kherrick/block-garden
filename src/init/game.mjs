@@ -18,6 +18,7 @@ import {
 
 import { COLOR_STORAGE_KEY } from "../dialog/colors/index.mjs";
 import { getSavedColors } from "../dialog/colors/getSavedColors.mjs";
+import { showToast } from "../api/ui/toast.mjs";
 
 import { cancelGameLoop, gameLoop } from "../state/gameLoop.mjs";
 import { colors as gameColors } from "../state/config/colors.mjs";
@@ -51,6 +52,9 @@ import { initTouchControls } from "./touchControls.mjs";
  */
 export async function initGame(gThis, shadow, cnvs) {
   cancelGameLoop();
+
+  showToast(shadow, "Initializing Block Garden...");
+  await new Promise((r) => setTimeout(r, 0));
 
   shadow.dispatchEvent(
     new CustomEvent("block-garden-load", {
@@ -91,6 +95,9 @@ export async function initGame(gThis, shadow, cnvs) {
   } catch (error) {
     console.log(`continuing with static version: ${version}`);
   }
+
+  showToast(shadow, "Generating World...");
+  await new Promise((r) => setTimeout(r, 0));
 
   const { computedSignals, gameConfig, gameState } = await initState(
     gThis,
@@ -141,6 +148,9 @@ export async function initGame(gThis, shadow, cnvs) {
   initMaterialBarEffects(shadow, initMaterialBar(gameColors));
 
   initMaterialBarEventListeners(shadow);
+
+  showToast(shadow, "Preparing Graphics...");
+  await new Promise((r) => setTimeout(r, 0));
 
   // Only pass cnvs to initGameDependencies, and call it once
   const { gl, cbuf, cube, uL, uM, uMVP } = initGameDependencies(cnvs);
@@ -240,6 +250,9 @@ export async function initGame(gThis, shadow, cnvs) {
   const ver = await localForage.setItem(`block-garden-version`, version);
 
   console.log(`Block Garden version: ${ver}`);
+
+  showToast(shadow, "Starting Game...");
+  await new Promise((r) => setTimeout(r, 0));
 
   gameLoop(
     shadow,

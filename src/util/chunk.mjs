@@ -46,6 +46,9 @@ export class Chunk {
     /** @type {boolean} Whether terrain has been generated */
     this.generated = false;
 
+    /** @type {boolean} Whether peristent data has been restored */
+    this.restored = false;
+
     /** @type {ChunkMesh|null} Cached mesh data */
     this.mesh = null;
 

@@ -1,9 +1,27 @@
 /**
  * Per-chunk procedural terrain generator.
  * Generates terrain for a single chunk based on world seed.
+ *
+ * Features:
+ * - Biome-aware surface blocks (grass, sand, snow, clay)
+ * - Depth layers with ore distribution (coal, iron, gold)
+ * - Cave generation using 3D noise
+ * - Resource block dispersal (crops, flowers)
+ * - Trees in forest/swamp biomes
+ * - Clouds at high altitude
  */
 
-import { initNoise, terrainNoise, noise3d } from "../util/noise.mjs";
+import {
+  initNoise,
+  terrainNoise,
+  noise3d,
+  caveNoise,
+  oreNoise,
+} from "../util/noise.mjs";
+
+import { getBiome } from "../util/getBiome.mjs";
+import { blockNames } from "../state/config/blocks.mjs";
+import { getBlockIdByName } from "../state/config/getBlockIdByName.mjs";
 
 /**
  * @typedef {import('../util/chunk.mjs').Chunk} Chunk
@@ -13,50 +31,56 @@ import { initNoise, terrainNoise, noise3d } from "../util/noise.mjs";
  * @typedef {import('../state/config/blocks.mjs').BlockDefinition} BlockDefinition
  */
 
-// Block IDs (cached after first lookup)
-let blockIds = null;
-
-/**
- * Initialize block ID lookup cache.
- *
- * @param {BlockDefinition[]} blocks
- * @param {{[key: string]: string}} blockNames
- */
-function initBlockIds(blocks, blockNames) {
-  if (blockIds) return;
-
-  const getBlockId = (name) => blocks.findIndex((b) => b.name === name);
-
-  blockIds = {
-    GRASS: getBlockId(blockNames.GRASS),
-    DIRT: getBlockId(blockNames.DIRT),
-    STONE: getBlockId(blockNames.STONE),
-    WATER: getBlockId(blockNames.WATER),
-    SAND: getBlockId(blockNames.SAND),
-    CLOUD: getBlockId(blockNames.CLOUD),
-    WOOD: getBlockId(blockNames.WOOD),
-    TREE_LEAVES: getBlockId(blockNames.TREE_LEAVES),
-  };
-}
+// Block IDs (cached at top level)
+const GRASS = getBlockIdByName(blockNames.GRASS);
+const DIRT = getBlockIdByName(blockNames.DIRT);
+const STONE = getBlockIdByName(blockNames.STONE);
+const WATER = getBlockIdByName(blockNames.WATER);
+const SAND = getBlockIdByName(blockNames.SAND);
+const SNOW = getBlockIdByName(blockNames.SNOW);
+const ICE = getBlockIdByName(blockNames.ICE);
+const CLAY = getBlockIdByName(blockNames.CLAY);
+const BEDROCK = getBlockIdByName(blockNames.BEDROCK);
+const LAVA = getBlockIdByName(blockNames.LAVA);
+const COAL = getBlockIdByName(blockNames.COAL);
+const IRON = getBlockIdByName(blockNames.IRON);
+const GOLD = getBlockIdByName(blockNames.GOLD);
+const CLOUD = getBlockIdByName(blockNames.CLOUD);
+const WOOD = getBlockIdByName(blockNames.WOOD);
+const TREE_LEAVES = getBlockIdByName(blockNames.TREE_LEAVES);
 
 /**
  * Terrain generation constants.
  */
-const MIN_Y = 1;
-const MAX_Y = 24;
-const SEA_LEVEL = 4;
-const CLOUD_HEIGHT_MIN = 18;
-const CLOUD_HEIGHT_MAX = 22;
+export const MIN_Y = 0;
+export const MAX_Y = 128;
+const SEA_LEVEL = 32;
+const CLOUD_HEIGHT_MIN = 100;
+const CLOUD_HEIGHT_MAX = 120;
+
+// Depth layer thresholds (relative to surface)
+const DIRT_DEPTH = 4; // Dirt layer depth
+const COAL_MIN_DEPTH = 10; // Coal starts appearing
+const COAL_MAX_DEPTH = 50; // Coal stops appearing
+const IRON_MIN_DEPTH = 20; // Iron starts appearing
+const IRON_MAX_DEPTH = 60; // Iron stops appearing
+const GOLD_MIN_DEPTH = 30; // Gold starts appearing (deep)
+const GOLD_MAX_DEPTH = 70; // Gold stops appearing
+const LAVA_HEIGHT = 5; // Lava level
+const BEDROCK_HEIGHT = 2; // Bedrock at bottom
+
+// Cave generation thresholds
+const CAVE_THRESHOLD = 0.55; // Higher = less caves, lower = more caves
+const CAVE_MIN_Y = 8; // Don't carve caves below this
+const CAVE_MAX_Y_OFFSET = 20; // Don't carve caves closer than this to surface
 
 /**
  * Generate terrain for a single chunk.
  *
  * @param {Chunk} chunk - The chunk to generate
  * @param {number} seed - World seed
- * @param {BlockDefinition[]} blocks - Block definitions
- * @param {{[key: string]: string}} blockNames - Block name mapping
  */
-export function generateChunk(chunk, seed, blocks, blockNames) {
+export function generateChunk(chunk, seed) {
   // Skip if already generated
   if (chunk.generated) {
     return;
@@ -65,58 +89,107 @@ export function generateChunk(chunk, seed, blocks, blockNames) {
   // Ensure noise is initialized
   initNoise(seed);
 
-  // Ensure block IDs are cached
-  initBlockIds(blocks, blockNames);
-
-  const { GRASS, DIRT, STONE, WATER, SAND, CLOUD, WOOD, TREE_LEAVES } =
-    blockIds;
-
   // Generate each column in the chunk
   for (let localX = 0; localX < 16; localX++) {
     for (let localZ = 0; localZ < 16; localZ++) {
       const worldX = chunk.worldX + localX;
       const worldZ = chunk.worldZ + localZ;
 
-      // Calculate terrain height using noise
+      // Get biome for this column
+      const biome = getBiome(worldX, worldZ, seed);
+
+      // Calculate terrain height using noise - taller terrain for 128-block world
       const n = terrainNoise(worldX, worldZ, seed);
-      let surfaceHeight = Math.floor(((n + 1) / 2) * 12 + 2);
+      // Base terrain between 30-60, with variation up to 80 for mountains
+      let surfaceHeight = Math.floor(((n + 1) / 2) * 30 + 30);
+
+      // Add mountain peaks with sharper features
+      const mountainNoise = terrainNoise(
+        worldX * 0.5,
+        worldZ * 0.5,
+        seed + 100,
+      );
+      if (mountainNoise > 0.6) {
+        surfaceHeight += Math.floor((mountainNoise - 0.6) * 50);
+      }
 
       // Ensure spawn area has solid ground
       if (Math.abs(worldX) < 3 && Math.abs(worldZ) < 3) {
         surfaceHeight = Math.max(surfaceHeight, SEA_LEVEL + 1);
       }
 
+      // Cap surface height
+      surfaceHeight = Math.min(surfaceHeight, MAX_Y - 10);
+
       // Fill the column
       for (let y = MIN_Y; y <= MAX_Y; y++) {
         let blockType = 0; // Air by default
 
-        if (y === MIN_Y) {
-          blockType = WATER; // Bottom water layer
-        } else if (y <= surfaceHeight) {
-          if (y === surfaceHeight) {
-            if (y < SEA_LEVEL + 1) {
-              blockType = SAND;
-            } else {
-              blockType = GRASS;
+        if (y <= surfaceHeight) {
+          // Underground or at surface
+          const depth = surfaceHeight - y;
 
-              // Tree chance (away from spawn)
-              if (
-                (Math.abs(worldX) > 4 || Math.abs(worldZ) > 4) &&
-                seededRandom(worldX, worldZ, seed) < 0.02 &&
-                worldX % 3 !== 0 &&
-                worldZ % 3 !== 0
-              ) {
-                placeTree(chunk, localX, y + 1, localZ, WOOD, TREE_LEAVES);
-              }
+          if (y < BEDROCK_HEIGHT) {
+            // Bedrock at very bottom
+            blockType = BEDROCK;
+          } else if (y < LAVA_HEIGHT) {
+            // Lava layer
+            blockType =
+              seededRandom(worldX, worldZ, y + seed) < 0.7 ? LAVA : BEDROCK;
+          } else if (y === surfaceHeight) {
+            // Surface block based on biome
+            if (y < SEA_LEVEL + 1) {
+              blockType = SAND; // Underwater is always sand
+            } else {
+              blockType = biome.surfaceBlockId;
             }
-          } else if (y > surfaceHeight - 3) {
-            blockType = DIRT;
+          } else if (depth < DIRT_DEPTH) {
+            // Sub-surface layer (dirt for most biomes)
+            blockType = biome.subBlockId;
           } else {
+            // Deep stone layer with ore distribution
             blockType = STONE;
+
+            // Ore generation based on depth
+            const oreValue = oreNoise(worldX, y, worldZ, seed);
+
+            if (
+              depth >= GOLD_MIN_DEPTH &&
+              depth <= GOLD_MAX_DEPTH &&
+              oreValue > 0.8
+            ) {
+              blockType = GOLD;
+            } else if (
+              depth >= IRON_MIN_DEPTH &&
+              depth <= IRON_MAX_DEPTH &&
+              oreValue > 0.65
+            ) {
+              blockType = IRON;
+            } else if (
+              depth >= COAL_MIN_DEPTH &&
+              depth <= COAL_MAX_DEPTH &&
+              oreValue > 0.55
+            ) {
+              blockType = COAL;
+            }
+          }
+
+          // Cave carving (don't carve near surface or in lava/bedrock)
+          if (
+            y > CAVE_MIN_Y &&
+            y < surfaceHeight - CAVE_MAX_Y_OFFSET &&
+            blockType !== BEDROCK &&
+            blockType !== LAVA
+          ) {
+            const caveValue = caveNoise(worldX, y, worldZ, seed);
+            if (caveValue > CAVE_THRESHOLD) {
+              blockType = 0; // Air (cave)
+            }
           }
         } else {
           // Above surface
           if (y <= SEA_LEVEL) {
+            // Water level
             blockType = WATER;
           } else if (
             (Math.abs(worldX) > 6 || Math.abs(worldZ) > 6) &&
@@ -135,6 +208,59 @@ export function generateChunk(chunk, seed, blocks, blockNames) {
           chunk.setBlock(localX, y, localZ, blockType);
         }
       }
+
+      // Surface decorations (only if surface is above water)
+      if (surfaceHeight > SEA_LEVEL) {
+        // Tree generation in biomes with trees
+        if (
+          biome.trees &&
+          (Math.abs(worldX) > 4 || Math.abs(worldZ) > 4) &&
+          seededRandom(worldX, worldZ, seed) < 0.02 &&
+          worldX % 3 !== 0 &&
+          worldZ % 3 !== 0
+        ) {
+          placeTree(
+            chunk,
+            localX,
+            surfaceHeight + 1,
+            localZ,
+            WOOD,
+            TREE_LEAVES,
+          );
+        }
+
+        // Crop/resource dispersal - drastically reduced density
+        if (
+          biome.cropBlockIds.length > 0 &&
+          seededRandom(worldX, worldZ, seed + 500) < 0.002 &&
+          !biome.trees
+        ) {
+          placeResource(
+            chunk,
+            localX,
+            surfaceHeight + 1,
+            localZ,
+            biome,
+            seed,
+            worldX,
+            worldZ,
+          );
+        } else if (
+          biome.cropBlockIds.length > 0 &&
+          seededRandom(worldX, worldZ, seed + 1000) < 0.0005
+        ) {
+          placeResource(
+            chunk,
+            localX,
+            surfaceHeight + 1,
+            localZ,
+            biome,
+            seed,
+            worldX,
+            worldZ,
+          );
+        }
+      }
     }
   }
 
@@ -143,7 +269,33 @@ export function generateChunk(chunk, seed, blocks, blockNames) {
 }
 
 /**
- * Seeded random for consistent tree placement.
+ * Place a resource/crop block on the surface.
+ *
+ * @param {Chunk} chunk
+ * @param {number} localX
+ * @param {number} y
+ * @param {number} localZ
+ * @param {import('../state/config/biomes.mjs').Biome} biome
+ * @param {number} seed
+ * @param {number} worldX
+ * @param {number} worldZ
+ */
+function placeResource(chunk, localX, y, localZ, biome, seed, worldX, worldZ) {
+  if (y >= MAX_Y || biome.cropBlockIds.length === 0) return;
+
+  // Select a random crop from the biome's available crops
+  const cropIndex = Math.floor(
+    seededRandom(worldX + 100, worldZ + 100, seed) * biome.cropBlockIds.length,
+  );
+  const cropBlockId = biome.cropBlockIds[cropIndex];
+
+  if (cropBlockId > 0 && chunk.getBlock(localX, y, localZ) === 0) {
+    chunk.setBlock(localX, y, localZ, cropBlockId);
+  }
+}
+
+/**
+ * Seeded random for consistent placement.
  *
  * @param {number} x
  * @param {number} z
@@ -172,7 +324,7 @@ function placeTree(chunk, localX, y, localZ, woodId, leavesId) {
 
   // Trunk
   for (let i = 0; i < height; i++) {
-    if (y + i < 128) {
+    if (y + i < MAX_Y) {
       chunk.setBlock(localX, y + i, localZ, woodId);
     }
   }
@@ -186,7 +338,7 @@ function placeTree(chunk, localX, y, localZ, woodId, leavesId) {
         const ty = y + ly;
 
         // Stay within chunk bounds
-        if (tx < 0 || tx >= 16 || tz < 0 || tz >= 16 || ty >= 128) {
+        if (tx < 0 || tx >= 16 || tz < 0 || tz >= 16 || ty >= MAX_Y) {
           continue;
         }
 
@@ -214,18 +366,17 @@ function placeTree(chunk, localX, y, localZ, woodId, leavesId) {
 export function getSurfaceHeight(worldX, worldZ, seed) {
   initNoise(seed);
   const n = terrainNoise(worldX, worldZ, seed);
-  let surfaceHeight = Math.floor(((n + 1) / 2) * 12 + 2);
+  let surfaceHeight = Math.floor(((n + 1) / 2) * 30 + 30);
+
+  // Add mountain peaks
+  const mountainNoise = terrainNoise(worldX * 0.5, worldZ * 0.5, seed + 100);
+  if (mountainNoise > 0.6) {
+    surfaceHeight += Math.floor((mountainNoise - 0.6) * 50);
+  }
 
   if (Math.abs(worldX) < 3 && Math.abs(worldZ) < 3) {
     surfaceHeight = Math.max(surfaceHeight, SEA_LEVEL + 1);
   }
 
-  return surfaceHeight;
-}
-
-/**
- * Reset block ID cache (for testing or config changes).
- */
-export function resetBlockIdCache() {
-  blockIds = null;
+  return Math.min(surfaceHeight, MAX_Y - 10);
 }

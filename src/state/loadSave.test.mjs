@@ -71,6 +71,13 @@ jest.unstable_mockModule("../util/chunk.mjs", () => {
     CHUNK_SIZE_X,
     CHUNK_SIZE_Y,
     CHUNK_SIZE_Z,
+    worldToChunk: (worldX, worldZ) => {
+      const chunkX = Math.floor(worldX / CHUNK_SIZE_X);
+      const chunkZ = Math.floor(worldZ / CHUNK_SIZE_Z);
+      const localX = ((worldX % CHUNK_SIZE_X) + CHUNK_SIZE_X) % CHUNK_SIZE_X;
+      const localZ = ((worldZ % CHUNK_SIZE_Z) + CHUNK_SIZE_Z) % CHUNK_SIZE_Z;
+      return { chunkX, chunkZ, localX, localZ };
+    },
   };
 });
 
@@ -211,8 +218,8 @@ describe("loadSaveState", () => {
     const saveState = {
       config: { seed: 12345, version: 1 },
       state: {
-        plantStructures: { "0,0": { blocks: [1, 2, 3] } },
-        growthTimers: { "0,0": 100 },
+        plantStructures: { "0,0,0": { blocks: [1, 2, 3] } },
+        growthTimers: { "0,0,0": 100 },
       },
       world: {},
       storedChunks: {},
@@ -221,10 +228,14 @@ describe("loadSaveState", () => {
 
     await loadSaveState(globalThis, globalThis.shadow, saveState);
 
-    expect(mockGameState.plantStructures).toEqual({
-      "0,0": { blocks: [1, 2, 3] },
-    });
-    expect(mockGameState.growthTimers).toEqual({ "0,0": 100 });
+    // Verify plants are put into storedPlantStates for future restoration
+    expect(mockGameState.plantStructures).toEqual({});
+    expect(mockGameState.growthTimers).toEqual({});
+
+    expect(mockWorld.storedPlantStates.has("0,0")).toBe(true);
+    const stored = mockWorld.storedPlantStates.get("0,0");
+    expect(stored.structures["0,0,0"]).toEqual({ blocks: [1, 2, 3] });
+    expect(stored.timers["0,0,0"]).toBe(100);
   });
 
   test("should restore stored chunk modifications", async () => {

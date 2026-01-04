@@ -1,9 +1,16 @@
 import { blockNames } from "../../state/config/blocks.mjs";
+import { getBlockIdByName } from "../../state/config/getBlockIdByName.mjs";
 
 /**
- * @typedef {import('../../state/config/index.mjs').BlockDefinition} BlockDefinition
- * @typedef {import('../../state/config/index.mjs').BlockPlacement} BlockPlacement
+ * @typedef {import('../../state/config/blocks.mjs').BlockDefinition} BlockDefinition
+ * @typedef {import('../../state/config/blocks.mjs').BlockPlacement} BlockPlacement
  */
+
+const GROWING = getBlockIdByName(blockNames.CORN_GROWING);
+const STALK = getBlockIdByName(blockNames.CORN_STALK);
+const LEAVES = getBlockIdByName(blockNames.CORN_LEAVES);
+const EAR = getBlockIdByName(blockNames.CORN_EAR);
+const SILK = getBlockIdByName(blockNames.CORN_SILK);
 
 /**
  * Generate 3D corn structure.
@@ -12,19 +19,11 @@ import { blockNames } from "../../state/config/blocks.mjs";
  * @param {number} y - World Y coordinate
  * @param {number} z - World Z coordinate
  * @param {number} progress - Growth progress (0.0 to 1.0)
- * @param {BlockDefinition[]} blocks - Block definitions array
  *
  * @returns {BlockPlacement[]}
  */
-export function generateCornStructure(x, y, z, progress, blocks) {
+export function generateCornStructure(x, y, z, progress) {
   const structure = [];
-  const getBlockId = (name) => blocks.findIndex((b) => b.name === name);
-
-  const GROWING = getBlockId(blockNames.CORN_GROWING);
-  const STALK = getBlockId(blockNames.CORN_STALK);
-  const LEAVES = getBlockId(blockNames.CORN_LEAVES);
-  const EAR = getBlockId(blockNames.CORN_EAR);
-  const SILK = getBlockId(blockNames.CORN_SILK);
 
   if (progress < 0.2) {
     structure.push({ x, y, z, blockId: GROWING });

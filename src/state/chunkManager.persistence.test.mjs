@@ -1,3 +1,22 @@
+// Mock Worker class globally
+global.Worker = class MockWorker {
+  constructor(url) {
+    this.url = url;
+  }
+  postMessage(data) {
+    // Synchronously respond for testing
+    if (this.onmessage) {
+      this.onmessage({
+        data: {
+          chunkX: data.chunkX,
+          chunkZ: data.chunkZ,
+          blocks: new ArrayBuffer(16 * 128 * 16),
+        },
+      });
+    }
+  }
+};
+
 /**
  * @jest-environment node
  */
@@ -103,16 +122,7 @@ describe("ChunkManager Persistence", () => {
 
   test("should persist player modifications when chunk is unloaded and reloaded", () => {
     // 1. Load initial chunks
-    manager.updateVisibleChunks(
-      0,
-      0,
-      123,
-      [],
-      {},
-      generateChunk,
-      {},
-      deleteChunkMesh,
-    );
+    manager.updateVisibleChunks(0, 0, 123, {}, deleteChunkMesh);
 
     // 2. Modify a block in chunk (1, 0)
     // World coordinates: 16 (first block of chunk 1), 50, 0
@@ -132,16 +142,7 @@ describe("ChunkManager Persistence", () => {
 
     // 3. Move player far away to unload chunk (1, 0)
     // Move to -100, 0. Distance to (1, 0) is huge.
-    manager.updateVisibleChunks(
-      -100,
-      0,
-      123,
-      [],
-      {},
-      generateChunk,
-      {},
-      deleteChunkMesh,
-    );
+    manager.updateVisibleChunks(-100, 0, 123, {}, deleteChunkMesh);
 
     // Verify chunk is unloaded
     expect(manager.getChunk(1, 0)).toBeUndefined();
@@ -153,16 +154,9 @@ describe("ChunkManager Persistence", () => {
     expect(cachedMods.size).toBe(1);
 
     // 4. Move player back to reload chunk
-    manager.updateVisibleChunks(
-      0,
-      0,
-      123,
-      [],
-      {},
-      generateChunk,
-      {},
-      deleteChunkMesh,
-    );
+    manager.updateVisibleChunks(0, 0, 123, {}, deleteChunkMesh);
+    // Call again to trigger restoration (since it happens in the next update after generation)
+    manager.updateVisibleChunks(0, 0, 123, {}, deleteChunkMesh);
 
     // Verify chunk is reloaded and modification is restored
     const reloadedChunk = manager.getChunk(1, 0);
@@ -174,16 +168,7 @@ describe("ChunkManager Persistence", () => {
 
   test("should NOT persist non-player modifications", () => {
     // 1. Load initial chunks
-    manager.updateVisibleChunks(
-      0,
-      0,
-      123,
-      [],
-      {},
-      generateChunk,
-      {},
-      deleteChunkMesh,
-    );
+    manager.updateVisibleChunks(0, 0, 123, {}, deleteChunkMesh);
 
     // 2. Modify a block WITHOUT player flag in chunk (1, 0)
     const worldX = 16;
@@ -208,28 +193,10 @@ describe("ChunkManager Persistence", () => {
     expect(chunk.getModifications().size).toBe(0);
 
     // 3. Unload
-    manager.updateVisibleChunks(
-      -100,
-      0,
-      123,
-      [],
-      {},
-      generateChunk,
-      {},
-      deleteChunkMesh,
-    );
+    manager.updateVisibleChunks(-100, 0, 123, {}, deleteChunkMesh);
 
     // 4. Reload
-    manager.updateVisibleChunks(
-      0,
-      0,
-      123,
-      [],
-      {},
-      generateChunk,
-      {},
-      deleteChunkMesh,
-    );
+    manager.updateVisibleChunks(0, 0, 123, {}, deleteChunkMesh);
 
     // Verify block is gone (reset to procedural state - air)
     // Procedural gen sets (0, 10, 0) to 1. (16, 51, 0) should be air.

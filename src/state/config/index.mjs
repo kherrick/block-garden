@@ -3,8 +3,7 @@ import { Signal } from "signal-polyfill";
 import { blockNames, blocks } from "./blocks.mjs";
 
 /**
- * @typedef {import('./blocks.mjs').BlockDefinition} BlockDefinition
- * @typedef {import('./blocks.mjs').BlockPlacement} BlockPlacement
+ * @typedef {import('./blocks.mjs').BlockArray} BlockArray
  */
 
 /**
@@ -13,7 +12,7 @@ import { blockNames, blocks } from "./blocks.mjs";
  * @typedef {Object} GameConfig
  *
  * @property {Object} blockNames - Names of all blocks
- * @property {BlockDefinition[]} blocks - All block definitions
+ * @property {BlockArray} blocks - All block definitions
  * @property {Signal.State} cacheRadius
  * @property {Signal.State} renderRadius
  * @property {Signal.State} worldRadius

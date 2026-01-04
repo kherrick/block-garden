@@ -1,9 +1,15 @@
 import { blockNames } from "../../state/config/blocks.mjs";
+import { getBlockIdByName } from "../../state/config/getBlockIdByName.mjs";
 
 /**
- * @typedef {import('../../state/config/index.mjs').BlockDefinition} BlockDefinition
- * @typedef {import('../../state/config/index.mjs').BlockPlacement} BlockPlacement
+ * @typedef {import('../../state/config/blocks.mjs').BlockDefinition} BlockDefinition
+ * @typedef {import('../../state/config/blocks.mjs').BlockPlacement} BlockPlacement
  */
+
+const GROWING = getBlockIdByName(blockNames.BERRY_BUSH_GROWING);
+const BRANCH = getBlockIdByName(blockNames.BERRY_BUSH_BRANCH);
+const LEAVES = getBlockIdByName(blockNames.BERRY_BUSH_LEAVES);
+const BERRIES = getBlockIdByName(blockNames.BERRY_BUSH_BERRIES);
 
 /**
  * Generate 3D berry bush structure.
@@ -12,18 +18,11 @@ import { blockNames } from "../../state/config/blocks.mjs";
  * @param {number} y - World Y coordinate
  * @param {number} z - World Z coordinate
  * @param {number} progress - Growth progress (0.0 to 1.0)
- * @param {BlockDefinition[]} blocks - Block definitions array
  *
  * @returns {BlockPlacement[]}
  */
-export function generateBerryBushStructure(x, y, z, progress, blocks) {
+export function generateBerryBushStructure(x, y, z, progress) {
   const structure = [];
-  const getBlockId = (name) => blocks.findIndex((b) => b.name === name);
-
-  const GROWING = getBlockId(blockNames.BERRY_BUSH_GROWING);
-  const BRANCH = getBlockId(blockNames.BERRY_BUSH_BRANCH);
-  const LEAVES = getBlockId(blockNames.BERRY_BUSH_LEAVES);
-  const BERRIES = getBlockId(blockNames.BERRY_BUSH_BERRIES);
 
   if (progress < 0.2) {
     structure.push({ x, y, z, blockId: GROWING });

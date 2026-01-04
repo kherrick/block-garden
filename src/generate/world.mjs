@@ -1,4 +1,6 @@
-import { initNoise, terrainNoise } from "../util/noise.mjs";
+import { initNoise } from "../util/noise.mjs";
+
+import { MAX_Y } from "./chunkGenerator.mjs";
 
 /**
  * @typedef {import('../state/config/index.mjs').gameConfig} GameConfig
@@ -35,14 +37,8 @@ export function generateWorld(seed, gameState) {
   gameState.plantStructures = {};
   gameState.growthTimers = {};
 
-  // Calculate spawn height at origin
-  const SEA_LEVEL = 4;
-  const n = terrainNoise(0, 0, seed);
-  let spawnY = Math.floor(((n + 1) / 2) * 12 + 2);
-  spawnY = Math.max(spawnY, SEA_LEVEL + 1);
-
-  // Set spawn position (terrain will generate around player)
-  gameState.y = spawnY + 10 + (1.62 - gameState.playerHeight / 2);
+  // Set spawn in sky (drop)
+  gameState.y = MAX_Y;
   gameState.x = 0;
   gameState.z = 0;
   gameState.dy = 0;

@@ -1,7 +1,8 @@
 /**
  * @jest-environment node
  */
-import { meshChunk } from "./chunkMesher.mjs";
+import { jest } from "@jest/globals";
+import { meshChunk, greedyMeshChunk } from "./chunkMesher.mjs";
 
 // Minimal mock Chunk and ChunkManager for testing
 const CHUNK_SIZE_X = 16;
@@ -43,11 +44,18 @@ const mockChunkManager = {
   getBlock: (x, y, z) => 0, // Always air for neighbor
 };
 
-const blockDefs = [
-  { name: "air", color: [1, 1, 1, 0] },
-  { name: "stone", color: [0.5, 0.5, 0.5, 1] },
-  { name: "glass", color: [0.8, 0.8, 1, 0.5] },
-];
+const blockDefs = Object.assign(
+  [
+    { id: 0, name: "air", color: [1, 1, 1, 0] },
+    { id: 1, name: "stone", color: [0.5, 0.5, 0.5, 1] },
+    { id: 2, name: "glass", color: [0.8, 0.8, 1, 0.5] },
+  ],
+  {
+    getById: function (id) {
+      return this.find((b) => b.id === id);
+    },
+  },
+);
 
 describe("meshChunk", () => {
   test("returns empty mesh for all-air chunk", () => {
@@ -113,11 +121,18 @@ describe("meshChunk", () => {
 
   test("renders both faces between different transparent blocks", () => {
     // (1,1,1) = glassA, (2,1,1) = glassB (different type)
-    const customDefs = [
-      { name: "air", color: [1, 1, 1, 0] },
-      { name: "glassA", color: [0.8, 0.8, 1, 0.5] },
-      { name: "glassB", color: [1, 0.8, 0.8, 0.5] },
-    ];
+    const customDefs = Object.assign(
+      [
+        { id: 0, name: "air", color: [1, 1, 1, 0] },
+        { id: 1, name: "glassA", color: [0.8, 0.8, 1, 0.5] },
+        { id: 2, name: "glassB", color: [1, 0.8, 0.8, 0.5] },
+      ],
+      {
+        getById: function (id) {
+          return this.find((b) => b.id === id);
+        },
+      },
+    );
     const chunk = {
       worldX: 0,
       worldZ: 0,
@@ -136,11 +151,7 @@ describe("meshChunk", () => {
   });
 });
 
-import {
-  greedyMeshChunk,
-  setGreedyMeshing,
-  USE_GREEDY_MESHING,
-} from "./chunkMesher.mjs";
+import { setGreedyMeshing, USE_GREEDY_MESHING } from "./chunkMesher.mjs";
 
 describe("greedyMeshChunk", () => {
   test("returns indexed geometry with indices array", () => {

@@ -62,7 +62,9 @@ export class BlockGarden {
    * @returns {number} Index of the block with the given name, or -1 if not found.
    */
   getBlockIdByName(name, blocks = this.config.blocks) {
-    return blocks.findIndex((block) => block.name === name);
+    const block = blocks.find((block) => block.name === name);
+
+    return block ? block.id : -1;
   }
 
   /**
@@ -92,7 +94,7 @@ export class BlockGarden {
   setBlock(x, y, z, blockType) {
     const world = this.getWorld();
 
-    world.setBlock(x, y, z, blockType);
+    world.setBlock(x, y, z, blockType, true);
 
     this.setWorld(world);
   }
@@ -106,7 +108,9 @@ export class BlockGarden {
   batchSetBlocks(updates) {
     const world = this.getWorld();
 
-    updates.forEach(({ x, y, z, block }) => world.setBlock(x, y, z, block));
+    updates.forEach(({ x, y, z, block }) =>
+      world.setBlock(x, y, z, block, true),
+    );
 
     this.setWorld(world);
   }
@@ -134,7 +138,7 @@ export class BlockGarden {
     y,
     z,
     onBlock,
-    offBlock = this.blocks.DIRT,
+    offBlock = this.getBlockIdByName("Dirt"),
     spacing = 1,
     characters = Characters,
     rotate = 0,

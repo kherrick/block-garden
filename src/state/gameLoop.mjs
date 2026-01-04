@@ -5,14 +5,13 @@ import {
   uploadChunkMesh,
   deleteChunkMesh,
 } from "../util/chunkMesher.mjs";
-import { generateChunk } from "../generate/chunkGenerator.mjs";
-
-import { blocks as blockTypes, blockNames } from "../state/config/blocks.mjs";
+import { blocks as blockTypes } from "../state/config/blocks.mjs";
 
 import { updatePlayer } from "../update/player.mjs";
 import { updatePhysics } from "../update/physics.mjs";
 import { updateWorld } from "../update/world.mjs";
 import { updatePlantGrowth, updateStructure } from "../update/plantGrowth.mjs";
+import { getBlockByName } from "./config/blocks.mjs";
 
 /** @typedef {import("../util/chunk.mjs").Chunk} Chunk */
 /** @typedef {import("../util/ray.mjs").PointWithFace} PointWithFace */
@@ -296,9 +295,6 @@ export function gameLoop(
     renderX,
     renderZ,
     gameState.seed || 0,
-    blockTypes,
-    blockNames,
-    generateChunk,
     gl,
     deleteChunkMesh,
     gameState.growthTimers,
@@ -320,7 +316,7 @@ export function gameLoop(
         let progress = 1.0;
         if (timer !== undefined) {
           // Re-calculate progress if timer is active
-          const plantDef = blockTypes.find((b) => b.name === structure.type);
+          const plantDef = getBlockByName(structure.type);
           const totalTime = gameState.fastGrowth
             ? 30 // hardcoded FAST_GROWTH_TIME import issue, can define or import
             : plantDef?.growthTime || 10.0;
@@ -333,7 +329,8 @@ export function gameLoop(
   );
 
   // Budgeted meshing: limit meshes built per frame to avoid stutter
-  const MESHES_PER_FRAME = 2;
+  // Increased budget for faster initial loading
+  const MESHES_PER_FRAME = 10;
   let meshedThisFrame = 0;
 
   for (const chunk of visibleChunks) {

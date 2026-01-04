@@ -36,6 +36,8 @@ import { InventoryDialog } from "../dialog/inventory.mjs";
 
 /** @typedef {import('signal-polyfill').Signal.State} Signal.State */
 
+/** @typedef {import('../state/config/blocks.mjs').BlockArray} BlockArray */
+
 /** @typedef {import('./game.mjs').CustomShadowHost} CustomShadowHost */
 
 /**
@@ -62,21 +64,24 @@ function handleCornerClick(e) {
 }
 
 /**
- *
- * @param {number} currentBlock
- * @param {number} blockCount
+ * @param {number} currentBlockId
+ * @param {BlockArray} blocks
  * @param {boolean} isForward
  *
  * @returns {number}
  */
-function getNewIndex(currentBlock, blockCount, isForward) {
-  return isForward
-    ? currentBlock === blockCount - 1
+function getNewBlockId(currentBlockId, blocks, isForward) {
+  const currentIndex = blocks.findIndex((b) => b.id === currentBlockId);
+  const blockCount = blocks.length;
+  const newIndex = isForward
+    ? currentIndex === blockCount - 1
       ? 1
-      : currentBlock + 1
-    : currentBlock === 1
+      : currentIndex + 1
+    : currentIndex === 1
       ? blockCount - 1
-      : currentBlock - 1;
+      : currentIndex - 1;
+
+  return blocks[newIndex].id;
 }
 
 /**
@@ -435,15 +440,15 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
         e.preventDefault();
 
         if (e.code === "Backquote" || e.code === "Accent") {
-          const newIndex = getNewIndex(
+          const nextBlockId = getNewBlockId(
             gameState.curBlock.get(),
-            gameConfig.blocks.length,
+            gameConfig.blocks,
             !e.shiftKey,
           );
 
-          gameState.curBlock.set(newIndex);
+          gameState.curBlock.set(nextBlockId);
 
-          setMaterialBarItem(newIndex);
+          setMaterialBarItem(nextBlockId);
         }
       }
     },
@@ -976,11 +981,11 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
     const { world } = gameState;
 
     // Helper to find block IDs
-    const getBlockId = (name) => blocks.findIndex((b) => b.name === name);
+    const getBlockId = (name) => blocks.find((b) => b.name === name)?.id ?? -1;
     const GRASS = getBlockId(blockNames.GRASS);
     const RANDOM_PLANT_RADIUS = 32;
     const MIN_Y = 1;
-    const MAX_Y = 24;
+    const MAX_Y = 124; // Updated to match terrain height
 
     // Collect valid grass blocks
     const validSeedSpots = [];
@@ -1002,7 +1007,7 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
     // Place one of each seed at a random valid spot
     if (validSeedSpots.length > 0) {
       const usedKeys = new Set();
-      blocks.forEach((block, blockId) => {
+      blocks.forEach((block) => {
         if (block.isSeed) {
           let spot = null;
           let attempts = 0;
@@ -1016,7 +1021,7 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
             attempts++;
           }
           if (spot) {
-            world.set(spot.key, blockId, true);
+            world.set(spot.key, block.id, true);
             gameState.plantStructures[spot.key] = {
               type: block.name,
               blocks: [spot.key],

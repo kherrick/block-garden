@@ -7,6 +7,21 @@ const external = ["https://kherrick.github.io/block-garden/deps/qrcode.mjs"];
 
 export default [
   {
+    input: "src/generate/terrain.worker.mjs",
+    output: {
+      file: "dist/src/generate/terrain.worker-bundle-min.mjs",
+      format: "esm",
+      sourcemap: false,
+    },
+    external,
+    plugins: [
+      nodeResolve(),
+      commonjs(),
+      typescript({ noEmitOnError: true }),
+      terser(),
+    ],
+  },
+  {
     input: "index.mjs",
     output: {
       file: "dist/block-garden-bundle-min.mjs",

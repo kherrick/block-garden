@@ -167,9 +167,9 @@ export class Fireworks extends BlockGarden {
       duration = 8000,
       xMin = 5,
       xMax = 25,
-      yStart = 2, // Start near ground
-      yMinTarget = 25,
-      yMaxTarget = 45,
+      yStart = 64, // Start above average terrain
+      yMinTarget = 100,
+      yMaxTarget = 120,
       zMin = 10,
       zMax = 30,
       delay = 0,

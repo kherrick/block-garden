@@ -1,5 +1,5 @@
 /**
- * @typedef {import('../state/config/blocks.mjs').BlockDefinition} BlockDefinition
+ * @typedef {import('../state/config/blocks.mjs').BlockArray} BlockArray
  */
 
 /**
@@ -15,6 +15,7 @@
  */
 
 import { CHUNK_SIZE_X, CHUNK_SIZE_Y, CHUNK_SIZE_Z } from "./chunk.mjs";
+import { getBlockById } from "../state/config/blocks.mjs";
 
 /**
  * Face definitions for a unit cube.
@@ -102,7 +103,7 @@ const FACES = [
  *
  * @param {{[k: string]: number[]}} colorMap
  * @param {number} blockType - Block type to check
- * @param {BlockDefinition[]} blockDefs - Block definitions
+ * @param {BlockArray} blockDefs - Block definitions
  *
  * @returns {boolean}
  */
@@ -112,7 +113,8 @@ function isTransparent(colorMap, blockType, blockDefs) {
     return true;
   }
 
-  const block = blockDefs[blockType];
+  const block = blockDefs.getById(blockType);
+
   if (!block) {
     // Unknown = transparent
     return true;
@@ -168,7 +170,7 @@ function getNeighborBlock(chunk, chunkManager, localX, y, localZ) {
  * @param {{[k: string]: number[]}} colorMap
  * @param {Chunk} chunk - Chunk to mesh
  * @param {ChunkManager} chunkManager - For neighbor lookups
- * @param {BlockDefinition[]} blockDefs - Block definitions
+ * @param {BlockArray} blockDefs - Block definitions
  *
  * @returns {ChunkMesh}
  */
@@ -190,7 +192,8 @@ export function meshChunk(colorMap, chunk, chunkManager, blockDefs) {
           continue;
         }
 
-        const block = blockDefs[type];
+        const block = blockDefs.getById(type);
+
         if (!block) {
           // Skip unknown blocks
           continue;
@@ -307,7 +310,7 @@ const AXIS_SIZES = [CHUNK_SIZE_X, CHUNK_SIZE_Y, CHUNK_SIZE_Z];
  * @param {{[k: string]: number[]}} colorMap
  * @param {Chunk} chunk - Chunk to mesh
  * @param {ChunkManager} chunkManager - For neighbor lookups
- * @param {BlockDefinition[]} blockDefs - Block definitions
+ * @param {BlockArray} blockDefs - Block definitions
  *
  * @returns {ChunkMesh}
  */
@@ -370,7 +373,8 @@ export function greedyMeshChunk(colorMap, chunk, chunkManager, blockDefs) {
             neighborCoords[2],
           );
 
-          const block = blockDefs[type];
+          const block = blockDefs.getById(type);
+
           if (!block) {
             mask[uPos + vPos * uSize] = 0;
             continue;
@@ -620,7 +624,7 @@ function generateQuadVertices(
  * @param {{[k: string]: number[]}} colorMap
  * @param {Chunk} chunk - Chunk to mesh
  * @param {ChunkManager} chunkManager - For neighbor lookups
- * @param {BlockDefinition[]} blockDefs - Block definitions
+ * @param {BlockArray} blockDefs - Block definitions
  *
  * @returns {ChunkMesh}
  */

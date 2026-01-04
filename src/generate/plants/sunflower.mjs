@@ -1,9 +1,16 @@
 import { blockNames } from "../../state/config/blocks.mjs";
+import { getBlockIdByName } from "../../state/config/getBlockIdByName.mjs";
 
 /**
- * @typedef {import('../../state/config/index.mjs').BlockDefinition} BlockDefinition
- * @typedef {import('../../state/config/index.mjs').BlockPlacement} BlockPlacement
+ * @typedef {import('../../state/config/blocks.mjs').BlockDefinition} BlockDefinition
+ * @typedef {import('../../state/config/blocks.mjs').BlockPlacement} BlockPlacement
  */
+
+const GROWING = getBlockIdByName(blockNames.SUNFLOWER_GROWING);
+const STEM = getBlockIdByName(blockNames.SUNFLOWER_STEM);
+const LEAVES = getBlockIdByName(blockNames.SUNFLOWER_LEAVES);
+const CENTER = getBlockIdByName(blockNames.SUNFLOWER_CENTER);
+const PETALS = getBlockIdByName(blockNames.SUNFLOWER_PETALS);
 
 /**
  * Generate 3D sunflower structure.
@@ -12,19 +19,11 @@ import { blockNames } from "../../state/config/blocks.mjs";
  * @param {number} y - World Y coordinate
  * @param {number} z - World Z coordinate
  * @param {number} progress - Growth progress (0.0 to 1.0)
- * @param {BlockDefinition[]} blocks - Block definitions array
  *
  * @returns {BlockPlacement[]}
  */
-export function generateSunflowerStructure(x, y, z, progress, blocks) {
+export function generateSunflowerStructure(x, y, z, progress) {
   const structure = [];
-  const getBlockId = (name) => blocks.findIndex((b) => b.name === name);
-
-  const GROWING = getBlockId(blockNames.SUNFLOWER_GROWING);
-  const STEM = getBlockId(blockNames.SUNFLOWER_STEM);
-  const LEAVES = getBlockId(blockNames.SUNFLOWER_LEAVES);
-  const CENTER = getBlockId(blockNames.SUNFLOWER_CENTER);
-  const PETALS = getBlockId(blockNames.SUNFLOWER_PETALS);
 
   // Early stage
   if (progress < 0.1) {

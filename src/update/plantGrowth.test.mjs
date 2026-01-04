@@ -119,9 +119,9 @@ describe("Plant Farming & Harvest", () => {
       const blocks = generateWillowTreeStructure(0, 10, 0, 0.15, blockDefs);
 
       expect(blocks.length).toBeGreaterThan(0);
-      const growingBlockId = blockDefs.findIndex(
+      const growingBlockId = blockDefs.find(
         (b) => b.name === blockNames.WILLOW_TREE_GROWING,
-      );
+      ).id;
       expect(blocks.some((b) => b.blockId === growingBlockId)).toBe(true);
     });
 
@@ -129,9 +129,9 @@ describe("Plant Farming & Harvest", () => {
       const blocks = generatePineTreeStructure(0, 10, 0, 0.1, blockDefs);
 
       expect(blocks.length).toBeGreaterThan(0);
-      const growingBlockId = blockDefs.findIndex(
+      const growingBlockId = blockDefs.find(
         (b) => b.name === blockNames.PINE_TREE_GROWING,
-      );
+      ).id;
       expect(blocks.some((b) => b.blockId === growingBlockId)).toBe(true);
     });
 
@@ -139,9 +139,9 @@ describe("Plant Farming & Harvest", () => {
       const blocks = generateBirchStructure(0, 10, 0, 0.12, blockDefs);
 
       expect(blocks.length).toBeGreaterThan(0);
-      const growingBlockId = blockDefs.findIndex(
+      const growingBlockId = blockDefs.find(
         (b) => b.name === blockNames.BIRCH_GROWING,
-      );
+      ).id;
       expect(blocks.some((b) => b.blockId === growingBlockId)).toBe(true);
     });
 

@@ -1,9 +1,14 @@
 import { blockNames } from "../../state/config/blocks.mjs";
+import { getBlockIdByName } from "../../state/config/getBlockIdByName.mjs";
 
 /**
- * @typedef {import('../../state/config/index.mjs').BlockDefinition} BlockDefinition
- * @typedef {import('../../state/config/index.mjs').BlockPlacement} BlockPlacement
+ * @typedef {import('../../state/config/blocks.mjs').BlockDefinition} BlockDefinition
+ * @typedef {import('../../state/config/blocks.mjs').BlockPlacement} BlockPlacement
  */
+
+const GROWING = getBlockIdByName(blockNames.FERN_GROWING);
+const STEM = getBlockIdByName(blockNames.FERN_STEM);
+const FROND = getBlockIdByName(blockNames.FERN_FROND);
 
 /**
  * Generate 3D fern structure.
@@ -12,17 +17,11 @@ import { blockNames } from "../../state/config/blocks.mjs";
  * @param {number} y - World Y coordinate
  * @param {number} z - World Z coordinate
  * @param {number} progress - Growth progress (0.0 to 1.0)
- * @param {BlockDefinition[]} blocks - Block definitions array
  *
  * @returns {BlockPlacement[]}
  */
-export function generateFernStructure(x, y, z, progress, blocks) {
+export function generateFernStructure(x, y, z, progress) {
   const structure = [];
-  const getBlockId = (name) => blocks.findIndex((b) => b.name === name);
-
-  const GROWING = getBlockId(blockNames.FERN_GROWING);
-  const STEM = getBlockId(blockNames.FERN_STEM);
-  const FROND = getBlockId(blockNames.FERN_FROND);
 
   if (progress < 0.2) {
     structure.push({ x, y, z, blockId: GROWING });

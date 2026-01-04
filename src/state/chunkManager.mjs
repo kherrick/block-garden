@@ -8,24 +8,15 @@ import {
 
 import { GravityQueue } from "../update/gravity.mjs";
 import { gameConfig } from "./config/index.mjs";
+import { getBlockById } from "./config/blocks.mjs";
 
 /**
  * ChunkManager - Manages chunk lifecycle and world access.
  *
  * Provides a unified interface for block access across chunks,
- * handles chunk loading/unloading, and maintains backward compatibility
- * with the Map-based world storage.
+ * handles chunk loading/unloading, along with Map-based world storage.
  *
  * @class ChunkManager
- *
- * @example
- * const manager = new ChunkManager();
- * manager.setBlock(10, 50, 10, 1); // Set block at world coords
- * const type = manager.getBlock(10, 50, 10); // Get block type
- *
- * // Map-compatible API for backward compatibility
- * manager.set("10,50,10", 1);
- * manager.get("10,50,10");
  */
 export class ChunkManager {
   /**
@@ -48,6 +39,104 @@ export class ChunkManager {
 
     /** @type {Map<string, {timers: Object, structures: Object}>} Stored plant states for unloaded chunks */
     this.storedPlantStates = new Map();
+
+    /** @type {Worker[]} Terrain generation worker pool */
+    this.workers = [];
+
+    const workerCount = globalThis.navigator?.hardwareConcurrency || 4;
+
+    for (let i = 0; i < workerCount; i++) {
+      const worker = new Worker(
+        new URL("../generate/terrain.worker.mjs", import.meta.url),
+        { type: "module" },
+      );
+
+      worker.onmessage = this.handleWorkerMessage.bind(this);
+
+      this.workers.push(worker);
+    }
+
+    /** @type {number} Index of next worker to use (round-robin) */
+    this.nextWorkerIndex = 0;
+  }
+
+  /**
+   * Handle message from terrain worker.
+   *
+   * @param {MessageEvent} e
+   */
+  handleWorkerMessage(e) {
+    const { chunkX, chunkZ, blocks } = e.data;
+    const key = this.getChunkKey(chunkX, chunkZ);
+    const chunk = this.chunks.get(key);
+
+    if (chunk) {
+      // Apply generated blocks
+      chunk.blocks.set(new Uint8Array(blocks));
+      chunk.generated = true;
+
+      // Re-apply any modifications that happened before generation finished
+      const mods = chunk.getModifications();
+      if (mods.size > 0) {
+        chunk.applyModifications(mods);
+      }
+
+      chunk.dirty = true;
+    }
+  }
+
+  /**
+   * Restore persisted data (modifications, plants) for a newly generated chunk.
+   *
+   * @param {Chunk} chunk
+   * @param {Object} [growthTimers]
+   * @param {Object} [plantStructures]
+   * @param {function} [onPlantsRestored]
+   */
+  restoreChunkPersistence(
+    chunk,
+    growthTimers = null,
+    plantStructures = null,
+    onPlantsRestored = null,
+  ) {
+    const key = this.getChunkKey(chunk.chunkX, chunk.chunkZ);
+
+    // Restore player modifications
+    const storedMods = this.storedChunks.get(key);
+    if (storedMods) {
+      chunk.applyModifications(storedMods);
+      this.storedChunks.delete(key);
+    }
+
+    // Restore Plant States
+    if (this.storedPlantStates.has(key)) {
+      console.log(`[Persistence] Restoring plant state for chunk ${key}`);
+
+      const { timers, structures } = this.storedPlantStates.get(key);
+
+      if (growthTimers) {
+        Object.assign(growthTimers, timers);
+      }
+
+      if (plantStructures) {
+        for (const [structureKey, structure] of Object.entries(structures)) {
+          plantStructures[structureKey] = structure;
+        }
+      }
+
+      this.storedPlantStates.delete(key);
+
+      if (onPlantsRestored && plantStructures) {
+        const validStructures = Object.keys(structures).filter(
+          (key) => plantStructures[key],
+        );
+
+        onPlantsRestored(validStructures);
+      }
+    }
+
+    chunk.restored = true;
+    chunk.dirty = true;
   }
 
   /**
@@ -72,10 +161,10 @@ export class ChunkManager {
    */
   getOrCreateChunk(chunkX, chunkZ) {
     const key = this.getChunkKey(chunkX, chunkZ);
+
     let chunk = this.chunks.get(key);
     if (!chunk) {
       chunk = new Chunk(chunkX, chunkZ);
-
       this.chunks.set(key, chunk);
     }
 
@@ -104,7 +193,6 @@ export class ChunkManager {
    * @returns {number} Block type (0 = air)
    */
   getBlock(x, y, z) {
-    // Handle bottom at y <= 0
     if (y <= 0) {
       return 1; // Bottom
     }
@@ -134,13 +222,13 @@ export class ChunkManager {
    * @param {number} y - World Y coordinate
    * @param {number} z - World Z coordinate
    * @param {number} type - Block type (0 = air)
-   * @param {boolean} [isPlayerChange=false] - Whether this is a player modification (persisted across unload/reload)
+   * @param {boolean} [isPlayerChange=false] - Whether this is a player modification
    *
    * @returns {boolean} True if block was set
    */
   setBlock(x, y, z, type, isPlayerChange = false) {
     if (y <= 0 || y >= CHUNK_SIZE_Y) {
-      return false; // Can't modify bottom or above world
+      return false;
     }
 
     const floorX = Math.floor(x);
@@ -152,18 +240,15 @@ export class ChunkManager {
 
     const result = chunk.setBlock(localX, floorY, localZ, type);
 
-    // Mark neighboring chunks dirty if block is at edge
     if (result) {
       this.markNeighborsDirty(chunkX, chunkZ, localX, localZ);
 
-      // Track player modifications for persistence
       if (isPlayerChange) {
         chunk.markModified(localX, floorY, localZ, type);
       }
 
-      // Enqueue gravity block if applicable
       if (this.blockTypes && type !== 0) {
-        const blockDef = this.blockTypes[type];
+        const blockDef = getBlockById(type);
         if (blockDef && blockDef.gravity) {
           this.gravityQueue.enqueue(floorX, floorY, floorZ);
         }
@@ -175,14 +260,8 @@ export class ChunkManager {
 
   /**
    * Mark neighboring chunks as dirty if block is at chunk edge.
-   *
-   * @param {number} chunkX - Chunk X
-   * @param {number} chunkZ - Chunk Z
-   * @param {number} localX - Local X
-   * @param {number} localZ - Local Z
    */
   markNeighborsDirty(chunkX, chunkZ, localX, localZ) {
-    // If block is at edge, neighbor chunks need mesh rebuild
     if (localX === 0) {
       const neighbor = this.getChunk(chunkX - 1, chunkZ);
       if (neighbor) {
@@ -214,12 +293,6 @@ export class ChunkManager {
 
   /**
    * Check if a block exists at world coordinates.
-   *
-   * @param {number} x - World X coordinate
-   * @param {number} y - World Y coordinate
-   * @param {number} z - World Z coordinate
-   *
-   * @returns {boolean}
    */
   hasBlock(x, y, z) {
     return this.getBlock(x, y, z) !== 0;
@@ -227,13 +300,6 @@ export class ChunkManager {
 
   /**
    * Delete block at world coordinates (set to air).
-   *
-   * @param {number} x - World X coordinate
-   * @param {number} y - World Y coordinate
-   * @param {number} z - World Z coordinate
-   * @param {boolean} [isPlayerChange=false] - Whether this is a player modification
-   *
-   * @returns {boolean}
    */
   deleteBlock(x, y, z, isPlayerChange = false) {
     const floorX = Math.floor(x);
@@ -242,11 +308,10 @@ export class ChunkManager {
 
     const result = this.setBlock(floorX, floorY, floorZ, 0, isPlayerChange);
 
-    // Check block above - if it has gravity, enqueue it
     if (result && this.blockTypes) {
       const aboveType = this.getBlock(floorX, floorY + 1, floorZ);
       if (aboveType !== 0) {
-        const blockDef = this.blockTypes[aboveType];
+        const blockDef = getBlockById(aboveType);
         if (blockDef && blockDef.gravity) {
           this.gravityQueue.enqueue(floorX, floorY + 1, floorZ);
         }
@@ -267,8 +332,6 @@ export class ChunkManager {
 
   /**
    * Get all loaded chunks.
-   *
-   * @returns {IterableIterator<Chunk>}
    */
   getAllChunks() {
     return this.chunks.values();
@@ -276,12 +339,6 @@ export class ChunkManager {
 
   /**
    * Get chunks within load radius of player.
-   * Creates and generates chunks as needed.
-   *
-   * @param {number} playerX - Player world X
-   * @param {number} playerZ - Player world Z
-   *
-   * @returns {Chunk[]}
    */
   getVisibleChunks(playerX, playerZ) {
     const { chunkX: playerChunkX, chunkZ: playerChunkZ } = worldToChunk(
@@ -306,27 +363,13 @@ export class ChunkManager {
 
   /**
    * Update visible chunks around player position.
-   * Generates terrain for new chunks, unloads distant chunks.
+   * Generates terrain for new chunks (ASYNC via Worker), unloads distant chunks.
    * Returns chunks sorted by distance (nearest first).
-   *
-   * @param {number} playerX - Player world X
-   * @param {number} playerZ - Player world Z
-   * @param {number} seed - World seed
-   * @param {import('../state/config/blocks.mjs').BlockDefinition[]} blocks - Block definitions
-   * @param {{[key: string]: string}} blockNames - Block name mapping
-   * @param {(chunk: Chunk, seed: number, blocks: any, blockNames: any) => void} generateChunk - Chunk generator function
-   * @param {WebGL2RenderingContext} [gl] - WebGL context for cleanup
-   * @param {(gl: WebGL2RenderingContext, chunk: Chunk) => void} [deleteChunkMesh] - Mesh cleanup function
-   *
-   * @returns {Chunk[]} Visible chunks sorted by distance
    */
   updateVisibleChunks(
     playerX,
     playerZ,
     seed,
-    blocks,
-    blockNames,
-    generateChunk,
     gl,
     deleteChunkMesh,
     growthTimers = null,
@@ -343,96 +386,48 @@ export class ChunkManager {
     const currentWorldRadius = gameConfig.worldRadius.get();
     const renderRadius = gameConfig.renderRadius.get();
 
-    // Generate chunks in spiral from player (nearest first) within renderRadius
+    const processChunk = (chunk) => {
+      // If not generated and not generating, request it
+      if (!chunk.generated && !chunk.generating) {
+        chunk.generating = true;
+
+        const worker = this.workers[this.nextWorkerIndex];
+
+        this.nextWorkerIndex = (this.nextWorkerIndex + 1) % this.workers.length;
+
+        worker.postMessage({
+          chunkX: chunk.chunkX,
+          chunkZ: chunk.chunkZ,
+          seed,
+        });
+
+        return;
+      }
+
+      // If generated but not restored, restore persistence
+      if (chunk.generated && !chunk.restored) {
+        this.restoreChunkPersistence(
+          chunk,
+          growthTimers,
+          plantStructures,
+          onPlantsRestored,
+        );
+      }
+    };
+
+    // Generate chunks in spiral
     for (let r = 0; r <= renderRadius; r++) {
       if (r === 0) {
-        // Center chunk
         const chunk = this.getOrCreateChunk(playerChunkX, playerChunkZ);
-        if (!chunk.generated) {
-          generateChunk(chunk, seed, blocks, blockNames);
 
-          // Restore player modifications if we have any stored
-          const storedKey = this.getChunkKey(playerChunkX, playerChunkZ);
-          const storedMods = this.storedChunks.get(storedKey);
-          if (storedMods) {
-            chunk.applyModifications(storedMods);
-            this.storedChunks.delete(storedKey);
-          }
+        processChunk(chunk);
 
-          // Restore plant states
-          if (this.storedPlantStates.has(storedKey)) {
-            console.log(
-              `[Persistence] Restoring plant state for chunk ${storedKey}`,
-            );
-            const { timers, structures } =
-              this.storedPlantStates.get(storedKey);
-            if (growthTimers) {
-              console.log(
-                `[Persistence] Restoring ${Object.keys(timers).length} timers`,
-              );
-              Object.assign(growthTimers, timers);
-            }
-            if (plantStructures) {
-              console.log(
-                `[Persistence] Restoring ${Object.keys(structures).length} structures`,
-              );
-              // Restore structures and sync their blocks with actual world state
-              for (const [structureKey, structure] of Object.entries(
-                structures,
-              )) {
-                plantStructures[structureKey] = structure;
-
-                // Sync structure blocks with actual world state
-                // (remove references to blocks that don't exist in world anymore)
-                if (structure.blocks && structure.blocks.length > 0) {
-                  const syncedBlocks = structure.blocks.filter((block) => {
-                    const worldKey = `${block.x},${block.y},${block.z}`;
-                    // Keep block if it still exists in the world
-                    return (
-                      chunk.getBlock(
-                        block.x - chunk.worldX,
-                        block.y,
-                        block.z - chunk.worldZ,
-                      ) !== 0
-                    );
-                  });
-
-                  structure.blocks = syncedBlocks;
-
-                  // If all blocks were harvested, clean up the structure
-                  if (syncedBlocks.length === 0) {
-                    console.log(
-                      `[Persistence] Plant at ${structureKey} has no blocks remaining, marking for cleanup`,
-                    );
-                    delete plantStructures[structureKey];
-                    if (growthTimers) {
-                      delete growthTimers[structureKey];
-                    }
-                  }
-                }
-              }
-            }
-            this.storedPlantStates.delete(storedKey);
-
-            if (onPlantsRestored && plantStructures) {
-              // Only trigger refresh for structures that still have blocks
-              const validStructures = Object.keys(structures).filter(
-                (key) => plantStructures[key],
-              );
-              console.log(
-                `[Persistence] Triggering visual refresh for ${validStructures.length} plants (${Object.keys(structures).length - validStructures.length} were fully harvested)`,
-              );
-              // Invoke callback with the restored structure keys
-              onPlantsRestored(validStructures);
-            }
-          }
+        if (chunk.generated) {
+          visible.push(chunk);
         }
-        visible.push(chunk);
       } else {
-        // Ring at radius r
         for (let dx = -r; dx <= r; dx++) {
           for (let dz = -r; dz <= r; dz++) {
-            // Only process chunks at exactly radius r (the ring)
             if (Math.abs(dx) !== r && Math.abs(dz) !== r) {
               continue;
             }
@@ -440,117 +435,30 @@ export class ChunkManager {
             const cx = playerChunkX + dx;
             const cz = playerChunkZ + dz;
 
+            // handle null for world radius (infinite)
             const WORLD_RADIUS =
               currentWorldRadius > 2048 ? null : currentWorldRadius;
-            // Check world bounds if worldRadius is set
             if (WORLD_RADIUS !== null) {
-              const minChunkX = Math.floor(-WORLD_RADIUS / CHUNK_SIZE_X);
-              const maxChunkX = Math.floor(WORLD_RADIUS / CHUNK_SIZE_X);
-              const minChunkZ = Math.floor(-WORLD_RADIUS / CHUNK_SIZE_Z);
-              const maxChunkZ = Math.floor(WORLD_RADIUS / CHUNK_SIZE_Z);
+              const maxChunk = Math.floor(WORLD_RADIUS / CHUNK_SIZE_X);
 
-              if (
-                cx < minChunkX ||
-                cx > maxChunkX ||
-                cz < minChunkZ ||
-                cz > maxChunkZ
-              ) {
+              if (Math.abs(cx) > maxChunk || Math.abs(cz) > maxChunk) {
                 continue;
               }
             }
 
             const chunk = this.getOrCreateChunk(cx, cz);
-            if (!chunk.generated) {
-              generateChunk(chunk, seed, blocks, blockNames);
 
-              // Restore player modifications if we have any stored
-              const storedKey = this.getChunkKey(cx, cz);
-              const storedMods = this.storedChunks.get(storedKey);
-              if (storedMods) {
-                chunk.applyModifications(storedMods);
-                this.storedChunks.delete(storedKey);
-              }
+            processChunk(chunk);
 
-              // Restore plant states
-              if (this.storedPlantStates.has(storedKey)) {
-                console.log(
-                  `[Persistence] Restoring plant state for chunk ${storedKey}`,
-                );
-                const { timers, structures } =
-                  this.storedPlantStates.get(storedKey);
-                if (growthTimers) {
-                  console.log(
-                    `[Persistence] Restoring ${Object.keys(timers).length} timers`,
-                  );
-                  Object.assign(growthTimers, timers);
-                }
-                if (plantStructures) {
-                  console.log(
-                    `[Persistence] Restoring ${Object.keys(structures).length} structures`,
-                  );
-                  // Restore structures and sync their blocks with actual world state
-                  for (const [structureKey, structure] of Object.entries(
-                    structures,
-                  )) {
-                    plantStructures[structureKey] = structure;
-
-                    // Sync structure blocks with actual world state
-                    // (remove references to blocks that don't exist in world anymore)
-                    if (structure.blocks && structure.blocks.length > 0) {
-                      const syncedBlocks = structure.blocks.filter((block) => {
-                        // Check if block exists in the world
-                        return (
-                          chunk.getBlock(
-                            block.x - chunk.worldX,
-                            block.y,
-                            block.z - chunk.worldZ,
-                          ) !== 0
-                        );
-                      });
-
-                      structure.blocks = syncedBlocks;
-
-                      // If all blocks were harvested, clean up the structure
-                      if (syncedBlocks.length === 0) {
-                        console.log(
-                          `[Persistence] Plant at ${structureKey} has no blocks remaining, marking for cleanup`,
-                        );
-                        delete plantStructures[structureKey];
-                        if (growthTimers) {
-                          delete growthTimers[structureKey];
-                        }
-                      }
-                    }
-                  }
-                }
-                this.storedPlantStates.delete(storedKey);
-
-                if (onPlantsRestored && plantStructures) {
-                  // Only trigger refresh for structures that still have blocks
-                  const validStructures = Object.keys(structures).filter(
-                    (key) => plantStructures[key],
-                  );
-                  console.log(
-                    `[Persistence] Triggering visual refresh for ${validStructures.length} plants (${Object.keys(structures).length - validStructures.length} were fully harvested)`,
-                  );
-                  // Invoke callback with the restored structure keys
-                  onPlantsRestored(validStructures);
-                }
-              }
+            if (chunk.generated) {
+              visible.push(chunk);
             }
-
-            visible.push(chunk);
           }
         }
       }
     }
 
-    // Cleanup & Visibility Check
-    // We want to:
-    // 1. Unload chunks > cacheRadius
-    // 2. Keep visible chunks <= renderRadius
-    // 3. Keep visible chunks <= cacheRadius IF they already have a mesh (Persistence)
-
+    // Unload chunks outside cache radius
     const toDelete = [];
 
     for (const [key, chunk] of this.chunks) {
@@ -558,8 +466,7 @@ export class ChunkManager {
       const dz = Math.abs(chunk.chunkZ - playerChunkZ);
 
       if (dx > cachedRadius || dz > cachedRadius) {
-        // UNLOAD: Outside persistence zone
-        // Store player modifications before deletion
+        // Store player modifications if chunk has any
         const mods = chunk.getModifications();
         if (mods.size > 0) {
           this.storedChunks.set(key, new Map(mods));
@@ -569,40 +476,39 @@ export class ChunkManager {
           deleteChunkMesh(gl, chunk);
         }
 
-        // Store plant states for this chunk
+        // Store plant states before unloading
         if (growthTimers && plantStructures) {
           const chunkTimers = {};
           const chunkStructures = {};
           let hasPlantData = false;
 
-          // Find growth timers in this chunk
-          for (const key of Object.keys(growthTimers)) {
-            const [x, y, z] = key.split(",").map(Number);
+          for (const timerKey of Object.keys(growthTimers)) {
+            const [x, y, z] = timerKey.split(",").map(Number);
             const { chunkX, chunkZ } = worldToChunk(x, z);
 
             if (chunkX === chunk.chunkX && chunkZ === chunk.chunkZ) {
-              chunkTimers[key] = growthTimers[key];
-              delete growthTimers[key];
+              chunkTimers[timerKey] = growthTimers[timerKey];
+              delete growthTimers[timerKey];
               hasPlantData = true;
             }
           }
 
-          // Find plant structures in this chunk
-          for (const key of Object.keys(plantStructures)) {
-            const [x, y, z] = key.split(",").map(Number);
+          for (const structKey of Object.keys(plantStructures)) {
+            const [x, y, z] = structKey.split(",").map(Number);
             const { chunkX, chunkZ } = worldToChunk(x, z);
 
             if (chunkX === chunk.chunkX && chunkZ === chunk.chunkZ) {
-              chunkStructures[key] = plantStructures[key];
-              delete plantStructures[key];
+              chunkStructures[structKey] = plantStructures[structKey];
+
+              delete plantStructures[structKey];
+
               hasPlantData = true;
             }
           }
 
           if (hasPlantData) {
-            console.log(
-              `[Persistence] Storing plant state for chunk ${key}: ${Object.keys(chunkTimers).length} timers, ${Object.keys(chunkStructures).length} structures`,
-            );
+            console.log(`[Persistence] Storing plant state for chunk ${key}`);
+
             this.storedPlantStates.set(key, {
               timers: chunkTimers,
               structures: chunkStructures,
@@ -612,8 +518,7 @@ export class ChunkManager {
 
         toDelete.push(key);
       } else {
-        // PERSIST: Inside persistence zone
-        // If it was already pushed to 'visible' (inside renderRadius loop), don't double push
+        // Chunk is within cache radius but outside render radius
         if ((dx > renderRadius || dz > renderRadius) && chunk.generated) {
           visible.push(chunk);
         }
@@ -624,7 +529,7 @@ export class ChunkManager {
       this.chunks.delete(key);
     }
 
-    // Return sorted by distance (nearest first for meshing priority)
+    // Sort by distance (nearest first)
     return visible.sort((a, b) => {
       const distA =
         Math.abs(a.chunkX - playerChunkX) + Math.abs(a.chunkZ - playerChunkZ);
@@ -638,8 +543,6 @@ export class ChunkManager {
   /**
    * Iterate over all blocks in all chunks.
    * Provides Map-like forEach for backward compatibility.
-   *
-   * @param {(type: number, key: string) => void} callback
    */
   forEach(callback) {
     for (const chunk of this.chunks.values()) {
@@ -667,8 +570,6 @@ export class ChunkManager {
   /**
    * Get entries iterator for backward compatibility.
    * Yields [key, type] pairs like Map.entries().
-   *
-   * @returns {Generator<[string, number]>}
    */
   *entries() {
     for (const chunk of this.chunks.values()) {
@@ -693,11 +594,7 @@ export class ChunkManager {
   }
 
   /**
-   * Check if block exists at key (backward compatibility).
-   *
-   * @param {string} key - "x,y,z" key
-   *
-   * @returns {boolean}
+   * Check if block exists at key.
    */
   has(key) {
     const [x, y, z] = key.split(",").map(Number);
@@ -706,10 +603,7 @@ export class ChunkManager {
   }
 
   /**
-   * Get block at key (backward compatibility).
-   *
-   * @param {string} key - "x,y,z" key
-   * @returns {number|undefined}
+   * Get block at key.
    */
   get(key) {
     const [x, y, z] = key.split(",").map(Number);
@@ -719,28 +613,18 @@ export class ChunkManager {
   }
 
   /**
-   * Set block at key (backward compatibility).
-   *
-   * @param {string} key - "x,y,z" key
-   * @param {number} type - Block type
-   * @param {boolean} [isPlayerChange=false] - Whether this is a player modification
-   *
-   * @returns {ChunkManager}
+   * Set block at key.
    */
   set(key, type, isPlayerChange = false) {
     const [x, y, z] = key.split(",").map(Number);
+
     this.setBlock(x, y, z, type, isPlayerChange);
 
     return this;
   }
 
   /**
-   * Delete block at key (backward compatibility).
-   *
-   * @param {string} key - "x,y,z" key
-   * @param {boolean} [isPlayerChange=false] - Whether this is a player modification
-   *
-   * @returns {boolean}
+   * Delete block at key.
    */
   delete(key, isPlayerChange = false) {
     const [x, y, z] = key.split(",").map(Number);

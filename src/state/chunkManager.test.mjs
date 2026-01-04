@@ -1,3 +1,22 @@
+// Mock Worker class globally
+global.Worker = class MockWorker {
+  constructor(url) {
+    this.url = url;
+  }
+  postMessage(data) {
+    // Synchronously respond for testing
+    if (this.onmessage) {
+      this.onmessage({
+        data: {
+          chunkX: data.chunkX,
+          chunkZ: data.chunkZ,
+          blocks: new ArrayBuffer(16 * 128 * 16),
+        },
+      });
+    }
+  }
+};
+
 /**
  * @jest-environment node
  */
@@ -5,6 +24,9 @@ import { jest } from "@jest/globals";
 
 // Mock the chunk module before importing ChunkManager
 jest.unstable_mockModule("../util/chunk.mjs", () => {
+  // ... (rest of mock stays same, I am just replacing top of file to inject Worker, wait I shouldn't replace huge chunk)
+  // I will target the imports specifically.
+
   const CHUNK_SIZE_X = 16;
   const CHUNK_SIZE_Y = 128;
   const CHUNK_SIZE_Z = 16;
@@ -419,16 +441,13 @@ describe("ChunkManager", () => {
           0,
           0,
           123,
-          [],
-          {},
-          generateChunk,
           {},
           deleteChunkMesh,
         );
 
         // (2*2+1)^2 = 25 chunks
         expect(visible.length).toBe(25);
-        expect(generateChunk).toHaveBeenCalled();
+        // expect(generateChunk).toHaveBeenCalled(); // No longer used, worker handles it
       });
 
       test("unloads chunks outside cache radius", () => {
@@ -442,16 +461,7 @@ describe("ChunkManager", () => {
         const farChunk = manager.getOrCreateChunk(10, 10);
         farChunk.mesh = { vertexCount: 100 };
 
-        manager.updateVisibleChunks(
-          0,
-          0,
-          123,
-          [],
-          {},
-          generateChunk,
-          {},
-          deleteChunkMesh,
-        );
+        manager.updateVisibleChunks(0, 0, 123, {}, deleteChunkMesh);
 
         // Should be removed
         expect(manager.getChunk(10, 10)).toBeUndefined();
@@ -478,9 +488,6 @@ describe("ChunkManager", () => {
           0,
           0,
           123,
-          [],
-          {},
-          generateChunk,
           {},
           deleteChunkMesh,
         );
@@ -523,16 +530,7 @@ describe("ChunkManager World Limits", () => {
     // Logic: floor(-16/16) = -1, floor(16/16) = 1.
     // So chunks -1, 0, 1 in X and Z should be valid.
 
-    const chunks = manager.updateVisibleChunks(
-      0,
-      0,
-      123,
-      blocks,
-      blockNames,
-      generateChunk,
-      gl,
-      deleteChunkMesh,
-    );
+    const chunks = manager.updateVisibleChunks(0, 0, 123, gl, deleteChunkMesh);
 
     // Visible chunks should be within bounds
     // loadRadius is 2. So spiral checks -2 to 2.

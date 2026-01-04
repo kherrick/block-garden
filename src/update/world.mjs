@@ -2,7 +2,7 @@
  * @typedef {import('../state/state.mjs').GameState} GameState
  */
 
-import { blocks as blockTypes } from "../state/config/blocks.mjs";
+import { getBlockById } from "../state/config/blocks.mjs";
 
 /** Maximum gravity updates per frame to prevent CPU spikes */
 const GRAVITY_UPDATES_PER_FRAME = 200;
@@ -62,7 +62,7 @@ export function updateWorld(state) {
       continue; // Block was removed
     }
 
-    const blockDef = blockTypes[type];
+    const blockDef = getBlockById(type);
     if (!blockDef || !blockDef.gravity) {
       continue; // No longer a gravity block
     }
@@ -92,7 +92,7 @@ export function updateWorld(state) {
     // Check if any gravity blocks were above the old position
     const aboveType = world.getBlock(x, y + 1, z);
     if (aboveType !== 0) {
-      const aboveDef = blockTypes[aboveType];
+      const aboveDef = getBlockById(aboveType);
       if (aboveDef && aboveDef.gravity) {
         gravityQueue.enqueue(x, y + 1, z);
       }

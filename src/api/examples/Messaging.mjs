@@ -27,11 +27,11 @@ export class Messaging extends BlockGarden {
     onBlock = "Snow",
     offBlock = "Coal",
     x1 = 15,
-    y1 = 31,
-    z1 = 20,
+    y1 = 76,
+    z1 = 45,
     x2 = 15,
-    y2 = 25,
-    z2 = 20,
+    y2 = 70,
+    z2 = 45,
     rotate = 180,
   ) {
     try {
@@ -41,8 +41,8 @@ export class Messaging extends BlockGarden {
       const boundsOne = this.drawText(
         msgOne, // text to draw
         x1, // x: 15 = right side of screen (centered)
-        y1, // y: 4 = eye level for player at y=2
-        z1, // z: 15 = IN FRONT of player (spawn)
+        y1, // y: 76 = toward the clouds
+        z1, // z: 45 = IN FRONT of player (spawn)
         onBlockId, // onBlock: block ID for text pixels (the letters)
         offBlockId, // offBlock: block ID for background (empty space)
         1, // spacing: 1 block between characters
@@ -53,8 +53,8 @@ export class Messaging extends BlockGarden {
       const boundsTwo = this.drawText(
         msgTwo, // text to draw
         x2, // x: 15 = right side of screen (centered)
-        y2, // y: 4 = eye level for player at y=2
-        z2, // z: 15 = IN FRONT of player (spawn)
+        y2, // y: 70 = toward the clouds
+        z2, // z: 45 = IN FRONT of player (spawn)
         onBlockId, // onBlock: block ID for text pixels (the letters)
         offBlockId, // offBlock: block ID for background (empty space)
         1, // spacing: 1 block between characters
@@ -64,11 +64,11 @@ export class Messaging extends BlockGarden {
 
       showToast(this.shadow, "The text has been drawn successfully!");
       setTimeout(
-        () => showToast(this.shadow, "Look up above the clouds ↑↑↑"),
+        () => showToast(this.shadow, "Look up toward the clouds ↑↑↑"),
         4000,
       );
       setTimeout(
-        () => showToast(this.shadow, "Look up above the clouds ↑↑↑"),
+        () => showToast(this.shadow, "Look up toward the clouds ↑↑↑"),
         8000,
       );
 

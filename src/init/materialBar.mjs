@@ -1,5 +1,6 @@
 /** @typedef {import('../state/config/blocks.mjs').BlockDefinition} BlockDefinition */
 /** @typedef {import('../util/colors/index.mjs').Colors} Colors */
+import { getBlockById } from "../state/config/blocks.mjs";
 
 /**
  *
@@ -25,7 +26,7 @@ export function initMaterialBar(gameColors) {
 
     materialBarEl.innerHTML = materialBar
       .map((blockId, index) => {
-        const block = blocks[blockId];
+        const block = getBlockById(blockId);
         const blockNameKey =
           block?.name.toLowerCase().replace(/ /g, "-") || "air";
         const blockName = block?.name || "Air";

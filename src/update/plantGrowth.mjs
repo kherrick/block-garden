@@ -1,7 +1,4 @@
-import {
-  blocks as blockDefs,
-  FAST_GROWTH_TIME,
-} from "../state/config/blocks.mjs";
+import { getBlockByName, FAST_GROWTH_TIME } from "../state/config/blocks.mjs";
 
 import { generators } from "../generate/plants/index.mjs";
 
@@ -88,7 +85,7 @@ export function updatePlantGrowth(gameState) {
       // Update structure visuals based on progress
       if (structure && generators[structure.type]) {
         // Find plant block definition to get growthTime
-        const plantDef = blockDefs.find((b) => b.name === structure.type);
+        const plantDef = getBlockByName(structure.type);
         const totalTime = useFastGrowth
           ? FAST_GROWTH_TIME
           : plantDef?.growthTime || 10.0;
@@ -120,10 +117,21 @@ export function updateStructure(gameState, key, progress, type) {
   // Clean up old blocks
   if (structure.blocks) {
     for (const block of structure.blocks) {
-      const k = `${block.x},${block.y},${block.z}`;
+      let k;
+      let blockId;
+
+      if (typeof block === "string") {
+        k = block;
+        blockId = undefined; // If it's just a key, we'll delete whatever is there (usually the seed)
+      } else {
+        k = `${block.x},${block.y},${block.z}`;
+        blockId = block.blockId;
+      }
+
       const currentId = gameState.world.get(k);
-      // Only remove if it's the block we expect (prevent deleting player-placed blocks if collision)
-      if (currentId === block.blockId) {
+
+      // Only remove if it's the block we expect or if it was just a coordinate string (seed)
+      if (blockId === undefined || currentId === blockId) {
         gameState.world.delete(k);
       }
     }
@@ -133,7 +141,7 @@ export function updateStructure(gameState, key, progress, type) {
   let newBlocks = [];
   const generator = generators[type];
   if (generator) {
-    newBlocks = generator(rootX, rootY, rootZ, progress, blockDefs);
+    newBlocks = generator(rootX, rootY, rootZ, progress);
     // Debug logging is causing performance issues -- enable a flag to sample
     // // console.debug(`[PlantGrowth] Updated ${type} at ${key} (progress ${progress.toFixed(2)}): ${newBlocks.length} blocks generated`);
   } else {

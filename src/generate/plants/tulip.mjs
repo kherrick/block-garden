@@ -1,9 +1,16 @@
 import { blockNames } from "../../state/config/blocks.mjs";
+import { getBlockIdByName } from "../../state/config/getBlockIdByName.mjs";
 
 /**
- * @typedef {import('../../state/config/index.mjs').BlockDefinition} BlockDefinition
- * @typedef {import('../../state/config/index.mjs').BlockPlacement} BlockPlacement
+ * @typedef {import('../../state/config/blocks.mjs').BlockDefinition} BlockDefinition
+ * @typedef {import('../../state/config/blocks.mjs').BlockPlacement} BlockPlacement
  */
+
+const GROWING = getBlockIdByName(blockNames.TULIP_GROWING);
+const BULB = getBlockIdByName(blockNames.TULIP_BULB);
+const STEM = getBlockIdByName(blockNames.TULIP_STEM);
+const LEAVES = getBlockIdByName(blockNames.TULIP_LEAVES);
+const PETALS = getBlockIdByName(blockNames.TULIP_PETALS);
 
 /**
  * Generate 3D tulip structure.
@@ -12,19 +19,11 @@ import { blockNames } from "../../state/config/blocks.mjs";
  * @param {number} y - World Y coordinate
  * @param {number} z - World Z coordinate
  * @param {number} progress - Growth progress (0.0 to 1.0)
- * @param {BlockDefinition[]} blocks - Block definitions array
  *
  * @returns {BlockPlacement[]}
  */
-export function generateTulipStructure(x, y, z, progress, blocks) {
+export function generateTulipStructure(x, y, z, progress) {
   const structure = [];
-  const getBlockId = (name) => blocks.findIndex((b) => b.name === name);
-
-  const GROWING = getBlockId(blockNames.TULIP_GROWING);
-  const BULB = getBlockId(blockNames.TULIP_BULB);
-  const STEM = getBlockId(blockNames.TULIP_STEM);
-  const LEAVES = getBlockId(blockNames.TULIP_LEAVES);
-  const PETALS = getBlockId(blockNames.TULIP_PETALS);
 
   if (progress < 0.2) {
     structure.push({ x, y, z, blockId: GROWING });

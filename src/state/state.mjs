@@ -1,6 +1,7 @@
 import { Signal } from "signal-polyfill";
 
 import { gameConfig } from "./config/index.mjs";
+import { getBlockById } from "./config/blocks.mjs";
 import { getBlockIdByName } from "./config/getBlockIdByName.mjs";
 
 import { getRandomSeed } from "../util/getRandomSeed.mjs";
@@ -154,8 +155,8 @@ export const gameState = {
  */
 export const computedSignals = {
   currentBlock: new Signal.Computed(() => {
-    const index = gameState.curBlock.get();
-    const block = gameConfig.blocks[index];
+    const id = gameState.curBlock.get();
+    const block = getBlockById(id);
 
     return block?.name || "Air";
   }),
@@ -268,7 +269,7 @@ export async function initState(gThis, version) {
   // materials inventory with all blocks, except for air
   const allMaterialBlocks = gameConfig.blocks
     .filter((block) => block.name !== "Air")
-    .map((_, index) => index);
+    .map((block) => block.id);
 
   gameState.materialsInventory.set(allMaterialBlocks);
 

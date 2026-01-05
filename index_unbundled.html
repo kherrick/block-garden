@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title>Block Garden</title>
+    <base href="/block-garden/"></base>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" name="viewport"/>
+    <meta name="description" content="Block Garden - A 3D sandbox exploration and farming game. Explore procedurally generated worlds, dig for resources, and cultivate a variety of plants."/>
+    <meta name="theme-color" content="#000000"/>
+    <link rel="manifest" href="manifest.json"/>
+    <link rel="icon" href="assets/icons/favicon.ico" type="image/x-icon"/>
+    <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png"/>
+    <style>
+      * {
+        -webkit-tap-highlight-color: transparent;
+        box-sizing: border-box;
+        font-family: Arial, sans-serif;
+      }
+
+      body {
+        background: var(--bg-color-black, #000);
+        color: var(--bg-color-white, #fff);
+        margin: 0;
+        overflow: hidden;
+        padding: 0;
+      }
+    </style>
+    <script type="importmap">
+      {
+        "imports": {
+          "alea": "https://cdn.jsdelivr.net/npm/alea@1.0.1/+esm",
+          "hammerjs": "https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/+esm",
+          "konami-code-js": "https://cdn.jsdelivr.net/npm/konami-code-js@0.8.3/+esm",
+          "localforage": "https://cdn.jsdelivr.net/npm/localforage@1.10.0/+esm",
+          "pdf-lib": "https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/+esm",
+          "signal-polyfill": "https://cdn.jsdelivr.net/npm/signal-polyfill@0.2.2/+esm",
+          "simplex-noise": "https://cdn.jsdelivr.net/npm/simplex-noise@4.0.3/+esm",
+          "workbox-window": "https://cdn.jsdelivr.net/npm/workbox-window@7.4.0/+esm"
+        }
+      }
+    </script>
+    <script src="service-worker/init.mjs" type="module"></script>
+  </head>
+
+  <body>
+    <block-garden></block-garden>
+
+    <script type="module" src="./index.mjs"></script>
+  </body>
+</html>

@@ -88,7 +88,6 @@ export const blockNames = {
   FERN_GROWING: "Fern Growing",
   FERN_STEM: "Fern Stem",
   FERN: "Fern",
-  FOG: "Fog",
   GOLD: "Gold",
   GRASS: "Grass",
   ICE: "Ice",
@@ -1003,6 +1002,32 @@ const blocks = Object.assign(blockDefinitionsArray, {
   getById: (id) => blockDefinitionsById[id],
   getByName: (name) => blockDefinitionsByName.get(name),
 });
+
+/**
+ * Get a Set of all blocks whose gravity is false.
+ *
+ * @param {BlockArray} blocks
+ *
+ * @returns {Set<BlockDefinition>}
+ */
+export function getNonGravityBlocks(blocks) {
+  return new Set(
+    blocks.filter(
+      (block) => block.gravity === false || block.gravity === undefined,
+    ),
+  );
+}
+
+/**
+ * Get a Set of all blocks whose gravity is true.
+ *
+ * @param {BlockArray} blocks
+ *
+ * @returns {Set<BlockDefinition>}
+ */
+export function getGravityBlocks(blocks) {
+  return new Set(blocks.filter((block) => block.gravity === true));
+}
 
 /**
  * Get a block definition by its name.

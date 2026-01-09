@@ -1,11 +1,18 @@
 import { characters as Characters } from "./misc/characters.mjs";
 import { sleep } from "./misc/sleep.mjs";
 
+import { cssColorToRGB } from "../util/colors/cssColorToRGB.mjs";
 import { getShadowRoot } from "../util/getShadowRoot.mjs";
-import { resizeCanvas } from "./ui/resizeCanvas.mjs";
+import { nearestColor } from "../util/colors/nearestColor.mjs";
+import { rgbToHex } from "../util/colors/rgbToHex.mjs";
+import { transformStyleMapByStyleDeclaration } from "../util/colors/transformStyleMapByStyleDeclaration.mjs";
 
 import { createKeyEvent } from "./player/createKeyEvent.mjs";
 import { pressKey } from "./player/pressKey.mjs";
+
+import { blockNames } from "../state/config/blocks.mjs";
+
+import { resizeCanvas } from "./ui/resizeCanvas.mjs";
 
 /**
  * @typedef {import('../state/config/blocks.mjs').BlockDefinition} BlockDefinition
@@ -13,7 +20,7 @@ import { pressKey } from "./player/pressKey.mjs";
 
 export class BlockGarden {
   /**
-   * Class constructor initializing references to global objects and configuration.
+   * Initializes references to global objects and configuration.
    * Sets up shortcuts to globalThis, document, config, state, and blocks.
    */
   constructor() {
@@ -24,6 +31,10 @@ export class BlockGarden {
     this.state = this.gThis.blockGarden.state;
     this.computed = this.gThis.blockGarden.computed;
     this.blocks = this.config.blocks;
+
+    /** @type {Function[]} */
+    this.blockBreakListeners = [];
+    this.isInterceptingSetBlock = false;
   }
 
   /**
@@ -54,17 +65,186 @@ export class BlockGarden {
   }
 
   /**
+   * Get an ideal color map for raw pixel data.
+   *
+   * @param {Uint8ClampedArray|number[]} pixels - RGBA pixel data.
+   * @param {number} width - Width of the image data.
+   * @param {number} height - Height of the image data.
+   * @param {Set} [bannedBlocks=new Set()] - Set of blocks to exclude.
+   *
+   * @returns {Object.<string, string>} Mapping of CSS props to color hexes.
+   */
+  getIdealColorMapForPixels(pixels, width, height, bannedBlocks = new Set()) {
+    const blockColorMap = transformStyleMapByStyleDeclaration(
+      this.gThis.getComputedStyle(this.shadow.host),
+      "--bg-block-",
+    );
+
+    const paletteRGB = [];
+    const rgbToBlockName = {};
+    const blockNamesList = [];
+
+    for (const [rawBlockName, cssColor] of Object.entries(blockColorMap)) {
+      const blockName = this.normalizeBlockName(rawBlockName);
+      if (bannedBlocks.has(blockName)) {
+        continue;
+      }
+
+      const rgb = cssColorToRGB(this.doc, cssColor);
+      if (!rgb) {
+        continue;
+      }
+
+      paletteRGB.push(rgb);
+      rgbToBlockName[rgb.join(",")] = blockName;
+      blockNamesList.push(blockName);
+    }
+
+    const blockColorAccum = {};
+    const blockColorCount = {};
+
+    for (const blockName of blockNamesList) {
+      blockColorAccum[blockName] = [0, 0, 0];
+      blockColorCount[blockName] = 0;
+    }
+
+    for (let i = 0; i < pixels.length; i += 4) {
+      const r = pixels[i],
+        g = pixels[i + 1],
+        b = pixels[i + 2],
+        a = pixels[i + 3];
+
+      if (a < 128) {
+        continue;
+      }
+
+      const nearest = nearestColor(paletteRGB, r, g, b);
+      const blockName = rgbToBlockName[nearest.join(",")];
+
+      if (blockName) {
+        blockColorAccum[blockName][0] += r;
+        blockColorAccum[blockName][1] += g;
+        blockColorAccum[blockName][2] += b;
+        blockColorCount[blockName]++;
+      }
+    }
+
+    /** @type {Object.<string, string>} */
+    const idealColorMap = {};
+    for (const blockName of blockNamesList) {
+      const count = blockColorCount[blockName];
+      if (count > 0) {
+        const avg = blockColorAccum[blockName].map((c) =>
+          Math.round(c / count),
+        );
+        const cssKey = `--bg-block-${blockName.toLowerCase().replace(/_/g, "-")}-color`;
+        idealColorMap[cssKey] = rgbToHex(avg[0], avg[1], avg[2]);
+      }
+    }
+
+    return idealColorMap;
+  }
+
+  /**
    * Finds the index of a block by its name within the provided blocks array.
    *
-   * @param {string} name
-   * @param {BlockDefinition[]} blocks
+   * @param {string} rawBlockName
    *
-   * @returns {number} Index of the block with the given name, or -1 if not found.
+   * @returns {string}
    */
+  getBlockNameFromCss(rawBlockName) {
+    const cssKey = rawBlockName.replace("--bg-color-", "").toLowerCase();
+
+    // Direct match
+    const directKey = cssKey.toUpperCase().replace(/-/g, "_");
+    if (blockNames[directKey]) {
+      return directKey;
+    }
+
+    // Fuzzy match against blockNames
+    for (const [key] of Object.entries(blockNames)) {
+      if (key.toLowerCase().replace(/_/g, "-") === cssKey) {
+        return key;
+      }
+    }
+
+    return null;
+  }
+
   getBlockIdByName(name, blocks = this.config.blocks) {
     const block = blocks.find((block) => block.name === name);
 
     return block ? block.id : -1;
+  }
+
+  /**
+   * Helper to normalize a raw block name from CSS (e.g. "dirt" -> "DIRT")
+   *
+   * @param {string} rawBlockName
+   *
+   * @returns {string}
+   */
+  normalizeBlockName(rawBlockName) {
+    if (typeof rawBlockName !== "string") {
+      return null;
+    }
+    return rawBlockName.toUpperCase().replace(/-/g, "_");
+  }
+
+  /**
+   * Check if an object is a map of strings to strings
+   *
+   * @param {any} obj
+   *
+   * @returns {boolean}
+   */
+  isStringMap(obj) {
+    if (typeof obj !== "object" || obj === null) {
+      return false;
+    }
+
+    return Object.values(obj).every((value) => typeof value === "string");
+  }
+
+  /**
+   * Rotate pixels by an angle in degrees
+   */
+  rotatePixels(pixels, width, height, angleDeg = 0) {
+    if (angleDeg === 0) {
+      return { pixels, width, height };
+    }
+
+    const rad = (angleDeg * Math.PI) / 180;
+    const cosRad = Math.abs(Math.cos(rad));
+    const sinRad = Math.abs(Math.sin(rad));
+    const newWidth = Math.floor(height * sinRad + width * cosRad);
+    const newHeight = Math.floor(height * cosRad + width * sinRad);
+
+    const canvas = this.doc.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    canvas.width = width;
+    canvas.height = height;
+
+    const imgData = ctx.createImageData(width, height);
+    imgData.data.set(pixels);
+    ctx.putImageData(imgData, 0, 0);
+
+    const rotatedCanvas = this.doc.createElement("canvas");
+    rotatedCanvas.width = newWidth;
+    rotatedCanvas.height = newHeight;
+
+    const rotatedCtx = rotatedCanvas.getContext("2d");
+    rotatedCtx.save();
+    rotatedCtx.translate(newWidth / 2, newHeight / 2);
+    rotatedCtx.rotate(rad);
+    rotatedCtx.drawImage(canvas, -width / 2, -height / 2);
+    rotatedCtx.restore();
+
+    return {
+      pixels: rotatedCtx.getImageData(0, 0, newWidth, newHeight).data,
+      width: newWidth,
+      height: newHeight,
+    };
   }
 
   /**
@@ -116,6 +296,73 @@ export class BlockGarden {
   }
 
   /**
+   * Registers a callback to be called when a block is broken (set to Air).
+   *
+   * @param {function(number, number, number): void} callback - Function to call with x, y, z coordinates.
+   */
+  onBlockBreak(callback) {
+    this.blockBreakListeners.push(callback);
+
+    if (!this.isInterceptingSetBlock) {
+      this.setupBlockBreakInterception();
+    }
+  }
+
+  /**
+   * Internal helper to intercept world.setBlock calls and notify listeners.
+   *
+   * @private
+   */
+  setupBlockBreakInterception() {
+    this.isInterceptingSetBlock = true;
+
+    const world = this.getWorld();
+    const originalSetBlock = world.setBlock.bind(world);
+    const airId = this.getBlockIdByName("Air");
+
+    world.setBlock = (x, y, z, blockType, updateChunk) => {
+      const result = originalSetBlock(x, y, z, blockType, updateChunk);
+
+      if (blockType === 0 || blockType === airId) {
+        this.blockBreakListeners.forEach((cb) => cb(x, y, z));
+      }
+
+      return result;
+    };
+  }
+
+  /**
+   * Opens the specified URL in a new window or tab.
+   *
+   * @param {string} url - The URL to open.
+   * @param {string} [target="_blank"] - The target window/tab name (default is "_blank").
+   */
+  openUrl(url, target = "_blank") {
+    if (this.gThis.window) {
+      this.gThis.window.open(url, target);
+    } else if (typeof window !== "undefined") {
+      window.open(url, target);
+    } else {
+      console.warn("⚠️ Navigation failed: No window object found.");
+    }
+  }
+
+  /**
+   * Replaces the current window's location with the specified URL.
+   *
+   * @param {string} url - The URL to navigate to.
+   */
+  replaceWindow(url) {
+    if (this.gThis.window) {
+      this.gThis.window.location.href = url;
+    } else if (typeof window !== "undefined") {
+      window.location.href = url;
+    } else {
+      console.warn("⚠️ Navigation failed: No window object found.");
+    }
+  }
+
+  /**
    * Renders a string using bitmap glyphs into a block grid and returns its bounds.
    * For each character, this draws its bitmap starting at the current x position,
    * then adds the configured spacing columns using the offBlock.
@@ -158,7 +405,6 @@ export class BlockGarden {
 
     for (const char of text.toUpperCase()) {
       const bitmap = characters[char];
-
       if (!bitmap) {
         continue;
       }
@@ -226,19 +472,23 @@ export class BlockGarden {
    * @param {number} x - X coordinate (in blocks) of the top-left corner to draw the QR code.
    * @param {number} y - Y coordinate (in blocks) of the top-left corner to draw the QR code.
    * @param {number} z - Z coordinate (depth) to draw the QR code on.
-   * @param {*} [onBlock=this.blocks.ICE] - Block used for dark modules of the QR code.
-   * @param {*} [offBlock=this.blocks.COAL] - Block used for light modules of the QR code.
+   * @param {*} [onBlock=this.getBlockIdByName("Coal")] - Block used for dark modules (1s)
+   * @param {*} [offBlock=this.getBlockIdByName("Ice")] - Block used for light modules (0s) + quiet zone
    *
-   * @returns {Promise<{x:number, y:number, z:number, width:number, height:number, data:string }>} The position and size of the drawn QR code, with resulting dataURL.
+   * @returns {Promise<{x:number, y:number, z:number, width:number, height:number, data:string, size:number, totalSize:number}>} The position and size of the drawn QR code.
    */
   async drawQRCode(
     text,
     x,
     y,
     z,
-    onBlock = this.blocks.ICE,
-    offBlock = this.blocks.COAL,
+    onBlock = this.getBlockIdByName("Coal"),
+    offBlock = this.getBlockIdByName("Ice"),
   ) {
+    if (!text || text.length === 0) {
+      throw new Error("QR code text cannot be empty");
+    }
+
     const qrcode = await this.getQRCodeModule();
     const qr = qrcode(0, "L");
 
@@ -246,20 +496,55 @@ export class BlockGarden {
     qr.make();
 
     const size = qr.getModuleCount();
+    const MARGIN = 4; // Standard QR quiet zone
+    const totalSize = size + MARGIN * 2; // Include border on all sides
+
+    console.log(
+      `📱 Generating ${size}x${size} QR code (total: ${totalSize}x${totalSize} with margin)`,
+    );
+
     const updates = [];
 
+    // Fill entire area (QR + quiet zone) with light background first
+    for (let row = 0; row < totalSize; row++) {
+      for (let col = 0; col < totalSize; col++) {
+        updates.push({
+          x: x + col,
+          y: y + row,
+          z,
+          block: offBlock, // Light background everywhere initially
+        });
+      }
+    }
+
+    // Draw QR modules INSIDE the quiet zone (not on border)
     for (let row = 0; row < size; row++) {
       for (let col = 0; col < size; col++) {
         const isDark = qr.isDark(row, col);
         const block = isDark ? onBlock : offBlock;
 
-        updates.push({ x: x + col, y: y + row, z, block });
+        // Offset by MARGIN to leave quiet zone clear
+        updates.push({
+          x: x + MARGIN + col,
+          y: y + MARGIN + row,
+          z,
+          block,
+        });
       }
     }
 
     this.batchSetBlocks(updates);
 
-    return { x, y, z, width: size, height: size, data: qr.createDataURL() };
+    return {
+      x,
+      y,
+      z,
+      width: totalSize,
+      height: totalSize,
+      data: qr.createDataURL(),
+      size, // Raw QR size (without margin)
+      totalSize, // Size including quiet zone
+    };
   }
 
   /**
@@ -336,15 +621,15 @@ export class BlockGarden {
    * Shows the fullscreen option in the resolution selection element and sets
    * its value to 'fullscreen'.
    *
-   * @returns {Promise<void>}
+   * @returns {void}
    */
-  async showFullScreen() {
+  showFullScreen() {
     const resolutionSelect = this.shadow.getElementById("resolutionSelect");
     const fullscreenOption = resolutionSelect.querySelector(
       '[value="fullscreen"]',
     );
 
-    fullscreenOption.removeAttribute("hidden");
+    fullscreenOption?.removeAttribute("hidden");
 
     if (resolutionSelect instanceof HTMLSelectElement) {
       resolutionSelect.value = "fullscreen";
@@ -355,13 +640,22 @@ export class BlockGarden {
    * Sets the display to fullscreen mode by showing the fullscreen option,
    * updating the current resolution configuration, and resizing the canvas.
    *
-   * @returns {Promise<void>}
+   * @returns {void}
    */
-  async setFullscreen() {
+  setFullscreen() {
     this.showFullScreen();
-
     this.config.currentResolution.set("fullscreen");
 
     resizeCanvas(this.shadow, this.config.currentResolution);
+  }
+
+  extractBlockKey(prop) {
+    const match = prop.match(/--bg-(block|color)-(.+?)(?:-color)?$/i);
+    if (match) {
+      const candidate = this.normalizeBlockName(match[2]);
+      return blockNames[candidate] ? candidate : null;
+    }
+
+    return null;
   }
 }

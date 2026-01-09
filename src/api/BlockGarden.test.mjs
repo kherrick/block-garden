@@ -45,4 +45,15 @@ describe("BlockGarden API", () => {
     // Verify [x, y, z, type, isPlayerChange]
     expect(lastSetBlockArgs).toEqual([1, 2, 3, 2, true]);
   });
+
+  test("should trigger onBlockBreak callback when block is set to Air", () => {
+    let calledWith = null;
+    const callback = (x, y, z) => {
+      calledWith = [x, y, z];
+    };
+    api.onBlockBreak(callback);
+
+    api.setBlock(10, 20, 30, 0); // Setting to Air (0)
+    expect(calledWith).toEqual([10, 20, 30]);
+  });
 });

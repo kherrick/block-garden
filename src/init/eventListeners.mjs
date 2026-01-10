@@ -10,6 +10,7 @@ import { raycastFromCanvasCoords } from "../util/raycastFromCanvasCoords.mjs";
 import { removeBlock } from "../util/interaction.mjs";
 import { runCompress } from "../util/compression.mjs";
 import { showColorCustomizationDialog } from "../util/customColors.mjs";
+import { processSaveData } from "../util/saveData.mjs";
 
 import { gameConfig } from "../state/config/index.mjs";
 import { createSaveState } from "../state/createSave.mjs";
@@ -21,6 +22,7 @@ import { generateWorld } from "../generate/world.mjs";
 import { showAboutDialog } from "../dialog/about.mjs";
 import { showExamplesDialog } from "../dialog/examples.mjs";
 import { showPrivacyDialog } from "../dialog/privacy.mjs";
+import { showUrlDialog } from "../dialog/url.mjs";
 
 import { resizeCanvas } from "../api/ui/resizeCanvas.mjs";
 import { showToast } from "../api/ui/toast.mjs";
@@ -320,6 +322,14 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
     (e) => {
       host.keys[e.key.toLowerCase()] = false;
 
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement ||
+        e.target instanceof HTMLSelectElement
+      ) {
+        return;
+      }
+
       e.preventDefault();
     },
   );
@@ -402,12 +412,26 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
       await showColorCustomizationDialog(globalThis);
     });
   }
+  // Clear keys on blur to prevent stuck keys when window/tab loses focus
+  globalThis.addEventListener("blur", () => {
+    Object.keys(host.keys).forEach((key) => {
+      host.keys[key] = false;
+    });
+  });
 
   // Keyboard events
   shadow.addEventListener(
     "keydown",
     /** @param {KeyboardEvent} e */
     async (e) => {
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement ||
+        e.target instanceof HTMLSelectElement
+      ) {
+        return;
+      }
+
       const lowercaseKey = e.key.toLowerCase();
 
       const host =
@@ -804,38 +828,8 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
       shadow.removeChild(input);
     }
 
-    let stateJSON = "{}";
-
-    if (file.name.endsWith(".txt")) {
-      stateJSON = (await file.text()).replace(/\s+/g, "");
-    }
-
-    if (file.name.endsWith(".pdf")) {
-      const [results] = await extractAttachments(file);
-      stateJSON = await extractJsonFromPng(new Blob([results.data]));
-    }
-
-    if (file.name.endsWith(".bgs")) {
-      const decompressedStream = file
-        .stream()
-        .pipeThrough(new globalThis.DecompressionStream("gzip"));
-
-      const decompressedBlob = await new globalThis.Response(
-        decompressedStream,
-      ).blob();
-
-      stateJSON = await decompressedBlob.text();
-    }
-
-    // Validate the file is a valid game state before sharing
-    /** @type {Object} */
-    let saveState;
-
-    try {
-      saveState = JSON.parse(stateJSON);
-    } catch (parseError) {
-      throw new Error("Invalid game state file: not valid JSON.");
-    }
+    const stateJSON = await processSaveData(file, file.name, globalThis);
+    const saveState = JSON.parse(stateJSON);
 
     await loadSaveState(globalThis, shadow, saveState);
   });
@@ -999,6 +993,20 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
         console.error("Failed to open storage dialog:", error);
 
         alert("Failed to open storage dialog. Check console for details.");
+      }
+    });
+  }
+
+  // Add event listener for URL loading button
+  const loadExternalGameUrlBtn = shadow.getElementById("loadExternalGameUrl");
+  if (loadExternalGameUrlBtn) {
+    loadExternalGameUrlBtn.addEventListener("click", async function () {
+      try {
+        await showUrlDialog(globalThis, globalThis.document, shadow);
+      } catch (error) {
+        console.error("Failed to open URL dialog:", error);
+
+        alert("Failed to open URL dialog. Check console for details.");
       }
     });
   }

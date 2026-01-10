@@ -13,10 +13,6 @@ import { placeBlock, removeBlock } from "../util/interaction.mjs";
  * @returns {void}
  */
 export function updatePlayer(shadow, state, dt) {
-  if (isKeyPressed(shadow, "control")) {
-    return;
-  }
-
   const { yaw, flying } = state;
   const isFlying = flying.get();
   const speed = isFlying ? 12 : 8; // Faster when flying

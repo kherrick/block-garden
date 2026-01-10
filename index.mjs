@@ -986,6 +986,7 @@ export class BlockGarden extends HTMLElement {
             <button id="openStorageBtn">🗄️ Open Game Storage</button>
             <button id="saveExternalGameFile">🗃️ Save Game File To Disk</button>
             <button id="loadExternalGameFile">💾 Load Game File From Disk</button>
+            <button id="loadExternalGameUrl">💾 Load Game By URL</button>
           </div>
 
           <h4 class="seed-controls__header seed-controls--share" hidden>Share</h4>

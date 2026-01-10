@@ -3,6 +3,7 @@ import localForage from "localforage";
 import { deleteSharedSave, retrieveSharedSave } from "../state/shareTarget.mjs";
 import { createSaveState } from "../state/createSave.mjs";
 import { loadSaveState } from "../state/loadSave.mjs";
+import { processSaveData } from "../util/saveData.mjs";
 
 import {
   canvasToPngWithState,
@@ -14,6 +15,8 @@ import { compressToBinaryBlob } from "../util/compression.mjs";
 import { getDateTime } from "../util/getDateTime.mjs";
 import { getShadowRoot } from "../util/getShadowRoot.mjs";
 import { extractAttachments } from "../util/extractAttachments.mjs";
+import { getGameSaveUrlParam } from "../util/urlParams.mjs";
+import { showToast } from "../api/ui/toast.mjs";
 
 const TIME_SECONDS_ONE = 1000;
 const TIME_MINUTES_ONE = 1 * 60 * TIME_SECONDS_ONE;
@@ -229,14 +232,24 @@ export async function checkAutoSave(globalThis, shadow) {
           // Parse and load save state
           const saveState = JSON.parse(stateJSON);
 
-          // Set the seed before loading the rest of the state (for proper world init)
-          if (saveState.config && saveState.config.seed) {
-            globalThis.blockGarden.state.seed = saveState.config.seed;
+          const loaded = await loadSaveState(globalThis, shadow, saveState);
+
+          if (!loaded) {
+            showToast(
+              shadow,
+              "Oops! This auto-save appears to be broken. Continuing with normal load...",
+              { stack: true, useSingle: false, duration: 5000 },
+            );
+
+            dialog.close();
+            dialog.remove();
+
+            resolve(false);
+
+            return;
           }
 
-          await loadSaveState(globalThis, shadow, saveState);
-
-          const seedInput = shadow.getElementById("seedInput");
+          const seedInput = shadow.getElementById("worldSeedInput");
           const currentSeedDisplay = shadow.getElementById("currentSeed");
 
           if (seedInput instanceof HTMLInputElement) {
@@ -250,6 +263,18 @@ export async function checkAutoSave(globalThis, shadow) {
           console.log("Auto save loaded successfully");
         } catch (error) {
           console.error("Failed to load auto save:", error);
+          showToast(shadow, "Oops! Failed to load auto-save. Continuing...", {
+            stack: true,
+            useSingle: false,
+            duration: 5000,
+          });
+
+          dialog.close();
+          dialog.remove();
+
+          resolve(false);
+
+          return;
         }
 
         dialog.close();
@@ -351,7 +376,22 @@ export async function checkSharedSave(globalThis, shadow) {
           try {
             let saveState = sharedSave.data;
 
-            await loadSaveState(globalThis, shadow, saveState);
+            const loaded = await loadSaveState(globalThis, shadow, saveState);
+
+            if (!loaded) {
+              showToast(
+                shadow,
+                "Oops! This shared save appears to be broken. Continuing with normal load...",
+                { stack: true, useSingle: false, duration: 5000 },
+              );
+
+              dialog.close();
+              dialog.remove();
+
+              resolve(false);
+
+              return;
+            }
 
             // handle loading pdfs
             if (saveState?.type === "pdf") {
@@ -371,7 +411,7 @@ export async function checkSharedSave(globalThis, shadow) {
             }
 
             const { seed } = saveState.config;
-            const seedInput = shadow.getElementById("seedInput");
+            const seedInput = shadow.getElementById("worldSeedInput");
             const currentSeedDisplay = shadow.getElementById("currentSeed");
 
             if (seedInput instanceof HTMLInputElement) {
@@ -388,11 +428,22 @@ export async function checkSharedSave(globalThis, shadow) {
             console.log("Shared save loaded successfully");
           } catch (error) {
             console.error("Failed to load shared save:", error);
+            showToast(
+              shadow,
+              "Oops! Failed to load shared save. Continuing...",
+              { stack: true, useSingle: false, duration: 5000 },
+            );
+
+            dialog.close();
+            dialog.remove();
+
+            resolve(false);
+
+            return;
           }
 
           dialog.close();
           dialog.remove();
-
           resolve(true);
         });
 
@@ -401,6 +452,7 @@ export async function checkSharedSave(globalThis, shadow) {
         .addEventListener("click", async () => {
           // Delete the shared save if user declines
           await deleteSharedSave();
+
           dialog.close();
           dialog.remove();
 
@@ -414,11 +466,162 @@ export async function checkSharedSave(globalThis, shadow) {
 
         // Delete the shared save if dialog is cancelled
         await deleteSharedSave();
+
         resolve(false);
       });
     });
   } catch (error) {
     console.error("Failed to check for shared save:", error);
+
+    return false;
+  }
+}
+
+/**
+ * Check for and load game save from URL parameter `gameSave`
+ *
+ * Displays a dialog asking user to load the save from URL
+ *
+ * @param {typeof globalThis} globalThis
+ * @param {ShadowRoot} shadow
+ *
+ * @returns {Promise<boolean>} - true if a URL save was loaded, false otherwise
+ */
+export async function checkUrlSave(globalThis, shadow) {
+  try {
+    const gameSaveUrl = getGameSaveUrlParam(globalThis);
+
+    if (!gameSaveUrl) {
+      return false;
+    }
+
+    // Create and show URL save dialog
+    const dialog = globalThis.document.createElement("dialog");
+    dialog.style.cssText = `
+      background: var(--bg-color-gray-50);
+      border-radius: 0.5rem;
+      border: 0.125rem solid var(--bg-color-gray-900);
+      color: var(--bg-color-gray-900);
+      font-family: monospace;
+      padding: 1.25rem;
+      max-width: 25rem;
+      z-index: 10000;
+    `;
+
+    dialog.innerHTML = `
+      <h3 style="margin: 0 0 1rem 0">Game Save Found in URL</h3>
+      <p style="margin: 0 0 1rem 0">
+        A game save was found in the URL. Would you like to load it?
+      </p>
+      <div style="display: flex; gap: 0.625rem; justify-content: flex-end">
+        <button id="urlSaveNo" style="
+          background: var(--bg-color-red-500);
+          border-radius: 0.25rem;
+          border: none;
+          color: white;
+          cursor: pointer;
+          padding: 0.5rem 0.9375rem;
+        ">No</button>
+        <button id="urlSaveYes" style="
+          background: var(--bg-color-green-500);
+          border-radius: 0.25rem;
+          border: none;
+          color: white;
+          cursor: pointer;
+          padding: 0.5rem 0.9375rem;
+        ">Yes</button>
+      </div>
+    `;
+
+    shadow.append(dialog);
+    dialog.showModal();
+
+    return new Promise((resolve) => {
+      dialog
+        .querySelector("#urlSaveYes")
+        .addEventListener("click", async () => {
+          try {
+            const response = await fetch(gameSaveUrl);
+
+            if (!response.ok) {
+              throw new Error(
+                `Failed to fetch from URL: ${response.statusText}`,
+              );
+            }
+
+            const blob = await response.blob();
+            const filename = gameSaveUrl.split("/").pop() || "save.bgs";
+
+            const stateJSON = await processSaveData(blob, filename, globalThis);
+            const saveState = JSON.parse(stateJSON);
+
+            const loaded = await loadSaveState(globalThis, shadow, saveState);
+
+            if (!loaded) {
+              showToast(
+                shadow,
+                "Oops! This URL save state appears to be broken. Continuing with normal load...",
+                { stack: true, useSingle: false, duration: 5000 },
+              );
+              dialog.close();
+              dialog.remove();
+
+              resolve(false);
+
+              return;
+            }
+
+            const seedInput = shadow.getElementById("worldSeedInput");
+            const currentSeedDisplay = shadow.getElementById("currentSeed");
+
+            if (seedInput instanceof HTMLInputElement) {
+              seedInput.value = globalThis.blockGarden.state.seed;
+            }
+
+            if (currentSeedDisplay) {
+              currentSeedDisplay.textContent =
+                globalThis.blockGarden.state.seed;
+            }
+
+            console.log("URL save loaded successfully");
+          } catch (error) {
+            console.error("Failed to load URL save:", error);
+            showToast(shadow, "Oops! Failed to load URL save. Continuing...", {
+              stack: true,
+              useSingle: false,
+              duration: 5000,
+            });
+
+            dialog.close();
+            dialog.remove();
+
+            resolve(false);
+
+            return;
+          }
+
+          dialog.close();
+          dialog.remove();
+
+          resolve(true);
+        });
+
+      dialog.querySelector("#urlSaveNo").addEventListener("click", () => {
+        dialog.close();
+        dialog.remove();
+
+        resolve(false);
+      });
+
+      dialog.addEventListener("cancel", () => {
+        dialog.close();
+        dialog.remove();
+
+        resolve(false);
+      });
+    });
+  } catch (error) {
+    console.error("Failed to check for URL save:", error);
 
     return false;
   }

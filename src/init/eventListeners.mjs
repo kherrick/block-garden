@@ -1,3 +1,4 @@
+import isNumber from "lodash.isnumber";
 import extrasHandler from "konami-code-js";
 
 import { copyToClipboard } from "../util/copyToClipboard.mjs";
@@ -18,6 +19,7 @@ import { loadSaveState } from "../state/loadSave.mjs";
 import { selectMaterialBarSlot, setMaterialBarItem } from "../state/state.mjs";
 
 import { generateWorld } from "../generate/world.mjs";
+import { initNewWorld } from "./newWorld.mjs";
 
 import { showAboutDialog } from "../dialog/about.mjs";
 import { showExamplesDialog } from "../dialog/examples.mjs";
@@ -424,14 +426,6 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
     "keydown",
     /** @param {KeyboardEvent} e */
     async (e) => {
-      if (
-        e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement ||
-        e.target instanceof HTMLSelectElement
-      ) {
-        return;
-      }
-
       const lowercaseKey = e.key.toLowerCase();
 
       const host =
@@ -439,25 +433,23 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
         (shadow.host);
       host.keys[lowercaseKey] = true;
 
-      // Allow digits 0-9, enter, and delete
-      if (lowercaseKey === "enter") {
-        if (
-          e.target instanceof HTMLInputElement &&
-          e.target.getAttribute("id") === "worldSeedInput"
-        ) {
-          handleGenerateButton();
-        }
-      }
+      const isInputFocused =
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement ||
+        e.target instanceof HTMLSelectElement;
 
       // Always hide the world generation panel with escape
       if (lowercaseKey === "escape") {
-        shadow
-          .querySelector('[class="seed-controls"]')
-          .setAttribute("hidden", "hidden");
+        const seedControls = shadow.querySelector('[class="seed-controls"]');
+        if (!seedControls.hasAttribute("hidden")) {
+          seedControls.setAttribute("hidden", "hidden");
 
-        setTimeout(() => {
-          globalThis.blockGarden.state.isCanvasActionDisabled = false;
-        }, 500);
+          setTimeout(() => {
+            globalThis.blockGarden.state.isCanvasActionDisabled = false;
+          }, 500);
+
+          return;
+        }
       }
 
       // Add 'S' key to show / hide the world generation panel
@@ -476,6 +468,27 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
         }
 
         globalThis.document.exitPointerLock();
+
+        return;
+      }
+
+      if (lowercaseKey === "enter") {
+        if (
+          e.target instanceof HTMLInputElement &&
+          e.target.getAttribute("id") === "worldSeedInput"
+        ) {
+          handleGenerateButton();
+
+          return;
+        }
+      }
+
+      // If an input is focused or canvas actions are disabled, return early for all other keys
+      if (
+        isInputFocused ||
+        globalThis.blockGarden.state.isCanvasActionDisabled
+      ) {
+        return;
       }
 
       if (
@@ -675,7 +688,16 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
   });
 
   function handleWorldStateButton() {
-    shadow.querySelector('[class="seed-controls"]').toggleAttribute("hidden");
+    const seedControls = shadow.querySelector('[class="seed-controls"]');
+    seedControls.toggleAttribute("hidden");
+
+    if (seedControls.hasAttribute("hidden")) {
+      setTimeout(() => {
+        globalThis.blockGarden.state.isCanvasActionDisabled = false;
+      }, 500);
+    } else {
+      globalThis.blockGarden.state.isCanvasActionDisabled = true;
+    }
   }
 
   const worldStateBtn = shadow.getElementById("worldState");
@@ -691,11 +713,25 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
 
     const currentSeedDisplay = shadow.getElementById("currentSeed");
 
-    generateWorld(Number(seedInputValue), globalThis.blockGarden.state);
+    const seedValue = Number(seedInputValue);
+    if (!isNumber(seedValue) || isNaN(seedValue)) {
+      showToast(shadow, "Invalid seed. Please enter a number.");
+      return;
+    }
 
-    console.log(`Generated new world with seed: ${seedInputValue}`);
+    if (seedValue < 1 || seedValue > Number.MAX_SAFE_INTEGER) {
+      showToast(
+        shadow,
+        `Seed must be between 1 and ${Number.MAX_SAFE_INTEGER}.`,
+      );
+      return;
+    }
 
-    currentSeedDisplay.textContent = seedInputValue;
+    generateWorld(seedValue, globalThis.blockGarden.state);
+
+    console.log(`Generated new world with seed: ${seedValue}`);
+
+    currentSeedDisplay.textContent = String(seedValue);
   }
 
   function handleRandomSeedButton() {
@@ -726,6 +762,10 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
 
     if (seedInput instanceof HTMLInputElement) {
       await copyToClipboard(globalThis, seedInput.value);
+      showToast(
+        shadow,
+        `Game seed, ${seedInput.value}, has been copied successfully`,
+      );
     }
   });
 
@@ -828,10 +868,32 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
       shadow.removeChild(input);
     }
 
-    const stateJSON = await processSaveData(file, file.name, globalThis);
-    const saveState = JSON.parse(stateJSON);
+    try {
+      const stateJSON = await processSaveData(file, file.name, globalThis);
+      const saveState = JSON.parse(stateJSON);
 
-    await loadSaveState(globalThis, shadow, saveState);
+      const loaded = await loadSaveState(globalThis, shadow, saveState);
+
+      if (!loaded) {
+        showToast(
+          shadow,
+          "Oops! This save state appears to be broken. Loading a new world...",
+          { stack: true, useSingle: false, duration: 5000 },
+        );
+
+        initNewWorld(globalThis.blockGarden.state.seed);
+      }
+    } catch (error) {
+      console.error("Failed to load external game file:", error);
+
+      showToast(shadow, "Oops! Failed to load file. Loading a new world...", {
+        stack: true,
+        useSingle: false,
+        duration: 5000,
+      });
+
+      initNewWorld(globalThis.blockGarden.state.seed);
+    }
   });
 
   let canShareFiles = false;

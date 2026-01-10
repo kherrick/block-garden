@@ -13,6 +13,7 @@ import {
   autoSaveGame,
   checkAutoSave,
   checkSharedSave,
+  checkUrlSave,
   getSaveMode,
 } from "../dialog/storage.mjs";
 
@@ -36,6 +37,7 @@ import { initHammerControls } from "./hammerControls.mjs";
 import { initMaterialBar } from "./materialBar.mjs";
 import { initNewWorld } from "./newWorld.mjs";
 import { initTouchControls } from "./touchControls.mjs";
+import { getGameSaveUrlParam, clearUrlParams } from "../util/urlParams.mjs";
 
 /**
  * @typedef {Element & { keys: object, touchKeys: object }} CustomShadowHost
@@ -81,6 +83,16 @@ export async function initGame(gThis, shadow, cnvs) {
   }
 
   shadow.addEventListener("focusout", (e) => {
+    const focusEvent = /** @type {FocusEvent} */ (e);
+    if (
+      focusEvent.relatedTarget instanceof HTMLInputElement ||
+      focusEvent.relatedTarget instanceof HTMLTextAreaElement ||
+      focusEvent.relatedTarget instanceof HTMLSelectElement ||
+      /** @type {any} */ (focusEvent.relatedTarget)?.closest?.(".seed-controls")
+    ) {
+      return;
+    }
+
     cnvs.focus();
   });
 
@@ -99,10 +111,16 @@ export async function initGame(gThis, shadow, cnvs) {
   showToast(shadow, "Generating World...");
   await new Promise((r) => setTimeout(r, 0));
 
-  const { computedSignals, gameConfig, gameState } = await initState(
-    gThis,
-    version,
-  );
+  const { computedSignals, gameConfig, gameState, invalidSeedProvided } =
+    await initState(gThis, version);
+
+  if (invalidSeedProvided) {
+    showToast(
+      shadow,
+      `Invalid seed provided in URL. Using a random seed instead.`,
+      { stack: true, useSingle: false, duration: 5000 },
+    );
+  }
 
   const host =
     /** @type {CustomShadowHost} */
@@ -246,18 +264,27 @@ export async function initGame(gThis, shadow, cnvs) {
     gameState.shouldReset.set(true);
   });
 
-  // Check for shared save first (takes priority)
+  // Check for shared save
   let sharedSaveLoaded = await checkSharedSave(gThis, shadow);
 
-  // If no shared save, check for auto-save
+  // Check for auto-save
   let autoSaveLoaded = false;
   if (!sharedSaveLoaded) {
     autoSaveLoaded = await checkAutoSave(gThis, shadow);
   }
 
+  // Check for URL save
+  let urlSaveLoaded = false;
   if (!sharedSaveLoaded && !autoSaveLoaded) {
+    urlSaveLoaded = await checkUrlSave(gThis, shadow);
+  }
+
+  if (!sharedSaveLoaded && !autoSaveLoaded && !urlSaveLoaded) {
     initNewWorld(gameState.seed);
   }
+
+  // cleanup URL parameters (seed, gameSave) after they are consumed
+  clearUrlParams(gThis);
 
   // Set up auto-save interval
   setInterval(async () => {

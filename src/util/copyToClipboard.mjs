@@ -7,7 +7,7 @@
  * @param {typeof globalThis} gThis - Global this (window object)
  * @param {string} text - The text to copy to clipboard
  *
- * @returns {Promise<void>} Promise that resolves when copy is complete (or fails silently)
+ * @returns {Promise<void>} Promise that resolves when copy is complete
  */
 export async function copyToClipboard(gThis, text) {
   const nav = gThis.navigator;

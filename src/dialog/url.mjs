@@ -143,11 +143,28 @@ export class UrlDialog {
       const stateJSON = await processSaveData(blob, filename, this.gThis);
       const saveState = JSON.parse(stateJSON);
 
-      await loadSaveState(this.gThis, this.shadow, saveState);
+      const loaded = await loadSaveState(this.gThis, this.shadow, saveState);
 
-      showToast(this.shadow, "Game loaded successfully from URL!");
+      if (loaded) {
+        showToast(this.shadow, "Game loaded successfully from URL!");
 
-      this.close();
+        this.close();
+      } else {
+        showToast(
+          this.shadow,
+          "Oops! This URL save state appears to be broken. Use a valid game save file!",
+          { stack: true, useSingle: false, duration: 5000 },
+        );
+
+        const loadBtn = /** @type {HTMLButtonElement} */ (
+          this.dialog.querySelector("#loadUrlBtn")
+        );
+
+        if (loadBtn) {
+          loadBtn.disabled = false;
+          loadBtn.textContent = "Load";
+        }
+      }
     } catch (error) {
       console.error("Failed to load game from URL:", error);
 

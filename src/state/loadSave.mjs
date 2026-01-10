@@ -1,8 +1,14 @@
+import isNumber from "lodash.isnumber";
+
 import { base64toBlob } from "../util/conversion.mjs";
 import { extractAttachments } from "../util/extractAttachments.mjs";
 import { extractJsonFromPng } from "../util/canvasToPngWithState.mjs";
 import { initNoise } from "../util/noise.mjs";
 import { worldToChunk } from "../util/chunk.mjs";
+
+/**
+ * @typedef {import('signal-polyfill').Signal} Signal
+ */
 
 /**
  * Restores game state and config from a save file.
@@ -14,9 +20,15 @@ import { worldToChunk } from "../util/chunk.mjs";
  * @param {ShadowRoot} shadow - Shadow root for canvas resizing
  * @param {Object} state - Save state object created by createSaveState
  *
- * @returns {Promise<void>}
+ * @returns {Promise<boolean>} - true if save state was successfully loaded, false if invalid
  */
 export async function loadSaveState(gThis, shadow, state) {
+  if (!state) {
+    console.warn("Save state validation failed: No state data provided.");
+
+    return false;
+  }
+
   let saveState = state;
 
   // handle loading pdfs
@@ -29,92 +41,184 @@ export async function loadSaveState(gThis, shadow, state) {
     saveState = JSON.parse(await extractJsonFromPng(new Blob([results.data])));
   }
 
-  // Support both old and new save formats
   const worldData = saveState.world || saveState;
-  const config = saveState.config || {};
   const stateData = saveState.state || {};
 
+  // Validation
+  let hasVoxelData = false;
+
+  const worldKeys = Object.keys(worldData);
+  for (const x of worldKeys) {
+    const numX = Number(x);
+    if (!isNumber(numX) || isNaN(numX)) {
+      continue;
+    }
+
+    const xz = worldData[x];
+    if (xz && typeof xz === "object") {
+      const zKeys = Object.keys(xz);
+      for (const z of zKeys) {
+        const numZ = Number(z);
+        if (!isNumber(numZ) || isNaN(numZ)) {
+          continue;
+        }
+
+        const ys = xz[z];
+        if (ys && typeof ys === "object") {
+          const yKeys = Object.keys(ys);
+          for (const y of yKeys) {
+            const numY = Number(y);
+            if (!isNumber(numY) || isNaN(numY)) {
+              continue;
+            }
+
+            const blockId = ys[y];
+            if (typeof blockId === "number") {
+              hasVoxelData = true;
+
+              break;
+            }
+          }
+        }
+
+        if (hasVoxelData) {
+          break;
+        }
+      }
+    }
+
+    if (hasVoxelData) {
+      break;
+    }
+  }
+
+  if (!hasVoxelData) {
+    console.warn("Save state validation failed: No voxel data found.");
+
+    return false;
+  }
+
+  // Start of Side-Effects
+  const config = saveState.config || {};
   const world = gThis.blockGarden.state.world;
-
-  // Restore config/state values
   const gameState = gThis.blockGarden.state;
-  if (config.seed !== undefined) {
-    gameState.seed = config.seed;
-  }
+  const configSignals = gThis.blockGarden.config;
 
-  if (config.version !== undefined) {
-    gameState.version = config.version;
-  }
+  /**
+   * Apply values to state or signals.
+   *
+   * @param {Object} obj - The parent object containing the property or Signal
+   * @param {string} key - The key within the object
+   * @param {any} value - The value from the save data
+   * @param {'number'|'boolean'|'string'|'object'} type - Expected type
+   * @param {Object} [options] - Constraints like min/max
+   */
+  const applyValue = (obj, key, value, type, options = {}) => {
+    if (value === undefined || value === null || !obj) {
+      return;
+    }
+
+    let result = value;
+
+    if (type === "number") {
+      result = Number(value);
+      if (isNaN(result)) {
+        return;
+      }
+
+      if (options.min !== undefined) {
+        result = Math.max(options.min, result);
+      }
+
+      if (options.max !== undefined) {
+        result = Math.min(options.max, result);
+      }
+    } else if (type === "boolean") {
+      result = Boolean(value);
+    } else if (type === "string") {
+      result = String(value);
+    } else if (type === "object") {
+      if (typeof value !== "object" || Array.isArray(value)) {
+        return;
+      }
+    }
+
+    // Apply to Signal or raw property
+    const target = obj[key];
+    if (target && typeof target.set === "function") {
+      target.set(result);
+    } else {
+      obj[key] = result;
+    }
+  };
+
+  // Restore config values
+  applyValue(gameState, "seed", config.seed, "number", {
+    min: 1,
+    max: Number.MAX_SAFE_INTEGER,
+  });
+  applyValue(gameState, "version", config.version, "string");
 
   // Restore granular generation settings to gameConfig Signals
-  const configSignals = gThis.blockGarden.config;
-  if (config.terrainOctaves !== undefined)
-    configSignals.terrainOctaves.set(config.terrainOctaves);
-  if (config.mountainScale !== undefined)
-    configSignals.mountainScale.set(config.mountainScale);
-  if (config.decorationDensity !== undefined)
-    configSignals.decorationDensity.set(config.decorationDensity);
-  if (config.caveThreshold !== undefined)
-    configSignals.caveThreshold.set(config.caveThreshold);
-  if (config.useCaves !== undefined)
-    configSignals.useCaves.set(config.useCaves);
-  if (config.cloudDensity !== undefined)
-    configSignals.cloudDensity.set(config.cloudDensity);
-
-  if (stateData.x !== undefined) {
-    gameState.x = stateData.x;
-  }
-
-  if (stateData.y !== undefined) {
-    gameState.y = stateData.y;
-  }
-
-  if (stateData.z !== undefined) {
-    gameState.z = stateData.z;
-  }
-
-  if (stateData.dx !== undefined) {
-    gameState.dx = stateData.dx;
-  }
-
-  if (stateData.dy !== undefined) {
-    gameState.dy = stateData.dy;
-  }
-
-  if (stateData.dz !== undefined) {
-    gameState.dz = stateData.dz;
-  }
-
-  if (stateData.onGround !== undefined) {
-    gameState.onGround = stateData.onGround;
-  }
-
-  // Validate and initialize inventory
-  if (!stateData.inventory || typeof stateData.inventory !== "object") {
-    // Initialize to empty inventory if missing
-    gameState.inventory = {};
-
-    console.warn(
-      "Inventory missing or invalid in save, initializing to empty object.",
+  if (configSignals) {
+    applyValue(
+      configSignals,
+      "terrainOctaves",
+      config.terrainOctaves,
+      "number",
+      {
+        min: 1,
+        max: 8,
+      },
     );
-  } else {
-    gameState.inventory = stateData.inventory;
+
+    applyValue(configSignals, "mountainScale", config.mountainScale, "number", {
+      min: 0,
+      max: 100,
+    });
+
+    applyValue(
+      configSignals,
+      "decorationDensity",
+      config.decorationDensity,
+      "number",
+      { min: 0, max: 100 },
+    );
+
+    applyValue(configSignals, "caveThreshold", config.caveThreshold, "number", {
+      min: 0,
+      max: 100,
+    });
+
+    applyValue(configSignals, "useCaves", config.useCaves, "boolean");
+    applyValue(configSignals, "cloudDensity", config.cloudDensity, "number", {
+      min: 0,
+      max: 100,
+    });
   }
 
-  // Validate and initialize curBlock
-  if (stateData.curBlock !== undefined && gameState.curBlock?.set) {
-    gameState.curBlock.set(stateData.curBlock);
-  } else if (gameState.curBlock?.set) {
-    // Set to default block (e.g., Dirt)
-    gameState.curBlock.set(1); // Replace 1 with your default block ID if needed
-    console.warn("curBlock missing in save, set to default block.");
+  // Restore player state
+  applyValue(gameState, "x", stateData.x, "number");
+  applyValue(gameState, "y", stateData.y, "number");
+  applyValue(gameState, "z", stateData.z, "number");
+  applyValue(gameState, "dx", stateData.dx, "number");
+  applyValue(gameState, "dy", stateData.dy, "number");
+  applyValue(gameState, "dz", stateData.dz, "number");
+  applyValue(gameState, "onGround", stateData.onGround, "boolean");
+
+  if (stateData.inventory && typeof stateData.inventory === "object") {
+    gameState.inventory = stateData.inventory;
+  } else {
+    gameState.inventory = {};
   }
+
+  applyValue(gameState, "curBlock", stateData.curBlock, "number");
 
   // Cancel any running game loop before reset (if available)
   if (typeof gThis.cancelGameLoop === "function") {
     gThis.cancelGameLoop();
-  } else if (typeof globalThis.cancelGameLoop === "function") {
-    globalThis.cancelGameLoop();
+  } else if (typeof gThis.globalThis?.cancelGameLoop === "function") {
+    gThis.globalThis.cancelGameLoop();
   }
 
   // Clear existing world
@@ -125,48 +229,78 @@ export async function loadSaveState(gThis, shadow, state) {
   if (gameState.seed !== undefined) {
     initNoise(gameState.seed);
 
-    // Instead of restoring plants directly to active state,
-    // we move them to storedPlantStates so they are handled
-    // by the chunk restoration logic during generation.
+    // Clear existing active state in-place to preserve object references for the game loop
+    if (gameState.plantStructures) {
+      Object.keys(gameState.plantStructures).forEach((k) => {
+        delete gameState.plantStructures[k];
+      });
+    }
+
+    if (gameState.growthTimers) {
+      Object.keys(gameState.growthTimers).forEach((k) => {
+        delete gameState.growthTimers[k];
+      });
+    }
+
     const structures = stateData.plantStructures || {};
     const timers = stateData.growthTimers || {};
 
-    // Clear existing active state
-    gameState.plantStructures = {};
-    gameState.growthTimers = {};
+    world.storedPlantStates.clear();
 
-    // Partition by chunk and add to storedPlantStates
-    const partitioned = new Map();
-
-    for (const key of Object.keys(structures)) {
-      const [x, y, z] = key.split(",").map(Number);
-      const { chunkX, chunkZ } = worldToChunk(x, z);
-      const chunkKey = `${chunkX},${chunkZ}`;
-
-      if (!partitioned.has(chunkKey)) {
-        partitioned.set(chunkKey, { timers: {}, structures: {} });
-      }
-
-      const chunkData = partitioned.get(chunkKey);
-      chunkData.structures[key] = structures[key];
-      if (timers[key] !== undefined) {
-        chunkData.timers[key] = timers[key];
-      }
+    // Preserve stored plant states from the save
+    if (saveState.storedPlantStates) {
+      Object.entries(saveState.storedPlantStates).forEach(([key, value]) => {
+        world.storedPlantStates.set(key, value);
+      });
     }
 
-    // Apply to world
-    for (const [key, data] of partitioned) {
-      world.storedPlantStates.set(key, data);
-    }
+    const plantKeys = new Set([
+      ...Object.keys(structures),
+      ...Object.keys(timers),
+    ]);
 
-    console.log("Noise initialized for saved world with seed:", gameState.seed);
+    plantKeys.forEach((key) => {
+      const parts = key.split(",");
+      if (parts.length === 3) {
+        const x = parseInt(parts[0]);
+        const z = parseInt(parts[2]);
+        const { chunkX, chunkZ } = worldToChunk(x, z);
+
+        const chunkKey = `${chunkX},${chunkZ}`;
+        if (!world.storedPlantStates.has(chunkKey)) {
+          world.storedPlantStates.set(chunkKey, {
+            structures: {},
+            timers: {},
+          });
+        }
+
+        const stored = world.storedPlantStates.get(chunkKey);
+        if (structures[key]) {
+          stored.structures[key] = structures[key];
+        }
+
+        if (timers[key]) {
+          stored.timers[key] = timers[key];
+        }
+      }
+    });
+  }
+
+  // Restore stored chunk modifications
+  world.storedChunks.clear();
+  if (saveState.storedChunks) {
+    Object.entries(saveState.storedChunks).forEach(([chunkKey, mods]) => {
+      world.storedChunks.set(
+        chunkKey,
+        new Map(Object.entries(mods).map(([k, v]) => [Number(k), v])),
+      );
+    });
   }
 
   // Profile world loading
   const t0 = performance.now();
 
   // Validate world data size
-  const worldKeys = Object.keys(worldData);
   if (worldKeys.length > 1000) {
     console.warn(
       `World data is very large (${worldKeys.length} x columns), may cause slow loading.`,
@@ -174,70 +308,34 @@ export async function loadSaveState(gThis, shadow, state) {
   }
 
   // Populate chunks from save data
-  globalThis.Object.entries(worldData).forEach(([x, xz]) => {
-    globalThis.Object.entries(xz).forEach(([z, ys]) => {
-      globalThis.Object.entries(ys).forEach(([y, blockId]) => {
-        // Load block by its ID, not by array index
+  Object.entries(worldData).forEach(([xStr, xz]) => {
+    const x = Number(xStr);
+    Object.entries(xz).forEach(([zStr, ys]) => {
+      const z = Number(zStr);
+      Object.entries(ys).forEach(([yStr, blockId]) => {
+        const y = Number(yStr);
+
+        // Load block by its ID
         world.set(`${x},${y},${z}`, Number(blockId));
+
+        // Mark chunk as generated to prevent terrain worker from overwriting save data
+        const { chunkX, chunkZ } = worldToChunk(x, z);
+        const chunk = world.getChunk(chunkX, chunkZ);
+        if (chunk) {
+          chunk.generated = true;
+          // We DO NOT set chunk.restored = true here, because we want
+          // restoreChunkPersistence to be called by updateVisibleChunks
+          // to move plants from storedPlantStates to active state.
+        }
       });
     });
   });
 
-  // Restore stored chunks modifications
-  if (saveState.storedChunks) {
-    world.storedChunks = new Map();
-    globalThis.Object.entries(saveState.storedChunks).forEach(
-      ([key, modsObj]) => {
-        const mods = new Map();
-        globalThis.Object.entries(modsObj).forEach(([idx, type]) => {
-          mods.set(Number(idx), Number(type));
-        });
-        world.storedChunks.set(key, mods);
-      },
-    );
-    console.log(
-      `Restored ${world.storedChunks.size} chunks with player modifications.`,
-    );
-  }
-
-  // Restore stored plant states
-  if (saveState.storedPlantStates) {
-    if (!world.storedPlantStates) {
-      world.storedPlantStates = new Map();
-    }
-    globalThis.Object.entries(saveState.storedPlantStates).forEach(
-      ([key, state]) => {
-        world.storedPlantStates.set(key, state);
-      },
-    );
-  }
-
   const t1 = performance.now();
-  console.log(
-    `World loaded in ${(t1 - t0).toFixed(2)} ms. World size: ${worldKeys.length} columns.`,
-  );
-
-  // Reposition player to the top-most block at current x,z if not present in save
-  let playerX = Math.floor(gameState.x);
-  let playerZ = Math.floor(gameState.z);
-
-  let foundY = -Infinity;
-
-  for (let y = 255; y >= 0; y--) {
-    if (world.get(`${playerX},${y},${playerZ}`)) {
-      foundY = y;
-      break;
-    }
-  }
-
-  if (foundY > -Infinity && stateData.y === undefined) {
-    gameState.y = foundY + 1 + 1.62;
-    gameState.dy = 0;
-    gameState.onGround = false;
-  }
-
-  console.log("Save state loaded successfully");
+  console.log(`World loading of ${worldKeys.length} columns took ${t1 - t0}ms`);
 
   // "Reset" to enable updated state / config
   shadow.dispatchEvent(new CustomEvent("block-garden-reset"));
+
+  return true;
 }

@@ -1,3 +1,4 @@
+import isNumber from "lodash.isnumber";
 import { Signal } from "signal-polyfill";
 
 import { gameConfig } from "./config/index.mjs";
@@ -43,7 +44,6 @@ import { ChunkManager } from "./chunkManager.mjs";
  * @property {Signal.State} arrowsControlCamera
  * @property {Signal.State} curBlock
  * @property {Signal.State} shouldReset
- * @property {Signal.State} shouldReset
  * @property {Signal.State} hasEnabledExtras
  * @property {Signal.State} flying
  * @property {Signal.State} materialBar
@@ -52,11 +52,23 @@ import { ChunkManager } from "./chunkManager.mjs";
 
 /** @type number */
 let initialWorldSeed;
+let invalidSeedProvided = false;
 
 const params = new URLSearchParams(globalThis.location?.search);
 
 if (params.has("seed")) {
-  initialWorldSeed = Number(params.get("seed"));
+  const seed = Number(params.get("seed"));
+  if (
+    isNumber(seed) &&
+    !isNaN(seed) &&
+    seed >= 1 &&
+    seed <= Number.MAX_SAFE_INTEGER
+  ) {
+    initialWorldSeed = seed;
+  } else {
+    initialWorldSeed = getRandomSeed();
+    invalidSeedProvided = true;
+  }
 } else {
   initialWorldSeed = getRandomSeed();
 }
@@ -260,7 +272,7 @@ export function getState(key) {
  * @param {typeof globalThis} gThis - Global this or window object
  * @param {string} version - Game version string to set in config
  *
- * @returns {Promise<{computedSignals, gameConfig, gameState: GameState}>} Object containing both config and state
+ * @returns {Promise<{computedSignals, gameConfig, gameState: GameState, invalidSeedProvided: boolean}>} Object containing both config and state
  */
 export async function initState(gThis, version) {
   gameConfig.version.set(version);
@@ -295,6 +307,7 @@ export async function initState(gThis, version) {
     computedSignals,
     gameConfig,
     gameState,
+    invalidSeedProvided,
   };
 }
 

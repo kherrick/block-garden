@@ -50,14 +50,21 @@ jest.unstable_mockModule("../util/chunk.mjs", () => {
     }
 
     getBlock(x, y, z) {
-      if (!this.inBounds(x, y, z)) return 0;
+      if (!this.inBounds(x, y, z)) {
+        return 0;
+      }
+
       return this.blocks[this.index(x, y, z)];
     }
 
     setBlock(x, y, z, blockId) {
-      if (!this.inBounds(x, y, z)) return false;
+      if (!this.inBounds(x, y, z)) {
+        return false;
+      }
+
       this.blocks[this.index(x, y, z)] = blockId;
       this.dirty = true;
+
       return true;
     }
 
@@ -76,6 +83,7 @@ jest.unstable_mockModule("../util/chunk.mjs", () => {
       const chunkZ = Math.floor(worldZ / CHUNK_SIZE_Z);
       const localX = ((worldX % CHUNK_SIZE_X) + CHUNK_SIZE_X) % CHUNK_SIZE_X;
       const localZ = ((worldZ % CHUNK_SIZE_Z) + CHUNK_SIZE_Z) % CHUNK_SIZE_Z;
+
       return { chunkX, chunkZ, localX, localZ };
     },
   };
@@ -106,6 +114,7 @@ describe("loadSaveState", () => {
         // Return falsy for all blocks (simulating no blocks)
         return null;
       }),
+      getChunk: jest.fn(() => ({ generated: false, restored: false })),
       storedChunks: new Map(),
       storedPlantStates: new Map(),
     };
@@ -137,6 +146,93 @@ describe("loadSaveState", () => {
     globalThis.shadow = {
       dispatchEvent: jest.fn(),
     };
+  });
+
+  test("should return false for null or undefined save state", async () => {
+    const result = await loadSaveState(globalThis, globalThis.shadow, null);
+
+    expect(result).toBe(false);
+  });
+
+  test("should return false for empty world data", async () => {
+    const saveState = {
+      config: { seed: 12345 },
+      state: { x: 0, y: 0, z: 0 },
+      world: {},
+    };
+
+    const result = await loadSaveState(
+      globalThis,
+      globalThis.shadow,
+      saveState,
+    );
+
+    expect(result).toBe(false);
+  });
+
+  test("should return false for world data with columns but no blocks", async () => {
+    const saveState = {
+      world: { 0: { 0: {} } },
+    };
+
+    const result = await loadSaveState(
+      globalThis,
+      globalThis.shadow,
+      saveState,
+    );
+
+    expect(result).toBe(false);
+  });
+
+  test("should return false for package.json-like structure", async () => {
+    const saveState = {
+      name: "block-garden",
+      version: "1.0.0",
+      dependencies: {
+        localforage: "^1.10.0",
+      },
+      scripts: {
+        start: "npm start",
+      },
+    };
+
+    const result = await loadSaveState(
+      globalThis,
+      globalThis.shadow,
+      saveState,
+    );
+
+    expect(result).toBe(false);
+  });
+
+  test("should return false for 3-level nested non-game JSON", async () => {
+    const saveState = {
+      metadata: {
+        tags: [{ id: "tag1", value: "foo" }],
+      },
+    };
+
+    const result = await loadSaveState(
+      globalThis,
+      globalThis.shadow,
+      saveState,
+    );
+
+    expect(result).toBe(false);
+  });
+
+  test("should return true for valid world data", async () => {
+    const saveState = {
+      world: { 0: { 0: { 10: 1 } } },
+    };
+
+    const result = await loadSaveState(
+      globalThis,
+      globalThis.shadow,
+      saveState,
+    );
+
+    expect(result).toBe(true);
   });
 
   test("should load blocks with their block IDs", async () => {
@@ -180,13 +276,18 @@ describe("loadSaveState", () => {
         inventory: { stone: 20 },
         curBlock: 3,
       },
-      world: {},
+      world: { 0: { 0: { 0: 1 } } },
       storedChunks: {},
       storedPlantStates: {},
     };
 
-    await loadSaveState(globalThis, globalThis.shadow, saveState);
+    const result = await loadSaveState(
+      globalThis,
+      globalThis.shadow,
+      saveState,
+    );
 
+    expect(result).toBe(true);
     expect(mockGameState.x).toBe(50);
     expect(mockGameState.y).toBe(60);
     expect(mockGameState.z).toBe(70);
@@ -204,7 +305,7 @@ describe("loadSaveState", () => {
       state: {
         // No inventory field
       },
-      world: {},
+      world: { 0: { 0: { 0: 1 } } },
       storedChunks: {},
       storedPlantStates: {},
     };
@@ -221,7 +322,7 @@ describe("loadSaveState", () => {
         plantStructures: { "0,0,0": { blocks: [1, 2, 3] } },
         growthTimers: { "0,0,0": 100 },
       },
-      world: {},
+      world: { 0: { 0: { 0: 1 } } },
       storedChunks: {},
       storedPlantStates: {},
     };
@@ -233,6 +334,7 @@ describe("loadSaveState", () => {
     expect(mockGameState.growthTimers).toEqual({});
 
     expect(mockWorld.storedPlantStates.has("0,0")).toBe(true);
+
     const stored = mockWorld.storedPlantStates.get("0,0");
     expect(stored.structures["0,0,0"]).toEqual({ blocks: [1, 2, 3] });
     expect(stored.timers["0,0,0"]).toBe(100);
@@ -242,7 +344,7 @@ describe("loadSaveState", () => {
     const saveState = {
       config: { seed: 12345, version: 1 },
       state: {},
-      world: {},
+      world: { 0: { 0: { 0: 1 } } },
       storedChunks: {
         "1,0": {
           100: 2,
@@ -256,6 +358,7 @@ describe("loadSaveState", () => {
 
     // Verify stored chunks were restored
     expect(mockWorld.storedChunks.has("1,0")).toBe(true);
+
     const mods = mockWorld.storedChunks.get("1,0");
     expect(mods.get(100)).toBe(2);
     expect(mods.get(200)).toBe(1);
@@ -270,7 +373,13 @@ describe("loadSaveState", () => {
     // This tests backward compatibility - loadSaveState should handle
     // both new format (with config/state/world fields) and old format
 
-    await loadSaveState(globalThis, globalThis.shadow, oldFormatSaveState);
+    const result = await loadSaveState(
+      globalThis,
+      globalThis.shadow,
+      oldFormatSaveState,
+    );
+
+    expect(result).toBe(true);
 
     // Should load blocks even from old format
     expect(mockWorld.set).toHaveBeenCalledWith("0,10,0", 2);
@@ -281,7 +390,7 @@ describe("loadSaveState", () => {
     const saveState = {
       config: { seed: 12345, version: 1 },
       state: {},
-      world: {},
+      world: { 0: { 0: { 0: 1 } } },
       storedChunks: {},
       storedPlantStates: {},
     };
@@ -293,5 +402,37 @@ describe("loadSaveState", () => {
         type: "block-garden-reset",
       }),
     );
+  });
+
+  test("should clamp generation settings to valid ranges", async () => {
+    const saveState = {
+      config: {
+        terrainOctaves: 20, // Should be clamped to 8
+        mountainScale: 500, // Should be clamped to 100
+        decorationDensity: -50, // Should be clamped to 0
+        cloudDensity: 150, // Should be clamped to 100
+        seed: Number.MAX_SAFE_INTEGER + 1000, // Should be clamped to MAX_SAFE_INTEGER
+      },
+      world: { 0: { 0: { 0: 1 } } },
+    };
+
+    const configSignals = {
+      terrainOctaves: new MockSignal(0),
+      mountainScale: new MockSignal(0),
+      decorationDensity: new MockSignal(0),
+      cloudDensity: new MockSignal(0),
+      caveThreshold: new MockSignal(0),
+      useCaves: new MockSignal(true),
+    };
+
+    globalThis.blockGarden.config = configSignals;
+
+    await loadSaveState(globalThis, globalThis.shadow, saveState);
+
+    expect(configSignals.terrainOctaves.get()).toBe(8);
+    expect(configSignals.mountainScale.get()).toBe(100);
+    expect(configSignals.decorationDensity.get()).toBe(0);
+    expect(configSignals.cloudDensity.get()).toBe(100);
+    expect(mockGameState.seed).toBe(Number.MAX_SAFE_INTEGER);
   });
 });

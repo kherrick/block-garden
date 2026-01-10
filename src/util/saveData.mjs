@@ -19,9 +19,13 @@ export async function processSaveData(data, filename, gThis) {
     stateJSON = (await data.text()).replace(/\s+/g, "");
   } else if (name.endsWith(".pdf")) {
     const file = new File([data], filename, { type: "application/pdf" });
-    const [results] = await extractAttachments(file);
+    const attachments = await extractAttachments(file);
 
-    stateJSON = await extractJsonFromPng(new Blob([results.data]));
+    if (!attachments || attachments.length === 0 || !attachments[0].data) {
+      throw new Error("Invalid game save: No attachments found in PDF.");
+    }
+
+    stateJSON = await extractJsonFromPng(new Blob([attachments[0].data]));
   } else if (name.endsWith(".bgs")) {
     const decompressedStream = data
       .stream()

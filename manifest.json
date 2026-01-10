@@ -1,0 +1,95 @@
+{
+  "background_color": "#000000",
+  "description": "Block Garden - A 3D sandbox exploration and farming game. Explore procedurally generated worlds, dig for resources, and cultivate a variety of plants.",
+  "display": "fullscreen",
+  "id": "block-garden",
+  "name": "Block Garden",
+  "short_name": "Block Garden",
+  "start_url": "https://kherrick.github.io/block-garden/",
+  "theme_color": "#000000",
+  "icons": [
+        {
+      "purpose": "any",
+      "sizes": "48x48",
+      "src": "https://kherrick.github.io/block-garden/assets/icons/48.png",
+      "type": "image/png"
+    },
+        {
+      "purpose": "any",
+      "sizes": "72x72",
+      "src": "https://kherrick.github.io/block-garden/assets/icons/72.png",
+      "type": "image/png"
+    },
+        {
+      "purpose": "any",
+      "sizes": "96x96",
+      "src": "https://kherrick.github.io/block-garden/assets/icons/96.png",
+      "type": "image/png"
+    },
+        {
+      "purpose": "any",
+      "sizes": "128x128",
+      "src": "https://kherrick.github.io/block-garden/assets/icons/128.png",
+      "type": "image/png"
+    },
+        {
+      "purpose": "any",
+      "sizes": "152x152",
+      "src": "https://kherrick.github.io/block-garden/assets/icons/152.png",
+      "type": "image/png"
+    },
+        {
+      "purpose": "any",
+      "sizes": "192x192",
+      "src": "https://kherrick.github.io/block-garden/assets/icons/192.png",
+      "type": "image/png"
+    },
+        {
+      "purpose": "any",
+      "sizes": "512x512",
+      "src": "https://kherrick.github.io/block-garden/assets/icons/512.png",
+      "type": "image/png"
+    },
+        {
+      "purpose": "any",
+      "sizes": "1024x1024",
+      "src": "https://kherrick.github.io/block-garden/assets/icons/1024.png",
+      "type": "image/png"
+    },
+    {
+      "purpose": "maskable",
+      "sizes": "1024x1024",
+      "src": "https://kherrick.github.io/block-garden/assets/icons/1024.png",
+      "type": "image/png"
+    }
+  ],
+  "screenshots": [
+    {
+      "form_factor": "wide",
+      "label": "block-garden",
+      "sizes": "2266x1440",
+      "src": "https://kherrick.github.io/block-garden/assets/screenshots/block-garden-screenshot-2266x1440.png",
+      "type": "image/png"
+    },
+    {
+      "form_factor": "narrow",
+      "label": "block-garden",
+      "sizes": "743x883",
+      "src": "https://kherrick.github.io/block-garden/assets/screenshots/block-garden-screenshot-743x883.png",
+      "type": "image/png"
+    }
+  ],
+  "share_target": {
+    "action": "share/share-target.html",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "files": [
+        {
+          "name": "gameState",
+          "accept": [".bgs", ".pdf", ".txt", "text/plain", "application/pdf", "application/gzip", "application/*"]
+        }
+      ]
+    }
+  }
+}

@@ -17,6 +17,55 @@ export function getGameSaveUrlParam(gThis) {
 }
 
 /**
+ * Get a number from the searchParams by key
+ *
+ * @param {URLSearchParams} searchParams
+ * @param {string} key
+ *
+ * @returns {Number|undefined}
+ */
+export function getNumberParam(searchParams, key) {
+  const value = searchParams.get(key);
+  if (value === null || value.trim() === "") {
+    return undefined; // guard against missing or empty
+  }
+
+  const num = Number(value);
+  return Number.isFinite(num) ? num : undefined;
+}
+
+/**
+ * Extracts player position and camera angle parameters from the URL.
+ *
+ * @param {typeof globalThis} gThis
+ *
+ * @returns {Object} Object with x, y, z, pitch, yaw (all numbers or undefined)
+ */
+export function getPlayerParamsFromUrl(gThis) {
+  try {
+    const searchParams = new URLSearchParams(location.search);
+    const params = {};
+
+    for (const key of ["x", "y", "z", "pitch", "yaw"]) {
+      const num = getNumberParam(searchParams, key);
+      if (num !== undefined) {
+        params[key] = num;
+      }
+    }
+
+    const flyingParam = searchParams.get("flying");
+    if (flyingParam === "true" || flyingParam === "false") {
+      params.flying = flyingParam === "true";
+    }
+
+    return params;
+  } catch (error) {
+    console.warn("Failed to parse player params from URL:", error);
+    return {};
+  }
+}
+
+/**
  * Remove `seed` and `gameSave` parameters from the URL.
  *
  * @param {typeof globalThis} gThis
@@ -38,6 +87,42 @@ export function clearUrlParams(gThis) {
 
     if (params.has("gameSave")) {
       params.delete("gameSave");
+
+      changed = true;
+    }
+
+    if (params.has("x")) {
+      params.delete("x");
+
+      changed = true;
+    }
+
+    if (params.has("y")) {
+      params.delete("y");
+
+      changed = true;
+    }
+
+    if (params.has("z")) {
+      params.delete("z");
+
+      changed = true;
+    }
+
+    if (params.has("pitch")) {
+      params.delete("pitch");
+
+      changed = true;
+    }
+
+    if (params.has("yaw")) {
+      params.delete("yaw");
+
+      changed = true;
+    }
+
+    if (params.has("flying")) {
+      params.delete("flying");
 
       changed = true;
     }

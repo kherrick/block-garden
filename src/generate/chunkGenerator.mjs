@@ -55,9 +55,9 @@ const TREE_LEAVES = getBlockIdByName(blockNames.TREE_LEAVES);
  */
 export const MIN_Y = 0;
 export const MAX_Y = 128;
-const SEA_LEVEL = 32;
-const CLOUD_HEIGHT_MIN = 100;
-const CLOUD_HEIGHT_MAX = 120;
+export const SEA_LEVEL = 32;
+export const CLOUD_HEIGHT_MIN = 100;
+export const CLOUD_HEIGHT_MAX = 120;
 
 // Depth layer thresholds (relative to surface)
 const DIRT_DEPTH = 4; // Dirt layer depth
@@ -71,7 +71,6 @@ const LAVA_HEIGHT = 5; // Lava level
 const BEDROCK_HEIGHT = 2; // Bedrock at bottom
 
 // Cave generation thresholds
-const CAVE_THRESHOLD = 0.55; // Higher = less caves, lower = more caves
 const CAVE_MIN_Y = 8; // Don't carve caves below this
 const CAVE_MAX_Y_OFFSET = 20; // Don't carve caves closer than this to surface
 

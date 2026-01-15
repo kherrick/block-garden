@@ -204,7 +204,10 @@ export async function loadSaveState(gThis, shadow, state) {
   applyValue(gameState, "dx", stateData.dx, "number");
   applyValue(gameState, "dy", stateData.dy, "number");
   applyValue(gameState, "dz", stateData.dz, "number");
+  applyValue(gameState, "pitch", stateData.pitch, "number");
+  applyValue(gameState, "yaw", stateData.yaw, "number");
   applyValue(gameState, "onGround", stateData.onGround, "boolean");
+  applyValue(gameState, "flying", stateData.flying, "boolean");
 
   if (stateData.inventory && typeof stateData.inventory === "object") {
     gameState.inventory = stateData.inventory;
@@ -213,6 +216,48 @@ export async function loadSaveState(gThis, shadow, state) {
   }
 
   applyValue(gameState, "curBlock", stateData.curBlock, "number");
+
+  // Restore UI and inventory state
+  if (
+    stateData.materialsInventory &&
+    Array.isArray(stateData.materialsInventory)
+  ) {
+    applyValue(
+      gameState,
+      "materialsInventory",
+      stateData.materialsInventory,
+      "object",
+    );
+  }
+
+  if (stateData.materialBar && Array.isArray(stateData.materialBar)) {
+    applyValue(gameState, "materialBar", stateData.materialBar, "object");
+  }
+
+  applyValue(
+    gameState,
+    "activeMaterialBarSlot",
+    stateData.activeMaterialBarSlot,
+    "number",
+    {
+      min: 0,
+      max: 8,
+    },
+  );
+
+  applyValue(
+    gameState,
+    "arrowsControlCamera",
+    stateData.arrowsControlCamera,
+    "boolean",
+  );
+
+  applyValue(
+    gameState,
+    "hasEnabledExtras",
+    stateData.hasEnabledExtras,
+    "boolean",
+  );
 
   // Cancel any running game loop before reset (if available)
   if (typeof gThis.cancelGameLoop === "function") {

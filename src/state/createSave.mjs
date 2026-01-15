@@ -121,11 +121,27 @@ export function createSaveState(world, gThis) {
       dx: state?.dx ?? null,
       dy: state?.dy ?? null,
       dz: state?.dz ?? null,
+      pitch: state?.pitch ?? null,
+      yaw: state?.yaw ?? null,
       onGround: state?.onGround ?? null,
       inventory: state?.inventory ?? null,
       curBlock: state?.curBlock?.get
         ? state.curBlock.get()
         : (state?.curBlock ?? null),
+      flying: state?.flying?.get ? state.flying.get() : null,
+      materialsInventory: state?.materialsInventory?.get
+        ? state.materialsInventory.get()
+        : null,
+      materialBar: state?.materialBar?.get ? state.materialBar.get() : null,
+      activeMaterialBarSlot: state?.activeMaterialBarSlot?.get
+        ? state.activeMaterialBarSlot.get()
+        : null,
+      arrowsControlCamera: state?.arrowsControlCamera?.get
+        ? state.arrowsControlCamera.get()
+        : null,
+      hasEnabledExtras: state?.hasEnabledExtras?.get
+        ? state.hasEnabledExtras.get()
+        : null,
       growthTimers: state?.growthTimers ?? null,
       plantStructures: state?.plantStructures ?? null,
     },

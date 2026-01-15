@@ -7,6 +7,7 @@ import { getBlockIdByName } from "./config/getBlockIdByName.mjs";
 
 import { getRandomSeed } from "../util/getRandomSeed.mjs";
 
+import { CLOUD_HEIGHT_MIN } from "../generate/chunkGenerator.mjs";
 import { ChunkManager } from "./chunkManager.mjs";
 
 /** @typedef {import("../util/ray.mjs").PointWithFace} PointWithFace */
@@ -117,8 +118,8 @@ export const gameState = {
   yaw: 0,
   pitch: 0,
   x: 0,
-  y: 2,
-  z: 5,
+  y: CLOUD_HEIGHT_MIN - 1,
+  z: 0,
   dx: 0,
   dy: 0,
   dz: 0,

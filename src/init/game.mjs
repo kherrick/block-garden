@@ -37,7 +37,8 @@ import { initHammerControls } from "./hammerControls.mjs";
 import { initMaterialBar } from "./materialBar.mjs";
 import { initNewWorld } from "./newWorld.mjs";
 import { initTouchControls } from "./touchControls.mjs";
-import { getGameSaveUrlParam, clearUrlParams } from "../util/urlParams.mjs";
+
+import { clearUrlParams, getPlayerParamsFromUrl } from "../util/urlParams.mjs";
 
 /**
  * @typedef {Element & { keys: object, touchKeys: object }} CustomShadowHost
@@ -283,7 +284,33 @@ export async function initGame(gThis, shadow, cnvs) {
     initNewWorld(gameState.seed);
   }
 
-  // cleanup URL parameters (seed, gameSave) after they are consumed
+  // Apply URL player parameters (position and camera angles) if provided
+  const playerParams = getPlayerParamsFromUrl(gThis);
+  if (playerParams.x !== undefined) {
+    gameState.x = Number(playerParams.x);
+  }
+
+  if (playerParams.y !== undefined) {
+    gameState.y = Number(playerParams.y);
+  }
+
+  if (playerParams.z !== undefined) {
+    gameState.z = Number(playerParams.z);
+  }
+
+  if (playerParams.pitch !== undefined) {
+    gameState.pitch = Number(playerParams.pitch);
+  }
+
+  if (playerParams.yaw !== undefined) {
+    gameState.yaw = Number(playerParams.yaw);
+  }
+
+  if (playerParams.flying !== undefined) {
+    gameState.flying.set(Boolean(playerParams.flying));
+  }
+
+  // Cleanup URL parameters (seed, gameSave) after they are consumed
   clearUrlParams(gThis);
 
   // Set up auto-save interval

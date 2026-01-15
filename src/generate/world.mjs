@@ -1,6 +1,6 @@
 import { initNoise } from "../util/noise.mjs";
 
-import { MAX_Y } from "./chunkGenerator.mjs";
+import { CLOUD_HEIGHT_MIN } from "./chunkGenerator.mjs";
 
 /**
  * @typedef {import('../state/config/index.mjs').gameConfig} GameConfig
@@ -38,7 +38,7 @@ export function generateWorld(seed, gameState) {
   gameState.growthTimers = {};
 
   // Set spawn in sky (drop)
-  gameState.y = MAX_Y;
+  gameState.y = CLOUD_HEIGHT_MIN - 1;
   gameState.x = 0;
   gameState.z = 0;
   gameState.dy = 0;

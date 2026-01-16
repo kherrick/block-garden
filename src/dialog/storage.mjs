@@ -1400,6 +1400,23 @@ export class StorageDialog {
     }
   }
 
+  /**
+   * Capitalize the first letter of each word, replace spaces with dashes,
+   * and allow only alphanumeric characters and dashes.
+   *
+   * @param {string} name
+   *
+   * @returns {string}
+   */
+  formatName(name) {
+    return name
+      .trim()
+      .replace(/[^a-zA-Z0-9\s-]/g, "")
+      .split(/\s+/)
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join("-");
+  }
+
   /** @returns {Promise<{ game: any, file: File }>} */
   async getPDFGameStateAttachment() {
     const currentTime = getDateTime();
@@ -1548,10 +1565,19 @@ export class StorageDialog {
       height: imgHeight,
     });
 
-    const seed = gameState?.config?.seed || "";
-    const imageLink = seed
-      ? `https://kherrick.github.io/block-garden/?seed=${seed}`
-      : "https://kherrick.github.io/block-garden/";
+    let imageLink = "https://kherrick.github.io/block-garden/";
+
+    if (globalThis?.blockGarden?.config?.linkGameSave?.get() === true) {
+      const formattedGameName = this.formatName(game.name);
+
+      imageLink += `?gameSave=${imageLink}assets/game-saves/${formattedGameName}.pdf`;
+    } else {
+      const seed = gameState?.config?.seed;
+
+      if (seed) {
+        imageLink += `?seed=${gameState.config.seed}`;
+      }
+    }
 
     const imageAnnotation = pdfDoc.context.obj({
       Type: "Annot",
@@ -1612,24 +1638,26 @@ export class StorageDialog {
     const leftMargin = boxX + 20;
     const lineHeight = 18;
 
-    // Game stats with bold labels
-    page.drawText("Saved On:", {
-      x: leftMargin,
-      y: currentY,
-      size: 12,
-      font: titleFont,
-      color: gray900,
-    });
+    if (globalThis?.blockGarden?.config?.linkGameSave?.get() === false) {
+      // Game stats with bold labels
+      page.drawText("Saved On:", {
+        x: leftMargin,
+        y: currentY,
+        size: 12,
+        font: titleFont,
+        color: gray900,
+      });
 
-    page.drawText(lastSaved, {
-      x: leftMargin + titleFont.widthOfTextAtSize("Saved On: ", 12),
-      y: currentY,
-      size: 12,
-      font: bodyFont,
-      color: gray900,
-    });
+      page.drawText(lastSaved, {
+        x: leftMargin + titleFont.widthOfTextAtSize("Saved On: ", 12),
+        y: currentY,
+        size: 12,
+        font: bodyFont,
+        color: gray900,
+      });
 
-    currentY -= lineHeight;
+      currentY -= lineHeight;
+    }
 
     page.drawText("World Name:", {
       x: leftMargin,
@@ -1704,8 +1732,14 @@ export class StorageDialog {
     });
 
     // Attach PNG backup
-    const filename = `block-garden-game-card-${currentTime}.png`;
-    pdfDoc.attach(new Uint8Array(pngBytes), filename, {
+    let pngFilename = "";
+    if (globalThis?.blockGarden?.config?.linkGameSave?.get() === true) {
+      pngFilename = `block-garden-game-card.png`;
+    } else {
+      pngFilename = `block-garden-game-card-${currentTime}.png`;
+    }
+
+    pdfDoc.attach(new Uint8Array(pngBytes), pngFilename, {
       mimeType: "image/png",
       description: "Block Garden Game Card",
     });
@@ -1714,9 +1748,16 @@ export class StorageDialog {
     const pdfBytes = await pdfDoc.save();
     const blob = new Blob([pdfBytes], { type: "application/pdf" });
 
+    let pdfFilename = "";
+    if (globalThis?.blockGarden?.config?.linkGameSave?.get() === true) {
+      pdfFilename = `Block-Garden-Game-Save.pdf`;
+    } else {
+      pdfFilename = `Block-Garden-Game-Save-${currentTime}.pdf`;
+    }
+
     return {
       game,
-      file: new File([blob], `Block-Garden-Game-Save-${currentTime}.pdf`, {
+      file: new File([blob], pdfFilename, {
         type: blob.type,
         lastModified: Date.now(),
       }),

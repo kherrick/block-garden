@@ -30,42 +30,87 @@ export function generateWillowTreeStructure(x, y, z, progress) {
     return structure;
   }
 
-  const maxHeight = 5;
-  const height = Math.floor(maxHeight * progress);
+  // Deterministic random helper
+  const isOdd = (n) => n % 2 !== 0;
+
+  // Randomize height slightly between 5 and 7 blocks
+  const height = 5 + ((x + z) % 3);
 
   // If no height yet, show growing block
   if (height === 0) {
     structure.push({ x, y, z, blockId: GROWING });
+
     return structure;
   }
 
-  // Trunk
+  // Generate Trunk (Straight, supported)
   for (let i = 0; i < height; i++) {
     structure.push({ x, y: y + i, z, blockId: TRUNK });
   }
 
-  if (progress > 0.6) {
+  if (progress > 0.4) {
     const crownY = y + height;
-    // Branches spread out
-    structure.push({ x: x + 1, y: crownY, z, blockId: BRANCHES });
-    structure.push({ x: x - 1, y: crownY, z, blockId: BRANCHES });
-    structure.push({ x, y: crownY, z: z + 1, blockId: BRANCHES });
-    structure.push({ x, y: crownY, z: z - 1, blockId: BRANCHES });
+    const trunkX = x;
+    const trunkZ = z;
 
-    // Leaves hanging down from branches
-    if (progress > 0.8) {
-      structure.push({ x: x + 1, y: crownY - 1, z, blockId: LEAVES });
-      structure.push({ x: x - 1, y: crownY - 1, z, blockId: LEAVES });
-      structure.push({ x, y: crownY - 1, z: z + 1, blockId: LEAVES });
-      structure.push({ x, y: crownY - 1, z: z - 1, blockId: LEAVES });
+    // Define potential branch points around the crown
+    const potentialBranches = [
+      { dx: 0, dz: 0 }, // Center (always exists)
+      { dx: 1, dz: 0 }, // East
+      { dx: -1, dz: 0 }, // West
+      { dx: 0, dz: 1 }, // South
+      { dx: 0, dz: -1 }, // North
+    ];
 
-      if (progress > 0.9 && height > 3) {
-        structure.push({ x: x + 2, y: crownY - 1, z, blockId: LEAVES });
-        structure.push({ x: x - 2, y: crownY - 1, z, blockId: LEAVES });
-        structure.push({ x: x + 2, y: crownY - 2, z, blockId: LEAVES });
-        structure.push({ x: x - 2, y: crownY - 2, z, blockId: LEAVES });
+    // Generate the canopy curtains
+    potentialBranches.forEach((pos, index) => {
+      // Randomly decide if this branch grows.
+      // The center branch always grows. Others depend on coordinates.
+      const exists = index === 0 || isOdd(x + z + index);
+
+      if (exists) {
+        const bx = trunkX + pos.dx;
+        const bz = trunkZ + pos.dz;
+
+        // Place the Branch wood
+        structure.push({ x: bx, y: crownY, z: bz, blockId: BRANCHES });
+
+        // Generate Weeping Leaves
+        if (progress > 0.6) {
+          // Randomize how far this specific curtain hangs down.
+          // Range: 2 to 5 blocks long
+          const dropLength = 2 + ((x * index + z) % 4);
+
+          // Don't let leaves touch the ground (y + 1), stop at y + 2
+          const maxDrop = Math.min(dropLength, crownY - (y + 1));
+
+          for (let d = 1; d <= maxDrop; d++) {
+            // Make the curtain slightly wider at the top (d=1) for fullness
+            if (d === 1) {
+              // Add a neighbor leaf at the very top of the drape for volume
+              if (isOdd(index)) {
+                structure.push({
+                  x: bx + 1,
+                  y: crownY - d,
+                  z: bz,
+                  blockId: LEAVES,
+                });
+              } else {
+                structure.push({
+                  x: bx - 1,
+                  y: crownY - d,
+                  z: bz,
+                  blockId: LEAVES,
+                });
+              }
+            }
+
+            // Main vertical strand
+            structure.push({ x: bx, y: crownY - d, z: bz, blockId: LEAVES });
+          }
+        }
       }
-    }
+    });
   }
 
   return structure;

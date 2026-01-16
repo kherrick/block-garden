@@ -117,9 +117,9 @@ export class DrawVideo extends BlockGarden {
    * @param {number} [config.x=10] - X position in world
    * @param {number} [config.y=50] - Y position in world
    * @param {number} [config.z=20] - Z position in world
-   * @param {number} [config.width=48] - Frame width in blocks (default increased to 48)
-   * @param {number} [config.height=36] - Frame height in blocks (default increased to 36)
-   * @param {number} [config.fps=2] - Frames per second (default reduced to 2, range: 0.5-30)
+   * @param {number} [config.width=48] - Frame width in blocks
+   * @param {number} [config.height=36] - Frame height in blocks
+   * @param {number} [config.fps=2] - Frames per second (range: 0.5-30)
    * @param {boolean} [config.optimizeColors=false] - Optimize block colors for image
    * @param {number} [config.captureButtonBlock] - Block ID for capture button
    * @param {number} [config.stopButtonBlock] - Block ID for stop button
@@ -127,8 +127,8 @@ export class DrawVideo extends BlockGarden {
    * @param {number} [config.emptyBlock] - Block ID for empty space
    * @param {boolean} [config.showBorder=true] - Show border around frame
    * @param {string} [config.facingMode="user"] - Camera facing mode ('user' or 'environment')
-   * @param {number} [config.buttonSize=4] - Size of control buttons (default increased to 4)
-   * @param {number} [config.buttonSpacing=3] - Spacing between buttons (default increased to 3)
+   * @param {number} [config.buttonSize=4] - Size of control buttons
+   * @param {number} [config.buttonSpacing=3] - Spacing between buttons
    * @param {number} [config.gamma=1.8] - Gamma correction for brightness (1.0=none, 1.8=default, higher=brighter)
    *
    * @returns {Object} Control API for the video feed

@@ -144,17 +144,15 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
 
   // Extras
   new extrasHandler((handler) => {
+    shadow.getElementById("examplesBtnContainer").removeAttribute("hidden");
+    shadow.getElementById("fastGrowthButton").removeAttribute("hidden");
+    shadow.getElementById("gameSaveLinkingButton").removeAttribute("hidden");
+    shadow.getElementById("randomPlantButton").removeAttribute("hidden");
+    shadow.getElementById("toggleAODebug").removeAttribute("hidden");
+
     shadow
       .getElementById("customizeColorsBtnContainer")
       .removeAttribute("hidden");
-
-    shadow.getElementById("randomPlantButton").removeAttribute("hidden");
-
-    shadow.getElementById("toggleAODebug").removeAttribute("hidden");
-
-    shadow.getElementById("fastGrowthButton").removeAttribute("hidden");
-
-    shadow.getElementById("examplesBtnContainer").removeAttribute("hidden");
 
     shadow
       .querySelector('block-garden-option[value="fullscreen"]')
@@ -211,6 +209,29 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
       fastGrowthButton.style.color = "var(--bg-color-white)";
 
       shadow.dispatchEvent(new CustomEvent("block-garden-reset"));
+    });
+  }
+
+  // Game Save Linking
+  const gameSaveLinkingButton = shadow.getElementById("gameSaveLinkingButton");
+  if (gameSaveLinkingButton) {
+    const gameConfig = globalThis.blockGarden.config;
+
+    gameSaveLinkingButton.addEventListener("click", () => {
+      const currentVal = gameConfig.linkGameSave.get();
+      const shouldLinkGameSave = !currentVal;
+
+      gameConfig.linkGameSave.set(shouldLinkGameSave);
+
+      gameSaveLinkingButton.textContent = shouldLinkGameSave
+        ? "Disable Game Save Linking"
+        : "Enable Game Save Linking";
+
+      gameSaveLinkingButton.style.backgroundColor = shouldLinkGameSave
+        ? "var(--bg-color-red-500)"
+        : "var(--bg-color-green-500)";
+
+      gameSaveLinkingButton.style.color = "var(--bg-color-white)";
     });
   }
 

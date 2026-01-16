@@ -256,7 +256,7 @@ export function generateChunk(chunk, seed, settings = {}) {
           );
         }
 
-        // Crop/resource dispersal - drastically reduced density
+        // Crop/resource dispersal
         if (
           biome.cropBlockIds.length > 0 &&
           seededRandom(worldX, worldZ, seed + 500) <

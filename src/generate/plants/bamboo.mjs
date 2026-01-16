@@ -33,14 +33,19 @@ export function generateBambooStructure(x, y, z, progress) {
   const maxHeight = 8;
   const height = Math.floor(maxHeight * progress);
 
+  // keep growing if no height yet
+  if (height === 0) {
+    structure.push({ x, y, z, blockId: GROWING });
+
+    return structure;
+  }
+
   for (let i = 0; i < height; i++) {
     const isJoint = i % 3 === 2;
     structure.push({ x, y: y + i, z, blockId: isJoint ? JOINT : STALK });
 
     // Leaves at joints
     if (isJoint && i < height - 1) {
-      // Not at very top? Or yes?
-      // Leaves stick out
       structure.push({ x: x + 1, y: y + i, z, blockId: LEAVES });
       structure.push({ x: x - 1, y: y + i, z, blockId: LEAVES });
     }

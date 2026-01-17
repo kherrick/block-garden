@@ -1,3 +1,5 @@
+import { showToast } from "../api/ui/toast.mjs";
+
 import { formatName } from "../util/formatWorldName.mjs";
 
 export class LinkConfigurationDialog {
@@ -237,9 +239,7 @@ export class LinkConfigurationDialog {
       params,
     });
 
-    import("../api/ui/toast.mjs").then(({ showToast }) => {
-      showToast(this.shadow, `Link block armed for "${worldName}"!`);
-    });
+    showToast(this.shadow, `Link block armed for "${worldName}"!`);
 
     this.close();
   }

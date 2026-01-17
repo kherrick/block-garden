@@ -33,6 +33,7 @@ import { showExamplesDialog } from "../dialog/examples.mjs";
 import { showPrivacyDialog } from "../dialog/privacy.mjs";
 import { showUrlDialog } from "../dialog/url.mjs";
 import { showLinkConfigDialog } from "../dialog/linkConfiguration.mjs";
+import { showTextConfigDialog } from "../dialog/textConfiguration.mjs";
 
 import { resizeCanvas } from "../api/ui/resizeCanvas.mjs";
 import { showToast } from "../api/ui/toast.mjs";
@@ -287,6 +288,14 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
   if (configureLinkBlock) {
     configureLinkBlock.addEventListener("click", () => {
       showLinkConfigDialog(globalThis, globalThis.document, shadow);
+    });
+  }
+
+  // Text Block Configuration
+  const configureTextBlock = shadow.getElementById("configureTextBlock");
+  if (configureTextBlock) {
+    configureTextBlock.addEventListener("click", () => {
+      showTextConfigDialog(globalThis, globalThis.document, shadow);
     });
   }
 

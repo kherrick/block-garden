@@ -5,6 +5,7 @@ import { formatName } from "./formatWorldName.mjs";
 import { showToast } from "../api/ui/toast.mjs";
 
 import { getBlockById } from "../state/config/blocks.mjs";
+import { getShadowRoot } from "./getShadowRoot.mjs";
 
 /** @typedef {import('../state/state.mjs').GameState} GameState */
 
@@ -28,6 +29,12 @@ export function placeBlock(gameState, targetHit) {
     const blockDef = getBlockById(blockType);
     if (blockDef && blockDef.name === "Link") {
       activateLinkBlock(gameState, hit.x, hit.y, hit.z);
+
+      return true;
+    }
+
+    if (blockDef && blockDef.name === "Text") {
+      activateTextBlock(gameState, hit.x, hit.y, hit.z);
 
       return true;
     }
@@ -61,7 +68,7 @@ export function placeBlock(gameState, targetHit) {
   };
 
   if (intersects(playerAABB, newBlockAABB)) {
-    const shadow = document.querySelector("block-garden")?.shadowRoot;
+    const shadow = getShadowRoot(globalThis.document, "block-garden");
     if (shadow) {
       const targetBlockType = gameState.world.get(`${hit.x},${hit.y},${hit.z}`);
       const targetBlockDef = getBlockById(targetBlockType);
@@ -79,6 +86,17 @@ export function placeBlock(gameState, targetHit) {
         if (metadata?.worldName) {
           msg = `🔗 Link to: ${metadata.worldName} at [${hit.x}, ${hit.y}, ${hit.z}]`;
         }
+      } else if (targetBlockDef?.name === "Text") {
+        const chunkX = Math.floor(hit.x / 16);
+        const chunkZ = Math.floor(hit.z / 16);
+        const chunk = gameState.world.getOrCreateChunk(chunkX, chunkZ);
+        const localX = ((hit.x % 16) + 16) % 16;
+        const localZ = ((hit.z % 16) + 16) % 16;
+
+        const metadata = chunk.metadata.get(chunk.index(localX, hit.y, localZ));
+        if (metadata?.text) {
+          msg = `📝 Text: ${metadata.text.substring(0, 20)}${metadata.text.length > 20 ? "..." : ""} at [${hit.x}, ${hit.y}, ${hit.z}]`;
+        }
       }
 
       showToast(shadow, msg);
@@ -95,6 +113,8 @@ export function placeBlock(gameState, targetHit) {
   let metadata = null;
   if (curBlockDef && curBlockDef.name === "Link") {
     metadata = gameState.armedLinkConfig.get();
+  } else if (curBlockDef && curBlockDef.name === "Text") {
+    metadata = gameState.armedTextConfig.get();
   }
 
   gameState.world.set(key, curBlockId, true, metadata);
@@ -211,7 +231,7 @@ function activateLinkBlock(gameState, x, y, z) {
   }
 
   const { worldName, params = {} } = metadata;
-  const shadow = document.querySelector("block-garden").shadowRoot;
+  const shadow = getShadowRoot(globalThis.document, "block-garden");
 
   // Show inspection toast
   const paramString = Object.entries(params)
@@ -276,4 +296,76 @@ function activateLinkBlock(gameState, x, y, z) {
   dialog.querySelector("#confirmTravel").addEventListener("click", () => {
     window.location.href = url.toString();
   });
+}
+
+/**
+ * Activates a Text block at the given coordinates.
+ *
+ * @param {GameState} gameState
+ * @param {number} x
+ * @param {number} y
+ * @param {number} z
+ */
+function activateTextBlock(gameState, x, y, z) {
+  const chunkX = Math.floor(x / 16);
+  const chunkZ = Math.floor(z / 16);
+  const chunk = gameState.world.getOrCreateChunk(chunkX, chunkZ);
+  const localX = ((x % 16) + 16) % 16;
+  const localZ = ((z % 16) + 16) % 16;
+
+  const metadata = chunk.metadata.get(chunk.index(localX, y, localZ));
+  const text = metadata?.text || "No text saved in this block.";
+  const shadow = getShadowRoot(globalThis.document, "block-garden");
+
+  // Show inspection toast
+  const toastMsg = `📝 Text at [${x}, ${y}, ${z}]`;
+  showToast(shadow, toastMsg);
+
+  const dialog = document.createElement("dialog");
+  dialog.style.cssText = `
+    background: var(--bg-color-gray-50);
+    border-radius: 0.5rem;
+    border: 0.125rem solid var(--bg-color-gray-900);
+    color: var(--bg-color-gray-900);
+    font-family: monospace;
+    padding: 1.25rem;
+    max-width: 30rem;
+    width: 90%;
+    z-index: 10000;
+  `;
+
+  dialog.innerHTML = `
+    <h3 style="margin: 0 0 1rem 0">Block Text</h3>
+    <div style="margin: 0 0 1.5rem 0; white-space: pre-wrap; word-break: break-word; max-height: 200px; overflow-y: auto; border: 1px solid var(--bg-color-gray-300); padding: 0.5rem; border-radius: 0.25rem;">
+      ${text}
+    </div>
+    <div style="display: flex; gap: 0.625rem; justify-content: flex-end">
+      <button id="closeTextDialog" style="background: var(--bg-color-blue-500); border-radius: 0.25rem; border: none; color: white; cursor: pointer; padding: 0.5rem 0.9375rem;">OK</button>
+    </div>
+  `;
+
+  if (document.pointerLockElement) {
+    document.exitPointerLock();
+  }
+
+  gameState.isCanvasActionDisabled = true;
+
+  shadow.append(dialog);
+  dialog.showModal();
+
+  const closeDialog = () => {
+    dialog.close();
+    dialog.remove();
+
+    setTimeout(() => {
+      gameState.isCanvasActionDisabled = false;
+    }, 500);
+  };
+
+  dialog
+    .querySelector("#closeTextDialog")
+    .addEventListener("click", closeDialog);
+
+  // Close on Escape is handled by dialog naturally but we need to reset gameState
+  dialog.addEventListener("close", closeDialog);
 }

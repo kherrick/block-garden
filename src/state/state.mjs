@@ -50,6 +50,7 @@ import { ChunkManager } from "./chunkManager.mjs";
  * @property {Signal.State} materialBar
  * @property {Signal.State} activeMaterialBarSlot
  * @property {Signal.State} armedLinkConfig
+ * @property {Signal.State} armedTextConfig
  */
 
 /** @type number */
@@ -159,6 +160,9 @@ export const gameState = {
   armedLinkConfig: new Signal.State({
     worldName: "",
     params: {},
+  }),
+  armedTextConfig: new Signal.State({
+    text: "",
   }),
 };
 

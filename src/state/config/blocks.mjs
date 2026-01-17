@@ -162,6 +162,7 @@ export const blockNames = {
   WILLOW_TRUNK: "Willow Trunk",
   WOOD: "Wood",
   LINK: "Link",
+  TEXT: "Text",
 };
 
 export const FAST_GROWTH_TIME = 30;
@@ -975,10 +976,16 @@ const blockDefinitionsArray = [
     drops: null,
     solid: true,
   },
+  {
+    name: blockNames.TEXT,
+    id: 131,
+    drops: null,
+    solid: true,
+  },
 ];
 
 /**
- * Build a lookup array for blocks by ID (max ID is 120, using 256 for buffer)
+ * Build a lookup array for blocks by ID (max ID is 131, using 256 for buffer)
  */
 const blockDefinitionsById = new Array(256).fill(undefined);
 

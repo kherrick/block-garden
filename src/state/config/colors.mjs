@@ -231,6 +231,7 @@ export const colors = {
     "tulip-stem": "var(--bg-color-olive-drab-700)",
     tulip: "var(--bg-color-deep-pink)",
     walnut: "var(--bg-color-brown)",
+    text: "var(--bg-color-beige)",
     water: "var(--bg-color-royal-blue)",
     "wheat-grain": "var(--bg-color-goldenrod)",
     "wheat-growing": "var(--bg-color-yellow-green-400)",

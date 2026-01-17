@@ -62,6 +62,9 @@ export class Chunk {
 
     /** @type {Map<number, number>} Index -> block type for player-modified blocks */
     this.modifiedBlocks = new Map();
+
+    /** @type {Map<number, Object>} Index -> metadata object */
+    this.metadata = new Map();
   }
 
   /**
@@ -72,13 +75,20 @@ export class Chunk {
    * @param {number} y - Local Y (0-127)
    * @param {number} z - Local Z (0-15)
    * @param {number} type - Block type (0 = air for deletions)
+   * @param {Object} [metadata] - Optional metadata for the block
    */
-  markModified(x, y, z, type) {
+  markModified(x, y, z, type, metadata = null) {
     if (!this.inBounds(x, y, z)) {
       return;
     }
     const idx = this.index(x, y, z);
     this.modifiedBlocks.set(idx, type);
+
+    if (metadata) {
+      this.metadata.set(idx, metadata);
+    } else {
+      this.metadata.delete(idx);
+    }
   }
 
   /**
@@ -95,12 +105,20 @@ export class Chunk {
    * Used when restoring a chunk after it was unloaded.
    *
    * @param {Map<number, number>} mods - Index -> block type map
+   * @param {Map<number, Object>} [metadata] - Index -> metadata map
    */
-  applyModifications(mods) {
+  applyModifications(mods, metadata = null) {
     for (const [idx, type] of mods) {
       this.blocks[idx] = type;
     }
     this.modifiedBlocks = new Map(mods);
+
+    if (metadata) {
+      for (const [idx, data] of metadata) {
+        this.metadata.set(idx, data);
+      }
+    }
+
     this.dirty = true;
   }
 

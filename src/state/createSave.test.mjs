@@ -18,6 +18,7 @@ jest.unstable_mockModule("../util/chunk.mjs", () => {
       this.dirty = true;
       this.generated = false;
       this.modifiedBlocks = new Map();
+      this.metadata = new Map();
     }
 
     index(x, y, z) {
@@ -92,6 +93,7 @@ describe("createSaveState", () => {
       getAllChunks: jest.fn(() => [mockChunk1, mockChunk2]),
       storedChunks: new Map(),
       storedPlantStates: new Map(),
+      storedMetadata: new Map(),
     };
   });
 

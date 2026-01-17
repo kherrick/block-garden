@@ -332,12 +332,23 @@ export async function loadSaveState(gThis, shadow, state) {
   }
 
   // Restore stored chunk modifications
-  world.storedChunks.clear();
+  world.storedChunks?.clear();
+  world.storedMetadata?.clear();
   if (saveState.storedChunks) {
     Object.entries(saveState.storedChunks).forEach(([chunkKey, mods]) => {
       world.storedChunks.set(
         chunkKey,
         new Map(Object.entries(mods).map(([k, v]) => [Number(k), v])),
+      );
+    });
+  }
+
+  // Restore stored metadata
+  if (saveState.storedMetadata && world.storedMetadata) {
+    Object.entries(saveState.storedMetadata).forEach(([chunkKey, meta]) => {
+      world.storedMetadata.set(
+        chunkKey,
+        new Map(Object.entries(meta).map(([k, v]) => [Number(k), v])),
       );
     });
   }
@@ -358,10 +369,17 @@ export async function loadSaveState(gThis, shadow, state) {
     Object.entries(xz).forEach(([zStr, ys]) => {
       const z = Number(zStr);
       Object.entries(ys).forEach(([yStr, blockId]) => {
+        if (yStr === "metadata") {
+          return;
+        }
+
         const y = Number(yStr);
 
+        // Load metadata if it exists
+        const metadata = ys.metadata ? ys.metadata[yStr] : null;
+
         // Load block by its ID
-        world.set(`${x},${y},${z}`, Number(blockId));
+        world.set(`${x},${y},${z}`, Number(blockId), false, metadata);
 
         // Mark chunk as generated to prevent terrain worker from overwriting save data
         const { chunkX, chunkZ } = worldToChunk(x, z);

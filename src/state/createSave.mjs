@@ -42,6 +42,16 @@ export function createSaveState(world, gThis) {
 
           // Save block ID for later restoration
           worldData[worldX][worldZ][y] = blockId;
+
+          // Save metadata if it exists
+          const localCoords = chunk.index(x, y, z);
+          const metadata = chunk.metadata?.get(localCoords);
+          if (metadata) {
+            if (!worldData[worldX][worldZ].metadata) {
+              worldData[worldX][worldZ].metadata = {};
+            }
+            worldData[worldX][worldZ].metadata[y] = metadata;
+          }
         }
       }
     }
@@ -72,12 +82,12 @@ export function createSaveState(world, gThis) {
   // Prepare stored chunks for save (merge currently loaded chunks' modifications)
   const storedChunksData = {};
 
-  // 1. Add modifications from unloaded chunks
+  // Add modifications from unloaded chunks
   for (const [key, mods] of world.storedChunks) {
     storedChunksData[key] = Object.fromEntries(mods);
   }
 
-  // 2. Add modifications from loaded chunks
+  // Add modifications from loaded chunks
   for (const chunk of world.getAllChunks()) {
     const mods = chunk.getModifications();
     if (mods.size > 0) {
@@ -86,7 +96,23 @@ export function createSaveState(world, gThis) {
     }
   }
 
-  // 3. Add stored plant states
+  // Add metadata from unloaded chunks
+  const storedMetadataData = {};
+  if (world.storedMetadata) {
+    for (const [key, metadata] of world.storedMetadata) {
+      storedMetadataData[key] = Object.fromEntries(metadata);
+    }
+  }
+
+  // Add metadata from loaded chunks
+  for (const chunk of world.getAllChunks()) {
+    if (chunk.metadata?.size > 0) {
+      const key = world.getChunkKey(chunk.chunkX, chunk.chunkZ);
+      storedMetadataData[key] = Object.fromEntries(chunk.metadata);
+    }
+  }
+
+  // Add stored plant states
   const storedPlantStatesData = {};
   for (const [key, state] of world.storedPlantStates) {
     storedPlantStatesData[key] = state;
@@ -148,5 +174,6 @@ export function createSaveState(world, gThis) {
     world: worldData,
     storedChunks: storedChunksData,
     storedPlantStates: storedPlantStatesData,
+    storedMetadata: storedMetadataData,
   };
 }

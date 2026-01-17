@@ -49,6 +49,7 @@ import { ChunkManager } from "./chunkManager.mjs";
  * @property {Signal.State} flying
  * @property {Signal.State} materialBar
  * @property {Signal.State} activeMaterialBarSlot
+ * @property {Signal.State} armedLinkConfig
  */
 
 /** @type number */
@@ -155,6 +156,10 @@ export const gameState = {
     getBlockIdByName("Stone"),
   ]),
   activeMaterialBarSlot: new Signal.State(0),
+  armedLinkConfig: new Signal.State({
+    worldName: "",
+    params: {},
+  }),
 };
 
 /**

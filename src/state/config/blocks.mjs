@@ -161,6 +161,7 @@ export const blockNames = {
   WILLOW_TREE: "Willow Tree",
   WILLOW_TRUNK: "Willow Trunk",
   WOOD: "Wood",
+  LINK: "Link",
 };
 
 export const FAST_GROWTH_TIME = 30;
@@ -967,6 +968,12 @@ const blockDefinitionsArray = [
     drops: "WOOD",
     solid: true,
     crop: true,
+  },
+  {
+    name: blockNames.LINK,
+    id: 130,
+    drops: null,
+    solid: true,
   },
 ];
 

@@ -3,7 +3,6 @@ import localForage from "localforage";
 import { deleteSharedSave, retrieveSharedSave } from "../state/shareTarget.mjs";
 import { createSaveState } from "../state/createSave.mjs";
 import { loadSaveState } from "../state/loadSave.mjs";
-import { processSaveData } from "../util/saveData.mjs";
 
 import {
   canvasToPngWithState,
@@ -12,10 +11,12 @@ import {
 
 import { arrayBufferToBase64, base64toBlob } from "../util/conversion.mjs";
 import { compressToBinaryBlob } from "../util/compression.mjs";
-import { getDateTime } from "../util/getDateTime.mjs";
-import { getShadowRoot } from "../util/getShadowRoot.mjs";
 import { extractAttachments } from "../util/extractAttachments.mjs";
+import { formatName } from "../util/formatWorldName.mjs";
+import { getDateTime } from "../util/getDateTime.mjs";
 import { getGameSaveUrlParam } from "../util/urlParams.mjs";
+import { getShadowRoot } from "../util/getShadowRoot.mjs";
+import { processSaveData } from "../util/saveData.mjs";
 import { showToast } from "../api/ui/toast.mjs";
 
 const TIME_SECONDS_ONE = 1000;
@@ -1400,23 +1401,6 @@ export class StorageDialog {
     }
   }
 
-  /**
-   * Capitalize the first letter of each word, replace spaces with dashes,
-   * and allow only alphanumeric characters and dashes.
-   *
-   * @param {string} name
-   *
-   * @returns {string}
-   */
-  formatName(name) {
-    return name
-      .trim()
-      .replace(/[^a-zA-Z0-9\s-]/g, "")
-      .split(/\s+/)
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join("-");
-  }
-
   /** @returns {Promise<{ game: any, file: File }>} */
   async getPDFGameStateAttachment() {
     const currentTime = getDateTime();
@@ -1568,7 +1552,7 @@ export class StorageDialog {
     let imageLink = "https://kherrick.github.io/block-garden/";
 
     if (globalThis?.blockGarden?.config?.linkGameSave?.get() === true) {
-      const formattedGameName = this.formatName(game.name);
+      const formattedGameName = formatName(game.name);
 
       imageLink += `?gameSave=${imageLink}assets/game-saves/${formattedGameName}.pdf`;
     } else {

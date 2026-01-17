@@ -10,13 +10,6 @@ Block Garden - A 3D sandbox exploration and farming game. Explore procedurally g
 
 ```sh
 npm i && npm start
-
-```
-
-## To run Jest unit tests
-
-```sh
-npm i && npm test
 ```
 
 ## 🧩 Features include:
@@ -45,6 +38,26 @@ npm i && npm test
   - **Left Click:** Place Block
   - **Right Click:** Remove Block
 
+### Included Game Saves
+
+Get started by clicking one of the saved games below:
+
+### [The Garden](https://kherrick.github.io/block-garden/?gameSave=https://kherrick.github.io/block-garden/assets/game-saves/The-Garden.pdf)
+
+[![The Garden](assets/screenshots/block-garden-screenshot-the-garden-400x400.png)](https://kherrick.github.io/block-garden/?gameSave=https://kherrick.github.io/block-garden/assets/game-saves/The-Garden.pdf)
+
+### [Caves](https://kherrick.github.io/block-garden/?gameSave=https://kherrick.github.io/block-garden/assets/game-saves/Caves.pdf)
+
+[![Caves](assets/screenshots/block-garden-screenshot-caves-400x400.png)](https://kherrick.github.io/block-garden/?gameSave=https://kherrick.github.io/block-garden/assets/game-saves/Caves.pdf)
+
+### [Flowers](https://kherrick.github.io/block-garden/?gameSave=https://kherrick.github.io/block-garden/assets/game-saves/Flowers.pdf)
+
+[![Flowers](assets/screenshots/block-garden-screenshot-flowers-400x400.png)](https://kherrick.github.io/block-garden/?gameSave=https://kherrick.github.io/block-garden/assets/game-saves/Flowers.pdf)
+
+### [Gateway To The Clouds](https://kherrick.github.io/block-garden/?gameSave=https://kherrick.github.io/block-garden/assets/game-saves/Gateway-To-The-Clouds.pdf)
+
+[![Gateway To The Clouds](assets/screenshots/block-garden-screenshot-gateway-to-the-clouds-400x400.png)](https://kherrick.github.io/block-garden/?gameSave=https://kherrick.github.io/block-garden/assets/game-saves/Gateway-To-The-Clouds.pdf)
+
 ## Demos
 
 ### Fireworks
@@ -54,3 +67,7 @@ npm i && npm test
 ### Random Planting
 
 [![Block Garden Animation](assets/block-garden-animation.gif)](https://www.youtube.com/watch?v=eRDM5INHyKA)
+
+### Gateway To The Clouds
+
+[![Gateway To The Clouds](https://img.youtube.com/vi/OIdKx0u8REA/0.jpg)](https://www.youtube.com/watch?v=OIdKx0u8REA)

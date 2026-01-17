@@ -59,6 +59,12 @@ export class UrlDialog {
             <button id="exampleGame2" style="background: var(--bg-color-emerald-700); border-radius: 0.25rem; border: none; color: white; cursor: pointer; flex: 1; padding: 0.5rem;">
               Game 2 (Gateway)
             </button>
+            <button id="exampleGame3" style="background: var(--bg-color-emerald-700); border-radius: 0.25rem; border: none; color: white; cursor: pointer; flex: 1; padding: 0.5rem;">
+              Game 3 (Caves)
+            </button>
+            <button id="exampleGame4" style="background: var(--bg-color-emerald-700); border-radius: 0.25rem; border: none; color: white; cursor: pointer; flex: 1; padding: 0.5rem;">
+              Game 4 (Garden)
+            </button>
           </div>
         </div>
         <div style="display: flex; flex-direction: column; gap: 0.625rem;">
@@ -95,6 +101,26 @@ export class UrlDialog {
 
       urlInput.value =
         "https://kherrick.github.io/block-garden/assets/game-saves/Gateway-To-The-Clouds.pdf";
+    });
+
+    const game3Btn = dialog.querySelector("#exampleGame3");
+    game3Btn.addEventListener("click", () => {
+      const urlInput = /** @type {HTMLInputElement} */ (
+        dialog.querySelector("#saveUrlInput")
+      );
+
+      urlInput.value =
+        "https://kherrick.github.io/block-garden/assets/game-saves/Caves.pdf";
+    });
+
+    const game4Btn = dialog.querySelector("#exampleGame4");
+    game4Btn.addEventListener("click", () => {
+      const urlInput = /** @type {HTMLInputElement} */ (
+        dialog.querySelector("#saveUrlInput")
+      );
+
+      urlInput.value =
+        "https://kherrick.github.io/block-garden/assets/game-saves/The-Garden.pdf";
     });
 
     const loadBtn = dialog.querySelector("#loadUrlBtn");

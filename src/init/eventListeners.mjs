@@ -13,8 +13,15 @@ import { runCompress } from "../util/compression.mjs";
 import { showColorCustomizationDialog } from "../util/customColors.mjs";
 import { processSaveData } from "../util/saveData.mjs";
 
-import { gameConfig } from "../state/config/index.mjs";
+import {
+  blockNames,
+  blocks,
+  FAST_GROWTH_TIME,
+  getBlockById,
+} from "../state/config/blocks.mjs";
+import { BIOMES } from "../state/config/biomes.mjs";
 import { createSaveState } from "../state/createSave.mjs";
+import { gameConfig } from "../state/config/index.mjs";
 import { loadSaveState } from "../state/loadSave.mjs";
 import { selectMaterialBarSlot, setMaterialBarItem } from "../state/state.mjs";
 
@@ -25,6 +32,7 @@ import { showAboutDialog } from "../dialog/about.mjs";
 import { showExamplesDialog } from "../dialog/examples.mjs";
 import { showPrivacyDialog } from "../dialog/privacy.mjs";
 import { showUrlDialog } from "../dialog/url.mjs";
+import { showLinkConfigDialog } from "../dialog/linkConfiguration.mjs";
 
 import { resizeCanvas } from "../api/ui/resizeCanvas.mjs";
 import { showToast } from "../api/ui/toast.mjs";
@@ -66,6 +74,9 @@ function handleCornerClick(e) {
     cornerContainer?.setAttribute("hidden", "hidden");
   }
 }
+
+// Helper to find block IDs
+const getBlockId = (name) => blocks.find((b) => b.name === name)?.id ?? -1;
 
 /**
  * @param {number} currentBlockId
@@ -271,6 +282,14 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
     });
   }
 
+  // Link Block Configuration
+  const configureLinkBlock = shadow.getElementById("configureLinkBlock");
+  if (configureLinkBlock) {
+    configureLinkBlock.addEventListener("click", () => {
+      showLinkConfigDialog(globalThis, globalThis.document, shadow);
+    });
+  }
+
   // Visual Effect Toggles
   const config = globalThis.blockGarden.config;
 
@@ -323,7 +342,7 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
       if (typeof randomPlantSeeds === "function") {
         randomPlantSeeds();
 
-        showToast(shadow, "Random planting at spawn point complete!");
+        showToast(shadow, "Random planting at complete!");
       }
     });
   }
@@ -343,6 +362,10 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
     "keyup",
     /** @param {KeyboardEvent} e */
     (e) => {
+      if (!e.key) {
+        return;
+      }
+
       host.keys[e.key.toLowerCase()] = false;
 
       if (
@@ -447,6 +470,10 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
     "keydown",
     /** @param {KeyboardEvent} e */
     async (e) => {
+      if (!e.key) {
+        return;
+      }
+
       const lowercaseKey = e.key.toLowerCase();
 
       const host =
@@ -1107,66 +1134,125 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
     );
   });
 
-  // planting logic for randomPlantButton ---
-  function randomPlantSeeds() {
-    // Reuse the logic from generateWorld, but only the pre-planting part
-    const { blocks, blockNames } = gameConfig;
-    const { world } = gameState;
+  // Configurable constants
+  const PLANTING_CONFIG = {
+    TOSS_COUNT: 5, // Number of seeds to "toss"
+    TOSS_RADIUS: 20, // Max distance seeds can land
+    MIN_DISTANCE_FROM_PLAYER: 2, // Don't plant too close
 
-    // Helper to find block IDs
-    const getBlockId = (name) => blocks.find((b) => b.name === name)?.id ?? -1;
-    const GRASS = getBlockId(blockNames.GRASS);
-    const RANDOM_PLANT_RADIUS = 32;
-    const MIN_Y = 1;
-    const MAX_Y = 124; // Updated to match terrain height
+    // Blocks that should prevent planting in the entire column below them
+    BANNED_SURFACES: new Set([
+      getBlockId(blockNames.WATER),
+      getBlockId(blockNames.LAVA),
+    ]),
+  };
 
-    // Collect valid grass blocks
-    const validSeedSpots = [];
-    for (let x = -RANDOM_PLANT_RADIUS; x <= RANDOM_PLANT_RADIUS; x++) {
-      for (let z = -RANDOM_PLANT_RADIUS; z <= RANDOM_PLANT_RADIUS; z++) {
-        for (let y = MIN_Y; y <= MAX_Y; y++) {
-          const key = `${x},${y},${z}`;
-
-          // Allow planting on any grass block, regardless of y
-          if (
-            world.get(key) === GRASS &&
-            (Math.abs(x) > 2 || Math.abs(z) > 2)
-          ) {
-            validSeedSpots.push({ x, y, z, key });
-          }
-        }
+  /**
+   * Get biome from surface block ID, with cloud fallback
+   */
+  function getBiomeBySurface(surfaceId) {
+    // Check standard biomes first
+    for (const biome of Object.values(BIOMES)) {
+      if (biome.surfaceBlockId === surfaceId) {
+        return biome;
       }
     }
-    // Place one of each seed at a random valid spot
-    if (validSeedSpots.length > 0) {
-      const usedKeys = new Set();
-      blocks.forEach((block) => {
-        if (block.isSeed) {
-          let spot = null;
-          let attempts = 0;
-          while (attempts < 100 && !spot) {
-            const candidate =
-              validSeedSpots[Math.floor(Math.random() * validSeedSpots.length)];
-            if (candidate && !usedKeys.has(candidate.key)) {
-              spot = candidate;
-              usedKeys.add(candidate.key);
-            }
-            attempts++;
-          }
-          if (spot) {
-            world.set(spot.key, block.id, true);
-            gameState.plantStructures[spot.key] = {
-              type: block.name,
-              blocks: [spot.key],
-            };
-            const FAST_GROWTH_TIME = 30;
-            gameState.growthTimers[spot.key] = gameState.fastGrowth
-              ? FAST_GROWTH_TIME
-              : block.growthTime || 10.0;
+
+    // Clouds = any seed allowed
+    if (surfaceId === getBlockId(blockNames.CLOUD)) {
+      return {
+        name: "Clouds",
+        cropBlockIds: blocks.filter((b) => b.isSeed).map((b) => b.id),
+      };
+    }
+
+    return null;
+  }
+
+  /**
+   * Plant single seed at position
+   */
+  function plantSeedAt(key, allowedSeeds, world) {
+    if (allowedSeeds.length === 0) {
+      return;
+    }
+
+    const seedId =
+      allowedSeeds[Math.floor(Math.random() * allowedSeeds.length)];
+
+    const block = getBlockById(seedId);
+
+    world.set(key, seedId, true);
+
+    gameState.plantStructures[key] = {
+      type: block.name,
+      blocks: [key],
+    };
+
+    gameState.growthTimers[key] = gameState.fastGrowth
+      ? FAST_GROWTH_TIME
+      : block.growthTime || 10.0;
+  }
+
+  function randomPlantSeeds() {
+    const { world } = gameState;
+    const px = Math.floor(gameState.x);
+    const py = Math.floor(gameState.y);
+    const pz = Math.floor(gameState.z);
+
+    const usedKeys = new Set();
+    let seedsPlaced = 0;
+
+    for (let i = 0; i < PLANTING_CONFIG.TOSS_COUNT; i++) {
+      // Natural circular distribution using rejection sampling or polar coords
+      const angle = Math.random() * Math.PI * 2;
+      const dist = Math.sqrt(Math.random()) * PLANTING_CONFIG.TOSS_RADIUS;
+
+      if (dist < PLANTING_CONFIG.MIN_DISTANCE_FROM_PLAYER) continue;
+
+      const dx = Math.round(Math.cos(angle) * dist);
+      const dz = Math.round(Math.sin(angle) * dist);
+
+      const tx = px + dx;
+      const tz = pz + dz;
+
+      // Start search higher to better catch surfaces below elevated player
+      for (let y = py + 5; y >= 0; y--) {
+        const key = `${tx},${y},${tz}`;
+        const blockId = world.get(key);
+
+        // Skip air/undefined
+        if (blockId === undefined || blockId === getBlockId(blockNames.AIR)) {
+          continue;
+        }
+
+        // Quick ban check - skips entire column if we hit water/lava
+        if (PLANTING_CONFIG.BANNED_SURFACES.has(blockId)) break;
+
+        const block = getBlockById(blockId);
+        if (!block || !block.solid) continue;
+
+        // Valid planting surfaces
+        const biome = getBiomeBySurface(blockId);
+        if (biome && !usedKeys.has(key)) {
+          // Check if space ABOVE is clear
+          const aboveKey = `${tx},${y + 1},${tz}`;
+          const aboveId = world.get(aboveKey);
+
+          if (aboveId === undefined || aboveId === getBlockId(blockNames.AIR)) {
+            plantSeedAt(key, biome.cropBlockIds, world);
+            usedKeys.add(key);
+            seedsPlaced++;
           }
         }
-      });
+
+        break; // Found surface (or banned block), stop scanning column
+      }
     }
+
+    console.log(
+      `[Interaction] Randomly tossed seeds. Placed ${seedsPlaced} plants.`,
+    );
 
     // Ensure growthTimers are updated for fast growth if enabled
     if (gameState.fastGrowth) {

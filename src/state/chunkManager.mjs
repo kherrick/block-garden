@@ -40,6 +40,9 @@ export class ChunkManager {
     /** @type {Map<string, {timers: Object, structures: Object}>} Stored plant states for unloaded chunks */
     this.storedPlantStates = new Map();
 
+    /** @type {Map<string, Map<number, Object>>} Stored metadata (link config, etc.) for unloaded chunks */
+    this.storedMetadata = new Map();
+
     /** @type {Worker[]} Terrain generation worker pool */
     this.workers = [];
 
@@ -77,8 +80,9 @@ export class ChunkManager {
 
       // Re-apply any modifications that happened before generation finished
       const mods = chunk.getModifications();
+      const metadata = chunk.metadata;
       if (mods.size > 0) {
-        chunk.applyModifications(mods);
+        chunk.applyModifications(mods, metadata);
       }
 
       chunk.dirty = true;
@@ -103,9 +107,12 @@ export class ChunkManager {
 
     // Restore player modifications
     const storedMods = this.storedChunks.get(key);
+    const storedMetadata = this.storedMetadata.get(key);
     if (storedMods) {
-      chunk.applyModifications(storedMods);
+      chunk.applyModifications(storedMods, storedMetadata);
+
       this.storedChunks.delete(key);
+      this.storedMetadata.delete(key);
     }
 
     // Restore Plant States
@@ -165,6 +172,7 @@ export class ChunkManager {
     let chunk = this.chunks.get(key);
     if (!chunk) {
       chunk = new Chunk(chunkX, chunkZ);
+
       this.chunks.set(key, chunk);
     }
 
@@ -223,10 +231,11 @@ export class ChunkManager {
    * @param {number} z - World Z coordinate
    * @param {number} type - Block type (0 = air)
    * @param {boolean} [isPlayerChange=false] - Whether this is a player modification
+   * @param {Object} [metadata=null] - Optional metadata for the block
    *
    * @returns {boolean} True if block was set
    */
-  setBlock(x, y, z, type, isPlayerChange = false) {
+  setBlock(x, y, z, type, isPlayerChange = false, metadata = null) {
     if (y <= 0 || y >= CHUNK_SIZE_Y) {
       return false;
     }
@@ -244,7 +253,7 @@ export class ChunkManager {
       this.markNeighborsDirty(chunkX, chunkZ, localX, localZ);
 
       if (isPlayerChange) {
-        chunk.markModified(localX, floorY, localZ, type);
+        chunk.markModified(localX, floorY, localZ, type, metadata);
       }
 
       if (this.blockTypes && type !== 0) {
@@ -476,8 +485,11 @@ export class ChunkManager {
       if (dx > cachedRadius || dz > cachedRadius) {
         // Store player modifications if chunk has any
         const mods = chunk.getModifications();
-        if (mods.size > 0) {
+        if (mods.size > 0 && this.storedChunks) {
           this.storedChunks.set(key, new Map(mods));
+          if (chunk.metadata?.size > 0 && this.storedMetadata) {
+            this.storedMetadata.set(key, new Map(chunk.metadata));
+          }
         }
 
         if (gl && deleteChunkMesh) {
@@ -623,10 +635,10 @@ export class ChunkManager {
   /**
    * Set block at key.
    */
-  set(key, type, isPlayerChange = false) {
+  set(key, type, isPlayerChange = false, metadata = null) {
     const [x, y, z] = key.split(",").map(Number);
 
-    this.setBlock(x, y, z, type, isPlayerChange);
+    this.setBlock(x, y, z, type, isPlayerChange, metadata);
 
     return this;
   }

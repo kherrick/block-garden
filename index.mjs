@@ -857,6 +857,7 @@ export class BlockGarden extends HTMLElement {
                     <button id="gameSaveLinkingButton" hidden="hidden">Enable Game Save Linking</button>
                     <button id="toggleSplitControls">Enable Split Controls</button>
                     <button id="toggleFlight">🪽 Enable Flight</button>
+                    <button id="configureLinkBlock">🔗 Configure Link Block</button>
                     <button
                       onclick="if (confirm('Reloading will lose unsaved progress. Do you want to continue?')) { window.location.reload(); }">
                       Reload Game

@@ -117,6 +117,7 @@ describe("loadSaveState", () => {
       getChunk: jest.fn(() => ({ generated: false, restored: false })),
       storedChunks: new Map(),
       storedPlantStates: new Map(),
+      storedMetadata: new Map(),
     };
 
     // Create mock game state
@@ -257,9 +258,9 @@ describe("loadSaveState", () => {
     await loadSaveState(globalThis, globalThis.shadow, saveState);
 
     // Verify blocks are loaded with their IDs
-    expect(mockWorld.set).toHaveBeenCalledWith("0,10,0", 2); // Dirt
-    expect(mockWorld.set).toHaveBeenCalledWith("5,15,5", 1); // Grass
-    expect(mockWorld.set).toHaveBeenCalledWith("16,20,0", 3); // Stone
+    expect(mockWorld.set).toHaveBeenCalledWith("0,10,0", 2, false, null); // Dirt
+    expect(mockWorld.set).toHaveBeenCalledWith("5,15,5", 1, false, null); // Grass
+    expect(mockWorld.set).toHaveBeenCalledWith("16,20,0", 3, false, null); // Stone
   });
 
   test("should restore player position from save state", async () => {
@@ -382,8 +383,8 @@ describe("loadSaveState", () => {
     expect(result).toBe(true);
 
     // Should load blocks even from old format
-    expect(mockWorld.set).toHaveBeenCalledWith("0,10,0", 2);
-    expect(mockWorld.set).toHaveBeenCalledWith("5,15,5", 1);
+    expect(mockWorld.set).toHaveBeenCalledWith("0,10,0", 2, false, null);
+    expect(mockWorld.set).toHaveBeenCalledWith("5,15,5", 1, false, null);
   });
 
   test("should dispatch reset event when loading completes", async () => {

@@ -203,5 +203,29 @@ export function updatePhysics(shadow, ui, state, dt) {
   state.dz = dz;
   state.onGround = newOnGround;
 
+  // Update bobbing distance and intensity
+  const horizontalSpeed = Math.sqrt(dx * dx + dz * dz);
+
+  if (state.onGround && !isFlying) {
+    state.bobbingDistance += horizontalSpeed * dt;
+  }
+
+  // Smooth out bobbing effect (fade out when airborne, fade in when walking)
+  const targetIntensity =
+    state.onGround && !isFlying && horizontalSpeed > 0.1 ? 1.0 : 0.0;
+  // Lerp towards target intensity (approx 10.0 speed for quick but smooth transition)
+  const lerpSpeed = 10.0 * dt;
+  if (state.bobbingIntensity < targetIntensity) {
+    state.bobbingIntensity = Math.min(
+      targetIntensity,
+      state.bobbingIntensity + lerpSpeed,
+    );
+  } else {
+    state.bobbingIntensity = Math.max(
+      targetIntensity,
+      state.bobbingIntensity - lerpSpeed,
+    );
+  }
+
   return { x, y, z };
 }

@@ -35,6 +35,8 @@ import { ChunkManager } from "./chunkManager.mjs";
  * @property {number} dx
  * @property {number} dy
  * @property {number} dz
+ * @property {number} bobbingDistance
+ * @property {number} bobbingIntensity
  * @property {number} x
  * @property {number} y
  * @property {number} z
@@ -125,6 +127,8 @@ export const gameState = {
   dx: 0,
   dy: 0,
   dz: 0,
+  bobbingDistance: 0,
+  bobbingIntensity: 0,
   gameTime: 0,
   playerHeight: 1.8,
   playerWidth: 0.6,

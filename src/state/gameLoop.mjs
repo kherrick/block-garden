@@ -30,6 +30,8 @@ const previousState = {
   x: 0,
   y: 0,
   z: 0,
+  bobbingDistance: 0,
+  bobbingIntensity: 0,
 };
 
 let isFirstFrame = true;
@@ -246,6 +248,8 @@ export function gameLoop(
     previousState.x = gameState.x;
     previousState.y = gameState.y;
     previousState.z = gameState.z;
+    previousState.bobbingDistance = gameState.bobbingDistance;
+    previousState.bobbingIntensity = gameState.bobbingIntensity;
 
     updateWorld(gameState);
     updatePlayer(shadow, gameState, dtSeconds);
@@ -273,6 +277,16 @@ export function gameLoop(
   const renderX = lerp(previousState.x, gameState.x, alpha);
   const renderY = lerp(previousState.y, gameState.y, alpha);
   const renderZ = lerp(previousState.z, gameState.z, alpha);
+  const renderBobbingDistance = lerp(
+    previousState.bobbingDistance,
+    gameState.bobbingDistance,
+    alpha,
+  );
+  const renderBobbingIntensity = lerp(
+    previousState.bobbingIntensity,
+    gameState.bobbingIntensity,
+    alpha,
+  );
 
   const now = performance.now();
   if (now - lastUIUpdateTime >= UI_UPDATE_MS) {
@@ -299,19 +313,43 @@ export function gameLoop(
   }
 
   // Calculate eye position for rendering (approx 1.62m above feet)
-  // gameState.playerHeight usually around 1.8? Assuming feet position logic
-  // If gameState.y is center of AABB, logic might differ.
-  // Original code: const eyeY = gameState.y - gameState.playerHeight / 2 + 1.62;
-  const eyeY = renderY - gameState.playerHeight / 2 + 1.62;
+  const horizontalSpeed = Math.sqrt(
+    gameState.dx * gameState.dx + gameState.dz * gameState.dz,
+  );
+
+  let bobbingAmountY = 0;
+  let bobbingAmountSide = 0;
+
+  // Always calculate, but scale by intensity
+  if (renderBobbingIntensity > 0.001) {
+    // Frequency ~1.5 provides a natural walking rhythm at speed 8
+    const freq = 1.5;
+    const speedFactor = horizontalSpeed * 0.012;
+
+    // Vertical bobbing (up and down)
+    bobbingAmountY =
+      Math.sin(renderBobbingDistance * freq * 2.0) * speedFactor * 0.6;
+
+    // Horizontal sway (side to side) - cycles half as fast as vertical
+    bobbingAmountSide = Math.sin(renderBobbingDistance * freq) * speedFactor;
+
+    // Apply smoothing intensity
+    bobbingAmountY *= renderBobbingIntensity;
+    bobbingAmountSide *= renderBobbingIntensity;
+  }
+
+  // Apply horizontal bobbing relative to movement direction
+  const swayX = Math.cos(yaw) * bobbingAmountSide;
+  const swayZ = -Math.sin(yaw) * bobbingAmountSide;
+
+  const eyeX = renderX + swayX;
+  const eyeY = renderY - gameState.playerHeight / 2 + 1.62 + bobbingAmountY;
+  const eyeZ = renderZ + swayZ;
 
   // Raycasting depends on actual game logic state OR interpolated state?
   // Visual raycast should match visual cursor. Physics raycast (action) should match logic.
   // Usually, for "looking at", we use interpolated position so it matches what user sees.
-  gameState.hit = ray(
-    world,
-    { x: renderX, y: eyeY, z: renderZ },
-    { yaw, pitch },
-  );
+  gameState.hit = ray(world, { x: eyeX, y: eyeY, z: eyeZ }, { yaw, pitch });
 
   gl.viewport(0, 0, cnvs.width, cnvs.height);
   gl.enable(gl.DEPTH_TEST);
@@ -332,8 +370,8 @@ export function gameLoop(
 
   const V = look(
     I(),
-    [renderX, eyeY, renderZ],
-    [renderX + fx * cosPitch, eyeY + Math.sin(pitch), renderZ + fz * cosPitch],
+    [eyeX, eyeY, eyeZ],
+    [eyeX + fx * cosPitch, eyeY + Math.sin(pitch), eyeZ + fz * cosPitch],
     [0, 1, 0],
   );
 

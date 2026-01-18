@@ -24,6 +24,7 @@ import { blockNames, blocks } from "./blocks.mjs";
  * @property {Signal.State} terrainOctaves
  * @property {Signal.State} useAmbientOcclusion
  * @property {Signal.State} useAODebug
+ * @property {Signal.State} useAutoJump - Auto jump toggle state
  * @property {Signal.State} useCaves
  * @property {Signal.State} useDynamicLighting
  * @property {Signal.State} usePerFaceLighting
@@ -56,6 +57,7 @@ export const gameConfig = {
   terrainOctaves: new Signal.State(2),
   useAmbientOcclusion: new Signal.State(false),
   useAODebug: new Signal.State(false),
+  useAutoJump: new Signal.State(true),
   useCaves: new Signal.State(true),
   useDynamicLighting: new Signal.State(false),
   usePerFaceLighting: new Signal.State(true),

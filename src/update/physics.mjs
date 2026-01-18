@@ -135,7 +135,7 @@ export function updatePhysics(shadow, ui, state, dt) {
 
   // Integrate movement
   let newX = x + dx * dt;
-  const newY = y + dy * dt;
+  let newY = y + dy * dt;
   let newZ = z + dz * dt;
 
   // WORLD BOUNDARIES
@@ -177,24 +177,73 @@ export function updatePhysics(shadow, ui, state, dt) {
     // Axis-by-axis fallback
     if (
       !isColliding(state, getPlayerAABB(newX, y, z, playerWidth, playerHeight))
-    )
+    ) {
       x = newX;
-    else state.dx = 0;
+    } else {
+      // Horizontal collision occurred in X
+      let canStepUp = false;
+      if (onGround && gameConfig.useAutoJump.get() && !isFlying) {
+        // Check if we could clear this by stepping up 1.1 units
+        // Use a thinner AABB (0.4) to avoid getting stuck on adjacent walls
+        if (
+          !isColliding(
+            state,
+            getPlayerAABB(newX, y + 1.05, z, 0.4, playerHeight),
+          )
+        ) {
+          canStepUp = true;
+          if (onGround) {
+            dy = 12; // Trigger jump
+          }
+        }
+      }
+
+      if (!canStepUp) {
+        state.dx = 0;
+      }
+    }
 
     if (
       !isColliding(state, getPlayerAABB(x, newY, z, playerWidth, playerHeight))
     ) {
       y = newY;
     } else {
-      if (dy < 0) newOnGround = true;
-      dy = 0;
+      if (dy < 0) {
+        newOnGround = true;
+        dy = 0;
+      } else if (dy > 0 && newY > y) {
+        // Only stop upward momentum if we hit a ceiling (moved up)
+        dy = 0;
+      }
     }
 
     if (
       !isColliding(state, getPlayerAABB(x, y, newZ, playerWidth, playerHeight))
-    )
+    ) {
       z = newZ;
-    else state.dz = 0;
+    } else {
+      // Horizontal collision occurred in Z
+      let canStepUp = false;
+      if (onGround && gameConfig.useAutoJump.get() && !isFlying) {
+        // Check if we could clear this by stepping up 1.1 units
+        // Use a thinner AABB (0.4) to avoid getting stuck on adjacent walls
+        if (
+          !isColliding(
+            state,
+            getPlayerAABB(x, y + 1.05, newZ, 0.4, playerHeight),
+          )
+        ) {
+          canStepUp = true;
+          if (onGround) {
+            dy = 12; // Trigger jump
+          }
+        }
+      }
+
+      if (!canStepUp) {
+        state.dz = 0;
+      }
+    }
   }
 
   // Update state

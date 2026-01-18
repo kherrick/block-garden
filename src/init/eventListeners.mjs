@@ -342,6 +342,7 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
     "Per-Face Lighting",
   );
   setupToggle("toggleAODebug", config.useAODebug, "AO Debug");
+  setupToggle("toggleAutoJump", config.useAutoJump, "Auto Jump");
 
   // Random Plant Again Button
   const randomPlantButton = shadow.getElementById("randomPlantButton");

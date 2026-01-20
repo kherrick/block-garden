@@ -107,11 +107,15 @@ export function initHammerControls(stage, shadow, gameState) {
     );
   };
 
+  let isPanning = false;
+
   // View Looking (Pan)
   stage.on("panstart", (ev) => {
     if (isUIInteraction(ev)) {
       return;
     }
+
+    isPanning = true;
 
     lastDeltaX = 0;
     lastDeltaY = 0;
@@ -142,6 +146,8 @@ export function initHammerControls(stage, shadow, gameState) {
   });
 
   stage.on("panend", () => {
+    isPanning = false;
+
     lastDeltaX = 0;
     lastDeltaY = 0;
   });
@@ -234,6 +240,10 @@ export function initHammerControls(stage, shadow, gameState) {
 
   stage.on("press", (ev) => {
     if (isUIInteraction(ev)) {
+      return;
+    }
+
+    if (isPanning) {
       return;
     }
 

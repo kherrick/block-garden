@@ -1,8 +1,8 @@
 import Hammer from "hammerjs";
-import { intersects } from "../util/aabb.mjs";
-import { blocks as blockDefs, blockNames } from "../state/config/blocks.mjs";
+
 import { raycastFromCanvasCoords } from "../util/raycastFromCanvasCoords.mjs";
-import { placeBlock, removeBlock } from "../util/interaction.mjs";
+import { placeBlock } from "../util/interaction.mjs";
+
 import { gameConfig } from "../state/config/index.mjs";
 
 /** @typedef {import('./game.mjs').CustomShadowHost} CustomShadowHost */
@@ -24,7 +24,7 @@ export function initHammerControls(stage, shadow, gameState) {
 
   // Setup Press for Breaking (Hold)
   // Ensure we can look around while holding to break
-  press.set({ time: 500 }).recognizeWith(pan);
+  press.set({ time: 500, threshold: 50 }).recognizeWith(pan);
 
   // Setup Tap for Placing
   // Tap should only fire if we didn't pan or press
@@ -45,6 +45,38 @@ export function initHammerControls(stage, shadow, gameState) {
       lastPointerPos.y = pointerEvent.clientY;
     },
     { passive: true },
+  );
+
+  const updateCursorPos = (x, y) => {
+    if (
+      gameState.breakingInput.isHeld &&
+      gameState.breakingInput.mode === "cursor"
+    ) {
+      gameState.breakingInput.cursorX = x;
+      gameState.breakingInput.cursorY = y;
+    }
+  };
+
+  shadow.addEventListener(
+    "pointermove",
+    (
+      /** @type {PointerEvent} */
+      e,
+    ) => {
+      updateCursorPos(e.clientX, e.clientY);
+    },
+  );
+
+  shadow.addEventListener(
+    "touchmove",
+    (
+      /** @type {TouchEvent} */
+      e,
+    ) => {
+      if (e.touches && e.touches[0]) {
+        updateCursorPos(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    },
   );
 
   const isUIInteraction = (ev) => {
@@ -196,13 +228,8 @@ export function initHammerControls(stage, shadow, gameState) {
   });
 
   // Block Breaking (Press/Hold)
-  let breakInterval = null;
-
-  const stopBreaking = () => {
-    if (breakInterval) {
-      clearInterval(breakInterval);
-      breakInterval = null;
-    }
+  const cancelBreaking = () => {
+    gameState.breakingInput.isHeld = false;
   };
 
   stage.on("press", (ev) => {
@@ -210,80 +237,11 @@ export function initHammerControls(stage, shadow, gameState) {
       return;
     }
 
-    let hit = gameState.hit;
-
-    if (!gameConfig.useSplitControls.get()) {
-      const canvas = /** @type {HTMLCanvasElement} */ (
-        shadow.getElementById("canvas")
-      );
-
-      const eyeY = gameState.y - gameState.playerHeight / 2 + 1.62;
-
-      const { hit: rayHit } = raycastFromCanvasCoords(
-        canvas,
-        ev.center.x,
-        ev.center.y,
-        gameState.world,
-        {
-          x: gameState.x,
-          y: eyeY,
-          z: gameState.z,
-        },
-        {
-          yaw: gameState.yaw,
-          pitch: gameState.pitch,
-        },
-      );
-      hit = rayHit;
-    }
-
-    if (hit) {
-      removeBlock(gameState, hit);
-    }
-
-    // Start continuous breaking
-    stopBreaking();
-    breakInterval = setInterval(() => {
-      // Re-calculate raycast if split controls are off
-      let currentHit = gameState.hit;
-
-      if (!gameConfig.useSplitControls.get()) {
-        const canvas = /** @type {HTMLCanvasElement} */ (
-          shadow.getElementById("canvas")
-        );
-
-        // Use the latest tracked pointer position
-        const pointerX =
-          ev.pointerType === "mouse" ? lastPointerPos.x : ev.center.x;
-        const pointerY =
-          ev.pointerType === "mouse" ? lastPointerPos.y : ev.center.y;
-
-        const eyeY = gameState.y - gameState.playerHeight / 2 + 1.62;
-
-        const { hit: rayHit } = raycastFromCanvasCoords(
-          canvas,
-          pointerX,
-          pointerY,
-          gameState.world,
-          {
-            x: gameState.x,
-            y: eyeY,
-            z: gameState.z,
-          },
-          {
-            yaw: gameState.yaw,
-            pitch: gameState.pitch,
-          },
-        );
-        currentHit = rayHit;
-      }
-
-      if (currentHit) {
-        removeBlock(gameState, currentHit);
-      }
-    }, 500); // 500ms delay between breaks
+    gameState.breakingInput.isHeld = true;
+    gameState.breakingInput.mode = "cursor";
+    gameState.breakingInput.cursorX = ev.center.x;
+    gameState.breakingInput.cursorY = ev.center.y;
   });
 
-  stage.on("pressup", stopBreaking);
-  stage.on("panend", stopBreaking); // Safety release
+  stage.on("pressup", cancelBreaking);
 }

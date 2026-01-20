@@ -1,5 +1,5 @@
 import { isKeyPressed } from "../util/isKeyPressed.mjs";
-import { placeBlock, removeBlock } from "../util/interaction.mjs";
+import { placeBlock } from "../util/interaction.mjs";
 
 /** @typedef {import('../init/game.mjs').CustomShadowHost} CustomShadowHost */
 /** @typedef {import('../state/state.mjs').GameState} GameState */
@@ -107,24 +107,23 @@ export function updatePlayer(shadow, state, dt) {
       // Key is being held (not already handled)
       const holdDuration = performance.now() - state.actionKeyPressTime;
       if (holdDuration > 500) {
-        // Long press: remove block
-        removeBlock(state);
+        // Long press: start breaking input
+        state.breakingInput.isHeld = true;
+        state.breakingInput.mode = "center";
 
-        // Mark as handled and store time for repeat removal (negative = removal mode)
-        state.actionKeyPressTime = -performance.now();
+        // Mark as handled (negative) but keep reference time
+        state.actionKeyPressTime = -state.actionKeyPressTime;
       }
     } else {
-      // actionKeyPressTime < 0 means we're in removal mode, check for repeat
-      const lastRemoveTime = -state.actionKeyPressTime;
-      if (performance.now() - lastRemoveTime > 300) {
-        removeBlock(state);
-        state.actionKeyPressTime = -performance.now();
-      }
+      // Already breaking (negative time), ensure we keep input held
+      state.breakingInput.isHeld = true;
+      state.breakingInput.mode = "center";
     }
-    // If actionKeyPressTime === -1, do nothing (already handled this press)
   } else {
     // Key released
-    if (state.actionKeyPressTime > 0) {
+    if (state.actionKeyPressTime < 0) {
+      state.breakingInput.isHeld = false;
+    } else if (state.actionKeyPressTime > 0) {
       const holdDuration = performance.now() - state.actionKeyPressTime;
       if (holdDuration <= 500) {
         // Short press: place block
@@ -132,7 +131,7 @@ export function updatePlayer(shadow, state, dt) {
       }
     }
 
-    // Reset for next press (whether it was handled or not)
+    // Reset for next press
     state.actionKeyPressTime = 0;
   }
 

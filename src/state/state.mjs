@@ -53,6 +53,8 @@ import { ChunkManager } from "./chunkManager.mjs";
  * @property {Signal.State} activeMaterialBarSlot
  * @property {Signal.State} armedLinkConfig
  * @property {Signal.State} armedTextConfig
+ * @property {{active: boolean, startTime: number, blockPos: {x: number, y: number, z: number}|null, currentBlockId: number|null}} breaking
+ * @property {{isHeld: boolean, mode: string, cursorX: number, cursorY: number}} breakingInput
  */
 
 /** @type number */
@@ -168,6 +170,18 @@ export const gameState = {
   armedTextConfig: new Signal.State({
     text: "",
   }),
+  breaking: {
+    active: false,
+    startTime: 0,
+    blockPos: null, // {x, y, z}
+    currentBlockId: null,
+  },
+  breakingInput: {
+    isHeld: false,
+    mode: "center", // 'center' | 'cursor'
+    cursorX: 0,
+    cursorY: 0,
+  },
 };
 
 /**

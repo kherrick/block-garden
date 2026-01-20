@@ -1,5 +1,6 @@
 import { I, look, mul, persp } from "../util/math.mjs";
 import { ray } from "../util/ray.mjs";
+import { updateBreaking } from "../util/interaction.mjs";
 import {
   smartMeshChunk,
   uploadChunkMesh,
@@ -253,6 +254,7 @@ export function gameLoop(
 
     updateWorld(gameState);
     updatePlayer(shadow, gameState, dtSeconds);
+    updateBreaking(gameState, dtSeconds);
     const newPos = updatePhysics(shadow, ui, gameState, dtSeconds);
     updatePlantGrowth(gameState);
 

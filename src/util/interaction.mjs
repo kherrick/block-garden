@@ -5,15 +5,19 @@ import { formatName } from "./formatWorldName.mjs";
 import { showToast } from "../api/ui/toast.mjs";
 
 import { getBlockById } from "../state/config/blocks.mjs";
+import { gameConfig } from "../state/config/index.mjs";
+
 import { getShadowRoot } from "./getShadowRoot.mjs";
+import { raycastFromCanvasCoords } from "./raycastFromCanvasCoords.mjs";
 
 /** @typedef {import('../state/state.mjs').GameState} GameState */
+/** @typedef {import('../util/ray.mjs').PointWithFace} PointWithFace */
 
 /**
  * Attempts to place a block at the current hit position.
  *
  * @param {GameState} gameState
- * @param {import('../util/ray.mjs').PointWithFace} [targetHit] - Optional hit target. If not provided, uses gameState.hit
+ * @param {PointWithFace} [targetHit] - Optional hit target. If not provided, uses gameState.hit
  *
  * @returns {boolean} True if block was placed, false otherwise
  */
@@ -336,9 +340,7 @@ function activateTextBlock(gameState, x, y, z) {
 
   dialog.innerHTML = `
     <h3 style="margin: 0 0 1rem 0">Block Text</h3>
-    <div style="margin: 0 0 1.5rem 0; white-space: pre-wrap; word-break: break-word; max-height: 200px; overflow-y: auto; border: 1px solid var(--bg-color-gray-300); padding: 0.5rem; border-radius: 0.25rem;">
-      ${text}
-    </div>
+    <div style="margin: 0 0 1.5rem 0; white-space: pre-wrap; word-break: break-word; max-height: 200px; overflow-y: auto; border: 1px solid var(--bg-color-gray-300); padding: 0.5rem; border-radius: 0.25rem;">${text}</div>
     <div style="display: flex; gap: 0.625rem; justify-content: flex-end">
       <button id="closeTextDialog" style="background: var(--bg-color-blue-500); border-radius: 0.25rem; border: none; color: white; cursor: pointer; padding: 0.5rem 0.9375rem;">OK</button>
     </div>
@@ -368,4 +370,170 @@ function activateTextBlock(gameState, x, y, z) {
 
   // Close on Escape is handled by dialog naturally but we need to reset gameState
   dialog.addEventListener("close", closeDialog);
+}
+
+/**
+ * Starts a breaking session (if not already active) for a specific target.
+ * NOTE: This is now mostly internal or used for "one-shot" activation.
+ * Continuous breaking is handled by updateBreaking observing breakingInput.
+ *
+ * @param {GameState} gameState
+ * @param {import('../util/ray.mjs').PointWithFace} [targetHit]
+ */
+export function startBreaking(gameState, targetHit) {
+  const hit = targetHit;
+  if (!hit) {
+    return;
+  }
+
+  const blockKey = `${hit.x},${hit.y},${hit.z}`;
+  const blockId = gameState.world.get(blockKey);
+
+  if (blockId === undefined || blockId === 0) {
+    stopBreaking(gameState);
+    return;
+  }
+
+  // If we are already breaking THIS block, do nothing (continue breaking)
+  if (
+    gameState.breaking.active &&
+    gameState.breaking.blockPos &&
+    gameState.breaking.blockPos.x === hit.x &&
+    gameState.breaking.blockPos.y === hit.y &&
+    gameState.breaking.blockPos.z === hit.z
+  ) {
+    return;
+  }
+
+  // Start breaking new block
+  gameState.breaking.active = true;
+  gameState.breaking.startTime = performance.now();
+  gameState.breaking.blockPos = { x: hit.x, y: hit.y, z: hit.z };
+  gameState.breaking.currentBlockId = blockId;
+}
+
+/**
+ * Stops/cancels the current block breaking action.
+ *
+ * @param {GameState} gameState
+ */
+export function stopBreaking(gameState) {
+  if (gameState.breaking.active) {
+    gameState.breaking.active = false;
+    gameState.breaking.blockPos = null;
+    gameState.breaking.currentBlockId = null;
+    gameState.breaking.startTime = 0;
+  }
+}
+
+/**
+ * Updates the block breaking progress. Should be called every frame.
+ * Handles continuous breaking and re-targeting based on input state.
+ *
+ * @param {GameState} gameState
+ * @param {number} dt - Delta time in seconds
+ */
+export function updateBreaking(gameState, dt) {
+  // Check if input is held. If not, stop everything.
+  if (!gameState.breakingInput.isHeld) {
+    if (gameState.breaking.active) {
+      stopBreaking(gameState);
+    }
+    return;
+  }
+
+  // Determine target block based on mode
+  let targetHit = null;
+
+  // Determine effective mode:
+  // Force "center" if Split Controls are ON or Pointer Lock is active (Mouse Captured)
+  let effectiveMode = gameState.breakingInput.mode;
+  if (
+    gameConfig.useSplitControls.get() ||
+    (globalThis.document && globalThis.document.pointerLockElement)
+  ) {
+    effectiveMode = "center";
+  }
+
+  if (effectiveMode === "center") {
+    // Center mode (Split controls or Keyboard): Use gameState.hit (center ray)
+    targetHit = gameState.hit;
+  } else {
+    // Cursor mode (Mouse/Touch with Split OFF): Raycast from cursor
+    const shadow = getShadowRoot(globalThis.document, "block-garden");
+    const canvas = shadow
+      ? /** @type {HTMLCanvasElement} */ (shadow.getElementById("canvas"))
+      : null;
+
+    if (canvas) {
+      const eyeY = gameState.y - gameState.playerHeight / 2 + 1.62;
+      const { hit: rayHit } = raycastFromCanvasCoords(
+        canvas,
+        gameState.breakingInput.cursorX,
+        gameState.breakingInput.cursorY,
+        gameState.world,
+        {
+          x: gameState.x,
+          y: eyeY,
+          z: gameState.z,
+        },
+        {
+          yaw: gameState.yaw,
+          pitch: gameState.pitch,
+        },
+      );
+      targetHit = rayHit;
+    }
+  }
+
+  // Process Target
+  if (!targetHit) {
+    // Input held but pointing at sky/nothing
+    if (gameState.breaking.active) {
+      stopBreaking(gameState);
+    }
+    return;
+  }
+
+  // Compare with current breaking target
+  if (gameState.breaking.active) {
+    // Check if we are still on the same block
+    if (
+      gameState.breaking.blockPos &&
+      gameState.breaking.blockPos.x === targetHit.x &&
+      gameState.breaking.blockPos.y === targetHit.y &&
+      gameState.breaking.blockPos.z === targetHit.z
+    ) {
+      // Same block - continue progress
+    } else {
+      // Different block - restart
+      stopBreaking(gameState);
+      startBreaking(gameState, targetHit);
+    }
+  } else {
+    // Not active, start breaking this target
+    startBreaking(gameState, targetHit);
+  }
+
+  // Update Progress (if active)
+  if (gameState.breaking.active) {
+    const blockDef = getBlockById(gameState.breaking.currentBlockId);
+    if (!blockDef) {
+      stopBreaking(gameState);
+
+      return;
+    }
+
+    const breakTimeMs = (blockDef.breakTime || 0) * 1000;
+    const elapsedTime = performance.now() - gameState.breaking.startTime;
+
+    if (elapsedTime >= breakTimeMs) {
+      // Break the block
+      removeBlock(gameState, targetHit);
+
+      // Reset progress but KEEP input held state active to catch next block immediately
+      // We "stop" the current break to reset timer, but next frame will restart if still held
+      stopBreaking(gameState);
+    }
+  }
 }

@@ -8,7 +8,6 @@ import { extractAttachments } from "../util/extractAttachments.mjs";
 import { extractJsonFromPng } from "../util/canvasToPngWithState.mjs";
 import { getRandomSeed } from "../util/getRandomSeed.mjs";
 import { raycastFromCanvasCoords } from "../util/raycastFromCanvasCoords.mjs";
-import { removeBlock } from "../util/interaction.mjs";
 import { runCompress } from "../util/compression.mjs";
 import { showColorCustomizationDialog } from "../util/customColors.mjs";
 import { processSaveData } from "../util/saveData.mjs";
@@ -730,7 +729,29 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
      * for removal. Here, removal with button 2 from mousedown event
      */
     if (e.button === 2) {
-      removeBlock(gameState, hit);
+      gameState.breakingInput.isHeld = true;
+      gameState.breakingInput.mode = "cursor";
+      gameState.breakingInput.cursorX = e.clientX;
+      gameState.breakingInput.cursorY = e.clientY;
+    }
+  });
+
+  const clearBreakingInput = () => {
+    gameState.breakingInput.isHeld = false;
+  };
+
+  cnvs.addEventListener("mouseup", clearBreakingInput);
+  cnvs.addEventListener("mouseleave", clearBreakingInput);
+  shadow.addEventListener("touchend", clearBreakingInput);
+  shadow.addEventListener("touchcancel", clearBreakingInput);
+
+  cnvs.addEventListener("mousemove", (e) => {
+    if (
+      gameState.breakingInput.isHeld &&
+      gameState.breakingInput.mode === "cursor"
+    ) {
+      gameState.breakingInput.cursorX = e.clientX;
+      gameState.breakingInput.cursorY = e.clientY;
     }
   });
 

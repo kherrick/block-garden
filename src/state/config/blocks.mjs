@@ -10,6 +10,7 @@
  * @property {boolean} [isSeed=false] - Whether this block is a seed/plant
  * @property {string|string[]|null} [drops=null] - What material(s) drop when harvested
  * @property {boolean} [gravity=false] - Whether a block falls
+ * @property {number|null} [breakTime=0] - How long it takes to break a block
  * @property {number} [growthTime] - Time in seconds for plant to grow
  * @property {number} [friction=0] - Friction value when player moves through block (0-1). 0=no friction, 1=full stop. Future use for water, lava, leaves, etc.
  */
@@ -176,30 +177,35 @@ const blockDefinitionsArray = [
   {
     name: blockNames.AIR,
     id: 0,
+    breakTime: null,
     drops: null,
     solid: false,
   },
   {
     name: blockNames.AGAVE_BASE,
     id: 82,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.AGAVE_FLOWER_STALK,
     id: 84,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.AGAVE_FLOWER,
     id: 85,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.AGAVE_GROWING,
     id: 81,
+    breakTime: 0.5,
     drops: null,
     solid: true,
     crop: true,
@@ -207,12 +213,14 @@ const blockDefinitionsArray = [
   {
     name: blockNames.AGAVE_SPIKE,
     id: 83,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.AGAVE,
     id: 80,
+    breakTime: 0.5,
     drops: "AGAVE",
     solid: true,
     growthTime: 1920,
@@ -222,6 +230,7 @@ const blockDefinitionsArray = [
   {
     name: blockNames.BAMBOO_GROWING,
     id: 43,
+    breakTime: 0.5,
     drops: null,
     solid: true,
     crop: true,
@@ -229,24 +238,28 @@ const blockDefinitionsArray = [
   {
     name: blockNames.BAMBOO_JOINT,
     id: 53,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.BAMBOO_LEAVES,
     id: 54,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.BAMBOO_STALK,
     id: 52,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.BAMBOO,
     id: 36,
+    breakTime: 0.5,
     drops: "BAMBOO",
     solid: true,
     growthTime: 180,
@@ -256,24 +269,28 @@ const blockDefinitionsArray = [
   {
     name: blockNames.BEDROCK,
     id: 19,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.BERRY_BUSH_BERRIES,
     id: 51,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.BERRY_BUSH_BRANCH,
     id: 49,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.BERRY_BUSH_GROWING,
     id: 42,
+    breakTime: 0.5,
     drops: null,
     solid: true,
     crop: true,
@@ -281,12 +298,14 @@ const blockDefinitionsArray = [
   {
     name: blockNames.BERRY_BUSH_LEAVES,
     id: 50,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.BERRY_BUSH,
     id: 35,
+    breakTime: 0.5,
     drops: "BERRY_BUSH",
     solid: true,
     growthTime: 360,
@@ -296,24 +315,28 @@ const blockDefinitionsArray = [
   {
     name: blockNames.BIRCH_BARK,
     id: 117,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.BIRCH_BRANCHES,
     id: 118,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.BIRCH_CATKINS,
     id: 120,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.BIRCH_GROWING,
     id: 115,
+    breakTime: 0.5,
     drops: null,
     solid: true,
     crop: true,
@@ -321,18 +344,21 @@ const blockDefinitionsArray = [
   {
     name: blockNames.BIRCH_LEAVES,
     id: 119,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.BIRCH_TRUNK,
     id: 116,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.BIRCH,
     id: 114,
+    breakTime: 0.5,
     drops: ["BIRCH", "WOOD"],
     solid: true,
     growthTime: 1260,
@@ -342,18 +368,21 @@ const blockDefinitionsArray = [
   {
     name: blockNames.CACTUS_BODY,
     id: 30,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.CACTUS_FLOWER,
     id: 31,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.CACTUS_GROWING,
     id: 23,
+    breakTime: 0.5,
     drops: null,
     solid: true,
     crop: true,
@@ -361,6 +390,7 @@ const blockDefinitionsArray = [
   {
     name: blockNames.CACTUS,
     id: 15,
+    breakTime: 0.5,
     drops: "CACTUS",
     solid: true,
     growthTime: 2400,
@@ -370,6 +400,7 @@ const blockDefinitionsArray = [
   {
     name: blockNames.CARROT_GROWING,
     id: 21,
+    breakTime: 0.5,
     drops: null,
     solid: true,
     crop: true,
@@ -377,18 +408,21 @@ const blockDefinitionsArray = [
   {
     name: blockNames.CARROT_LEAVES,
     id: 26,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.CARROT_ROOT,
     id: 27,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.CARROT,
     id: 13,
+    breakTime: 0.5,
     drops: "CARROT",
     solid: true,
     growthTime: 240,
@@ -398,30 +432,35 @@ const blockDefinitionsArray = [
   {
     name: blockNames.CLAY,
     id: 6,
+    breakTime: 0.5,
     drops: "CLAY",
     solid: true,
   },
   {
     name: blockNames.CLOUD,
     id: 72,
+    breakTime: 0.5,
     drops: "CLOUD",
     solid: true,
   },
   {
     name: blockNames.COAL,
     id: 7,
+    breakTime: 0.5,
     drops: "COAL",
     solid: true,
   },
   {
     name: blockNames.CORN_EAR,
     id: 61,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.CORN_GROWING,
     id: 45,
+    breakTime: 0.5,
     drops: null,
     solid: true,
     crop: true,
@@ -429,24 +468,28 @@ const blockDefinitionsArray = [
   {
     name: blockNames.CORN_LEAVES,
     id: 60,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.CORN_SILK,
     id: 62,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.CORN_STALK,
     id: 59,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.CORN,
     id: 38,
+    breakTime: 0.5,
     drops: "CORN",
     solid: true,
     growthTime: 420,
@@ -456,18 +499,21 @@ const blockDefinitionsArray = [
   {
     name: blockNames.DIRT,
     id: 2,
+    breakTime: 0.5,
     drops: "DIRT",
     solid: true,
   },
   {
     name: blockNames.FERN_FROND,
     id: 70,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.FERN_GROWING,
     id: 48,
+    breakTime: 0.5,
     drops: null,
     solid: true,
     crop: true,
@@ -475,12 +521,14 @@ const blockDefinitionsArray = [
   {
     name: blockNames.FERN_STEM,
     id: 69,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.FERN,
     id: 41,
+    breakTime: 0.5,
     drops: "FERN",
     solid: true,
     growthTime: 90,
@@ -490,42 +538,49 @@ const blockDefinitionsArray = [
   {
     name: blockNames.GOLD,
     id: 9,
+    breakTime: 0.5,
     drops: "GOLD",
     solid: true,
   },
   {
     name: blockNames.GRASS,
     id: 1,
+    breakTime: 0.5,
     drops: "GRASS",
     solid: true,
   },
   {
     name: blockNames.ICE,
     id: 17,
+    breakTime: 0.5,
     drops: "ICE",
     solid: true,
   },
   {
     name: blockNames.IRON,
     id: 8,
+    breakTime: 0.5,
     drops: "IRON",
     solid: true,
   },
   {
     name: blockNames.KELP_BLADE,
     id: 93,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.KELP_BULB,
     id: 94,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.KELP_GROWING,
     id: 92,
+    breakTime: 0.5,
     drops: null,
     solid: true,
     crop: true,
@@ -533,6 +588,7 @@ const blockDefinitionsArray = [
   {
     name: blockNames.KELP,
     id: 91,
+    breakTime: 0.5,
     drops: "KELP",
     solid: true,
     growthTime: 150,
@@ -542,6 +598,7 @@ const blockDefinitionsArray = [
   {
     name: blockNames.LAVA,
     id: 18,
+    breakTime: 0.5,
     drops: null,
     solid: true,
     gravity: true,
@@ -549,18 +606,21 @@ const blockDefinitionsArray = [
   {
     name: blockNames.LAVENDER_BUSH,
     id: 89,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.LAVENDER_FLOWERS,
     id: 90,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.LAVENDER_GROWING,
     id: 87,
+    breakTime: 0.5,
     drops: null,
     solid: true,
     crop: true,
@@ -568,12 +628,14 @@ const blockDefinitionsArray = [
   {
     name: blockNames.LAVENDER_STEM,
     id: 88,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.LAVENDER,
     id: 86,
+    breakTime: 0.5,
     drops: "LAVENDER",
     solid: true,
     growthTime: 200,
@@ -583,18 +645,21 @@ const blockDefinitionsArray = [
   {
     name: blockNames.LOTUS_BUD,
     id: 112,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.LOTUS_FLOWER,
     id: 113,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.LOTUS_GROWING,
     id: 109,
+    breakTime: 0.5,
     drops: null,
     solid: true,
     crop: true,
@@ -602,18 +667,21 @@ const blockDefinitionsArray = [
   {
     name: blockNames.LOTUS_PAD,
     id: 110,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.LOTUS_STEM,
     id: 111,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.LOTUS,
     id: 108,
+    breakTime: 0.5,
     drops: "LOTUS",
     solid: true,
     growthTime: 390,
@@ -623,12 +691,14 @@ const blockDefinitionsArray = [
   {
     name: blockNames.MUSHROOM_CAP,
     id: 29,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.MUSHROOM_GROWING,
     id: 22,
+    breakTime: 0.5,
     drops: null,
     solid: true,
     crop: true,
@@ -636,12 +706,14 @@ const blockDefinitionsArray = [
   {
     name: blockNames.MUSHROOM_STEM,
     id: 28,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.MUSHROOM,
     id: 14,
+    breakTime: 0.5,
     drops: "MUSHROOM",
     solid: true,
     growthTime: 120,
@@ -651,18 +723,21 @@ const blockDefinitionsArray = [
   {
     name: blockNames.PINE_CONE,
     id: 65,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.PINE_NEEDLES,
     id: 64,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.PINE_TREE_GROWING,
     id: 46,
+    breakTime: 0.5,
     drops: null,
     solid: true,
     crop: true,
@@ -670,6 +745,7 @@ const blockDefinitionsArray = [
   {
     name: blockNames.PINE_TREE,
     id: 39,
+    breakTime: 0.5,
     drops: "PINE_TREE",
     solid: true,
     growthTime: 1440,
@@ -679,24 +755,28 @@ const blockDefinitionsArray = [
   {
     name: blockNames.PINE_TRUNK,
     id: 63,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.PUMICE,
     id: 71,
+    breakTime: 0.5,
     drops: "PUMICE",
     solid: true,
   },
   {
     name: blockNames.PUMPKIN_FRUIT,
     id: 106,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.PUMPKIN_GROWING,
     id: 103,
+    breakTime: 0.5,
     drops: null,
     solid: true,
     crop: true,
@@ -704,24 +784,28 @@ const blockDefinitionsArray = [
   {
     name: blockNames.PUMPKIN_LEAVES,
     id: 105,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.PUMPKIN_STEM,
     id: 107,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.PUMPKIN_VINE,
     id: 104,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.PUMPKIN,
     id: 102,
+    breakTime: 0.5,
     drops: "PUMPKIN",
     solid: true,
     growthTime: 660,
@@ -731,18 +815,21 @@ const blockDefinitionsArray = [
   {
     name: blockNames.ROSE_BLOOM,
     id: 101,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.ROSE_BUD,
     id: 100,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.ROSE_GROWING,
     id: 96,
+    breakTime: 0.5,
     drops: null,
     solid: true,
     crop: true,
@@ -750,24 +837,28 @@ const blockDefinitionsArray = [
   {
     name: blockNames.ROSE_LEAVES,
     id: 99,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.ROSE_STEM,
     id: 97,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.ROSE_THORNS,
     id: 98,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.ROSE,
     id: 95,
+    breakTime: 0.5,
     drops: "ROSE",
     solid: true,
     growthTime: 540,
@@ -777,6 +868,7 @@ const blockDefinitionsArray = [
   {
     name: blockNames.SAND,
     id: 5,
+    breakTime: 0.5,
     drops: "SAND",
     solid: true,
     gravity: true,
@@ -784,24 +876,28 @@ const blockDefinitionsArray = [
   {
     name: blockNames.SNOW,
     id: 16,
+    breakTime: 0.5,
     drops: "SNOW",
     solid: true,
   },
   {
     name: blockNames.STONE,
     id: 3,
+    breakTime: 0.5,
     drops: "STONE",
     solid: true,
   },
   {
     name: blockNames.SUNFLOWER_CENTER,
     id: 57,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.SUNFLOWER_GROWING,
     id: 44,
+    breakTime: 0.5,
     drops: null,
     solid: true,
     crop: true,
@@ -809,24 +905,28 @@ const blockDefinitionsArray = [
   {
     name: blockNames.SUNFLOWER_LEAVES,
     id: 56,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.SUNFLOWER_PETALS,
     id: 58,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.SUNFLOWER_STEM,
     id: 55,
+    breakTime: 0.5,
     drops: "SUNFLOWER",
     solid: true,
   },
   {
     name: blockNames.SUNFLOWER,
     id: 37,
+    breakTime: 0.5,
     drops: null,
     solid: true,
     growthTime: 600,
@@ -836,6 +936,7 @@ const blockDefinitionsArray = [
   {
     name: blockNames.TREE_GROWING,
     id: 34,
+    breakTime: 0.5,
     drops: null,
     solid: true,
     crop: true,
@@ -843,6 +944,7 @@ const blockDefinitionsArray = [
   {
     name: blockNames.TREE_LEAVES,
     id: 11,
+    breakTime: 0.5,
     drops: null,
     solid: true,
     crop: true,
@@ -850,6 +952,7 @@ const blockDefinitionsArray = [
   {
     name: blockNames.TREE_TRUNK,
     id: 10,
+    breakTime: 0.5,
     drops: "WOOD",
     solid: true,
     crop: true,
@@ -857,12 +960,14 @@ const blockDefinitionsArray = [
   {
     name: blockNames.TULIP_BULB,
     id: 79,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.TULIP_GROWING,
     id: 75,
+    breakTime: 0.5,
     drops: null,
     solid: true,
     crop: true,
@@ -870,24 +975,28 @@ const blockDefinitionsArray = [
   {
     name: blockNames.TULIP_LEAVES,
     id: 77,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.TULIP_PETALS,
     id: 78,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.TULIP_STEM,
     id: 76,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.TULIP,
     id: 74,
+    breakTime: 0.5,
     drops: "TULIP",
     solid: true,
     growthTime: 300,
@@ -897,6 +1006,7 @@ const blockDefinitionsArray = [
   {
     name: blockNames.WATER,
     id: 4,
+    breakTime: 0.5,
     drops: null,
     solid: true,
     gravity: true,
@@ -904,12 +1014,14 @@ const blockDefinitionsArray = [
   {
     name: blockNames.WHEAT_GRAIN,
     id: 25,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.WHEAT_GROWING,
     id: 20,
+    breakTime: 0.5,
     drops: null,
     solid: true,
     crop: true,
@@ -917,12 +1029,14 @@ const blockDefinitionsArray = [
   {
     name: blockNames.WHEAT_STALK,
     id: 24,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.WHEAT,
     id: 12,
+    breakTime: 0.5,
     drops: "WHEAT",
     solid: true,
     growthTime: 480,
@@ -932,18 +1046,21 @@ const blockDefinitionsArray = [
   {
     name: blockNames.WILLOW_BRANCHES,
     id: 67,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.WILLOW_LEAVES,
     id: 68,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.WILLOW_TREE_GROWING,
     id: 47,
+    breakTime: 0.5,
     drops: null,
     solid: true,
     crop: true,
@@ -951,6 +1068,7 @@ const blockDefinitionsArray = [
   {
     name: blockNames.WILLOW_TREE,
     id: 40,
+    breakTime: 0.5,
     drops: ["WILLOW_TREE", "WOOD"],
     solid: true,
     growthTime: 1800,
@@ -960,12 +1078,14 @@ const blockDefinitionsArray = [
   {
     name: blockNames.WILLOW_TRUNK,
     id: 66,
+    breakTime: 0.5,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.WOOD,
     id: 73,
+    breakTime: 0.5,
     drops: "WOOD",
     solid: true,
     crop: true,
@@ -973,12 +1093,14 @@ const blockDefinitionsArray = [
   {
     name: blockNames.LINK,
     id: 130,
+    breakTime: 30,
     drops: null,
     solid: true,
   },
   {
     name: blockNames.TEXT,
     id: 131,
+    breakTime: 30,
     drops: null,
     solid: true,
   },
@@ -1002,16 +1124,21 @@ const blockDefinitionsByName = new Map();
 const blockIdToIndexMap = new Map();
 blockDefinitionsArray.forEach((block, index) => {
   blockIdToIndexMap.set(block.id, index);
+
   if (block.id !== undefined && block.id < 256) {
     blockDefinitionsById[block.id] = block;
   }
+
   if (block.name) {
     blockDefinitionsByName.set(block.name, block);
   }
 });
 
-// Augment blocks array with fast lookup methods for performance
-/** @type {BlockArray} */
+/**
+ * Augment blocks array with fast lookup methods for performance
+ *
+ * @type {BlockArray}
+ */
 const blocks = Object.assign(blockDefinitionsArray, {
   getById: (id) => blockDefinitionsById[id],
   getByName: (name) => blockDefinitionsByName.get(name),

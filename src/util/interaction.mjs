@@ -19,7 +19,7 @@ import { raycastFromCanvasCoords } from "./raycastFromCanvasCoords.mjs";
  * @param {GameState} gameState
  * @param {PointWithFace} [targetHit] - Optional hit target. If not provided, uses gameState.hit
  *
- * @returns {boolean} True if block was placed, false otherwise
+ * @returns {boolean|string} "activated" if block was activated, "placed" if placed, false otherwise
  */
 export function placeBlock(gameState, targetHit) {
   const hit = targetHit || gameState.hit;
@@ -34,13 +34,13 @@ export function placeBlock(gameState, targetHit) {
     if (blockDef && blockDef.name === "Link") {
       activateLinkBlock(gameState, hit.x, hit.y, hit.z);
 
-      return true;
+      return "activated";
     }
 
     if (blockDef && blockDef.name === "Text") {
       activateTextBlock(gameState, hit.x, hit.y, hit.z);
 
-      return true;
+      return "activated";
     }
   }
 
@@ -146,7 +146,7 @@ export function placeBlock(gameState, targetHit) {
     };
   }
 
-  return true;
+  return "placed";
 }
 
 /**
@@ -289,14 +289,19 @@ function activateLinkBlock(gameState, x, y, z) {
   shadow.append(dialog);
   dialog.showModal();
 
-  dialog.querySelector("#cancelTravel").addEventListener("click", () => {
+  const closeDialog = () => {
     dialog.close();
     dialog.remove();
 
     setTimeout(() => {
       gameState.isCanvasActionDisabled = false;
     }, 500);
-  });
+  };
+
+  dialog.querySelector("#cancelTravel").addEventListener("click", closeDialog);
+
+  // Close on Escape is handled by dialog naturally but we need to reset gameState
+  dialog.addEventListener("close", closeDialog);
 
   dialog.querySelector("#confirmTravel").addEventListener("click", () => {
     window.location.href = url.toString();

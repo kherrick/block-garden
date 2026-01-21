@@ -535,6 +535,13 @@ export async function checkUrlSave(globalThis, shadow) {
     `;
 
     shadow.append(dialog);
+
+    dialog.addEventListener("close", () => {
+      setTimeout(() => {
+        globalThis.blockGarden.state.isCanvasActionDisabled = false;
+      }, 500);
+    });
+
     dialog.showModal();
 
     return new Promise((resolve) => {

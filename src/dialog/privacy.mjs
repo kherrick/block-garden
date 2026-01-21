@@ -82,7 +82,21 @@ export class PrivacyDialog {
 
   /** @returns {void} */
   show() {
-    this.dialog instanceof HTMLDialogElement && this.dialog.showModal();
+    if (this.dialog instanceof HTMLDialogElement) {
+      if (this.doc.pointerLockElement) {
+        this.doc.exitPointerLock();
+      }
+
+      globalThis.blockGarden.state.isCanvasActionDisabled = true;
+
+      this.dialog.addEventListener("close", () => {
+        setTimeout(() => {
+          globalThis.blockGarden.state.isCanvasActionDisabled = false;
+        }, 500);
+      });
+
+      this.dialog.showModal();
+    }
   }
 
   /** @returns {void} */

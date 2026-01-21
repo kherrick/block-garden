@@ -252,6 +252,7 @@ export class LinkConfigurationDialog {
 
       this.gThis.blockGarden.state.isCanvasActionDisabled = true;
 
+      this.dialog.addEventListener("close", () => this.close());
       this.dialog.showModal();
     }
   }

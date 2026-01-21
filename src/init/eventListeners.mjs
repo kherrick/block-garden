@@ -845,14 +845,20 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
       gameState.placingInput.cursorX = e.clientX;
       gameState.placingInput.cursorY = e.clientY;
 
+      /** @type {string | boolean} */
+      let result = false;
       if (!useSplit) {
         // use rayHit calculated above
         if (hit) {
-          placeBlock(gameState, hit);
+          result = placeBlock(gameState, hit);
         }
       } else {
         // use center hit
-        placeBlock(gameState);
+        result = placeBlock(gameState);
+      }
+
+      if (result === "activated") {
+        gameState.preventNextContextMenu = true;
       }
     }
   });
@@ -1469,9 +1475,31 @@ export function initCanvasEventListeners(shadow, cnvs, blocks, curBlock) {
     }
   });
 
-  cnvs.addEventListener("contextmenu", (e) => {
-    e.preventDefault();
-  });
+  globalThis.addEventListener(
+    "contextmenu",
+    (e) => {
+      // If we just activated a Link or Text block, prevent the context menu
+      const gameState = globalThis.blockGarden.state;
+      if (gameState.preventNextContextMenu) {
+        e.preventDefault();
+
+        gameState.preventNextContextMenu = false;
+
+        return;
+      }
+
+      const target = e.target;
+
+      // If the context menu is triggered on the canvas, prevent it (standard game behavior)
+      if (
+        target === cnvs ||
+        (target instanceof Element && cnvs.contains(target))
+      ) {
+        e.preventDefault();
+      }
+    },
+    true,
+  );
 }
 
 /**

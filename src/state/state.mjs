@@ -18,6 +18,7 @@ import { ChunkManager } from "./chunkManager.mjs";
  * @typedef {Object} GameState
  *
  * @property {boolean} fastGrowth
+ * @property {boolean} preventNextContextMenu
  * @property {boolean} onGround
  * @property {boolean} uiButtonActive
  * @property {boolean} spacePressed
@@ -140,6 +141,7 @@ export const gameState = {
   flySpeed: 10,
   flying: new Signal.State(false),
   onGround: false,
+  preventNextContextMenu: false,
   hit: null,
   lastSpacePressTime: 0,
   spacePressed: false,

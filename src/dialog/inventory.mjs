@@ -16,6 +16,7 @@ export class InventoryDialog {
     this.isOpen = false;
     this.blockColors = {};
     this.initBlockColors();
+    this.handleClose = this.handleClose.bind(this);
   }
 
   async initBlockColors() {
@@ -180,7 +181,7 @@ export class InventoryDialog {
     setTimeout(() => {
       globalThis.blockGarden.state.isCanvasActionDisabled = false;
 
-      this.dialog.removeEventListener("close", this.handleClose.bind(this));
+      this.dialog.removeEventListener("close", this.handleClose);
     }, 500);
   }
 
@@ -198,7 +199,7 @@ export class InventoryDialog {
 
     globalThis.blockGarden.state.isCanvasActionDisabled = true;
 
-    this.dialog.addEventListener("close", this.handleClose.bind(this));
+    this.dialog.addEventListener("close", this.handleClose);
   }
 
   close() {

@@ -28,8 +28,8 @@ Gameplay supports keyboard and mouse controls on desktop, and touch controls on 
 - **Use crosshair to center block placement**
 - **Click Game Canvas To Lock Mouse**
 
-- **Left Click:** Place Block
-- **Right Click:** Remove Block
+- **Left Click (Hold):** Break Block
+- **Right Click:** Place Block
 
 ---
 

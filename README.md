@@ -35,8 +35,8 @@ npm i && npm start
 - **Place / Remove Block:** `Enter`
 - Click Game Canvas To Lock Mouse
   - **Use crosshair to center block placement**
-  - **Left Click:** Place Block
-  - **Right Click:** Remove Block
+  - **Left Click (Hold):** Break Block
+  - **Right Click:** Place Block
 
 ### Included Game Saves
 

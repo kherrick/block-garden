@@ -186,6 +186,12 @@ export async function initGame(gThis, shadow, cnvs) {
     uUAO,
     uULG,
     uUAOD,
+    luvbuf,
+    caobuf,
+    pbuf,
+    nbuf,
+    breakCbuf,
+    breakUvbuf,
   } = initGameDependencies(cnvs, gameConfig.blocks);
 
   // Get required UI buttons for flight controls
@@ -260,6 +266,12 @@ export async function initGame(gThis, shadow, cnvs) {
       uUAO,
       uULG,
       uUAOD,
+      luvbuf,
+      caobuf,
+      pbuf,
+      nbuf,
+      breakCbuf,
+      breakUvbuf,
     );
 
     gameState.shouldReset.set(true);
@@ -349,6 +361,12 @@ export async function initGame(gThis, shadow, cnvs) {
     uUAO,
     uULG,
     uUAOD,
+    luvbuf,
+    caobuf,
+    pbuf,
+    nbuf,
+    breakCbuf,
+    breakUvbuf,
   );
 
   shadow.dispatchEvent(

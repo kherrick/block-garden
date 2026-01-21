@@ -53,8 +53,11 @@ import { ChunkManager } from "./chunkManager.mjs";
  * @property {Signal.State} activeMaterialBarSlot
  * @property {Signal.State} armedLinkConfig
  * @property {Signal.State} armedTextConfig
- * @property {{active: boolean, startTime: number, blockPos: {x: number, y: number, z: number}|null, currentBlockId: number|null}} breaking
+ * @property {{active: boolean, startTime: number, blockPos: {x: number, y: number, z: number}|null, currentBlockId: number|null, breakPercentage: number}} breaking
  * @property {{isHeld: boolean, mode: string, cursorX: number, cursorY: number}} breakingInput
+ * @property {{active: boolean, lastPlaceTime: number, interval: number}} placing
+ * @property {{isHeld: boolean, mode: string, cursorX: number, cursorY: number}} placingInput
+ * @property {{x: number, y: number, z: number}|null} cursorTarget - Block under cursor for immediate highlighting
  */
 
 /** @type number */
@@ -175,6 +178,7 @@ export const gameState = {
     startTime: 0,
     blockPos: null, // {x, y, z}
     currentBlockId: null,
+    breakPercentage: 0,
   },
   breakingInput: {
     isHeld: false,
@@ -182,6 +186,18 @@ export const gameState = {
     cursorX: 0,
     cursorY: 0,
   },
+  placing: {
+    active: false,
+    lastPlaceTime: 0,
+    interval: 250, // ms
+  },
+  placingInput: {
+    isHeld: false,
+    mode: "center", // 'center' | 'cursor'
+    cursorX: 0,
+    cursorY: 0,
+  },
+  cursorTarget: null,
 };
 
 /**

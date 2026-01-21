@@ -11,6 +11,7 @@ import { raycastFromCanvasCoords } from "../util/raycastFromCanvasCoords.mjs";
 import { runCompress } from "../util/compression.mjs";
 import { showColorCustomizationDialog } from "../util/customColors.mjs";
 import { processSaveData } from "../util/saveData.mjs";
+import { placeBlock } from "../util/interaction.mjs";
 
 import {
   blockNames,
@@ -260,10 +261,58 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
       toggleSplitControls.textContent = isEnabled
         ? "Disable Split Controls"
         : "Enable Split Controls";
+
       toggleSplitControls.style.backgroundColor = isEnabled
         ? "var(--bg-color-red-500)"
         : "var(--bg-color-green-500)";
+
       toggleSplitControls.style.color = "var(--bg-color-white)";
+    });
+  }
+
+  // Block Highlight Toggle
+  const toggleBlockHighlight = shadow.getElementById("toggleBlockHighlight");
+  if (toggleBlockHighlight) {
+    const config = globalThis.blockGarden.config;
+
+    toggleBlockHighlight.addEventListener("click", () => {
+      config.useBlockHighlight.set(!config.useBlockHighlight.get());
+    });
+
+    effect(() => {
+      const isEnabled = config.useBlockHighlight.get();
+      toggleBlockHighlight.textContent = isEnabled
+        ? "Disable Block Highlight"
+        : "Enable Block Highlight";
+
+      toggleBlockHighlight.style.backgroundColor = isEnabled
+        ? "var(--bg-color-red-500)"
+        : "var(--bg-color-green-500)";
+
+      toggleBlockHighlight.style.color = "var(--bg-color-white)";
+    });
+  }
+
+  // Damage Animation Toggle
+  const toggleDamageAnimation = shadow.getElementById("toggleDamageAnimation");
+  if (toggleDamageAnimation) {
+    const config = globalThis.blockGarden.config;
+
+    toggleDamageAnimation.addEventListener("click", () => {
+      config.useDamageAnimation.set(!config.useDamageAnimation.get());
+    });
+
+    effect(() => {
+      const isEnabled = config.useDamageAnimation.get();
+      toggleDamageAnimation.textContent = isEnabled
+        ? "Disable Damage Animation"
+        : "Enable Damage Animation";
+
+      toggleDamageAnimation.style.backgroundColor = isEnabled
+        ? "var(--bg-color-red-500)"
+        : "var(--bg-color-green-500)";
+
+      toggleDamageAnimation.style.color = "var(--bg-color-white)";
     });
   }
 
@@ -632,13 +681,55 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
     "touchstart",
     (e) => {
       lastTouchTime = Date.now();
-      if (
-        (e.target instanceof HTMLDivElement &&
-          e.target.closest(".touch-controls")) ||
-        e.target === shadow.getElementById("canvas")
-      ) {
+      const isCanvas = e.target === shadow.getElementById("canvas");
+      const isTouchControl =
+        e.target instanceof HTMLDivElement &&
+        e.target.closest(".touch-controls");
+
+      if (isTouchControl || isCanvas) {
         if (e.cancelable) {
           e.preventDefault();
+        }
+      }
+
+      // Set cursorTarget immediately for highlighting (before HammerJS press delay)
+      const touchEvent = /** @type {TouchEvent} */ (e);
+      if (isCanvas && touchEvent.touches && touchEvent.touches[0]) {
+        const gameState = globalThis.blockGarden.state;
+        const gameConfig = globalThis.blockGarden.config;
+
+        if (!gameConfig.useSplitControls.get()) {
+          const touch = touchEvent.touches[0];
+          const canvas = /** @type {HTMLCanvasElement} */ (
+            shadow.getElementById("canvas")
+          );
+
+          if (canvas) {
+            const eyeY = gameState.y - gameState.playerHeight / 2 + 1.62;
+            const { hit: rayHit } = raycastFromCanvasCoords(
+              canvas,
+              touch.clientX,
+              touch.clientY,
+              gameState.world,
+              {
+                x: gameState.x,
+                y: eyeY,
+                z: gameState.z,
+              },
+              {
+                yaw: gameState.yaw,
+                pitch: gameState.pitch,
+              },
+            );
+
+            if (rayHit) {
+              gameState.cursorTarget = {
+                x: rayHit.x,
+                y: rayHit.y,
+                z: rayHit.z,
+              };
+            }
+          }
         }
       }
     },
@@ -697,7 +788,6 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
     }
 
     const gameState = globalThis.blockGarden.state;
-    // @ts-ignore
     const gameConfig = globalThis.blockGarden.config;
 
     let hit = gameState.hit;
@@ -726,24 +816,57 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
 
     /**
      * Perform action -- defer to hammer.js "tap" event for placement, and "press" event
-     * for removal. Here, removal with button 2 from mousedown event
+     * for removal.
      */
+    // Left Click (Button 0) -> Break
+    if (e.button === 0) {
+      // Set cursorTarget immediately for highlighting (works even without pointer lock)
+      if (!useSplit && hit) {
+        gameState.cursorTarget = { x: hit.x, y: hit.y, z: hit.z };
+      }
+
+      if (
+        shadow.pointerLockElement === cnvs ||
+        shadow.pointerLockElement === shadow.host ||
+        globalThis.document.pointerLockElement === cnvs ||
+        globalThis.document.pointerLockElement === shadow.host
+      ) {
+        gameState.breakingInput.isHeld = true;
+        gameState.breakingInput.mode = "cursor";
+        gameState.breakingInput.cursorX = e.clientX;
+        gameState.breakingInput.cursorY = e.clientY;
+      }
+    }
+
+    // Right Click (Button 2) -> Place
     if (e.button === 2) {
-      gameState.breakingInput.isHeld = true;
-      gameState.breakingInput.mode = "cursor";
-      gameState.breakingInput.cursorX = e.clientX;
-      gameState.breakingInput.cursorY = e.clientY;
+      gameState.placingInput.isHeld = true;
+      gameState.placingInput.mode = "cursor";
+      gameState.placingInput.cursorX = e.clientX;
+      gameState.placingInput.cursorY = e.clientY;
+
+      if (!useSplit) {
+        // use rayHit calculated above
+        if (hit) {
+          placeBlock(gameState, hit);
+        }
+      } else {
+        // use center hit
+        placeBlock(gameState);
+      }
     }
   });
 
-  const clearBreakingInput = () => {
+  const clearInputs = () => {
     gameState.breakingInput.isHeld = false;
+    gameState.placingInput.isHeld = false;
+    gameState.cursorTarget = null;
   };
 
-  cnvs.addEventListener("mouseup", clearBreakingInput);
-  cnvs.addEventListener("mouseleave", clearBreakingInput);
-  shadow.addEventListener("touchend", clearBreakingInput);
-  shadow.addEventListener("touchcancel", clearBreakingInput);
+  cnvs.addEventListener("mouseup", clearInputs);
+  cnvs.addEventListener("mouseleave", clearInputs);
+  shadow.addEventListener("touchend", clearInputs);
+  shadow.addEventListener("touchcancel", clearInputs);
 
   cnvs.addEventListener("mousemove", (e) => {
     if (
@@ -752,6 +875,14 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
     ) {
       gameState.breakingInput.cursorX = e.clientX;
       gameState.breakingInput.cursorY = e.clientY;
+    }
+
+    if (
+      gameState.placingInput.isHeld &&
+      gameState.placingInput.mode === "cursor"
+    ) {
+      gameState.placingInput.cursorX = e.clientX;
+      gameState.placingInput.cursorY = e.clientY;
     }
   });
 

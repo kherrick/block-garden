@@ -58,5 +58,43 @@ export function generateTextureAtlas(blockDefs) {
     }
   });
 
+  // Draw crack stages at reserved IDs 240-249 (10 stages)
+  // Stage 0 (ID 240) = subtle cracks, Stage 9 (ID 249) = extreme cracks
+  for (let stage = 0; stage < 10; stage++) {
+    const id = 240 + stage;
+    const x = (id % 16) * tileSize;
+    const y = Math.floor(id / 16) * tileSize;
+
+    // Background should be transparent for cracks
+    ctx.clearRect(x, y, tileSize, tileSize);
+
+    // Draw crack pattern
+    ctx.strokeStyle = "rgba(0, 0, 0, 0.8)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+
+    const numCracks = stage + 1;
+    for (let i = 0; i < numCracks; i++) {
+      let curX = x + Math.random() * tileSize;
+      let curY = y + Math.random() * tileSize;
+
+      ctx.moveTo(curX, curY);
+
+      const segments = 3 + stage;
+      for (let j = 0; j < segments; j++) {
+        curX += (Math.random() - 0.5) * (tileSize / 2);
+        curY += (Math.random() - 0.5) * (tileSize / 2);
+
+        // Clamp to tile bounds
+        curX = Math.max(x, Math.min(x + tileSize, curX));
+        curY = Math.max(y, Math.min(y + tileSize, curY));
+
+        ctx.lineTo(curX, curY);
+      }
+    }
+
+    ctx.stroke();
+  }
+
   return canvas;
 }

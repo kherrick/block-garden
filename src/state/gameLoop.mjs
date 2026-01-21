@@ -1,20 +1,27 @@
-import { I, look, mul, persp } from "../util/math.mjs";
-import { ray } from "../util/ray.mjs";
-import { updateBreaking } from "../util/interaction.mjs";
+import { drawBreakingOverlay } from "../util/drawBreakingOverlay.mjs";
+import { drawChunkMesh } from "../util/drawChunkMesh.mjs";
+import { drawCrosshairs } from "../util/drawCrossHairs.mjs";
+import { drawSelectionHighlight } from "../util/drawSelectionHighlight.mjs";
+
 import {
+  deleteChunkMesh,
   smartMeshChunk,
   uploadChunkMesh,
-  deleteChunkMesh,
 } from "../util/chunkMesher.mjs";
+
+import { I, look, mul, persp } from "../util/math.mjs";
+import { ray } from "../util/ray.mjs";
+import { updateBreaking, updatePlacing } from "../util/interaction.mjs";
+
 import { blocks as blockTypes } from "../state/config/blocks.mjs";
 
 import { updatePlayer } from "../update/player.mjs";
 import { updatePhysics } from "../update/physics.mjs";
 import { updateWorld } from "../update/world.mjs";
 import { updatePlantGrowth, updateStructure } from "../update/plantGrowth.mjs";
+
 import { getBlockByName } from "./config/blocks.mjs";
 
-/** @typedef {import("../util/chunk.mjs").Chunk} Chunk */
 /** @typedef {import("../util/ray.mjs").PointWithFace} PointWithFace */
 
 // Fixed timestep configuration
@@ -44,124 +51,6 @@ let isFirstFrame = true;
  * @param {number} t
  */
 const lerp = (start, end, t) => start + (end - start) * t;
-
-/**
- * Draw a chunk mesh.
- *
- * @param {WebGL2RenderingContext} gl
- * @param {Chunk} chunk
- * @param {Float32Array} VP - View-projection matrix
- * @param {WebGLUniformLocation} uMVP
- * @param {WebGLUniformLocation} uM
- */
-function drawChunkMesh(gl, chunk, VP, uMVP, uM) {
-  const mesh = chunk.mesh;
-  if (!mesh || mesh.vertexCount === 0) {
-    return;
-  }
-
-  // Bind position buffer
-  gl.bindBuffer(gl.ARRAY_BUFFER, mesh.positionBuffer);
-  gl.enableVertexAttribArray(0);
-  gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
-
-  // Bind normal buffer
-  gl.bindBuffer(gl.ARRAY_BUFFER, mesh.normalBuffer);
-  gl.enableVertexAttribArray(1);
-  gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 0, 0);
-
-  // Bind color buffer
-  gl.bindBuffer(gl.ARRAY_BUFFER, mesh.colorBuffer);
-  gl.enableVertexAttribArray(2);
-  gl.vertexAttribPointer(2, 4, gl.FLOAT, false, 0, 0);
-
-  // Bind UV buffer
-  if (mesh.uvBuffer) {
-    gl.bindBuffer(gl.ARRAY_BUFFER, mesh.uvBuffer);
-    gl.enableVertexAttribArray(3);
-    gl.vertexAttribPointer(3, 2, gl.FLOAT, false, 0, 0);
-  } else {
-    gl.disableVertexAttribArray(3);
-  }
-
-  // Bind AO buffer
-  if (mesh.aoBuffer) {
-    gl.bindBuffer(gl.ARRAY_BUFFER, mesh.aoBuffer);
-    gl.enableVertexAttribArray(4);
-    gl.vertexAttribPointer(4, 1, gl.FLOAT, false, 0, 0);
-  } else {
-    // Default to 1.0 (no occlusion) if buffer missing
-    gl.disableVertexAttribArray(4);
-    gl.vertexAttrib1f(4, 1.0);
-  }
-
-  // Bind local UV buffer for Radial AO
-  if (mesh.localUVBuffer) {
-    gl.bindBuffer(gl.ARRAY_BUFFER, mesh.localUVBuffer);
-    gl.enableVertexAttribArray(5);
-    gl.vertexAttribPointer(5, 2, gl.FLOAT, false, 0, 0);
-  } else {
-    gl.disableVertexAttribArray(5);
-  }
-
-  // Bind corner AO buffer for Radial AO bilinear interpolation
-  if (mesh.cornerAOBuffer) {
-    gl.bindBuffer(gl.ARRAY_BUFFER, mesh.cornerAOBuffer);
-    gl.enableVertexAttribArray(6);
-    gl.vertexAttribPointer(6, 4, gl.FLOAT, false, 0, 0);
-  } else {
-    gl.disableVertexAttribArray(6);
-  }
-
-  // Set uniforms - identity model matrix since positions are in world space
-  const M = I();
-  gl.uniformMatrix4fv(uMVP, false, VP);
-  gl.uniformMatrix4fv(uM, false, M);
-
-  // Draw geometry - use indexed if available, otherwise non-indexed
-  if (mesh.indexBuffer && mesh.indexCount > 0) {
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, mesh.indexBuffer);
-    gl.drawElements(gl.TRIANGLES, mesh.indexCount, gl.UNSIGNED_SHORT, 0);
-  } else {
-    gl.drawArrays(gl.TRIANGLES, 0, mesh.vertexCount);
-  }
-}
-
-/**
- * Draw crosshairs in screen center.
- *
- * @param {WebGL2RenderingContext} gl
- * @param {HTMLCanvasElement} cnvs
- */
-function drawCrosshairs(gl, cnvs) {
-  // Switch to 2D overlay mode
-  gl.disable(gl.DEPTH_TEST);
-
-  // Use simple 2D rendering with WebGL
-  const cx = cnvs.width / 2;
-  const cy = cnvs.height / 2;
-  const size = 10;
-  const thickness = 2;
-
-  // Create a simple 2D crosshair using scissor test and clear
-  gl.enable(gl.SCISSOR_TEST);
-
-  // Set crosshair color (white with some transparency)
-  gl.clearColor(1.0, 1.0, 1.0, 0.8);
-
-  // Horizontal line
-  gl.scissor(cx - size, cy - thickness / 2, size * 2, thickness);
-  gl.clear(gl.COLOR_BUFFER_BIT);
-
-  // Vertical line
-  gl.scissor(cx - thickness / 2, cy - size, thickness, size * 2);
-  gl.clear(gl.COLOR_BUFFER_BIT);
-
-  gl.disable(gl.SCISSOR_TEST);
-
-  // Reset for next frame
-  gl.enable(gl.DEPTH_TEST);
-}
 
 const UI_UPDATE_MS = 200;
 let lastUIUpdateTime = 0;
@@ -210,6 +99,12 @@ export function gameLoop(
   uUAO,
   uULG,
   uUAOD,
+  luvbuf,
+  caobuf,
+  pbuf,
+  nbuf,
+  breakCbuf,
+  breakUvbuf,
 ) {
   if (gameState.shouldReset.get()) {
     gameState.shouldReset.set(false);
@@ -255,6 +150,7 @@ export function gameLoop(
     updateWorld(gameState);
     updatePlayer(shadow, gameState, dtSeconds);
     updateBreaking(gameState, dtSeconds);
+    updatePlacing(gameState, dtSeconds);
     const newPos = updatePhysics(shadow, ui, gameState, dtSeconds);
     updatePlantGrowth(gameState);
 
@@ -462,6 +358,41 @@ export function gameLoop(
     drawCrosshairs(gl, cnvs);
   }
 
+  // Draw selection highlight (if block targeted and not breaking)
+  if (gameConfig.useBlockHighlight.get()) {
+    drawSelectionHighlight(
+      gl,
+      gameState,
+      gameConfig,
+      VP,
+      uMVP,
+      uM,
+      uUT,
+      pbuf,
+      nbuf,
+      breakCbuf,
+      breakUvbuf,
+      cube,
+    );
+  }
+
+  // Draw breaking overlay (if breaking)
+  if (gameConfig.useDamageAnimation.get()) {
+    drawBreakingOverlay(
+      gl,
+      gameState,
+      gameConfig,
+      VP,
+      uMVP,
+      uM,
+      pbuf,
+      nbuf,
+      breakCbuf,
+      breakUvbuf,
+      cube,
+    );
+  }
+
   animationFrameId = requestAnimationFrame(() =>
     gameLoop(
       shadow,
@@ -483,6 +414,12 @@ export function gameLoop(
       uUAO,
       uULG,
       uUAOD,
+      luvbuf,
+      caobuf,
+      pbuf,
+      nbuf,
+      breakCbuf,
+      breakUvbuf,
     ),
   );
 }

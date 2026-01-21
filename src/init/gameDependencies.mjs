@@ -24,7 +24,11 @@ import { generateTextureAtlas } from "../util/atlasGenerator.mjs";
  *   uULG: WebGLUniformLocation,
  *   uUAOD: WebGLUniformLocation,
  *   luvbuf: WebGLBuffer,
- *   caoful: WebGLBuffer
+ *   caobuf: WebGLBuffer,
+ *   pbuf: WebGLBuffer,
+ *   nbuf: WebGLBuffer,
+ *   breakCbuf: WebGLBuffer,
+ *   breakUvbuf: WebGLBuffer
  * }}
  */
 export function initGameDependencies(cnvs, blockDefs = []) {
@@ -133,8 +137,8 @@ export function initGameDependencies(cnvs, blockDefs = []) {
 
   const vao = gl.createVertexArray();
   gl.bindVertexArray(vao);
-  createVBO(gl, cube.p, 0);
-  createVBO(gl, cube.n, 1);
+  const pbuf = createVBO(gl, cube.p, 0);
+  const nbuf = createVBO(gl, cube.n, 1);
 
   // Default color buffer
   const cbuf = gl.createBuffer();
@@ -161,8 +165,8 @@ export function initGameDependencies(cnvs, blockDefs = []) {
   gl.vertexAttribPointer(5, 2, gl.FLOAT, false, 0, 0);
 
   // Corner AO buffer for Radial AO
-  const caoful = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, caoful);
+  const caobuf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, caobuf);
   gl.enableVertexAttribArray(6);
   gl.vertexAttribPointer(6, 4, gl.FLOAT, false, 0, 0);
 
@@ -188,6 +192,10 @@ export function initGameDependencies(cnvs, blockDefs = []) {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
   }
 
+  // Dedicated buffers for breaking overlay (to avoid corrupting shared chunk buffers)
+  const breakCbuf = gl.createBuffer();
+  const breakUvbuf = gl.createBuffer();
+
   return {
     gl,
     cbuf,
@@ -203,6 +211,10 @@ export function initGameDependencies(cnvs, blockDefs = []) {
     uULG,
     uUAOD,
     luvbuf,
-    caoful,
+    caobuf,
+    pbuf,
+    nbuf,
+    breakCbuf,
+    breakUvbuf,
   };
 }

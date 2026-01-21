@@ -111,4 +111,6 @@ export function createVBO(gl, data, loc, size = 3) {
   gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
   gl.enableVertexAttribArray(loc);
   gl.vertexAttribPointer(loc, size, gl.FLOAT, false, 0, 0);
+
+  return buffer;
 }

@@ -153,7 +153,7 @@ export function placeBlock(gameState, targetHit) {
  * Attempts to remove a block at the current hit position.
  *
  * @param {GameState} gameState
- * @param {import('../util/ray.mjs').PointWithFace} [targetHit] - Optional hit target. If not provided, uses gameState.hit
+ * @param {PointWithFace} [targetHit] - Optional hit target. If not provided, uses gameState.hit
  *
  * @returns {boolean} True if block was removed, false otherwise
  */
@@ -204,7 +204,8 @@ export function removeBlock(gameState, targetHit) {
           }
         }
 
-        break; // Found the structure, no need to check others
+        // Found the structure, no need to check others
+        break;
       }
     }
   }
@@ -374,11 +375,11 @@ function activateTextBlock(gameState, x, y, z) {
 
 /**
  * Starts a breaking session (if not already active) for a specific target.
- * NOTE: This is now mostly internal or used for "one-shot" activation.
+ * This is now mostly internal or used for "one-shot" activation.
  * Continuous breaking is handled by updateBreaking observing breakingInput.
  *
  * @param {GameState} gameState
- * @param {import('../util/ray.mjs').PointWithFace} [targetHit]
+ * @param {PointWithFace} [targetHit]
  */
 export function startBreaking(gameState, targetHit) {
   const hit = targetHit;
@@ -391,6 +392,7 @@ export function startBreaking(gameState, targetHit) {
 
   if (blockId === undefined || blockId === 0) {
     stopBreaking(gameState);
+
     return;
   }
 
@@ -423,6 +425,7 @@ export function stopBreaking(gameState) {
     gameState.breaking.blockPos = null;
     gameState.breaking.currentBlockId = null;
     gameState.breaking.startTime = 0;
+    gameState.breaking.breakPercentage = 0;
   }
 }
 
@@ -482,6 +485,7 @@ export function updateBreaking(gameState, dt) {
           pitch: gameState.pitch,
         },
       );
+
       targetHit = rayHit;
     }
   }
@@ -492,8 +496,15 @@ export function updateBreaking(gameState, dt) {
     if (gameState.breaking.active) {
       stopBreaking(gameState);
     }
+
+    gameState.cursorTarget = null;
+
     return;
   }
+
+  // Keep cursorTarget synchronized with the breaking target during continuous breaking
+  // This prevents highlight artifacts when transitioning between blocks
+  gameState.cursorTarget = { x: targetHit.x, y: targetHit.y, z: targetHit.z };
 
   // Compare with current breaking target
   if (gameState.breaking.active) {
@@ -527,6 +538,11 @@ export function updateBreaking(gameState, dt) {
     const breakTimeMs = (blockDef.breakTime || 0) * 1000;
     const elapsedTime = performance.now() - gameState.breaking.startTime;
 
+    gameState.breaking.breakPercentage = Math.min(
+      1.0,
+      elapsedTime / breakTimeMs,
+    );
+
     if (elapsedTime >= breakTimeMs) {
       // Break the block
       removeBlock(gameState, targetHit);
@@ -534,6 +550,90 @@ export function updateBreaking(gameState, dt) {
       // Reset progress but KEEP input held state active to catch next block immediately
       // We "stop" the current break to reset timer, but next frame will restart if still held
       stopBreaking(gameState);
+    }
+  }
+}
+
+/**
+ * Updates the block placing progress. Should be called every frame.
+ * Handles continuous placing and re-targeting based on input state.
+ *
+ * @param {GameState} gameState
+ * @param {number} dt - Delta time in seconds
+ */
+export function updatePlacing(gameState, dt) {
+  // Check if input is held. If not, stop everything.
+  if (!gameState.placingInput.isHeld) {
+    if (gameState.placing.active) {
+      gameState.placing.active = false;
+      gameState.placing.lastPlaceTime = 0;
+    }
+
+    return;
+  }
+
+  // Determine target block based on mode
+  let targetHit = null;
+
+  // Determine effective mode:
+  // Force "center" if Split Controls are ON or Pointer Lock is active (Mouse Captured)
+  let effectiveMode = gameState.placingInput.mode;
+  if (
+    gameConfig.useSplitControls.get() ||
+    (globalThis.document && globalThis.document.pointerLockElement)
+  ) {
+    effectiveMode = "center";
+  }
+
+  if (effectiveMode === "center") {
+    // Center mode (Split controls or Keyboard): Use gameState.hit (center ray)
+    targetHit = gameState.hit;
+  } else {
+    // Cursor mode (Mouse/Touch with Split OFF): Raycast from cursor
+    const shadow = getShadowRoot(globalThis.document, "block-garden");
+    const canvas = shadow
+      ? /** @type {HTMLCanvasElement} */ (shadow.getElementById("canvas"))
+      : null;
+
+    if (canvas) {
+      const eyeY = gameState.y - gameState.playerHeight / 2 + 1.62;
+      const { hit: rayHit } = raycastFromCanvasCoords(
+        canvas,
+        gameState.placingInput.cursorX,
+        gameState.placingInput.cursorY,
+        gameState.world,
+        {
+          x: gameState.x,
+          y: eyeY,
+          z: gameState.z,
+        },
+        {
+          yaw: gameState.yaw,
+          pitch: gameState.pitch,
+        },
+      );
+
+      targetHit = rayHit;
+    }
+  }
+
+  // Process Target
+  if (!targetHit) {
+    return;
+  }
+
+  // Start/Update Progress
+  const now = performance.now();
+  if (!gameState.placing.active) {
+    // First placement (immediate)
+    gameState.placing.active = true;
+    gameState.placing.lastPlaceTime = now;
+  } else {
+    if (now - gameState.placing.lastPlaceTime >= gameState.placing.interval) {
+      // Periodic placement
+      if (placeBlock(gameState, targetHit)) {
+        gameState.placing.lastPlaceTime = now;
+      }
     }
   }
 }

@@ -826,8 +826,8 @@ export class BlockGarden extends HTMLElement {
                 Use crosshair to center block placement<br />
                 Click Game Canvas To Lock Mouse<br /><br />
 
-                Left Click: Place Block<br />
-                Right Click: Remove Block<br /><br />
+                Left Click (Hold): Remove Block<br />
+                Right Click: Place Block<br /><br />
 
                 <div class="info-buttons-container">
                   <button id="aboutBtn">ℹ️ About</button>
@@ -877,6 +877,8 @@ export class BlockGarden extends HTMLElement {
                         <block-garden-option value="fullscreen">Fullscreen</block-garden-option>
                       </block-garden-select>
                     </div>
+                    <button id="toggleBlockHighlight">Disable Block Highlight</button>
+                    <button id="toggleDamageAnimation">Disable Damage Animation</button>
                     <button id="toggleTextures">Disable Textures</button>
                     <button id="toggleAO">Disable Ambient Occlusion</button>
                     <button id="toggleAODebug" hidden="hidden">Enable AO Debug</button>

@@ -168,6 +168,13 @@ export function initHammerControls(stage, shadow, gameState) {
       ev.srcEvent.preventDefault();
     }
 
+    // Ignore Tap From Mouse
+    // We handle mouse placement in eventListeners.mjs via "mousedown" (Right Click).
+    // HammerJS "tap" corresponds to Left Click on mouse, which we now use for Breaking.
+    if (ev.pointerType === "mouse") {
+      return;
+    }
+
     let hit = gameState.hit;
 
     if (!gameConfig.useSplitControls.get()) {
@@ -236,6 +243,7 @@ export function initHammerControls(stage, shadow, gameState) {
   // Block Breaking (Press/Hold)
   const cancelBreaking = () => {
     gameState.breakingInput.isHeld = false;
+    gameState.cursorTarget = null;
   };
 
   stage.on("press", (ev) => {
@@ -251,6 +259,36 @@ export function initHammerControls(stage, shadow, gameState) {
     gameState.breakingInput.mode = "cursor";
     gameState.breakingInput.cursorX = ev.center.x;
     gameState.breakingInput.cursorY = ev.center.y;
+
+    // Immediately raycast to set cursorTarget for highlighting
+    if (!gameConfig.useSplitControls.get()) {
+      const canvas =
+        /** @type {HTMLCanvasElement} */
+        (shadow.getElementById("canvas"));
+
+      if (canvas) {
+        const eyeY = gameState.y - gameState.playerHeight / 2 + 1.62;
+        const { hit: rayHit } = raycastFromCanvasCoords(
+          canvas,
+          ev.center.x,
+          ev.center.y,
+          gameState.world,
+          {
+            x: gameState.x,
+            y: eyeY,
+            z: gameState.z,
+          },
+          {
+            yaw: gameState.yaw,
+            pitch: gameState.pitch,
+          },
+        );
+
+        if (rayHit) {
+          gameState.cursorTarget = { x: rayHit.x, y: rayHit.y, z: rayHit.z };
+        }
+      }
+    }
   });
 
   stage.on("pressup", cancelBreaking);

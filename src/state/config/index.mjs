@@ -25,7 +25,9 @@ import { blockNames, blocks } from "./blocks.mjs";
  * @property {Signal.State} useAmbientOcclusion
  * @property {Signal.State} useAODebug
  * @property {Signal.State} useAutoJump - Auto jump toggle state
+ * @property {Signal.State} useBlockHighlight - Block highlight toggle state
  * @property {Signal.State} useCaves
+ * @property {Signal.State} useDamageAnimation - Damage animation toggle state
  * @property {Signal.State} useDynamicLighting
  * @property {Signal.State} usePerFaceLighting
  * @property {Signal.State} useSplitControls - Use split controls toggle state
@@ -58,7 +60,9 @@ export const gameConfig = {
   useAmbientOcclusion: new Signal.State(false),
   useAODebug: new Signal.State(false),
   useAutoJump: new Signal.State(true),
+  useBlockHighlight: new Signal.State(true),
   useCaves: new Signal.State(true),
+  useDamageAnimation: new Signal.State(true),
   useDynamicLighting: new Signal.State(false),
   usePerFaceLighting: new Signal.State(true),
   useSplitControls: new Signal.State(false),

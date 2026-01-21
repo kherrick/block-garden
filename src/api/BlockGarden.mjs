@@ -1,21 +1,21 @@
 import { characters as Characters } from "./misc/characters.mjs";
 import { sleep } from "./misc/sleep.mjs";
 
-import { cssColorToRGB } from "../util/colors/cssColorToRGB.mjs";
-import { getShadowRoot } from "../util/getShadowRoot.mjs";
-import { nearestColor } from "../util/colors/nearestColor.mjs";
-import { rgbToHex } from "../util/colors/rgbToHex.mjs";
-import { transformStyleMapByStyleDeclaration } from "../util/colors/transformStyleMapByStyleDeclaration.mjs";
+import { cssColorToRGB } from "../utils/colors/cssColorToRGB.mjs";
+import { getShadowRoot } from "../ui/utils/getShadowRoot.mjs";
+import { nearestColor } from "../utils/colors/nearestColor.mjs";
+import { rgbToHex } from "../utils/colors/rgbToHex.mjs";
+import { transformStyleMapByStyleDeclaration } from "../utils/colors/transformStyleMapByStyleDeclaration.mjs";
 
 import { createKeyEvent } from "./player/createKeyEvent.mjs";
 import { pressKey } from "./player/pressKey.mjs";
 
-import { blockNames } from "../state/config/blocks.mjs";
+import { blockNames } from "../world/config/blocks.mjs";
 
 import { resizeCanvas } from "./ui/resizeCanvas.mjs";
 
 /**
- * @typedef {import('../state/config/blocks.mjs').BlockDefinition} BlockDefinition
+ * @typedef {import('../world/config/blocks.mjs').BlockDefinition} BlockDefinition
  */
 
 export class BlockGarden {

@@ -4,7 +4,7 @@
 import { jest } from "@jest/globals";
 
 // Mock side effects before imports
-jest.unstable_mockModule("./src/init/game.mjs", () => ({
+jest.unstable_mockModule("./src/core/systems/game/init.mjs", () => ({
   initGame: jest.fn(() => Promise.resolve()),
 }));
 

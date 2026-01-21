@@ -1,9 +1,9 @@
-import { blockNames } from "../../state/config/blocks.mjs";
+import { blockNames } from "../../world/config/blocks.mjs";
 
-import { applyColorsToShadowHost } from "../../util/colors/applyColorsToShadowHost.mjs";
-import { cssColorToRGB } from "../../util/colors/cssColorToRGB.mjs";
-import { nearestColor } from "../../util/colors/nearestColor.mjs";
-import { transformStyleMapByStyleDeclaration } from "../../util/colors/transformStyleMapByStyleDeclaration.mjs";
+import { applyColorsToShadowHost } from "../../utils/colors/applyColorsToShadowHost.mjs";
+import { cssColorToRGB } from "../../utils/colors/cssColorToRGB.mjs";
+import { nearestColor } from "../../utils/colors/nearestColor.mjs";
+import { transformStyleMapByStyleDeclaration } from "../../utils/colors/transformStyleMapByStyleDeclaration.mjs";
 
 import { BlockGarden } from "../BlockGarden.mjs";
 

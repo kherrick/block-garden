@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { arrayBufferToBase64 } from "../src/util/conversion.mjs";
+import { arrayBufferToBase64 } from "../src/utils/conversion.mjs";
 
 import { argv } from "node:process";
 

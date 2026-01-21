@@ -27,13 +27,15 @@ npm i && npm start
 ## 🎮 Quick Start
 
 - **Movement:** `w` / `a` / `s` / `d`
-- **Inventory:** `e`
 - **Camera:** `Arrow Keys`
-- **Change Block:** `~` / `` ` ``
-- **Jump / Ascend:** `Space`
 - **Descend:** `Shift`
-- **Place / Remove Block:** `Enter`
-- Click Game Canvas To Lock Mouse
+- **Jump / Ascend:** `Space`
+- **Place / Break Block:** `Enter`
+- **Change Block:** `~` / `` ` ``
+- **Open Inventory:** `e / i`
+- **Toggle Hotbar:** `m`
+- **Toggle Flight:** `k`
+- Click game canvas to lock mouse
   - **Use crosshair to center block placement**
   - **Left Click (Hold):** Break Block
   - **Right Click:** Place Block

@@ -1,4 +1,4 @@
-import { getRandomInt } from "../../util/getRandomInt.mjs";
+import { getRandomInt } from "../../utils/getRandomInt.mjs";
 import { BlockGarden } from "../BlockGarden.mjs";
 
 export class Fireworks extends BlockGarden {

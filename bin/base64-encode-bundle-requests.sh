@@ -8,28 +8,28 @@ base64Encoded="$(bin/urlToBase64.mjs http://localhost:8080/deps/qrcode.mjs)" \
   || exit 1
 
 grep -Rl 'fetch(' src/** | while IFS= read -r filename; do
-  if [[ "$filename" == "src/dialog/about.mjs" ]]; then
+  if [[ "$filename" == "src/ui/dialog/about.mjs" ]]; then
     # shellcheck disable=SC2016
     base64Encoded="$(bin/urlToBase64.mjs http://localhost:8080/about/)" \
       && bin/file-search-replace.mjs 'fetch\(\part\)' "$filename" 'fetch("data:text/html;base64,' "$base64Encoded\")" \
       || exit 1
   fi
 
-  if [[ "$filename" == "src/dialog/examples.mjs" ]]; then
+  if [[ "$filename" == "src/ui/dialog/examples.mjs" ]]; then
     # shellcheck disable=SC2016
     base64Encoded="$(bin/urlToBase64.mjs http://localhost:8080/src/api/examples/)" \
       && bin/file-search-replace.mjs 'fetch\(\`\$\{path\}\/\$\{part\}\`\)' "$filename" 'fetch("data:text/html;base64,' "$base64Encoded\")" \
       || exit 1
   fi
 
-  if [[ "$filename" == "src/dialog/privacy.mjs" ]]; then
+  if [[ "$filename" == "src/ui/dialog/privacy.mjs" ]]; then
     # shellcheck disable=SC2016
     base64Encoded="$(bin/urlToBase64.mjs http://localhost:8080/privacy/)" \
       && bin/file-search-replace.mjs 'fetch\(\part\)' "$filename" 'fetch("data:text/html;base64,' "$base64Encoded\")" \
       || exit 1
   fi
 
-  if [[ "$filename" == "src/init/game.mjs" ]]; then
+  if [[ "$filename" == "src/core/systems/game/init.mjs" ]]; then
     # shellcheck disable=SC2016
     base64Encoded="$(bin/urlToBase64.mjs http://localhost:8080/package.json)" \
       && bin/file-search-replace.mjs 'fetch\("package.json"\)' "$filename" 'fetch("data:application/json;base64,' "$base64Encoded\")" \

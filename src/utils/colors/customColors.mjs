@@ -1,0 +1,22 @@
+import { getShadowRoot } from "../../ui/utils/getShadowRoot.mjs";
+import { ColorCustomizationDialog } from "../../ui/dialog/colors/index.mjs";
+
+/**
+ * @param {typeof globalThis} gThis
+ *
+ * @returns {Promise<ColorCustomizationDialog>}
+ */
+export async function showColorCustomizationDialog(gThis) {
+  const shadow = getShadowRoot(gThis.document, "block-garden");
+  const colorDialog = new ColorCustomizationDialog(
+    gThis,
+    gThis.document,
+    shadow,
+  );
+
+  await colorDialog.createDialog();
+
+  colorDialog.show();
+
+  return colorDialog;
+}

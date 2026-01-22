@@ -80,7 +80,7 @@ export class ColorCustomizationDialog {
             color: var(--bg-color-white);
             cursor: pointer;
             font-size: 1.2rem;
-            padding: 0.5rem 1rem;
+            padding: 0 0.75rem;
           "
         >
           &times;

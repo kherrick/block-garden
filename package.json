@@ -1,6 +1,6 @@
 {
   "name": "block-garden",
-  "version": "1.10.2",
+  "version": "1.10.3",
   "description": "Block Garden - A 3D sandbox exploration and farming game. Explore procedurally generated worlds, dig for resources, and cultivate a variety of plants.",
   "homepage": "https://github.com/kherrick/block-garden/#block-garden",
   "license": "AGPL-3.0",
@@ -22,6 +22,7 @@
     "build:base:share-target": "bin/build-html.mjs dist/share/share-target.html base href /block-garden/",
     "build:ci": "npx concurrently --kill-others --success first \"npm run build single\" \"npm run start:dev\"",
     "build:gh-pages:nojekyll": "node bin/touch-nojekyll.mjs",
+    "build:gh-pages:site-verification": "node bin/add-site-verification.mjs",
     "build:pkg:get:meta": "git rev-parse HEAD",
     "build:pkg:meta": "node -e \"import fs from 'node:fs/promises'; import pkg from './package.json' with { type: 'json' }; (async () => { const meta = process.argv[1]; pkg['block-garden'] = { meta }; await fs.writeFile('dist/package.json', JSON.stringify(pkg, null, 2)); })()\"",
     "build:script:index": "bin/build-html.mjs dist/index.html script src block-garden-bundle-min.mjs",

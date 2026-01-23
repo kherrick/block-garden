@@ -65,6 +65,7 @@ npm run build:base:index \
   && npm run build:base:privacy \
   && npm run build:base:share-target \
   && npm run build:gh-pages:nojekyll \
+  && npm run build:gh-pages:site-verification \
   && npm run minify:index \
   && npm run minify:404 \
   && npm run minify:about \

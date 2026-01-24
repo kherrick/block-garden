@@ -7,11 +7,13 @@ import { effect } from "../../utils/effect.mjs";
 import { extractAttachments } from "../../utils/extractAttachments.mjs";
 import { extractJsonFromPng } from "../../utils/canvasToPngWithState.mjs";
 import { getRandomSeed } from "../../utils/getRandomSeed.mjs";
+import { persistValue } from "../../core/systems/persistence.mjs";
+import { placeBlock } from "../../utils/interaction.mjs";
+import { processSaveData } from "../../utils/saveData.mjs";
 import { raycastFromCanvasCoords } from "../../utils/raycastFromCanvasCoords.mjs";
 import { runCompress } from "../../utils/compression.mjs";
 import { showColorCustomizationDialog } from "../../utils/colors/customColors.mjs";
-import { processSaveData } from "../../utils/saveData.mjs";
-import { placeBlock } from "../../utils/interaction.mjs";
+import { waitForElement } from "../utils/waitForElement.mjs";
 
 import {
   blockNames,
@@ -48,9 +50,6 @@ import {
 } from "../dialog/storage.mjs";
 
 import { InventoryDialog } from "../dialog/inventory.mjs";
-
-import { waitForElement } from "../utils/waitForElement.mjs";
-import { pollForElement } from "../utils/pollForElement.mjs";
 
 /** @typedef {import('signal-polyfill').Signal.State} Signal.State */
 
@@ -222,8 +221,10 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
   // Fast Growth Button
   const fastGrowthButton = shadow.getElementById("fastGrowthButton");
   if (fastGrowthButton) {
-    fastGrowthButton.addEventListener("click", () => {
+    fastGrowthButton.addEventListener("click", async () => {
       gameState.fastGrowth = !gameState.fastGrowth;
+
+      await persistValue("state", "fastGrowth", gameState.fastGrowth);
 
       fastGrowthButton.textContent = gameState.fastGrowth
         ? "Disable Fast Growth"
@@ -242,19 +243,23 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
   // Game Save Linking
   const gameSaveLinkingButton = shadow.getElementById("gameSaveLinkingButton");
   if (gameSaveLinkingButton) {
-    const gameConfig = globalThis.blockGarden.config;
+    const config = globalThis.blockGarden.config;
 
-    gameSaveLinkingButton.addEventListener("click", () => {
-      const currentVal = gameConfig.linkGameSave.get();
-      const shouldLinkGameSave = !currentVal;
+    gameSaveLinkingButton.addEventListener("click", async () => {
+      const newValue = !config.linkGameSave.get();
 
-      gameConfig.linkGameSave.set(shouldLinkGameSave);
+      config.linkGameSave.set(newValue);
 
-      gameSaveLinkingButton.textContent = shouldLinkGameSave
+      await persistValue("config", "linkGameSave", newValue);
+    });
+
+    effect(() => {
+      const isEnabled = config.linkGameSave.get();
+      gameSaveLinkingButton.textContent = isEnabled
         ? "Disable Game Save Linking"
         : "Enable Game Save Linking";
 
-      gameSaveLinkingButton.style.backgroundColor = shouldLinkGameSave
+      gameSaveLinkingButton.style.backgroundColor = isEnabled
         ? "var(--bg-color-red-500)"
         : "var(--bg-color-green-500)";
 
@@ -267,8 +272,12 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
   if (toggleSplitControls) {
     const config = globalThis.blockGarden.config;
 
-    toggleSplitControls.addEventListener("click", () => {
-      config.useSplitControls.set(!config.useSplitControls.get());
+    toggleSplitControls.addEventListener("click", async () => {
+      const newValue = !config.useSplitControls.get();
+
+      config.useSplitControls.set(newValue);
+
+      await persistValue("config", "useSplitControls", newValue);
     });
 
     effect(() => {
@@ -290,8 +299,12 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
   if (toggleBlockHighlight) {
     const config = globalThis.blockGarden.config;
 
-    toggleBlockHighlight.addEventListener("click", () => {
-      config.useBlockHighlight.set(!config.useBlockHighlight.get());
+    toggleBlockHighlight.addEventListener("click", async () => {
+      const newValue = !config.useBlockHighlight.get();
+
+      config.useBlockHighlight.set(newValue);
+
+      await persistValue("config", "useBlockHighlight", newValue);
     });
 
     effect(() => {
@@ -313,8 +326,12 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
   if (toggleDamageAnimation) {
     const config = globalThis.blockGarden.config;
 
-    toggleDamageAnimation.addEventListener("click", () => {
-      config.useDamageAnimation.set(!config.useDamageAnimation.get());
+    toggleDamageAnimation.addEventListener("click", async () => {
+      const newValue = !config.useDamageAnimation.get();
+
+      config.useDamageAnimation.set(newValue);
+
+      await persistValue("config", "useDamageAnimation", newValue);
     });
 
     effect(() => {
@@ -332,12 +349,14 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
   }
 
   // Flight Toggle
-  /** @type {HTMLElement} */
-  const flightToggle = shadow.querySelector("#toggleFlight");
+  const flightToggle =
+    /** @type {HTMLElement} */
+    (shadow.querySelector("#toggleFlight"));
   if (flightToggle) {
     flightToggle.addEventListener("click", () => {
-      const isFlying = gameState.flying.get();
-      gameState.flying.set(!isFlying);
+      const newValue = !gameState.flying.get();
+
+      gameState.flying.set(newValue);
     });
 
     // Use effect to update UI whenever flying state changes
@@ -365,47 +384,69 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
   // Visual Effect Toggles
   const config = globalThis.blockGarden.config;
 
-  const setupToggle = (id, signal, labelPrefix) => {
+  const setupToggle = (id, signal, labelPrefix, configKey) => {
     const btn = shadow.getElementById(id);
+
     if (btn) {
       const update = () => {
         const val = signal.get();
+
         btn.textContent = val
           ? `Disable ${labelPrefix}`
           : `Enable ${labelPrefix}`;
+
         btn.style.backgroundColor = val
           ? "var(--bg-color-red-500)"
           : "var(--bg-color-green-500)";
+
         btn.style.color = "var(--bg-color-white)";
       };
+
       // Use effect to ensure UI updates when signal changes externally (e.g., from presets)
       effect(() => {
         update();
       });
-      btn.addEventListener("click", () => {
-        signal.set(!signal.get());
-        if (id === "toggleAO" || id === "toggleTextures") {
-          // Meshing currently doesn't re-run on these toggles if done via uniform,
-          // but keeping it consistent with other toggles.
-        }
+
+      btn.addEventListener("click", async () => {
+        const newValue = !signal.get();
+
+        signal.set(newValue);
+
+        await persistValue("config", configKey, newValue);
       });
     }
   };
 
-  setupToggle("toggleTextures", config.useTextureAtlas, "Textures");
-  setupToggle("toggleAO", config.useAmbientOcclusion, "Ambient Occlusion");
+  setupToggle(
+    "toggleTextures",
+    config.useTextureAtlas,
+    "Textures",
+    "useTextureAtlas",
+  );
+
+  setupToggle(
+    "toggleAO",
+    config.useAmbientOcclusion,
+    "Ambient Occlusion",
+    "useAmbientOcclusion",
+  );
+
   setupToggle(
     "toggleDynamicLighting",
     config.useDynamicLighting,
     "Light Cycle",
+    "useDynamicLighting",
   );
+
   setupToggle(
     "togglePerFaceLighting",
     config.usePerFaceLighting,
     "Per-Face Lighting",
+    "usePerFaceLighting",
   );
-  setupToggle("toggleAODebug", config.useAODebug, "AO Debug");
-  setupToggle("toggleAutoJump", config.useAutoJump, "Auto Jump");
+
+  setupToggle("toggleAODebug", config.useAODebug, "AO Debug", "useAODebug");
+  setupToggle("toggleAutoJump", config.useAutoJump, "Auto Jump", "useAutoJump");
 
   // Random Plant Again Button
   const randomPlantButton = shadow.getElementById("randomPlantButton");
@@ -714,11 +755,14 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
   if (resolutionSelectEl) {
     resolutionSelectEl.addEventListener(
       "change",
-      (
+      async (
         /** @type {CustomEvent} */
         e,
       ) => {
-        gameConfig.currentResolution.set(e.detail.value);
+        const newValue = e.detail.value;
+        gameConfig.currentResolution.set(newValue);
+
+        await persistValue("config", "currentResolution", newValue);
 
         resizeCanvas(shadow, gameConfig.currentResolution);
       },
@@ -1537,18 +1581,24 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
 
   const toggleTouchControls = shadow.getElementById("toggleTouchControls");
   if (toggleTouchControls) {
-    toggleTouchControls.addEventListener("click", () => {
-      gameConfig.useTouchControls.set(!gameConfig.useTouchControls.get());
+    toggleTouchControls.addEventListener("click", async () => {
+      const newValue = !gameConfig.useTouchControls.get();
+      gameConfig.useTouchControls.set(newValue);
+
+      await persistValue("config", "useTouchControls", newValue);
     });
 
     effect(() => {
       const enabled = gameConfig.useTouchControls.get();
+
       toggleTouchControls.textContent = enabled
         ? "Disable Touch Controls"
         : "Enable Touch Controls";
+
       toggleTouchControls.style.backgroundColor = enabled
         ? "var(--bg-color-red-500)"
         : "var(--bg-color-green-500)";
+
       toggleTouchControls.style.color = "var(--bg-color-white)";
     });
   }
@@ -1668,6 +1718,7 @@ function initRadiusControlListeners(shadow) {
       effect(() => {
         const currentVal = signal.get();
         input.value = String(currentVal);
+
         display.textContent = String(
           currentVal === null || currentVal > 2048 ? "∞" : currentVal,
         );
@@ -1717,6 +1768,7 @@ function initGenerationControlListeners(shadow) {
       effect(() => {
         const val = signal.get();
         input.value = String(val);
+
         display.textContent = `${val}${unit}`;
       });
 
@@ -1733,13 +1785,17 @@ function initGenerationControlListeners(shadow) {
   const caveThresholdInputContainer = shadow.getElementById(
     "caveThresholdInputContainer",
   );
+
   if (toggleCaves) {
     effect(() => {
       const val = gameConfig.useCaves.get();
+
       toggleCaves.textContent = val ? "Disable Caves" : "Enable Caves";
+
       toggleCaves.style.backgroundColor = val
         ? "var(--bg-color-red-500)"
         : "var(--bg-color-green-500)";
+
       toggleCaves.style.color = "var(--bg-color-white)";
 
       if (val) {
@@ -1771,7 +1827,8 @@ function initGenerationControlListeners(shadow) {
       gameConfig.terrainOctaves.set(1);
       gameConfig.mountainScale.set(0);
       gameConfig.decorationDensity.set(10);
-      gameConfig.caveThreshold.set(100); // 100% threshold means almost no caves
+      // 100% threshold means almost no caves
+      gameConfig.caveThreshold.set(100);
       gameConfig.useCaves.set(false);
       gameConfig.cloudDensity.set(0);
       gameConfig.useTextureAtlas.set(false);

@@ -928,19 +928,19 @@ export class BlockGarden extends HTMLElement {
                     <div id="rendering">
                       <div style="margin-top: 0.625rem; margin-bottom: 0.625rem;">
                         <label for="worldRadiusInput">World Radius: <span id="worldRadiusDisplay"></span></label>
-                        <input type="range" id="worldRadiusInput" min="0" max="2072" step="16" style="width: 100%;">
+                        <input type="range" id="worldRadiusInput" min="0" max="2072" step="1" style="width: 100%;">
                       </div>
                       <div style="margin-top: 0.625rem;">
                         <label for="viewRadiusInput">View Radius: <span id="viewRadiusDisplay"></span></label>
-                        <input type="range" id="viewRadiusInput" min="0" max="2048" step="16" style="width: 100%;">
+                        <input type="range" id="viewRadiusInput" min="0" max="2048" step="1" style="width: 100%;">
                       </div>
                       <div style="margin-top: 0.625rem;">
                         <label for="renderRadiusInput">Render Radius: <span id="renderRadiusDisplay"></span></label>
-                        <input type="range" id="renderRadiusInput" min="0" max="256" step="8" style="width: 100%;">
+                        <input type="range" id="renderRadiusInput" min="0" max="256" step="1" style="width: 100%;">
                       </div>
                       <div style="margin-top: 0.625rem;">
                         <label for="cacheRadiusInput">Cache Radius: <span id="cacheRadiusDisplay"></span></label>
-                        <input type="range" id="cacheRadiusInput" min="0" max="256" step="8" style="width: 100%;">
+                        <input type="range" id="cacheRadiusInput" min="0" max="256" step="1" style="width: 100%;">
                       </div>
                     </div>
 

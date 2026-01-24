@@ -10,6 +10,7 @@ import {
 } from "../../../utils/urlParams.mjs";
 import { getCustomProperties } from "../../../utils/colors/getCustomProperties.mjs";
 import { normalizeRGBToRGBA } from "../../../utils/colors/normalizeRGB.mjs";
+import { restorePersistedPreferences } from "../persistence.mjs";
 import { transformStyleMap } from "../../../utils/colors/transformStyleMap.mjs";
 
 import {
@@ -371,6 +372,9 @@ export async function initGame(gThis, shadow, cnvs) {
     breakCbuf,
     breakUvbuf,
   );
+
+  // Restore saved preferences from storage
+  await restorePersistedPreferences(gameState, gameConfig, shadow);
 
   shadow.dispatchEvent(
     new CustomEvent("block-garden-load", {

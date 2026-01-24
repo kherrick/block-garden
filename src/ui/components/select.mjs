@@ -386,6 +386,10 @@ export class BlockGardenSelect extends HTMLElement {
         if (item) {
           this.#selected.textContent = item.textContent.trim();
           this.#selected.classList.remove("placeholder");
+
+          // Update aria-selected on items
+          this.#items.forEach((i) => i.setAttribute("aria-selected", "false"));
+          item.setAttribute("aria-selected", "true");
         } else {
           // fallback when items not yet rendered
           this.#selected.textContent = val;

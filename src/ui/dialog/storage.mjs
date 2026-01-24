@@ -341,6 +341,8 @@ export async function checkSharedSave(globalThis, shadow) {
       return false;
     }
 
+    globalThis.blockGarden.state.isCanvasActionDisabled = true;
+
     // Create and show shared save dialog
     const dialog = globalThis.document.createElement("dialog");
     dialog.style.cssText = `
@@ -379,6 +381,18 @@ export async function checkSharedSave(globalThis, shadow) {
         ">Yes</button>
       </div>
     `;
+
+    dialog.addEventListener("cancel", () => {
+      setTimeout(() => {
+        globalThis.blockGarden.state.isCanvasActionDisabled = false;
+      }, 500);
+    });
+
+    dialog.addEventListener("close", () => {
+      setTimeout(() => {
+        globalThis.blockGarden.state.isCanvasActionDisabled = false;
+      }, 500);
+    });
 
     shadow.append(dialog);
 
@@ -498,14 +512,14 @@ export async function checkSharedSave(globalThis, shadow) {
 }
 
 /**
- * Check for and load game save from URL parameter `gameSave`
+ * Check for and automatically load a game save from the `gameSave` URL parameter.
  *
- * Displays a dialog asking user to load the save from URL
+ * Shows a toast on failure and updates the UI seed display on success.
  *
  * @param {typeof globalThis} globalThis
  * @param {ShadowRoot} shadow
  *
- * @returns {Promise<boolean>} - true if a URL save was loaded, false otherwise
+ * @returns {Promise<boolean>} True if a URL save was successfully loaded, false otherwise.
  */
 export async function checkUrlSave(globalThis, shadow) {
   try {
@@ -515,145 +529,66 @@ export async function checkUrlSave(globalThis, shadow) {
       return false;
     }
 
-    // Create and show URL save dialog
-    const dialog = globalThis.document.createElement("dialog");
-    dialog.style.cssText = `
-      background: var(--bg-color-gray-50);
-      border-radius: 0.5rem;
-      border: 0.125rem solid var(--bg-color-gray-900);
-      color: var(--bg-color-gray-900);
-      font-family: monospace;
-      padding: 1.25rem;
-      max-width: 25rem;
-      z-index: 10000;
-    `;
+    globalThis.blockGarden.state.isCanvasActionDisabled = true;
 
-    dialog.innerHTML = `
-      <h3 style="margin: 0 0 1rem 0">Game Save Found in URL</h3>
-      <p style="margin: 0 0 1rem 0">
-        A game save was found in the URL. Would you like to load it?
-      </p>
-      <div style="display: flex; gap: 0.625rem; justify-content: flex-end">
-        <button id="urlSaveNo" autofocus="autofocus" style="
-          background: var(--bg-color-red-500);
-          border-radius: 0.25rem;
-          border: none;
-          color: white;
-          cursor: pointer;
-          padding: 0.5rem 0.9375rem;
-        ">No</button>
-        <button id="urlSaveYes" style="
-          background: var(--bg-color-green-500);
-          border-radius: 0.25rem;
-          border: none;
-          color: white;
-          cursor: pointer;
-          padding: 0.5rem 0.9375rem;
-        ">Yes</button>
-      </div>
-    `;
+    try {
+      const response = await fetch(gameSaveUrl);
 
-    shadow.append(dialog);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch from URL: ${response.statusText}`);
+      }
 
-    dialog.addEventListener("close", () => {
-      setTimeout(() => {
+      const blob = await response.blob();
+      const filename = gameSaveUrl.split("/").pop() || "save.bgs";
+
+      const stateJSON = await processSaveData(blob, filename, globalThis);
+      const saveState = JSON.parse(stateJSON);
+
+      const loaded = await loadSaveState(globalThis, shadow, saveState);
+
+      if (!loaded) {
+        showToast(
+          shadow,
+          "Oops! This URL save state appears to be broken. Continuing with normal load...",
+          { stack: true, useSingle: false, duration: 5000 },
+        );
+
         globalThis.blockGarden.state.isCanvasActionDisabled = false;
-      }, 500);
-    });
 
-    dialog.showModal();
+        return false;
+      }
 
-    const autofocusElement = dialog.querySelector("[autofocus]");
-    if (autofocusElement instanceof HTMLElement) {
-      autofocusElement.focus();
+      const seedInput = shadow.getElementById("worldSeedInput");
+      const currentSeedDisplay = shadow.getElementById("currentSeed");
+
+      if (seedInput instanceof HTMLInputElement) {
+        seedInput.value = globalThis.blockGarden.state.seed;
+      }
+
+      if (currentSeedDisplay) {
+        currentSeedDisplay.textContent = globalThis.blockGarden.state.seed;
+      }
+
+      console.log("URL save loaded successfully");
+
+      globalThis.blockGarden.state.isCanvasActionDisabled = false;
+
+      return true;
+    } catch (error) {
+      console.error("Failed to load URL save:", error);
+      showToast(shadow, "Oops! Failed to load URL save. Continuing...", {
+        stack: true,
+        useSingle: false,
+        duration: 5000,
+      });
+
+      globalThis.blockGarden.state.isCanvasActionDisabled = false;
+
+      return false;
     }
-
-    return new Promise((resolve) => {
-      dialog
-        .querySelector("#urlSaveYes")
-        .addEventListener("click", async () => {
-          try {
-            const response = await fetch(gameSaveUrl);
-
-            if (!response.ok) {
-              throw new Error(
-                `Failed to fetch from URL: ${response.statusText}`,
-              );
-            }
-
-            const blob = await response.blob();
-            const filename = gameSaveUrl.split("/").pop() || "save.bgs";
-
-            const stateJSON = await processSaveData(blob, filename, globalThis);
-            const saveState = JSON.parse(stateJSON);
-
-            const loaded = await loadSaveState(globalThis, shadow, saveState);
-
-            if (!loaded) {
-              showToast(
-                shadow,
-                "Oops! This URL save state appears to be broken. Continuing with normal load...",
-                { stack: true, useSingle: false, duration: 5000 },
-              );
-              dialog.close();
-              dialog.remove();
-
-              resolve(false);
-
-              return;
-            }
-
-            const seedInput = shadow.getElementById("worldSeedInput");
-            const currentSeedDisplay = shadow.getElementById("currentSeed");
-
-            if (seedInput instanceof HTMLInputElement) {
-              seedInput.value = globalThis.blockGarden.state.seed;
-            }
-
-            if (currentSeedDisplay) {
-              currentSeedDisplay.textContent =
-                globalThis.blockGarden.state.seed;
-            }
-
-            console.log("URL save loaded successfully");
-          } catch (error) {
-            console.error("Failed to load URL save:", error);
-            showToast(shadow, "Oops! Failed to load URL save. Continuing...", {
-              stack: true,
-              useSingle: false,
-              duration: 5000,
-            });
-
-            dialog.close();
-            dialog.remove();
-
-            resolve(false);
-
-            return;
-          }
-
-          dialog.close();
-          dialog.remove();
-
-          resolve(true);
-        });
-
-      dialog.querySelector("#urlSaveNo").addEventListener("click", () => {
-        dialog.close();
-        dialog.remove();
-
-        resolve(false);
-      });
-
-      dialog.addEventListener("cancel", () => {
-        dialog.close();
-        dialog.remove();
-
-        resolve(false);
-      });
-    });
   } catch (error) {
     console.error("Failed to check for URL save:", error);
+    globalThis.blockGarden.state.isCanvasActionDisabled = false;
 
     return false;
   }

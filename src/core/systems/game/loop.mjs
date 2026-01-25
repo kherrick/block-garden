@@ -303,9 +303,12 @@ export function gameLoop(
   const cosPitch = Math.cos(pitch);
 
   const VIEW_DISTANCE = gameConfig.viewRadius.get();
-  // Use client dimensions for aspect ratio to handle CSS scaling vs internal resolution
   const aspect = cnvs.clientWidth / cnvs.clientHeight;
   const P = persp(I(), Math.PI / 3, aspect, 0.1, VIEW_DISTANCE);
+
+  // Celestial bodies need a stable projection matrix with a large far plane
+  // to prevent clipping when the world's viewRadius is small.
+  const P_celestial = persp(I(), Math.PI / 3, aspect, 0.1, 1000.0);
 
   const V = look(
     I(),
@@ -315,6 +318,7 @@ export function gameLoop(
   );
 
   const VP = mul(I(), P, V);
+  const VP_celestial = mul(I(), P_celestial, V);
 
   // Set visual enhancement toggles via uniforms
   gl.uniform1f(uUT, gameConfig.useTextureAtlas.get() ? 1.0 : 0.0);
@@ -355,7 +359,7 @@ export function gameLoop(
       celestialContext,
       timeForCelestial,
       [eyeX, eyeY, eyeZ],
-      VP,
+      VP_celestial,
       yaw,
       pitch,
       worldProgram,

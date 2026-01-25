@@ -5,16 +5,16 @@ import {
 
 // Sun appearance
 const SUN_COLOR = [1.0, 0.95, 0.8, 1.0]; // Warm white-yellow
-const SUN_SIZE = 15.0; // World units (appears large in sky)
+const SUN_SIZE = 90.0; // World units at fixed distance 500
 const SUN_GLOW_FALLOFF = 2.0; // Soft glow
 
 // Moon appearance
 const MOON_COLOR = [0.9, 0.92, 1.0, 0.9]; // Cool white-blue
-const MOON_SIZE = 10.0; // Slightly smaller than sun
+const MOON_SIZE = 60.0; // Slightly smaller than sun
 const MOON_GLOW_FALLOFF = 3.5; // Tighter glow
 
-// Distance from camera (will be overridden by dynamic calculation in drawCelestialBodies)
-const CELESTIAL_DISTANCE_DEFAULT = 100.0;
+// Distance from camera
+const CELESTIAL_DISTANCE = 500.0;
 
 /**
  * Draw celestial bodies (sun and moon) as billboards in the sky.
@@ -48,8 +48,8 @@ export function drawCelestialBodies(
   const hRatio = Math.max(-1.0, Math.min(1.0, -cameraPos[1] / viewRadius));
   const horizonAngle = Math.asin(hRatio);
 
-  // Set celestial distance slightly inside the far plane
-  const celestialDistance = viewRadius * 0.98;
+  // Set celestial distance to a fixed value to stabilize angular size
+  const celestialDistance = CELESTIAL_DISTANCE;
 
   // Get visibility for sun and moon
   const sunVisibility = getCelestialVisibility(worldTime, true);
@@ -61,16 +61,18 @@ export function drawCelestialBodies(
   }
 
   // Save current WebGL state
-  const prevProgram = gl.getParameter(gl.CURRENT_PROGRAM);
+  // const prevProgram = gl.getParameter(gl.CURRENT_PROGRAM);
   const prevDepthMask = gl.getParameter(gl.DEPTH_WRITEMASK);
   const prevBlend = gl.isEnabled(gl.BLEND);
+  const prevDepthTest = gl.isEnabled(gl.DEPTH_TEST);
 
   // Switch to celestial shader
   gl.useProgram(program);
   gl.bindVertexArray(vao);
 
-  // Disable depth writing (celestial bodies are infinitely far)
+  // Disable depth writing and testing (celestial bodies are infinitely far)
   gl.depthMask(false);
+  gl.disable(gl.DEPTH_TEST);
 
   // Enable additive blending for glow effect
   gl.enable(gl.BLEND);
@@ -124,18 +126,20 @@ export function drawCelestialBodies(
   if (sunVisibility > 0) {
     const sunPos = getCelestialPosition(worldTime, true);
     // Apply horizon offset to position (rotates around Z in XY plane)
-    const sunAngle = Math.atan2(sunPos.y, sunPos.x) + horizonAngle;
-    const sx = Math.cos(sunAngle);
-    const sy = Math.sin(sunAngle);
+    const sunAngle = Math.atan2(sunPos.y, sunPos.x);
 
     gl.uniform3f(
       uniforms.uCelestialPos,
-      sx * celestialDistance,
-      sy * celestialDistance,
+      Math.cos(sunAngle) * celestialDistance,
+      Math.sin(sunAngle) * celestialDistance,
       sunPos.z * celestialDistance,
     );
 
-    gl.uniform1f(uniforms.uSize, SUN_SIZE);
+    // Horizon enlargement: objects look larger near the horizon (illusion but immersive)
+    // Scale up to 20% when sunPos.y is near 0
+    const horizonFactor = 1.0 + 0.2 * (1.0 - Math.abs(sunPos.y));
+    gl.uniform1f(uniforms.uSize, SUN_SIZE * horizonFactor);
+
     gl.uniform4f(
       uniforms.uColor,
       SUN_COLOR[0],
@@ -153,18 +157,19 @@ export function drawCelestialBodies(
   if (moonVisibility > 0) {
     const moonPos = getCelestialPosition(worldTime, false);
     // Apply horizon offset to position
-    const moonAngle = Math.atan2(moonPos.y, moonPos.x) + horizonAngle;
-    const mx = Math.cos(moonAngle);
-    const my = Math.sin(moonAngle);
+    const moonAngle = Math.atan2(moonPos.y, moonPos.x);
 
     gl.uniform3f(
       uniforms.uCelestialPos,
-      mx * celestialDistance,
-      my * celestialDistance,
+      Math.cos(moonAngle) * celestialDistance,
+      Math.sin(moonAngle) * celestialDistance,
       moonPos.z * celestialDistance,
     );
 
-    gl.uniform1f(uniforms.uSize, MOON_SIZE);
+    // Horizon enlargement
+    const horizonFactor = 1.0 + 0.2 * (1.0 - Math.abs(moonPos.y));
+    gl.uniform1f(uniforms.uSize, MOON_SIZE * horizonFactor);
+
     gl.uniform4f(
       uniforms.uColor,
       MOON_COLOR[0],
@@ -187,6 +192,12 @@ export function drawCelestialBodies(
   } else {
     // Restore standard alpha blending
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  }
+
+  if (prevDepthTest) {
+    gl.enable(gl.DEPTH_TEST);
+  } else {
+    gl.disable(gl.DEPTH_TEST);
   }
 
   // Restore world shader program

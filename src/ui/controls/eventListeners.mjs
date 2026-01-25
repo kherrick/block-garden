@@ -23,9 +23,10 @@ import {
 } from "../../world/config/blocks.mjs";
 import { BIOMES } from "../../world/config/biomes.mjs";
 import { createSaveState } from "../../core/createSave.mjs";
-import { gameConfig } from "../../world/config/index.mjs";
+import { CONFIG_DEFAULTS, gameConfig } from "../../world/config/index.mjs";
 import { loadSaveState } from "../../core/loadSave.mjs";
 import {
+  gameState,
   selectMaterialBarSlot,
   setMaterialBarItem,
 } from "../../core/systems/game/state.mjs";
@@ -1909,21 +1910,42 @@ function initGenerationControlListeners(shadow) {
     });
   }
 
-  const applyLowDetailPreset = shadow.getElementById("applyLowDetailPreset");
-  if (applyLowDetailPreset) {
-    applyLowDetailPreset.addEventListener("click", () => {
-      gameConfig.terrainOctaves.set(1);
-      gameConfig.mountainScale.set(0);
-      gameConfig.decorationDensity.set(10);
-      // 100% threshold means almost no caves
-      gameConfig.caveThreshold.set(100);
-      gameConfig.useCaves.set(false);
-      gameConfig.cloudDensity.set(0);
-      gameConfig.useTextureAtlas.set(false);
-      gameConfig.useAmbientOcclusion.set(false);
-      gameConfig.useDynamicLighting.set(false);
+  const applyDefaultPreset = shadow.getElementById("applyDefaultPreset");
+  if (applyDefaultPreset) {
+    applyDefaultPreset.addEventListener("click", () => {
+      gameState.fastGrowth = false;
+      gameState.flying.set(false);
 
-      showToast(shadow, "Applied Low Detail Preset");
+      gameConfig.useTouchControls.set(CONFIG_DEFAULTS.USE_TOUCH_CONTROLS);
+      gameConfig.useAutoJump.set(CONFIG_DEFAULTS.USE_AUTO_JUMP);
+      gameConfig.linkGameSave.set(CONFIG_DEFAULTS.LINK_GAME_SAVE);
+      gameConfig.useSplitControls.set(CONFIG_DEFAULTS.USE_SPLIT_CONTROLS);
+
+      gameConfig.currentResolution.set(CONFIG_DEFAULTS.CURRENT_RESOLUTION);
+      gameConfig.useBlockHighlight.set(CONFIG_DEFAULTS.USE_BLOCK_HIGHLIGHT);
+      gameConfig.useDamageAnimation.set(CONFIG_DEFAULTS.USE_DAMAGE_ANIMATION);
+      gameConfig.useTextureAtlas.set(CONFIG_DEFAULTS.USE_TEXTURE_ATLAS);
+      gameConfig.useAmbientOcclusion.set(CONFIG_DEFAULTS.USE_AMBIENT_OCCLUSION);
+      gameConfig.useAODebug.set(CONFIG_DEFAULTS.USE_AO_DEBUG);
+      gameConfig.useTimeCycle.set(CONFIG_DEFAULTS.USE_TIME_CYCLE);
+      gameConfig.useDynamicLighting.set(CONFIG_DEFAULTS.USE_DYNAMIC_LIGHTING);
+      gameConfig.usePerFaceLighting.set(CONFIG_DEFAULTS.USE_PER_FACE_LIGHTING);
+
+      gameConfig.dayLength.set(CONFIG_DEFAULTS.DAY_LENGTH);
+      gameConfig.manualTimeOfDay.set(CONFIG_DEFAULTS.MANUAL_TIME_OF_DAY);
+      gameConfig.worldRadius.set(CONFIG_DEFAULTS.WORLD_RADIUS);
+      gameConfig.viewRadius.set(CONFIG_DEFAULTS.VIEW_RADIUS);
+      gameConfig.renderRadius.set(CONFIG_DEFAULTS.RENDER_RADIUS);
+      gameConfig.cacheRadius.set(CONFIG_DEFAULTS.CACHE_RADIUS);
+
+      gameConfig.terrainOctaves.set(CONFIG_DEFAULTS.TERRAIN_OCTAVES);
+      gameConfig.mountainScale.set(CONFIG_DEFAULTS.MOUNTAIN_SCALE);
+      gameConfig.decorationDensity.set(CONFIG_DEFAULTS.DECORATION_DENSITY);
+      gameConfig.cloudDensity.set(CONFIG_DEFAULTS.CLOUD_DENSITY);
+      gameConfig.caveThreshold.set(CONFIG_DEFAULTS.CAVE_THRESHOLD);
+      gameConfig.useCaves.set(CONFIG_DEFAULTS.USE_CAVES);
+
+      showToast(shadow, "Applied Defaults");
     });
   }
 }

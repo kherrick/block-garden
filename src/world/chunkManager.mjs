@@ -15,6 +15,13 @@ import { getBlockById } from "./config/blocks.mjs";
  */
 
 /**
+ * Maximum number of chunks to keep in memory at once.
+ * Each chunk is ~32KB (block data) plus metadata.
+ * 16384 chunks is approx 536MB of block data.
+ */
+const MAX_LOADED_CHUNKS = 16384;
+
+/**
  * ChunkManager - Manages chunk lifecycle and world access.
  *
  * Provides a unified interface for block access across chunks,
@@ -175,6 +182,15 @@ export class ChunkManager {
 
     let chunk = this.chunks.get(key);
     if (!chunk) {
+      // Memory Safety: Check if we've reached the allocation limit
+      if (this.chunks.size >= MAX_LOADED_CHUNKS) {
+        console.warn(
+          `[Memory] Chunk limit (${MAX_LOADED_CHUNKS}) reached. Skipping allocation for ${key}`,
+        );
+
+        return null;
+      }
+
       chunk = new Chunk(chunkX, chunkZ);
 
       this.chunks.set(key, chunk);
@@ -395,9 +411,15 @@ export class ChunkManager {
     );
 
     const visible = [];
-    const cachedRadius = gameConfig.cacheRadius.get();
-    const currentWorldRadius = gameConfig.worldRadius.get();
     const renderRadius = gameConfig.renderRadius.get();
+    const currentWorldRadius = gameConfig.worldRadius.get();
+
+    // Memory Safety: Ensure cacheRadius is at least slightly larger than renderRadius
+    // to prevent jitter/oscillation, but not so large it wastes memory.
+    const cachedRadius = Math.max(
+      gameConfig.cacheRadius.get(),
+      renderRadius + 2,
+    );
 
     const processChunk = (chunk) => {
       // If not generated and not generating, request it
@@ -469,10 +491,15 @@ export class ChunkManager {
 
             const chunk = this.getOrCreateChunk(cx, cz);
 
-            processChunk(chunk);
+            if (chunk) {
+              processChunk(chunk);
 
-            if (chunk.generated) {
-              visible.push(chunk);
+              if (chunk.generated) {
+                visible.push(chunk);
+              }
+            } else {
+              // Stop spiral generation if we hit memory limits
+              return visible;
             }
           }
         }

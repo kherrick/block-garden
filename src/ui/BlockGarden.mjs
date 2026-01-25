@@ -150,7 +150,7 @@ export class BlockGarden extends HTMLElement {
             grid-column: 2;
             grid-row: 1;
             justify-self: end;
-            z-index: 1;
+            z-index: 4;
           }
 
           .ui-grid__corner--bottom-left {
@@ -515,12 +515,27 @@ export class BlockGarden extends HTMLElement {
             position: relative;
           }
 
-          #settings .settings-actions {
+          #settings .settings-actions,
+          .settings-actions--container {
             display: flex;
             flex-direction: column;
           }
 
           #settings button {
+            width: 100%;
+          }
+
+          #cacheRadiusInput,
+          #caveThresholdInput
+          #cloudDensityInput,
+          #dayLengthInput,
+          #decorationDensityInput,
+          #manualTimeOfDayInput,
+          #mountainScaleInput,
+          #renderRadiusInput,
+          #terrainOctavesInput,
+          #viewRadiusInput,
+          #worldRadiusInput {
             width: 100%;
           }
 
@@ -833,6 +848,27 @@ export class BlockGarden extends HTMLElement {
           #privacy {
             color: var(--bg-color-white);
           }
+
+          .input-container {
+            display: flex;
+            flex-direction: column;
+            margin-top: 0.625rem;
+          }
+
+          .input-container--first {
+            margin-bottom: 0.625rem;
+          }
+
+          #dayLengthContainer,
+          #manualTimeOfDayContainer
+           {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 0.625rem;
+            margin-top: 0.625rem;
+          }
+
+
         </style>
         <canvas id="canvas" tabindex="0"></canvas>
         <div id="ui-grid" class="ui-grid">
@@ -886,7 +922,7 @@ export class BlockGarden extends HTMLElement {
               <div class="ui-grid__corner--heading" tabindex="0">⚙️ Settings</div>
               <div class="ui-grid__corner--container" hidden="hidden">
                 <div class="settings-actions">
-                  <div>
+                  <div class="settings-actions--container">
                     <div class="ui-grid__corner--sub-heading">Game</div>
                     <button id="worldState">🌍 World State</button>
                     <button id="toggleTouchControls">Disable Touch Controls</button>
@@ -904,7 +940,7 @@ export class BlockGarden extends HTMLElement {
                     </button>
                   </div>
 
-                  <div>
+                  <div class="settings-actions--container">
                     <div class="ui-grid__corner--sub-heading">Visuals</div>
 
                     <div id="resolution">
@@ -926,67 +962,67 @@ export class BlockGarden extends HTMLElement {
                   </div>
 
                   <div id="manualTimeOfDayContainer" hidden>
-                    <div style="margin-top: 0.625rem; margin-bottom: 0.625rem;">
-                      <label for="manualTimeOfDayInput">Time of Day: <span id="manualTimeOfDayDisplay">12:00</span></label>
+                    <label for="manualTimeOfDayInput">Time of Day: <span id="manualTimeOfDayDisplay">12:00</span></label>
 
-                      <input type="range" id="manualTimeOfDayInput" min="0" max="1" step="0.01" style="width: 100%;" disabled>
-                    </div>
+                    <input type="range" id="manualTimeOfDayInput" min="0" max="1" step="0.01" disabled>
                   </div>
 
                   <div id="dayLengthContainer" hidden>
-                    <div style="margin-top: 0.625rem; margin-bottom: 0.625rem;">
-                      <label for="dayLengthInput">Length of Day: <span id="dayLengthDisplay">24h</span></label>
+                    <label for="dayLengthInput">Length of Day: <span id="dayLengthDisplay">24h</span></label>
 
-                      <input type="range" id="dayLengthInput" min="10" max="1440" step="1" style="width: 100%;" disabled>
-                    </div>
+                    <input type="range" id="dayLengthInput" min="10" max="1440" step="1" disabled>
                   </div>
 
                   <div>
                     <div id="rendering">
-                      <div style="margin-top: 0.625rem; margin-bottom: 0.625rem;">
+                      <div class="input-container input-container--top">
                         <label for="worldRadiusInput">World Radius: <span id="worldRadiusDisplay"></span></label>
-                        <input type="range" id="worldRadiusInput" min="0" max="2072" step="1" style="width: 100%;">
+
+                        <input type="range" id="worldRadiusInput" min="0" max="2072" step="1">
                       </div>
-                      <div style="margin-top: 0.625rem;">
+                      <div class="input-container">
                         <label for="viewRadiusInput">View Radius: <span id="viewRadiusDisplay"></span></label>
-                        <input type="range" id="viewRadiusInput" min="0" max="2048" step="1" style="width: 100%;">
+
+                        <input type="range" id="viewRadiusInput" min="64" max="2048" step="1">
                       </div>
-                      <div style="margin-top: 0.625rem;">
+                      <div class="input-container">
                         <label for="renderRadiusInput">Render Radius: <span id="renderRadiusDisplay"></span></label>
-                        <input type="range" id="renderRadiusInput" min="0" max="256" step="1" style="width: 100%;">
+
+                        <input type="range" id="renderRadiusInput" min="0" max="256" step="1">
                       </div>
-                      <div style="margin-top: 0.625rem;">
+                      <div class="input-container">
                         <label for="cacheRadiusInput">Cache Radius: <span id="cacheRadiusDisplay"></span></label>
-                        <input type="range" id="cacheRadiusInput" min="0" max="256" step="1" style="width: 100%;">
+
+                        <input type="range" id="cacheRadiusInput" min="0" max="256" step="1">
                       </div>
                     </div>
 
-                    <div id="generation">
-                      <div class="ui-grid__corner--sub-heading">Generation (affects new chunks)</div>
-                      <div style="margin-top: 0.625rem;">
+                    <div id="generation" class="settings-actions--container">
+                      <div class="ui-grid__corner--sub-heading">Generation (on new chunks)</div>
+                      <div class="input-container">
                         <label for="terrainOctavesInput">Terrain Octaves: <span id="terrainOctavesDisplay"></span></label>
-                        <input type="range" id="terrainOctavesInput" min="1" max="8" step="1" style="width: 100%;">
+                        <input type="range" id="terrainOctavesInput" min="1" max="8" step="1">
                       </div>
-                      <div style="margin-top: 0.625rem;">
+                      <div class="input-container">
                         <label for="mountainScaleInput">Mountain Scale: <span id="mountainScaleDisplay"></span></label>
-                        <input type="range" id="mountainScaleInput" min="0" max="100" step="1" style="width: 100%;">
+                        <input type="range" id="mountainScaleInput" min="0" max="100" step="1">
                       </div>
-                      <div style="margin-top: 0.625rem;">
+                      <div class="input-container">
                         <label for="decorationDensityInput">Decoration Density: <span id="decorationDensityDisplay"></span></label>
-                        <input type="range" id="decorationDensityInput" min="0" max="100" step="1" style="width: 100%;">
+                        <input type="range" id="decorationDensityInput" min="0" max="100" step="1">
                       </div>
-                      <div style="margin-top: 0.625rem;">
+                      <div class="input-container">
                         <label for="cloudDensityInput">Cloud Density: <span id="cloudDensityDisplay"></span></label>
-                        <input type="range" id="cloudDensityInput" min="0" max="100" step="1" style="width: 100%;">
+                        <input type="range" id="cloudDensityInput" min="0" max="100" step="1">
                       </div>
-                      <div id="caveThresholdInputContainer" style="margin-top: 0.625rem;">
-                        <label for="caveThresholdInput">Cave Density (higher number is fewer caves): <span id="caveDensityDisplay"></span></label>
-                        <input type="range" id="caveThresholdInput" min="0" max="100" step="1" style="width: 100%;">
+                      <div id="caveThresholdInputContainer" class="input-container">
+                        <label for="caveThresholdInput">Cave Density: <span id="caveDensityDisplay"></span></label>
+                        <input type="range" id="caveThresholdInput" min="0" max="100" step="1">
                       </div>
-                      <div style="margin-top: 0.625rem;">
+                      <div class="input-container">
                         <button id="toggleCaves">Disable Caves</button>
                       </div>
-                      <button id="applyLowDetailPreset" title="Use low detail defaults.">Apply Low Detail Defaults</button>
+                      <button id="applyDefaultPreset" title="Use low detail defaults.">Apply Defaults</button>
                     </div>
                   </div>
 

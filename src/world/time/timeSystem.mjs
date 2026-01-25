@@ -100,12 +100,12 @@ export function getSkyColor(normalizedTime) {
   const keyTimes = [
     { time: 0.0, color: SKY_COLORS.midnight },
     { time: 0.2, color: SKY_COLORS.earlyMorning },
-    { time: 0.35, color: SKY_COLORS.dawn },
-    { time: 0.45, color: SKY_COLORS.morning },
+    { time: 0.25, color: SKY_COLORS.dawn },
+    { time: 0.35, color: SKY_COLORS.morning },
     { time: 0.5, color: SKY_COLORS.noon },
-    { time: 0.55, color: SKY_COLORS.afternoon },
-    { time: 0.65, color: SKY_COLORS.dusk },
-    { time: 0.8, color: SKY_COLORS.eveningDark },
+    { time: 0.65, color: SKY_COLORS.afternoon },
+    { time: 0.75, color: SKY_COLORS.dusk },
+    { time: 0.85, color: SKY_COLORS.eveningDark },
     { time: 1.0, color: SKY_COLORS.midnight },
   ];
 
@@ -140,12 +140,12 @@ export function getAmbientLight(normalizedTime) {
   const keyTimes = [
     { time: 0.0, light: AMBIENT_LIGHT.midnight },
     { time: 0.2, light: AMBIENT_LIGHT.earlyMorning },
-    { time: 0.35, light: AMBIENT_LIGHT.dawn },
-    { time: 0.45, light: AMBIENT_LIGHT.morning },
+    { time: 0.25, light: AMBIENT_LIGHT.dawn },
+    { time: 0.35, light: AMBIENT_LIGHT.morning },
     { time: 0.5, light: AMBIENT_LIGHT.noon },
-    { time: 0.55, light: AMBIENT_LIGHT.afternoon },
-    { time: 0.65, light: AMBIENT_LIGHT.dusk },
-    { time: 0.8, light: AMBIENT_LIGHT.eveningDark },
+    { time: 0.65, light: AMBIENT_LIGHT.afternoon },
+    { time: 0.75, light: AMBIENT_LIGHT.dusk },
+    { time: 0.85, light: AMBIENT_LIGHT.eveningDark },
     { time: 1.0, light: AMBIENT_LIGHT.midnight },
   ];
 
@@ -168,8 +168,8 @@ export function getAmbientLight(normalizedTime) {
 
 /**
  * Compute directional light vector (sun position) from time.
- * Sun starts in the east (positive X) at dawn, peaks at zenith at noon,
- * and sets in the west (negative X) at dusk.
+ * Sun rises in the east at dawn (0.25), peaks at zenith at noon (0.5),
+ * and sets in the west at dusk (0.75).
  *
  * @param {number} normalizedTime - Normalized time (0–1)
  *
@@ -178,30 +178,27 @@ export function getAmbientLight(normalizedTime) {
 export function getSunDirection(normalizedTime) {
   const time = normalizeTime(normalizedTime);
 
-  // Sun angle: 0 at midnight (behind), PI at noon (front), 2*PI at next midnight
-  // We want sun to rise from east (positive X) and set in west (negative X)
-  const angle = time * Math.PI * 2;
+  // Phase-shifted angle so sun peaks at noon (time=0.5)
+  // At dawn (0.25): angle = 0, height = 0 (rising)
+  // At noon (0.5): angle = PI/2, height = 1 (peak)
+  // At dusk (0.75): angle = PI, height = 0 (setting)
+  // At midnight (0 or 1): angle = -PI/2 or 3PI/2, height = -1 (below)
+  const angle = (time - 0.25) * Math.PI * 2;
 
-  // Sun moves from east to west across the sky
-  // At dawn (0.25): angle = PI/2, sun on eastern horizon
-  // At noon (0.5): angle = PI, sun directly overhead
-  // At dusk (0.75): angle = 3PI/2, sun on western horizon
-  // At midnight (0 or 1): angle = 0 or 2PI, sun below ground
-
-  // Compute height: peaks at noon, low at midnight
-  // Use sine to smooth the arc
+  // Compute height: peaks at noon, nadir at midnight
   let height = Math.sin(angle);
 
   // Clamp height to prevent sun from going too far below horizon at night
   // This keeps some ambient moonlight
   height = Math.max(height, -0.3);
 
-  // Horizontal angle: east to west
-  const horizontalAngle = angle - Math.PI / 2; // Shift so sun starts from east
-
-  const x = Math.cos(horizontalAngle);
+  // Horizontal movement: sun traces an arc from east (+X) to west (-X)
+  // At dawn: x = 1 (east), z = 0
+  // At noon: x = 0, z = 0 (overhead, horizontal doesn't matter as much)
+  // At dusk: x = -1 (west), z = 0
+  const x = Math.cos(angle);
   const y = height;
-  const z = Math.sin(horizontalAngle);
+  const z = 0; // Sun moves in XY plane for simplicity
 
   // Normalize the vector
   const length = Math.sqrt(x * x + y * y + z * z);
@@ -210,5 +207,175 @@ export function getSunDirection(normalizedTime) {
     x: x / length,
     y: y / length,
     z: z / length,
+  };
+}
+
+/**
+ * Get the world-space position direction for a celestial body.
+ * Sun and moon are on opposite sides of the sky.
+ *
+ * @param {number} normalizedTime - Normalized time (0–1)
+ * @param {boolean} isSun - True for sun, false for moon
+ *
+ * @returns {{x: number, y: number, z: number}} Unit direction vector to celestial body
+ */
+export function getCelestialPosition(normalizedTime, isSun = true) {
+  const time = normalizeTime(normalizedTime);
+
+  // Phase-shifted angle so sun peaks at noon (time=0.5)
+  // Sun: peaks at 0.5., Moon: peaks at 0.0 (opposite)
+  const baseAngle = (time - 0.25) * Math.PI * 2;
+
+  // Moon is opposite the sun (offset by PI)
+  const angle = isSun ? baseAngle : baseAngle + Math.PI;
+
+  // Height follows a sinusoidal arc
+  // Sun at noon (0.5): angle = PI/2, sin = 1 (peak)
+  // Moon at midnight (0): angle = PI/2, sin = 1 (peak)
+  const height = Math.sin(angle);
+
+  // Horizontal position: traces arc from east (+X) to west (-X)
+  const x = Math.cos(angle);
+  const z = 0; // Move in XY plane for simplicity
+
+  // Normalize the direction
+  const length = Math.sqrt(x * x + height * height + z * z);
+
+  return {
+    x: x / length,
+    y: height / length,
+    z: z / length,
+  };
+}
+
+/**
+ * Get visibility factor for a celestial body (0 = hidden, 1 = fully visible).
+ * Includes horizon fade effect with extended twilight visibility.
+ *
+ * @param {number} normalizedTime - Normalized time (0–1)
+ * @param {boolean} isSun - True for sun, false for moon
+ *
+ * @returns {number} Visibility factor (0–1)
+ */
+export function getCelestialVisibility(normalizedTime, isSun = true) {
+  const pos = getCelestialPosition(normalizedTime, isSun);
+
+  // Extended visibility range for realistic twilight effect
+  // Account for horizon dip at altitude by being more generous on the CPU-side check
+  const HORIZON_FADE_START = -1.1; // Broaden CPU check to allow horizon dip
+  const HORIZON_FADE_END = 0.3; // Fully visible higher up
+
+  if (pos.y <= HORIZON_FADE_START) {
+    return 0; // Fully below horizon
+  }
+
+  if (pos.y >= HORIZON_FADE_END) {
+    return 1; // Fully visible
+  }
+
+  // Smooth transition near horizon
+  const t =
+    (pos.y - HORIZON_FADE_START) / (HORIZON_FADE_END - HORIZON_FADE_START);
+
+  // Use smoothstep for natural easing
+  return t * t * (3 - 2 * t);
+}
+
+/**
+ * Get moon light direction (for night lighting).
+ * Moon provides dim, cool-toned illumination when sun is below horizon.
+ *
+ * @param {number} normalizedTime - Normalized time (0–1)
+ *
+ * @returns {{x: number, y: number, z: number}} Moon light direction vector
+ */
+export function getMoonDirection(normalizedTime) {
+  const moonPos = getCelestialPosition(normalizedTime, false);
+
+  // Invert direction (light comes FROM the moon)
+  return {
+    x: -moonPos.x,
+    y: -moonPos.y,
+    z: -moonPos.z,
+  };
+}
+
+/**
+ * Get moonlight intensity based on moon visibility.
+ * Returns 0 during day, ramps up at night.
+ *
+ * @param {number} normalizedTime - Normalized time (0–1)
+ *
+ * @returns {number} Moonlight intensity (0–1)
+ */
+export function getMoonlightIntensity(normalizedTime) {
+  const sunVis = getCelestialVisibility(normalizedTime, true);
+  const moonVis = getCelestialVisibility(normalizedTime, false);
+
+  // During twilight, blend based on relative visibility
+  // When sun is still visible, moonlight is reduced
+  const sunFactor = 1 - sunVis;
+
+  // Scale moonlight by moon visibility and inverse sun visibility
+  // Moonlight is dimmer than sunlight (max ~0.3 intensity)
+  return moonVis * sunFactor * 0.3;
+}
+
+/**
+ * Get blended light direction and intensity for smooth day/night transitions.
+ * Interpolates between sunlight and moonlight during twilight periods.
+ * Uses angular interpolation to avoid vector collapse (the "flash" issue).
+ *
+ * @param {number} normalizedTime - Normalized time (0–1)
+ *
+ * @returns {{x: number, y: number, z: number, intensity: number}} Light direction and intensity
+ */
+export function getBlendedLightDirection(normalizedTime) {
+  const time = normalizeTime(normalizedTime);
+  const sunVis = getCelestialVisibility(time, true);
+  const moonVis = getCelestialVisibility(time, false);
+
+  // Transition factor: 1.0 (pure Sun) to 0.0 (pure Moon)
+  const totalVis = sunVis + moonVis;
+  let sunWeight = 1.0;
+
+  if (totalVis > 0.001) {
+    sunWeight = sunVis / totalVis;
+  }
+
+  // Calculate base angle for the sun (0 at dawn, PI/2 at noon)
+  const sunAngle = (time - 0.25) * Math.PI * 2;
+  // Moon is opposite (offset by PI)
+  // Light from moon is also opposite to moon's position
+  // moonPos = (cos(A+PI), sin(A+PI)), moonDir = -moonPos = (cos(A), sin(A))
+  // sunDir (to sun) = (cos(A), sin(A)), lightFromSun = -sunDir = (-cos(A), -sin(A))
+  // Wait, sunAngle above is the angle TO the sun.
+  // We need light FROM the sun: sunAngle + PI.
+
+  const lightFromSunAngle = sunAngle + Math.PI;
+  const lightFromMoonAngle = sunAngle; // Opposite of moonPos (sunAngle + PI)
+
+  // Blending the angles avoids zero-length vectors
+  // Since they are opposite, linear vector blend collapses at midpoint.
+  // Instead, we interpolate the angle on the unit circle.
+
+  // Use a faster transition for direction to feel more like one source is taking over
+  const dirWeight = sunWeight * sunWeight * (3 - 2 * sunWeight); // Smoothstep the weight
+
+  // Interpolate angle: from moon-light-angle to sun-light-angle
+  // Since they are always PI apart, this is a 180-degree rotation.
+  const blendedAngle = lightFromMoonAngle + dirWeight * Math.PI;
+
+  const x = Math.cos(blendedAngle);
+  const y = Math.sin(blendedAngle);
+
+  // Blend intensity: sun is full brightness, moon is ~30%
+  const intensity = sunVis * 1.0 + moonVis * 0.3 * (1 - sunVis);
+
+  return {
+    x,
+    y,
+    z: 0,
+    intensity: Math.max(intensity, 0.1), // Minimum ambient
   };
 }

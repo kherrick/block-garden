@@ -40,6 +40,8 @@ import { blockNames, blocks } from "./blocks.mjs";
  * @property {Signal.State} timeScale - Multiplier for time progression (default 1.0)
  * @property {Signal.State} useTimeCycle - Enable day/night cycle (default true)
  * @property {Signal.State} manualTimeOfDay - Manual sun position override when cycle disabled (0-1, default 0.5 = noon)
+ * @property {Signal.State} useCelestialBodies - Enable visible sun/moon in sky (default true)
+ * @property {Signal.State} useMoonlight - Enable moonlight at night (default true)
  */
 
 /**
@@ -56,7 +58,7 @@ export const gameConfig = {
   caveThreshold: new Signal.State(80),
   cloudDensity: new Signal.State(20),
   currentResolution: new Signal.State("600"),
-  dayLength: new Signal.State(1440),
+  dayLength: new Signal.State(1200),
   decorationDensity: new Signal.State(40),
   linkGameSave: new Signal.State(false),
   manualTimeOfDay: new Signal.State(0.5),
@@ -69,8 +71,10 @@ export const gameConfig = {
   useAutoJump: new Signal.State(true),
   useBlockHighlight: new Signal.State(true),
   useCaves: new Signal.State(true),
+  useCelestialBodies: new Signal.State(true),
   useDamageAnimation: new Signal.State(true),
-  useDynamicLighting: new Signal.State(false),
+  useDynamicLighting: new Signal.State(true),
+  useMoonlight: new Signal.State(true),
   usePerFaceLighting: new Signal.State(true),
   useSplitControls: new Signal.State(false),
   useTextureAtlas: new Signal.State(false),

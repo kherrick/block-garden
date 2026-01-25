@@ -196,6 +196,8 @@ export async function initGame(gThis, shadow, cnvs) {
     nbuf,
     breakCbuf,
     breakUvbuf,
+    celestialContext,
+    worldProgram,
   } = initGameDependencies(cnvs, gameConfig.blocks);
 
   // Get required UI buttons for flight controls
@@ -276,6 +278,8 @@ export async function initGame(gThis, shadow, cnvs) {
       nbuf,
       breakCbuf,
       breakUvbuf,
+      celestialContext,
+      worldProgram,
     );
 
     gameState.shouldReset.set(true);
@@ -371,6 +375,8 @@ export async function initGame(gThis, shadow, cnvs) {
     nbuf,
     breakCbuf,
     breakUvbuf,
+    celestialContext,
+    worldProgram,
   );
 
   // Restore saved preferences from storage

@@ -1,4 +1,5 @@
 import { drawBreakingOverlay } from "../../../render/draw/breakingOverlay.mjs";
+import { drawCelestialBodies } from "../../../render/draw/celestialBodies.mjs";
 import { drawChunkMesh } from "../../../render/draw/chunkMesh.mjs";
 import { drawCrosshairs } from "../../../render/draw/crossHairs.mjs";
 import { drawSelectionHighlight } from "../../../render/draw/selectionHighlight.mjs";
@@ -11,6 +12,9 @@ import {
 import { getBlockByName } from "../../../world/config/blocks.mjs";
 import { blocks as blockTypes } from "../../../world/config/blocks.mjs";
 import {
+  getBlendedLightDirection,
+  getCelestialVisibility,
+  getMoonDirection,
   getSkyColor,
   getSunDirection,
   normalizeTime,
@@ -85,6 +89,8 @@ let lastRenderZ = 0;
  * @param {Object} uUAO
  * @param {Object} uULG
  * @param {Object} uUAOD
+ * @param {Object} celestialContext
+ * @param {WebGLProgram} worldProgram
  */
 export function gameLoop(
   shadow,
@@ -112,6 +118,8 @@ export function gameLoop(
   nbuf,
   breakCbuf,
   breakUvbuf,
+  celestialContext,
+  worldProgram,
 ) {
   if (gameState.shouldReset.get()) {
     gameState.shouldReset.set(false);
@@ -321,11 +329,38 @@ export function gameLoop(
       ? gameState.worldTime
       : gameConfig.manualTimeOfDay.get();
 
-    const sunDir = getSunDirection(timeForLighting);
-    gl.uniform3f(uL, sunDir.x, sunDir.y, sunDir.z);
+    // Get blended light direction and intensity for smooth transitions
+    const light = getBlendedLightDirection(timeForLighting);
+
+    // Apply lighting direction and intensity (negated direction since shader expects FROM light)
+    gl.uniform3f(
+      uL,
+      light.x * light.intensity,
+      light.y * light.intensity,
+      light.z * light.intensity,
+    );
   } else {
-    // Default "high noon" fixed light
-    gl.uniform3f(uL, -0.5, -1.0, -0.3);
+    // Default "high noon" fixed light (pointing down from above)
+    gl.uniform3f(uL, 0.0, -1.0, 0.0);
+  }
+
+  // Draw celestial bodies (sun/moon) - render after sky clear, before world geometry
+  if (gameConfig.useCelestialBodies.get() && celestialContext) {
+    const timeForCelestial = gameConfig.useTimeCycle.get()
+      ? gameState.worldTime
+      : gameConfig.manualTimeOfDay.get();
+
+    drawCelestialBodies(
+      gl,
+      celestialContext,
+      timeForCelestial,
+      [eyeX, eyeY, eyeZ],
+      VP,
+      yaw,
+      pitch,
+      worldProgram,
+      VIEW_DISTANCE,
+    );
   }
 
   // Render chunks with face-culled meshes
@@ -455,6 +490,8 @@ export function gameLoop(
       nbuf,
       breakCbuf,
       breakUvbuf,
+      celestialContext,
+      worldProgram,
     ),
   );
 }

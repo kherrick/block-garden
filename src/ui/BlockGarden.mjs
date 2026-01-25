@@ -937,7 +937,7 @@ export class BlockGarden extends HTMLElement {
                     <div style="margin-top: 0.625rem; margin-bottom: 0.625rem;">
                       <label for="dayLengthInput">Length of Day: <span id="dayLengthDisplay">24h</span></label>
 
-                      <input type="range" id="dayLengthInput" min="1" max="2000" step="1" style="width: 100%;" disabled>
+                      <input type="range" id="dayLengthInput" min="10" max="1440" step="1" style="width: 100%;" disabled>
                     </div>
                   </div>
 

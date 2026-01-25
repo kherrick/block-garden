@@ -1,4 +1,5 @@
 import { createCube, createProgram, createVBO } from "./graphics.mjs";
+import { initCelestialShader } from "./celestialShader.mjs";
 import { generateTextureAtlas } from "../world/generation/atlas.mjs";
 
 /** @typedef {import('../world/config/blocks.mjs').BlockDefinition} BlockDefinition */
@@ -30,7 +31,9 @@ import { generateTextureAtlas } from "../world/generation/atlas.mjs";
  *   pbuf: WebGLBuffer,
  *   nbuf: WebGLBuffer,
  *   breakCbuf: WebGLBuffer,
- *   breakUvbuf: WebGLBuffer
+ *   breakUvbuf: WebGLBuffer,
+ *   celestialContext: Object,
+ *   worldProgram: WebGLProgram
  * }}
  */
 export function initGameDependencies(cnvs, blockDefs = []) {
@@ -198,6 +201,9 @@ export function initGameDependencies(cnvs, blockDefs = []) {
   const breakCbuf = gl.createBuffer();
   const breakUvbuf = gl.createBuffer();
 
+  // Initialize celestial body shader (sun/moon billboards)
+  const celestialContext = initCelestialShader(gl);
+
   return {
     gl,
     cbuf,
@@ -218,5 +224,7 @@ export function initGameDependencies(cnvs, blockDefs = []) {
     nbuf,
     breakCbuf,
     breakUvbuf,
+    celestialContext,
+    worldProgram: program,
   };
 }

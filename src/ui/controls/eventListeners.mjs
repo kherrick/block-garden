@@ -432,9 +432,16 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
   );
 
   setupToggle(
+    "toggleTimeCycle",
+    config.useTimeCycle,
+    "Time Cycle",
+    "useTimeCycle",
+  );
+
+  setupToggle(
     "toggleDynamicLighting",
     config.useDynamicLighting,
-    "Light Cycle",
+    "Dynamic Lighting",
     "useDynamicLighting",
   );
 
@@ -1779,6 +1786,87 @@ function initGenerationControlListeners(shadow) {
       });
     }
   });
+
+  // Manual Length of Day Slider
+  const dayLengthInput = shadow.getElementById("dayLengthInput");
+  const dayLengthDisplay = shadow.getElementById("dayLengthDisplay");
+  const dayLengthContainer = shadow.getElementById("dayLengthContainer");
+
+  if (
+    dayLengthInput instanceof HTMLInputElement &&
+    dayLengthDisplay &&
+    dayLengthContainer
+  ) {
+    // Keep slider and display in sync
+    effect(() => {
+      const val = gameConfig.dayLength.get();
+      dayLengthInput.value = String(val);
+
+      // Just show the number, no math
+      dayLengthDisplay.textContent = String(val);
+
+      // Enable/disable depending on mode
+      const isCycleEnabled = gameConfig.useTimeCycle.get();
+      if (isCycleEnabled) {
+        dayLengthInput.removeAttribute("disabled");
+        dayLengthContainer.removeAttribute("hidden");
+      } else {
+        dayLengthInput.setAttribute("disabled", "disabled");
+        dayLengthContainer.setAttribute("hidden", "hidden");
+      }
+    });
+
+    // Update gameConfig on slider change with raw value
+    dayLengthInput.addEventListener("input", async (e) => {
+      if (e.target instanceof HTMLInputElement) {
+        const newValue = Number(e.target.value);
+        gameConfig.dayLength.set(newValue);
+
+        await persistValue("config", "dayLength", newValue);
+      }
+    });
+  }
+
+  // Manual Time of Day Slider
+  const manualTimeInput = shadow.getElementById("manualTimeOfDayInput");
+  const manualTimeDisplay = shadow.getElementById("manualTimeOfDayDisplay");
+  const manualTimeContainer = shadow.getElementById("manualTimeOfDayContainer");
+
+  if (
+    manualTimeInput instanceof HTMLInputElement &&
+    manualTimeDisplay &&
+    manualTimeContainer
+  ) {
+    // Synchronize slider and display with signal
+    effect(() => {
+      const val = gameConfig.manualTimeOfDay.get();
+      manualTimeInput.value = String(val);
+
+      // Convert 0-1 to 0:00-24:00 for display
+      const hours = Math.floor(val * 24);
+      const minutes = Math.floor((val * 24 - hours) * 60);
+      manualTimeDisplay.textContent = `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+
+      // Enable/disable based on useTimeCycle
+      const isCycleEnabled = gameConfig.useTimeCycle.get();
+      if (isCycleEnabled) {
+        manualTimeInput.setAttribute("disabled", "disabled");
+        manualTimeContainer.setAttribute("hidden", "hidden");
+      } else {
+        manualTimeInput.removeAttribute("disabled");
+        manualTimeContainer.removeAttribute("hidden");
+      }
+    });
+
+    manualTimeInput.addEventListener("input", async (e) => {
+      if (e.target instanceof HTMLInputElement) {
+        const newValue = parseFloat(e.target.value);
+        gameConfig.manualTimeOfDay.set(Math.max(0, Math.min(1, newValue)));
+
+        await persistValue("config", "manualTimeOfDay", newValue);
+      }
+    });
+  }
 
   const toggleCaves = shadow.getElementById("toggleCaves");
   const caveThresholdInput = shadow.getElementById("caveThresholdInput");

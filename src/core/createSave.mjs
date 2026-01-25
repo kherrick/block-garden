@@ -174,6 +174,7 @@ export function createSaveState(world, gThis) {
         : null,
       growthTimers: state?.growthTimers ?? null,
       plantStructures: state?.plantStructures ?? null,
+      worldTime: state?.worldTime ?? 0.5,
     },
     world: worldData,
     storedChunks: storedChunksData,

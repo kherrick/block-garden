@@ -110,11 +110,14 @@ export async function restorePersistedPreferences(
     persistedUseTextureAtlas,
     persistedUseAmbientOcclusion,
     persistedUseDynamicLighting,
+    persistedUseTimeCycle,
     persistedUsePerFaceLighting,
     persistedUseAODebug,
     persistedUseAutoJump,
     persistedCurrentResolution,
     persistedUseTouchControls,
+    persistedManualTimeOfDay,
+    persistedDayLength,
   ] = await Promise.all([
     getPersistedValue("state", "fastGrowth"),
     getPersistedValue("config", "linkGameSave"),
@@ -124,12 +127,26 @@ export async function restorePersistedPreferences(
     getPersistedValue("config", "useTextureAtlas"),
     getPersistedValue("config", "useAmbientOcclusion"),
     getPersistedValue("config", "useDynamicLighting"),
+    getPersistedValue("config", "useTimeCycle"),
     getPersistedValue("config", "usePerFaceLighting"),
     getPersistedValue("config", "useAODebug"),
     getPersistedValue("config", "useAutoJump"),
     getPersistedValue("config", "currentResolution"),
     getPersistedValue("config", "useTouchControls"),
+    getPersistedValue("config", "manualTimeOfDay"),
+    getPersistedValue("config", "dayLength"),
   ]);
+
+  if (
+    persistedManualTimeOfDay !== null &&
+    persistedManualTimeOfDay !== undefined
+  ) {
+    gameConfig.manualTimeOfDay.set(persistedManualTimeOfDay);
+  }
+
+  if (persistedDayLength !== null && persistedDayLength !== undefined) {
+    gameConfig.dayLength.set(persistedDayLength);
+  }
 
   if (persistedFastGrowth !== null && persistedFastGrowth !== undefined) {
     gameState.fastGrowth = persistedFastGrowth;
@@ -210,6 +227,10 @@ export async function restorePersistedPreferences(
     persistedUseDynamicLighting !== undefined
   ) {
     gameConfig.useDynamicLighting.set(persistedUseDynamicLighting);
+  }
+
+  if (persistedUseTimeCycle !== null && persistedUseTimeCycle !== undefined) {
+    gameConfig.useTimeCycle.set(persistedUseTimeCycle);
   }
 
   if (

@@ -10,6 +10,11 @@ import {
 } from "../../../world/meshing/chunkMesher.mjs";
 import { getBlockByName } from "../../../world/config/blocks.mjs";
 import { blocks as blockTypes } from "../../../world/config/blocks.mjs";
+import {
+  getSkyColor,
+  getSunDirection,
+  normalizeTime,
+} from "../../../world/time/timeSystem.mjs";
 
 import { I, look, mul, persp } from "../../../utils/math.mjs";
 import { ray } from "../../../utils/ray.mjs";
@@ -47,6 +52,7 @@ let isFirstFrame = true;
 
 /**
  * Linear interpolation
+ *
  * @param {number} start
  * @param {number} end
  * @param {number} t
@@ -118,11 +124,17 @@ export function gameLoop(
     gameState.gameTime = 0;
   }
 
+  // Initialize worldTime if missing (normalized 0–1)
+  if (typeof gameState.worldTime === "undefined") {
+    gameState.worldTime = 0.5; // Start at noon
+  }
+
   // Initialize previous state on first run
   if (isFirstFrame) {
     previousState.x = gameState.x;
     previousState.y = gameState.y;
     previousState.z = gameState.z;
+
     isFirstFrame = false;
   }
 
@@ -130,6 +142,7 @@ export function gameLoop(
 
   /* ================= Time Management ================= */
   const currentTime = performance.now();
+
   // Cap frame time to prevent spirals (e.g. if tab was backgrounded)
   const frameTime = Math.min(currentTime - lastFrameTime, 250);
   lastFrameTime = currentTime;
@@ -145,6 +158,7 @@ export function gameLoop(
     previousState.x = gameState.x;
     previousState.y = gameState.y;
     previousState.z = gameState.z;
+
     previousState.bobbingDistance = gameState.bobbingDistance;
     previousState.bobbingIntensity = gameState.bobbingIntensity;
 
@@ -152,16 +166,26 @@ export function gameLoop(
     updatePlayer(shadow, gameState, dtSeconds);
     updateBreaking(gameState, dtSeconds);
     updatePlacing(gameState, dtSeconds);
-    const newPos = updatePhysics(shadow, ui, gameState, dtSeconds);
     updatePlantGrowth(gameState);
 
-    // Apply physics results
+    // Physics results
+    const newPos = updatePhysics(shadow, ui, gameState, dtSeconds);
+
     gameState.x = newPos.x;
     gameState.y = newPos.y;
     gameState.z = newPos.z;
 
     // Advance game time
     gameState.gameTime += dtSeconds;
+
+    // Progress world time if time cycle is enabled
+    if (gameConfig.useTimeCycle.get()) {
+      const dayLengthSeconds = Number(gameConfig.dayLength.get());
+      const timeScaleMultiplier = gameConfig.timeScale.get();
+      const timeAdvance = (dtSeconds * timeScaleMultiplier) / dayLengthSeconds;
+
+      gameState.worldTime = normalizeTime(gameState.worldTime + timeAdvance);
+    }
 
     accumulatedTime -= FIXED_TIMESTEP;
     updates++;
@@ -181,6 +205,7 @@ export function gameLoop(
     gameState.bobbingDistance,
     alpha,
   );
+
   const renderBobbingIntensity = lerp(
     previousState.bobbingIntensity,
     gameState.bobbingIntensity,
@@ -253,8 +278,15 @@ export function gameLoop(
   gl.viewport(0, 0, cnvs.width, cnvs.height);
   gl.enable(gl.DEPTH_TEST);
 
-  // Use sky color from config
-  const [r, g, b, a] = colorMap["Air"];
+  // Compute sky color based on world time, or manual time if cycle is disabled
+  let skyColor;
+  if (gameConfig.useTimeCycle.get()) {
+    skyColor = getSkyColor(gameState.worldTime);
+  } else {
+    skyColor = getSkyColor(gameConfig.manualTimeOfDay.get());
+  }
+
+  const [r, g, b, a] = skyColor;
   gl.clearColor(r, g, b, a);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
@@ -282,13 +314,15 @@ export function gameLoop(
   gl.uniform1f(uULG, gameConfig.usePerFaceLighting.get() ? 1.0 : 0.0);
   gl.uniform1f(uUAOD, gameConfig.useAODebug.get() ? 1.0 : 0.0);
 
-  // Dynamic light direction follows a day/night cycle based on gameTime
+  // Dynamic lighting: use active cycle time if enabled, otherwise use manual override
   if (gameConfig.useDynamicLighting.get()) {
-    const sunAngle = gameState.gameTime * 0.01; // Slow rotation
-    const lx = Math.cos(sunAngle);
-    const ly = -Math.abs(Math.sin(sunAngle)) - 0.2; // Always coming from above, but varying
-    const lz = Math.sin(sunAngle);
-    gl.uniform3f(uL, lx, ly, lz);
+    // Determine time source: active cycle or manual override
+    const timeForLighting = gameConfig.useTimeCycle.get()
+      ? gameState.worldTime
+      : gameConfig.manualTimeOfDay.get();
+
+    const sunDir = getSunDirection(timeForLighting);
+    gl.uniform3f(uL, sunDir.x, sunDir.y, sunDir.z);
   } else {
     // Default "high noon" fixed light
     gl.uniform3f(uL, -0.5, -1.0, -0.3);

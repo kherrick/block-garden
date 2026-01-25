@@ -920,8 +920,25 @@ export class BlockGarden extends HTMLElement {
                     <button id="toggleTextures">Disable Textures</button>
                     <button id="toggleAO">Disable Ambient Occlusion</button>
                     <button id="toggleAODebug" hidden="hidden">Enable AO Debug</button>
-                    <button id="toggleDynamicLighting">Disable Light Cycle</button>
+                    <button id="toggleTimeCycle">Disable Time Cycle</button>
+                    <button id="toggleDynamicLighting">Disable Dynamic Cycle</button>
                     <button id="togglePerFaceLighting">Disable Per-Face Lighting</button>
+                  </div>
+
+                  <div id="manualTimeOfDayContainer" hidden>
+                    <div style="margin-top: 0.625rem; margin-bottom: 0.625rem;">
+                      <label for="manualTimeOfDayInput">Time of Day: <span id="manualTimeOfDayDisplay">12:00</span></label>
+
+                      <input type="range" id="manualTimeOfDayInput" min="0" max="1" step="0.01" style="width: 100%;" disabled>
+                    </div>
+                  </div>
+
+                  <div id="dayLengthContainer" hidden>
+                    <div style="margin-top: 0.625rem; margin-bottom: 0.625rem;">
+                      <label for="dayLengthInput">Length of Day: <span id="dayLengthDisplay">24h</span></label>
+
+                      <input type="range" id="dayLengthInput" min="1" max="2000" step="1" style="width: 100%;" disabled>
+                    </div>
                   </div>
 
                   <div>

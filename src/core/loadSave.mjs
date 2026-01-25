@@ -259,6 +259,12 @@ export async function loadSaveState(gThis, shadow, state) {
     "boolean",
   );
 
+  // Restore world time (normalized 0–1)
+  applyValue(gameState, "worldTime", stateData.worldTime, "number", {
+    min: 0,
+    max: 1,
+  });
+
   // Cancel any running game loop before reset (if available)
   if (typeof gThis.cancelGameLoop === "function") {
     gThis.cancelGameLoop();

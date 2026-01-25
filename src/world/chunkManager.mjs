@@ -9,6 +9,10 @@ import {
 import { GravityQueue } from "../core/systems/gravity.mjs";
 import { gameConfig } from "./config/index.mjs";
 import { getBlockById } from "./config/blocks.mjs";
+import {
+  propagateLight,
+  updateLightOnBlockChange,
+} from "./lighting/lightSystem.mjs";
 
 /**
  * @typedef {import('./config/blocks.mjs').BlockDefinition} BlockDefinition
@@ -96,6 +100,17 @@ export class ChunkManager {
         chunk.applyModifications(mods, metadata);
       }
 
+      // Propagate light for the newly generated/restored chunk
+      if (this.blockTypes) {
+        propagateLight(
+          chunk,
+          /** @type {import('./config/blocks.mjs').BlockArray} */ (
+            this.blockTypes
+          ),
+          this,
+        );
+      }
+
       chunk.dirty = true;
     }
   }
@@ -154,6 +169,18 @@ export class ChunkManager {
     }
 
     chunk.restored = true;
+
+    // Propagate light after persistence restore
+    if (this.blockTypes) {
+      propagateLight(
+        chunk,
+        /** @type {import('./config/blocks.mjs').BlockArray} */ (
+          this.blockTypes
+        ),
+        this,
+      );
+    }
+
     chunk.dirty = true;
   }
 
@@ -252,10 +279,19 @@ export class ChunkManager {
    * @param {number} type - Block type (0 = air)
    * @param {boolean} [isPlayerChange=false] - Whether this is a player modification
    * @param {Object} [metadata=null] - Optional metadata for the block
+   * @param {boolean} [skipLighting=false] - If true, lighting updates are deferred
    *
    * @returns {boolean} True if block was set
    */
-  setBlock(x, y, z, type, isPlayerChange = false, metadata = null) {
+  setBlock(
+    x,
+    y,
+    z,
+    type,
+    isPlayerChange = false,
+    metadata = null,
+    skipLighting = false,
+  ) {
     if (y <= 0 || y >= CHUNK_SIZE_Y) {
       return false;
     }
@@ -281,6 +317,29 @@ export class ChunkManager {
         if (blockDef && blockDef.gravity) {
           this.gravityQueue.enqueue(floorX, floorY, floorZ);
         }
+
+        // Track emissive blocks
+        if (blockDef && blockDef.emissive > 0) {
+          chunk.emissiveBlocks.add(`${localX},${floorY},${localZ}`);
+        } else {
+          chunk.emissiveBlocks.delete(`${localX},${floorY},${localZ}`);
+        }
+      } else if (type === 0) {
+        // Air block: remove from emissives
+        chunk.emissiveBlocks.delete(`${localX},${floorY},${localZ}`);
+      }
+
+      // Update light levels
+      if (this.blockTypes && !skipLighting) {
+        updateLightOnBlockChange(
+          this,
+          floorX,
+          floorY,
+          floorZ,
+          /** @type {import('./config/blocks.mjs').BlockArray} */ (
+            this.blockTypes
+          ),
+        );
       }
     }
 
@@ -666,10 +725,16 @@ export class ChunkManager {
   /**
    * Set block at key.
    */
-  set(key, type, isPlayerChange = false, metadata = null) {
+  set(
+    key,
+    type,
+    isPlayerChange = false,
+    metadata = null,
+    skipLighting = false,
+  ) {
     const [x, y, z] = key.split(",").map(Number);
 
-    this.setBlock(x, y, z, type, isPlayerChange, metadata);
+    this.setBlock(x, y, z, type, isPlayerChange, metadata, skipLighting);
 
     return this;
   }

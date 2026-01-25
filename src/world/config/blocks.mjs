@@ -13,6 +13,7 @@
  * @property {number|null} [breakTime=0] - How long it takes to break a block
  * @property {number} [growthTime] - Time in seconds for plant to grow
  * @property {number} [friction=0] - Friction value when player moves through block (0-1). 0=no friction, 1=full stop. Future use for water, lava, leaves, etc.
+ * @property {number} [emissive=0] - Light emission level (0-15). 0=none, 14=torch, 15=max/sun. Light propagates to nearby blocks.
  */
 
 /**
@@ -164,6 +165,9 @@ export const blockNames = {
   WOOD: "Wood",
   LINK: "Link",
   TEXT: "Text",
+  TORCH: "Torch",
+  LANTERN: "Lantern",
+  GLOWSTONE: "Glowstone",
 };
 
 export const FAST_GROWTH_TIME = 30;
@@ -1103,6 +1107,30 @@ const blockDefinitionsArray = [
     breakTime: 30,
     drops: null,
     solid: true,
+  },
+  {
+    name: blockNames.TORCH,
+    id: 132,
+    breakTime: 0.1,
+    drops: "TORCH",
+    solid: false,
+    emissive: 10,
+  },
+  {
+    name: blockNames.LANTERN,
+    id: 133,
+    breakTime: 0.3,
+    drops: "LANTERN",
+    solid: true,
+    emissive: 15,
+  },
+  {
+    name: blockNames.GLOWSTONE,
+    id: 134,
+    breakTime: 0.5,
+    drops: "GLOWSTONE",
+    solid: true,
+    emissive: 20,
   },
 ];
 

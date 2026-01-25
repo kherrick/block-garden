@@ -108,6 +108,9 @@ export const colors = {
     "wood-brown": "#362200",
     "yellow-400": "#ffff00",
     "yellow-green-400": "#9acd32",
+    "torch-orange": "#ff9933",
+    "lantern-gold": "#ffcc00",
+    "glowstone-yellow": "#ffffaa",
   },
   ui: {
     "touch-btn-background": "var(--bg-color-black-alpha-60)",
@@ -243,5 +246,8 @@ export const colors = {
     "willow-tree": "var(--bg-color-medium-slate-blue)",
     "willow-trunk": "var(--bg-color-dark-tan)",
     wood: "var(--bg-color-wood-brown)",
+    torch: "var(--bg-color-torch-orange)",
+    lantern: "var(--bg-color-lantern-gold)",
+    glowstone: "var(--bg-color-glowstone-yellow)",
   },
 };

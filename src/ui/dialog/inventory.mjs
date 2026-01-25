@@ -1,5 +1,6 @@
 import { gameConfig } from "../../world/config/index.mjs";
 import { getBlockIdByName } from "../../world/config/getBlockIdByName.mjs";
+
 import { setMaterialBarItem } from "../../core/systems/game/state.mjs";
 
 export class InventoryDialog {
@@ -12,16 +13,20 @@ export class InventoryDialog {
     this.gThis = globalThis;
     this.doc = doc;
     this.shadow = shadow;
+
     this.dialog = null;
     this.isOpen = false;
     this.blockColors = {};
+
     this.initBlockColors();
+
     this.handleClose = this.handleClose.bind(this);
   }
 
   async initBlockColors() {
     try {
       const colorsModule = await import("../../world/config/colors.mjs");
+
       this.blockColors = colorsModule.colors.block || {};
     } catch (e) {
       console.error("Failed to load block colors", e);
@@ -81,6 +86,11 @@ export class InventoryDialog {
           width: 2rem;
         }
 
+        .inventory-slot.is-seed {
+          background-color: rgba(76, 175, 80, 0.3);
+          box-shadow: inset 0 0 10px rgba(76, 175, 80, 0.2);
+        }
+
         .cube-face {
           border: 0.0625rem solid rgba(0, 0, 0, 0.3);
           height: 2rem;
@@ -105,18 +115,34 @@ export class InventoryDialog {
         .inventory-slot-name {
           color: var(--bg-color-white);
           font-size: 0.625rem;
-          line-height: 1;
-          max-width: 3rem;
+          line-height: 1.1;
+          max-width: 4rem;
           text-align: center;
           text-shadow: 0 0 2px black;
           word-break: break-word;
         }
+
+        .inventory-category-title {
+          background: linear-gradient(90deg, rgba(255,255,255,0.1) 0%, transparent 100%);
+          border-left: 0.25rem solid var(--bg-color-gray-500);
+          color: var(--bg-color-gray-300);
+          font-size: 0.75rem;
+          grid-column: 1 / -1;
+          margin-bottom: 0.5rem;
+          margin-top: 1rem;
+          padding: 0.25rem 0.75rem;
+          text-transform: uppercase;
+        }
+
+        .inventory-category-title:first-of-type {
+          margin-top: 0;
+        }
       </style>
-      <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
-        <h3 style="margin: 0">Material Inventory</h3>
-        <button id="closeInventoryDialog" autofocus="autofocus" style="background: var(--bg-color-red-500); border: none; color: white; border-radius: 0.25rem; cursor: pointer; padding: 0.25rem 0.5rem;">&times;</button>
+      <div style="display: flex; justify-content: space-between; margin-bottom: 1.5rem;">
+        <h3 style="margin: 0; font-size: 1.25rem; letter-spacing: 0.05rem;">Material Inventory</h3>
+        <button id="closeInventoryDialog" autofocus="autofocus" style="background: var(--bg-color-red-500); border: none; color: white; border-radius: 0.25rem; cursor: pointer; padding: 0.25rem 1rem; font-weight: bold;">&times;</button>
       </div>
-      <div id="inventoryGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(4rem, 1fr)); gap: 0.5rem;">
+      <div id="inventoryGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(5rem, 1fr)); gap: 0.75rem;">
         <!-- Blocks will be populated here -->
       </div>
     `;
@@ -138,16 +164,98 @@ export class InventoryDialog {
     const grid = this.dialog.querySelector("#inventoryGrid");
     const blocks = gameConfig.blocks;
 
-    grid.innerHTML = blocks
+    // Identify all seed blocks for grouping
+    const seeds = blocks.filter((b) => b.isSeed);
+    const plantPrefixes = seeds.flatMap((s) => {
+      const prefixes = [s.name];
+      if (s.name.endsWith(" Tree")) {
+        prefixes.push(s.name.replace(" Tree", ""));
+      }
+
+      return prefixes;
+    });
+
+    // Categorize all blocks
+    const categories = {
+      plants: { title: "🌱 Plants & Seeds", blocks: [] },
+      natural: { title: "⛰️ Natural Materials", blocks: [] },
+      system: { title: "⚙️ System Utilities", blocks: [] },
+      lighting: { title: "🏮 Lighting", blocks: [] },
+    };
+
+    blocks
       .filter((block) => block.name !== "Air")
-      .map((block) => {
+      .forEach((block) => {
+        const name = block.name.toUpperCase();
+
+        // System
+        if (name === "LINK" || name === "TEXT") {
+          categories.system.blocks.push(block);
+        }
+        // Lighting
+        else if (block.emissive > 0) {
+          categories.lighting.blocks.push(block);
+        }
+        // Plants
+        else if (
+          block.isSeed ||
+          block.crop ||
+          plantPrefixes.some((p) => block.name.startsWith(p))
+        ) {
+          categories.plants.blocks.push(block);
+        }
+        // Natural
+        else {
+          categories.natural.blocks.push(block);
+        }
+      });
+
+    // Special sorting for Plants: Group by plant type, seed first
+    categories.plants.blocks.sort((a, b) => {
+      // Find the root plant name for both
+      const rootA = plantPrefixes.find((p) => a.name.startsWith(p)) || a.name;
+      const rootB = plantPrefixes.find((p) => b.name.startsWith(p)) || b.name;
+
+      if (rootA !== rootB) {
+        return rootA.localeCompare(rootB);
+      }
+
+      // Within the same plant, seed always comes first
+      if (a.isSeed) {
+        return -1;
+      }
+
+      if (b.isSeed) {
+        return 1;
+      }
+
+      return a.name.localeCompare(b.name);
+    });
+
+    // Sort other categories alphabetically
+    const alphaSort = (a, b) => a.name.localeCompare(b.name);
+    categories.natural.blocks.sort(alphaSort);
+    categories.system.blocks.sort(alphaSort);
+    categories.lighting.blocks.sort(alphaSort);
+
+    // Build HTML
+    let html = "";
+    Object.values(categories).forEach((cat) => {
+      if (cat.blocks.length === 0) return;
+
+      html += `<div class="inventory-category-title">${cat.title}</div>`;
+
+      cat.blocks.forEach((block) => {
         const blockNameKey = block.name.toLowerCase().replace(/ /g, "-");
+
         const colorVar =
           this.blockColors[blockNameKey] || `var(--bg-color-gray-500)`;
 
-        return `
+        const isSeedClass = block.isSeed ? "is-seed" : "";
+
+        html += `
           <div
-            class="inventory-slot"
+            class="inventory-slot ${isSeedClass}"
             data-id="${getBlockIdByName(block.name)}"
             tabindex="0"
             title="${block.name}"
@@ -158,17 +266,21 @@ export class InventoryDialog {
               <div class="cube-face cube-right" style="background-color: ${colorVar};"></div>
             </div>
             <div class="inventory-slot-name">${block.name}</div>
-         </div>
-       `;
-      })
-      .join("");
+          </div>
+        `;
+      });
+    });
+
+    grid.innerHTML = html;
 
     grid.querySelectorAll(".inventory-slot").forEach((slot) => {
       slot.addEventListener("click", (e) => {
         const target =
           e.currentTarget instanceof HTMLElement ? e.currentTarget : null;
+
         if (target) {
           const id = Number(target.dataset.id);
+
           this.handleBlockClick(id);
         }
       });
@@ -179,8 +291,10 @@ export class InventoryDialog {
 
           const target =
             e.currentTarget instanceof HTMLElement ? e.currentTarget : null;
+
           if (target) {
             const id = Number(target.dataset.id);
+
             this.handleBlockClick(id);
           }
         }
@@ -206,7 +320,9 @@ export class InventoryDialog {
     if (!this.dialog) {
       this.createDialog();
     }
+
     this.dialog.showModal();
+
     this.isOpen = true;
 
     const autofocusElement = this.dialog.querySelector("[autofocus]");

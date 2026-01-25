@@ -72,6 +72,16 @@ export function drawChunkMesh(gl, chunk, VP, uMVP, uM) {
     gl.disableVertexAttribArray(6);
   }
 
+  // Bind light level buffer (emissive)
+  if (mesh.lightBuffer) {
+    gl.bindBuffer(gl.ARRAY_BUFFER, mesh.lightBuffer);
+    gl.enableVertexAttribArray(7);
+    gl.vertexAttribPointer(7, 1, gl.FLOAT, false, 0, 0);
+  } else {
+    gl.disableVertexAttribArray(7);
+    gl.vertexAttrib1f(7, 0.0);
+  }
+
   // Set uniforms - identity model matrix since positions are in world space
   const M = I();
   gl.uniformMatrix4fv(uMVP, false, VP);

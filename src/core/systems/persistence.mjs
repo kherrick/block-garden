@@ -103,6 +103,7 @@ export async function restorePersistedPreferences(
 ) {
   const [
     persistedFastGrowth,
+    persistedWorldTime,
     persistedLinkGameSave,
     persistedUseSplitControls,
     persistedUseBlockHighlight,
@@ -120,6 +121,7 @@ export async function restorePersistedPreferences(
     persistedDayLength,
   ] = await Promise.all([
     getPersistedValue("state", "fastGrowth"),
+    getPersistedValue("state", "worldTime"),
     getPersistedValue("config", "linkGameSave"),
     getPersistedValue("config", "useSplitControls"),
     getPersistedValue("config", "useBlockHighlight"),
@@ -146,6 +148,10 @@ export async function restorePersistedPreferences(
 
   if (persistedDayLength !== null && persistedDayLength !== undefined) {
     gameConfig.dayLength.set(persistedDayLength);
+  }
+
+  if (persistedWorldTime !== null && persistedWorldTime !== undefined) {
+    gameState.worldTime = persistedWorldTime;
   }
 
   if (persistedFastGrowth !== null && persistedFastGrowth !== undefined) {

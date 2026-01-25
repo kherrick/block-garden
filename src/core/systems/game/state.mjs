@@ -24,6 +24,7 @@ import { ChunkManager } from "../../../world/chunkManager.mjs";
  * @property {boolean} spacePressed
  * @property {boolean} isCanvasActionDisabled
  * @property {ChunkManager} world
+ * @property {number} worldTime
  * @property {number} actionKeyPressTime
  * @property {number} lastSpacePressTime
  * @property {number} flySpeed
@@ -125,6 +126,7 @@ export function setMaterialBarItem(blockId) {
 export const gameState = {
   curBlock: new Signal.State(getBlockIdByName("Dirt")),
   world: new ChunkManager(),
+  worldTime: 0.5,
   seed: initialWorldSeed,
   yaw: 0,
   pitch: 0,

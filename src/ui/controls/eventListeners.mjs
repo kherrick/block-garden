@@ -414,6 +414,21 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
         signal.set(newValue);
 
         await persistValue("config", configKey, newValue);
+
+        // sync world time with manual time
+        if (configKey === "useTimeCycle") {
+          if (newValue) {
+            const newWorldTime = config.manualTimeOfDay.get();
+
+            await persistValue("state", "worldTime", newWorldTime);
+            gameState.worldTime = newWorldTime;
+          } else {
+            const newManualTime = gameState.worldTime;
+
+            await persistValue("config", "manualTimeOfDay", newManualTime);
+            config.manualTimeOfDay.set(newManualTime);
+          }
+        }
       });
     }
   };
@@ -1862,9 +1877,13 @@ function initGenerationControlListeners(shadow) {
     manualTimeInput.addEventListener("input", async (e) => {
       if (e.target instanceof HTMLInputElement) {
         const newValue = parseFloat(e.target.value);
-        gameConfig.manualTimeOfDay.set(Math.max(0, Math.min(1, newValue)));
+        const val = Math.max(0, Math.min(1, newValue));
+
+        gameConfig.manualTimeOfDay.set(val);
+        gameState.worldTime = val;
 
         await persistValue("config", "manualTimeOfDay", newValue);
+        await persistValue("state", "worldTime", newValue);
       }
     });
   }
@@ -1912,38 +1931,160 @@ function initGenerationControlListeners(shadow) {
 
   const applyDefaultPreset = shadow.getElementById("applyDefaultPreset");
   if (applyDefaultPreset) {
-    applyDefaultPreset.addEventListener("click", () => {
+    applyDefaultPreset.addEventListener("click", async () => {
       gameState.fastGrowth = false;
       gameState.flying.set(false);
 
       gameConfig.useTouchControls.set(CONFIG_DEFAULTS.USE_TOUCH_CONTROLS);
+      await persistValue(
+        "config",
+        "useTouchControls",
+        CONFIG_DEFAULTS.USE_TOUCH_CONTROLS,
+      );
+
       gameConfig.useAutoJump.set(CONFIG_DEFAULTS.USE_AUTO_JUMP);
+      await persistValue(
+        "config",
+        "useAutoJump",
+        CONFIG_DEFAULTS.USE_AUTO_JUMP,
+      );
+
       gameConfig.linkGameSave.set(CONFIG_DEFAULTS.LINK_GAME_SAVE);
+      await persistValue(
+        "config",
+        "linkGameSave",
+        CONFIG_DEFAULTS.LINK_GAME_SAVE,
+      );
+
       gameConfig.useSplitControls.set(CONFIG_DEFAULTS.USE_SPLIT_CONTROLS);
+      await persistValue(
+        "config",
+        "useSplitControls",
+        CONFIG_DEFAULTS.USE_SPLIT_CONTROLS,
+      );
 
       gameConfig.currentResolution.set(CONFIG_DEFAULTS.CURRENT_RESOLUTION);
+      await persistValue(
+        "config",
+        "currentResolution",
+        CONFIG_DEFAULTS.CURRENT_RESOLUTION,
+      );
+
       gameConfig.useBlockHighlight.set(CONFIG_DEFAULTS.USE_BLOCK_HIGHLIGHT);
+      await persistValue(
+        "config",
+        "useBlockHighlight",
+        CONFIG_DEFAULTS.USE_BLOCK_HIGHLIGHT,
+      );
+
       gameConfig.useDamageAnimation.set(CONFIG_DEFAULTS.USE_DAMAGE_ANIMATION);
+      await persistValue(
+        "config",
+        "useDamageAnimation",
+        CONFIG_DEFAULTS.USE_DAMAGE_ANIMATION,
+      );
+
       gameConfig.useTextureAtlas.set(CONFIG_DEFAULTS.USE_TEXTURE_ATLAS);
+      await persistValue(
+        "config",
+        "useTextureAtlas",
+        CONFIG_DEFAULTS.USE_TEXTURE_ATLAS,
+      );
+
       gameConfig.useAmbientOcclusion.set(CONFIG_DEFAULTS.USE_AMBIENT_OCCLUSION);
+      await persistValue(
+        "config",
+        "useAmbientOcclusion",
+        CONFIG_DEFAULTS.USE_AMBIENT_OCCLUSION,
+      );
+
       gameConfig.useAODebug.set(CONFIG_DEFAULTS.USE_AO_DEBUG);
+      await persistValue("config", "useAODebug", CONFIG_DEFAULTS.USE_AO_DEBUG);
+
       gameConfig.useTimeCycle.set(CONFIG_DEFAULTS.USE_TIME_CYCLE);
+      await persistValue(
+        "config",
+        "useTimeCycle",
+        CONFIG_DEFAULTS.USE_TIME_CYCLE,
+      );
+
       gameConfig.useDynamicLighting.set(CONFIG_DEFAULTS.USE_DYNAMIC_LIGHTING);
+      await persistValue(
+        "config",
+        "useDynamicLighting",
+        CONFIG_DEFAULTS.USE_DYNAMIC_LIGHTING,
+      );
+
       gameConfig.usePerFaceLighting.set(CONFIG_DEFAULTS.USE_PER_FACE_LIGHTING);
+      await persistValue(
+        "config",
+        "usePerFaceLighting",
+        CONFIG_DEFAULTS.USE_PER_FACE_LIGHTING,
+      );
 
       gameConfig.dayLength.set(CONFIG_DEFAULTS.DAY_LENGTH);
+      await persistValue("config", "dayLength", CONFIG_DEFAULTS.DAY_LENGTH);
+
       gameConfig.manualTimeOfDay.set(CONFIG_DEFAULTS.MANUAL_TIME_OF_DAY);
+      await persistValue(
+        "config",
+        "manualTimeOfDay",
+        CONFIG_DEFAULTS.MANUAL_TIME_OF_DAY,
+      );
+
       gameConfig.worldRadius.set(CONFIG_DEFAULTS.WORLD_RADIUS);
+      await persistValue("config", "worldRadius", CONFIG_DEFAULTS.WORLD_RADIUS);
+
       gameConfig.viewRadius.set(CONFIG_DEFAULTS.VIEW_RADIUS);
+      await persistValue("config", "viewRadius", CONFIG_DEFAULTS.VIEW_RADIUS);
+
       gameConfig.renderRadius.set(CONFIG_DEFAULTS.RENDER_RADIUS);
+      await persistValue(
+        "config",
+        "renderRadius",
+        CONFIG_DEFAULTS.RENDER_RADIUS,
+      );
+
       gameConfig.cacheRadius.set(CONFIG_DEFAULTS.CACHE_RADIUS);
+      await persistValue("config", "cacheRadius", CONFIG_DEFAULTS.CACHE_RADIUS);
 
       gameConfig.terrainOctaves.set(CONFIG_DEFAULTS.TERRAIN_OCTAVES);
+      await persistValue(
+        "config",
+        "terrainOctaves",
+        CONFIG_DEFAULTS.TERRAIN_OCTAVES,
+      );
+
       gameConfig.mountainScale.set(CONFIG_DEFAULTS.MOUNTAIN_SCALE);
+      await persistValue(
+        "config",
+        "mountainScale",
+        CONFIG_DEFAULTS.MOUNTAIN_SCALE,
+      );
+
       gameConfig.decorationDensity.set(CONFIG_DEFAULTS.DECORATION_DENSITY);
+      await persistValue(
+        "config",
+        "decorationDensity",
+        CONFIG_DEFAULTS.DECORATION_DENSITY,
+      );
+
       gameConfig.cloudDensity.set(CONFIG_DEFAULTS.CLOUD_DENSITY);
+      await persistValue(
+        "config",
+        "cloudDensity",
+        CONFIG_DEFAULTS.CLOUD_DENSITY,
+      );
+
       gameConfig.caveThreshold.set(CONFIG_DEFAULTS.CAVE_THRESHOLD);
+      await persistValue(
+        "config",
+        "caveThreshold",
+        CONFIG_DEFAULTS.CAVE_THRESHOLD,
+      );
+
       gameConfig.useCaves.set(CONFIG_DEFAULTS.USE_CAVES);
+      await persistValue("config", "useCaves", CONFIG_DEFAULTS.USE_CAVES);
 
       showToast(shadow, "Applied Defaults");
     });

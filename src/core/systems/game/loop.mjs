@@ -4,33 +4,33 @@ import { drawChunkMesh } from "../../../render/draw/chunkMesh.mjs";
 import { drawCrosshairs } from "../../../render/draw/crossHairs.mjs";
 import { drawSelectionHighlight } from "../../../render/draw/selectionHighlight.mjs";
 
+import { getBlockByName } from "../../../world/config/blocks.mjs";
+import { blocks as blockTypes } from "../../../world/config/blocks.mjs";
+import {
+  getBlendedLightDirection,
+  getSkyColor,
+  normalizeTime,
+} from "../../../world/time/timeSystem.mjs";
+
 import {
   deleteChunkMesh,
   smartMeshChunk,
   uploadChunkMesh,
 } from "../../../world/meshing/chunkMesher.mjs";
-import { getBlockByName } from "../../../world/config/blocks.mjs";
-import { blocks as blockTypes } from "../../../world/config/blocks.mjs";
-import {
-  getBlendedLightDirection,
-  getCelestialVisibility,
-  getMoonDirection,
-  getSkyColor,
-  getSunDirection,
-  normalizeTime,
-} from "../../../world/time/timeSystem.mjs";
 
 import { I, look, mul, persp } from "../../../utils/math.mjs";
 import { ray } from "../../../utils/ray.mjs";
 import { updateBreaking, updatePlacing } from "../../../utils/interaction.mjs";
 
+import { updateWorld } from "../../systems/world.mjs";
 import { updatePlayer } from "../../systems/player.mjs";
 import { updatePhysics } from "../../systems/physics.mjs";
 import {
   updatePlantGrowth,
   updateStructure,
 } from "../../systems/plantGrowth.mjs";
-import { updateWorld } from "../../systems/world.mjs";
+
+import { persistValue } from "../persistence.mjs";
 
 /** @typedef {import("../../../utils/ray.mjs").PointWithFace} PointWithFace */
 
@@ -91,6 +91,7 @@ let lastRenderZ = 0;
  * @param {Object} uUAOD
  * @param {Object} celestialContext
  * @param {WebGLProgram} worldProgram
+ * @param {WebGLUniformLocation} uMinLight
  */
 export function gameLoop(
   shadow,
@@ -120,6 +121,7 @@ export function gameLoop(
   breakUvbuf,
   celestialContext,
   worldProgram,
+  uMinLight,
 ) {
   if (gameState.shouldReset.get()) {
     gameState.shouldReset.set(false);
@@ -135,6 +137,8 @@ export function gameLoop(
   // Initialize worldTime if missing (normalized 0–1)
   if (typeof gameState.worldTime === "undefined") {
     gameState.worldTime = 0.5; // Start at noon
+
+    persistValue("state", "worldTime", gameState.worldTime);
   }
 
   // Initialize previous state on first run
@@ -326,6 +330,17 @@ export function gameLoop(
   gl.uniform1f(uULG, gameConfig.usePerFaceLighting.get() ? 1.0 : 0.0);
   gl.uniform1f(uUAOD, gameConfig.useAODebug.get() ? 1.0 : 0.0);
 
+  // Set minimum ambient light floor based on time of day
+  // Night: nearly dark (0.05), Day: ambient level (0.3)
+  const timeForMinLight = gameConfig.useTimeCycle.get()
+    ? gameState.worldTime
+    : gameConfig.manualTimeOfDay.get();
+
+  const isNight = timeForMinLight < 0.2 || timeForMinLight > 0.8;
+  const minLightVal = isNight ? 0.05 : 0.3;
+
+  gl.uniform1f(uMinLight, minLightVal);
+
   // Dynamic lighting: use active cycle time if enabled, otherwise use manual override
   if (gameConfig.useDynamicLighting.get()) {
     // Determine time source: active cycle or manual override
@@ -496,6 +511,7 @@ export function gameLoop(
       breakUvbuf,
       celestialContext,
       worldProgram,
+      uMinLight,
     ),
   );
 }

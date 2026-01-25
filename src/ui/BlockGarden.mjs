@@ -956,9 +956,9 @@ export class BlockGarden extends HTMLElement {
                     <button id="toggleTextures">Disable Textures</button>
                     <button id="toggleAO">Disable Ambient Occlusion</button>
                     <button id="toggleAODebug" hidden="hidden">Enable AO Debug</button>
-                    <button id="toggleTimeCycle">Disable Time Cycle</button>
-                    <button id="toggleDynamicLighting">Disable Dynamic Cycle</button>
                     <button id="togglePerFaceLighting">Disable Per-Face Lighting</button>
+                    <button id="toggleDynamicLighting">Disable Dynamic Cycle</button>
+                    <button id="toggleTimeCycle">Disable Time Cycle</button>
                   </div>
 
                   <div id="manualTimeOfDayContainer" hidden>

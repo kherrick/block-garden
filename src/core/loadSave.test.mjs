@@ -256,9 +256,9 @@ describe("loadSaveState", () => {
     await loadSaveState(globalThis, globalThis.shadow, saveState);
 
     // Verify blocks are loaded with their IDs
-    expect(mockWorld.set).toHaveBeenCalledWith("0,10,0", 2, false, null); // Dirt
-    expect(mockWorld.set).toHaveBeenCalledWith("5,15,5", 1, false, null); // Grass
-    expect(mockWorld.set).toHaveBeenCalledWith("16,20,0", 3, false, null); // Stone
+    expect(mockWorld.set).toHaveBeenCalledWith("0,10,0", 2, false, null, true); // Dirt
+    expect(mockWorld.set).toHaveBeenCalledWith("5,15,5", 1, false, null, true); // Grass
+    expect(mockWorld.set).toHaveBeenCalledWith("16,20,0", 3, false, null, true); // Stone
   });
 
   test("should restore player position from save state", async () => {
@@ -381,8 +381,8 @@ describe("loadSaveState", () => {
     expect(result).toBe(true);
 
     // Should load blocks even from old format
-    expect(mockWorld.set).toHaveBeenCalledWith("0,10,0", 2, false, null);
-    expect(mockWorld.set).toHaveBeenCalledWith("5,15,5", 1, false, null);
+    expect(mockWorld.set).toHaveBeenCalledWith("0,10,0", 2, false, null, true);
+    expect(mockWorld.set).toHaveBeenCalledWith("5,15,5", 1, false, null, true);
   });
 
   test("should dispatch reset event when loading completes", async () => {

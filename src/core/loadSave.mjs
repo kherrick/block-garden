@@ -5,9 +5,14 @@ import { extractAttachments } from "../utils/extractAttachments.mjs";
 import { extractJsonFromPng } from "../utils/canvasToPngWithState.mjs";
 import { initNoise } from "../utils/noise.mjs";
 import { worldToChunk } from "../world/meshing/chunk.mjs";
+import { propagateLight } from "../world/lighting/lightSystem.mjs";
 
 /**
  * @typedef {import('signal-polyfill').Signal} Signal
+ */
+
+/**
+ * @typedef {import('../world/config/blocks.mjs').BlockArray} BlockArray
  */
 
 /**
@@ -384,8 +389,8 @@ export async function loadSaveState(gThis, shadow, state) {
         // Load metadata if it exists
         const metadata = ys.metadata ? ys.metadata[yStr] : null;
 
-        // Load block by its ID
-        world.set(`${x},${y},${z}`, Number(blockId), false, metadata);
+        // Load block by its ID (skip lighting during batch load)
+        world.set(`${x},${y},${z}`, Number(blockId), false, metadata, true);
 
         // Mark chunk as generated to prevent terrain worker from overwriting save data
         const { chunkX, chunkZ } = worldToChunk(x, z);
@@ -399,6 +404,19 @@ export async function loadSaveState(gThis, shadow, state) {
       });
     });
   });
+
+  // Batch light propagation after all blocks are loaded
+  if (gameState.world.blockTypes) {
+    for (const chunk of gameState.world.chunks.values()) {
+      propagateLight(
+        chunk,
+        /** @type {BlockArray} */ (gameState.world.blockTypes),
+        gameState.world,
+      );
+
+      chunk.dirty = true;
+    }
+  }
 
   const t1 = performance.now();
   console.log(`World loading of ${worldKeys.length} columns took ${t1 - t0}ms`);

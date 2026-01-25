@@ -536,6 +536,7 @@ export function meshChunk(colorMap, chunk, chunkManager, blockDefs) {
   const ao = [];
   const localUVs = [];
   const cornerAO = [];
+  const lightLevels = [];
 
   const baseX = chunk.worldX;
   const baseZ = chunk.worldZ;
@@ -642,6 +643,13 @@ export function meshChunk(colorMap, chunk, chunkManager, blockDefs) {
               normals.push(dx, dy, dz);
               colors.push(r, g, b, a_val);
 
+              // Light level: Get light at the face position
+              const lightVal = chunk.lightMap
+                ? chunk.lightMap.get(x + dx, y + dy, z + dz)
+                : 0;
+              // Convert 0-15 to 0.0-1.0 (linear for now, let shader handle curve if needed)
+              lightLevels.push(lightVal / 15);
+
               const uvCoord = faceExtra.uvs[v];
               uvs.push(
                 uBase + uvCoord[0] * tileSize,
@@ -684,12 +692,14 @@ export function meshChunk(colorMap, chunk, chunkManager, blockDefs) {
     ao: new Float32Array(ao),
     localUVs: new Float32Array(localUVs),
     cornerAO: new Float32Array(cornerAO),
+    lightLevels: new Float32Array(lightLevels),
     vertexCount: positions.length / 3,
     positionBuffer: null,
     normalBuffer: null,
     colorBuffer: null,
     uvBuffer: null,
     aoBuffer: null,
+    lightBuffer: null,
     localUVBuffer: null,
     cornerAOBuffer: null,
   };
@@ -747,6 +757,7 @@ export function greedyMeshChunk(colorMap, chunk, chunkManager, blockDefs) {
   const ao = [];
   const localUVs = [];
   const cornerAO = [];
+  const lightLevels = [];
   const indices = [];
 
   let vertexIndex = 0;
@@ -784,10 +795,15 @@ export function greedyMeshChunk(colorMap, chunk, chunkManager, blockDefs) {
           coords[v] = vPos;
 
           const [x, y, z] = coords;
-          if (y === 0) continue; // bedrock check
+          if (y === 0) {
+            // bedrock check
+            continue;
+          }
 
           const type = chunk.getBlock(x, y, z);
-          if (type === 0) continue;
+          if (type === 0) {
+            continue;
+          }
 
           // Check neighbor in the face direction
           const neighborCoords = [x, y, z];
@@ -803,7 +819,9 @@ export function greedyMeshChunk(colorMap, chunk, chunkManager, blockDefs) {
           );
 
           const block = blockDefs.getById(type);
-          if (!block) continue;
+          if (!block) {
+            continue;
+          }
 
           const [r, g, b, a] = colorMap[block.name] || [1, 1, 1, 1];
           const isThisTransparent = Number(a) < 1.0;
@@ -812,6 +830,12 @@ export function greedyMeshChunk(colorMap, chunk, chunkManager, blockDefs) {
             neighborType,
             blockDefs,
           );
+
+          // For greedy meshing, light levels must match
+          // We'll bake this into the mask by XORing or similar, but for now
+          // let's just use the current logic and fetch light later.
+          // Note: if lighting changes, we'd ideally want to split quads.
+          // For now, quads will have consistent light based on their origin.
 
           let shouldRender = false;
           if (neighborType === 0) {
@@ -834,6 +858,7 @@ export function greedyMeshChunk(colorMap, chunk, chunkManager, blockDefs) {
           const type = mask[uPos + vPos * uSize];
           if (type === 0) {
             uPos++;
+
             continue;
           }
 
@@ -853,9 +878,11 @@ export function greedyMeshChunk(colorMap, chunk, chunkManager, blockDefs) {
             for (let w = 0; w < width; w++) {
               if (mask[uPos + w + (vPos + height) * uSize] !== type) {
                 canExtend = false;
+
                 break;
               }
             }
+
             if (canExtend) height++;
           }
 
@@ -920,6 +947,22 @@ export function greedyMeshChunk(colorMap, chunk, chunkManager, blockDefs) {
             normals.push(...norm);
             colors.push(r, g, b, a_val);
 
+            // Use world coordinates or simplified axis lookup.
+            const lightCoords = [0, 0, 0];
+            lightCoords[axis] = d + dir;
+            lightCoords[u] = uPos;
+            lightCoords[v] = vPos;
+
+            const lVal = chunk.lightMap
+              ? chunk.lightMap.get(
+                  lightCoords[0],
+                  lightCoords[1],
+                  lightCoords[2],
+                )
+              : 0;
+
+            lightLevels.push(lVal / 15);
+
             // UVs: map quad corners to atlas tile corners
             // Corner order: 0=(0,0), 1=(w,0), 2=(w,h), 3=(0,h) in UV space
             const uvCoords = [
@@ -928,6 +971,7 @@ export function greedyMeshChunk(colorMap, chunk, chunkManager, blockDefs) {
               [width, height],
               [0, height],
             ][j];
+
             uvs.push(
               uBase + (uvCoords[0] / width) * tileSize,
               vBase + (uvCoords[1] / height) * tileSize,
@@ -966,6 +1010,7 @@ export function greedyMeshChunk(colorMap, chunk, chunkManager, blockDefs) {
               vertexIndex + 2,
             );
           }
+
           vertexIndex += 4;
 
           // Clear mask for merged region
@@ -974,6 +1019,7 @@ export function greedyMeshChunk(colorMap, chunk, chunkManager, blockDefs) {
               mask[uPos + w + (vPos + h) * uSize] = 0;
             }
           }
+
           uPos += width;
         }
       }
@@ -988,6 +1034,7 @@ export function greedyMeshChunk(colorMap, chunk, chunkManager, blockDefs) {
     ao: new Float32Array(ao),
     localUVs: new Float32Array(localUVs),
     cornerAO: new Float32Array(cornerAO),
+    lightLevels: new Float32Array(lightLevels),
     indices: new Uint16Array(indices),
     vertexCount: positions.length / 3,
     indexCount: indices.length,
@@ -996,6 +1043,7 @@ export function greedyMeshChunk(colorMap, chunk, chunkManager, blockDefs) {
     colorBuffer: null,
     uvBuffer: null,
     aoBuffer: null,
+    lightBuffer: null,
     localUVBuffer: null,
     cornerAOBuffer: null,
     indexBuffer: null,
@@ -1115,6 +1163,7 @@ export function uploadChunkMesh(gl, chunk) {
     if (!mesh.uvBuffer) {
       mesh.uvBuffer = gl.createBuffer();
     }
+
     gl.bindBuffer(gl.ARRAY_BUFFER, mesh.uvBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, mesh.uvs, gl.STATIC_DRAW);
   }
@@ -1133,6 +1182,7 @@ export function uploadChunkMesh(gl, chunk) {
     if (!mesh.localUVBuffer) {
       mesh.localUVBuffer = gl.createBuffer();
     }
+
     gl.bindBuffer(gl.ARRAY_BUFFER, mesh.localUVBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, mesh.localUVs, gl.STATIC_DRAW);
   }
@@ -1142,8 +1192,19 @@ export function uploadChunkMesh(gl, chunk) {
     if (!mesh.cornerAOBuffer) {
       mesh.cornerAOBuffer = gl.createBuffer();
     }
+
     gl.bindBuffer(gl.ARRAY_BUFFER, mesh.cornerAOBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, mesh.cornerAO, gl.STATIC_DRAW);
+  }
+
+  // Light buffer
+  if (mesh.lightLevels) {
+    if (!mesh.lightBuffer) {
+      mesh.lightBuffer = gl.createBuffer();
+    }
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, mesh.lightBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, mesh.lightLevels, gl.STATIC_DRAW);
   }
 
   // Index buffer (for indexed geometry)
@@ -1174,32 +1235,49 @@ export function deleteChunkMesh(gl, chunk) {
 
     mesh.positionBuffer = null;
   }
+
   if (mesh.normalBuffer) {
     gl.deleteBuffer(mesh.normalBuffer);
 
     mesh.normalBuffer = null;
   }
+
   if (mesh.colorBuffer) {
     gl.deleteBuffer(mesh.colorBuffer);
 
     mesh.colorBuffer = null;
   }
+
   if (mesh.uvBuffer) {
     gl.deleteBuffer(mesh.uvBuffer);
+
     mesh.uvBuffer = null;
   }
+
   if (mesh.aoBuffer) {
     gl.deleteBuffer(mesh.aoBuffer);
+
     mesh.aoBuffer = null;
   }
+
   if (mesh.localUVBuffer) {
     gl.deleteBuffer(mesh.localUVBuffer);
+
     mesh.localUVBuffer = null;
   }
+
   if (mesh.cornerAOBuffer) {
     gl.deleteBuffer(mesh.cornerAOBuffer);
+
     mesh.cornerAOBuffer = null;
   }
+
+  if (mesh.lightBuffer) {
+    gl.deleteBuffer(mesh.lightBuffer);
+
+    mesh.lightBuffer = null;
+  }
+
   if (mesh.indexBuffer) {
     gl.deleteBuffer(mesh.indexBuffer);
 

@@ -196,6 +196,8 @@ export async function initGame(gThis, shadow, cnvs) {
     nbuf,
     breakCbuf,
     breakUvbuf,
+    lbuf,
+    uMinLight,
     celestialContext,
     worldProgram,
   } = initGameDependencies(cnvs, gameConfig.blocks);
@@ -206,84 +208,6 @@ export async function initGame(gThis, shadow, cnvs) {
     playerY: shadow.getElementById("playerY"),
     playerZ: shadow.getElementById("playerZ"),
   };
-
-  // Attach reset event listener loading saves so it is ready for auto-save loading
-  shadow.addEventListener("block-garden-reset", (e) => {
-    // Set all growthTimers to FAST_GROWTH_TIME if enabled else restore to block default
-    const { blocks } = gameConfig;
-    const { growthTimers, plantStructures } = gameState;
-    const FAST_GROWTH_TIME = blocks.FAST_GROWTH_TIME || 30;
-
-    Object.keys(growthTimers).forEach((key) => {
-      if (gameState.fastGrowth) {
-        growthTimers[key] = FAST_GROWTH_TIME;
-      } else {
-        // Restore to block default
-        const plantType = plantStructures[key]?.type;
-        const block = blocks.find((b) => b.name === plantType);
-        growthTimers[key] = block?.growthTime || 10.0;
-      }
-    });
-
-    let colors;
-
-    if (e instanceof CustomEvent) {
-      colors = e?.detail?.colors ?? {};
-    }
-
-    // Build color map for blocks
-    let colorMap;
-    if (Object.keys(colors).length && colors.constructor === Object) {
-      colorMap = transformStyleMap(colors, "--bg-block-", "-color");
-    } else {
-      colorMap = transformStyleMap(initialColors, "--bg-block-", "-color");
-    }
-
-    // Build color maps
-    const bm = Object.fromEntries(
-      Object.entries(colorMap).map(([k, v]) => [
-        k
-          .replaceAll("-", " ")
-          .toLowerCase()
-          .split(" ")
-          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-          .join(" "),
-        normalizeRGBToRGBA(cssColorToRGB(gThis.document, v)),
-      ]),
-    );
-
-    gameLoop(
-      shadow,
-      cnvs,
-      bm,
-      gameState,
-      gameConfig,
-      ui,
-      gl,
-      cbuf,
-      uvbuf,
-      aobuf,
-      cube,
-      uL,
-      uM,
-      uMVP,
-      uT,
-      uUT,
-      uUAO,
-      uULG,
-      uUAOD,
-      luvbuf,
-      caobuf,
-      pbuf,
-      nbuf,
-      breakCbuf,
-      breakUvbuf,
-      celestialContext,
-      worldProgram,
-    );
-
-    gameState.shouldReset.set(true);
-  });
 
   // Check for shared save
   let sharedSaveLoaded = await checkSharedSave(gThis, shadow);
@@ -377,6 +301,7 @@ export async function initGame(gThis, shadow, cnvs) {
     breakUvbuf,
     celestialContext,
     worldProgram,
+    uMinLight,
   );
 
   // Restore saved preferences from storage
@@ -389,4 +314,82 @@ export async function initGame(gThis, shadow, cnvs) {
       composed: true,
     }),
   );
+
+  // Attach reset event listener for subsequent resets (e.g. settings changes)
+  shadow.addEventListener("block-garden-reset", (e) => {
+    cancelGameLoop();
+
+    // Set all growthTimers to FAST_GROWTH_TIME if enabled else restore to block default
+    const { blocks } = gameConfig;
+    const { growthTimers, plantStructures } = gameState;
+    const FAST_GROWTH_TIME = blocks.FAST_GROWTH_TIME || 30;
+
+    Object.keys(growthTimers).forEach((key) => {
+      if (gameState.fastGrowth) {
+        growthTimers[key] = FAST_GROWTH_TIME;
+      } else {
+        // Restore to block default
+        const plantType = plantStructures[key]?.type;
+        const block = blocks.find((b) => b.name === plantType);
+        growthTimers[key] = block?.growthTime || 10.0;
+      }
+    });
+
+    let colors;
+    if (e instanceof CustomEvent) {
+      colors = e?.detail?.colors ?? {};
+    }
+
+    // Build color map for blocks
+    let colorMap;
+    if (Object.keys(colors).length && colors.constructor === Object) {
+      colorMap = transformStyleMap(colors, "--bg-block-", "-color");
+    } else {
+      colorMap = transformStyleMap(initialColors, "--bg-block-", "-color");
+    }
+
+    // Build color maps
+    const bm = Object.fromEntries(
+      Object.entries(colorMap).map(([k, v]) => [
+        k
+          .replaceAll("-", " ")
+          .toLowerCase()
+          .split(" ")
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(" "),
+        normalizeRGBToRGBA(cssColorToRGB(gThis.document, v)),
+      ]),
+    );
+
+    gameLoop(
+      shadow,
+      cnvs,
+      bm,
+      gameState,
+      gameConfig,
+      ui,
+      gl,
+      cbuf,
+      uvbuf,
+      aobuf,
+      cube,
+      uL,
+      uM,
+      uMVP,
+      uT,
+      uUT,
+      uUAO,
+      uULG,
+      uUAOD,
+      luvbuf,
+      caobuf,
+      pbuf,
+      nbuf,
+      breakCbuf,
+      breakUvbuf,
+      celestialContext,
+      worldProgram,
+      uMinLight,
+    );
+  });
 }

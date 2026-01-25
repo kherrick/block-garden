@@ -32,6 +32,8 @@ import { generateTextureAtlas } from "../world/generation/atlas.mjs";
  *   nbuf: WebGLBuffer,
  *   breakCbuf: WebGLBuffer,
  *   breakUvbuf: WebGLBuffer,
+ *   lbuf: WebGLBuffer,
+ *   uMinLight: WebGLUniformLocation,
  *   celestialContext: Object,
  *   worldProgram: WebGLProgram
  * }}
@@ -56,10 +58,12 @@ export function initGameDependencies(cnvs, blockDefs = []) {
     layout(location=4)in float ao;
     layout(location=5)in vec2 localUV;
     layout(location=6)in vec4 cornerAO;
+    layout(location=7)in float lightLevel;
 
     uniform mat4 MVP, M;
     uniform vec3 L;
     uniform float uULG; // Use Per-Face Lighting (1.0 or 0.0)
+    uniform float uMinLight; // Minimum ambient light floor
 
     out vec4 C;
     out vec2 Vuv;
@@ -67,6 +71,7 @@ export function initGameDependencies(cnvs, blockDefs = []) {
     out float Vao;
     out vec2 VlocalUV;
     out vec4 VcornerAO;
+    out float Vlight;
 
     void main(){
       vec3 nn=normalize((M*vec4(n,0)).xyz);
@@ -79,6 +84,7 @@ export function initGameDependencies(cnvs, blockDefs = []) {
       Vao=ao;
       VlocalUV = localUV;
       VcornerAO = cornerAO;
+      Vlight = lightLevel;
       gl_Position=MVP*vec4(p,1);
     }`;
 
@@ -96,6 +102,9 @@ export function initGameDependencies(cnvs, blockDefs = []) {
     in float Vao;
     in vec2 VlocalUV;
     in vec4 VcornerAO;
+    in float Vlight;
+
+    uniform float uMinLight;
 
     out vec4 o;
 
@@ -121,8 +130,12 @@ export function initGameDependencies(cnvs, blockDefs = []) {
       // If uUAO is 0, aoBilinear is effectively 1.0
       float aoVal = mix(1.0, radialAO, uUAO);
 
+      // Final exposure: directional light + AO, blended with emissive light
+      // We also apply a minimum ambient floor (uMinLight)
+      float lightExposure = max(max(Lg * aoVal, Vlight), uMinLight);
+
       // AO Debug mode: if uUAOD is 1.0, show only AO values as grayscale
-      vec3 color = mix(baseColor.rgb * Lg * aoVal, vec3(aoVal), uUAOD);
+      vec3 color = mix(baseColor.rgb * lightExposure, vec3(aoVal), uUAOD);
       o = vec4(color, baseColor.a);
     }
   `;
@@ -137,6 +150,7 @@ export function initGameDependencies(cnvs, blockDefs = []) {
   const uUAO = gl.getUniformLocation(program, "uUAO");
   const uULG = gl.getUniformLocation(program, "uULG");
   const uUAOD = gl.getUniformLocation(program, "uUAOD");
+  const uMinLight = gl.getUniformLocation(program, "uMinLight");
 
   const cube = createCube();
 
@@ -174,6 +188,12 @@ export function initGameDependencies(cnvs, blockDefs = []) {
   gl.bindBuffer(gl.ARRAY_BUFFER, caobuf);
   gl.enableVertexAttribArray(6);
   gl.vertexAttribPointer(6, 4, gl.FLOAT, false, 0, 0);
+
+  // Light level buffer (emissive)
+  const lbuf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, lbuf);
+  gl.enableVertexAttribArray(7);
+  gl.vertexAttribPointer(7, 1, gl.FLOAT, false, 0, 0);
 
   // Initialize Texture Atlas
   if (blockDefs.length > 0) {
@@ -224,6 +244,8 @@ export function initGameDependencies(cnvs, blockDefs = []) {
     nbuf,
     breakCbuf,
     breakUvbuf,
+    lbuf,
+    uMinLight,
     celestialContext,
     worldProgram: program,
   };

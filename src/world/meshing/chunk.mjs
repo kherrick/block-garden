@@ -14,6 +14,7 @@ export const CHUNK_VOLUME = CHUNK_SIZE_X * CHUNK_SIZE_Y * CHUNK_SIZE_Z;
  * @property {Float32Array} [ao] - Ambient occlusion values
  * @property {Float32Array} [localUVs] - Local quad coordinates for Radial AO
  * @property {Float32Array} [cornerAO] - 4-corner AO values per face for Radial AO
+ * @property {Float32Array} [lightLevels] - Per-vertex light levels
  * @property {Uint16Array} [indices] - Vertex indices for indexed geometry
  * @property {number} vertexCount - Number of vertices
  * @property {number} [indexCount] - Number of indices (for indexed geometry)
@@ -23,7 +24,9 @@ export const CHUNK_VOLUME = CHUNK_SIZE_X * CHUNK_SIZE_Y * CHUNK_SIZE_Z;
  * @property {WebGLBuffer|null} [uvBuffer] - GPU buffer for UVs
  * @property {WebGLBuffer|null} [aoBuffer] - GPU buffer for AO
  * @property {WebGLBuffer|null} [localUVBuffer] - GPU buffer for local UVs
+ * @property {WebGLBuffer|null} [caobuf] - GPU buffer for corner AO (alias for cornerAOBuffer)
  * @property {WebGLBuffer|null} [cornerAOBuffer] - GPU buffer for corner AO
+ * @property {WebGLBuffer|null} [lightBuffer] - GPU buffer for light levels
  * @property {WebGLBuffer|null} [indexBuffer] - GPU buffer for indices
  */
 
@@ -65,6 +68,12 @@ export class Chunk {
 
     /** @type {Map<number, Object>} Index -> metadata object */
     this.metadata = new Map();
+
+    /** @type {import('../lighting/lightSystem.mjs').LightMap|null} Baked light data */
+    this.lightMap = null;
+
+    /** @type {Set<string>} Track local emissive block positions "x,y,z" */
+    this.emissiveBlocks = new Set();
   }
 
   /**

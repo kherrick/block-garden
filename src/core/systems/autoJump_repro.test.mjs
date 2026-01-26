@@ -45,11 +45,13 @@ describe("Auto Jump Reproduction", () => {
         getBlock: jest.fn(),
       },
     };
+
     shadow = {};
     ui = {};
 
     // Reset isSolid mock
     isSolid.mockReset();
+
     // Default local behavior if we used it, but we override below
     isSolid.mockReturnValue(false);
   });
@@ -66,6 +68,7 @@ describe("Auto Jump Reproduction", () => {
     // Move 0.1 -> Front=1.0. 0.1 / 0.016 = 6.25.
     state.x = 0.6;
     state.dx = 8.0;
+
     const dt = 0.016;
 
     // Logic for isSolid
@@ -85,6 +88,7 @@ describe("Auto Jump Reproduction", () => {
     });
 
     updatePhysics(shadow, ui, state, dt);
+
     expect(state.dy).toBe(12);
   });
 
@@ -95,6 +99,7 @@ describe("Auto Jump Reproduction", () => {
     // Player at Z=0.7. Radius 0.3. MaxZ = 1.0.
     // Touches Z=1 wall.
     state.z = 0.7;
+
     const dt = 0.016;
 
     isSolid.mockImplementation((world, x, y, z) => {
@@ -118,6 +123,6 @@ describe("Auto Jump Reproduction", () => {
 
     updatePhysics(shadow, ui, state, dt);
 
-    expect(state.dy).toBe(12);
+    expect(state.dy).toBe(0);
   });
 });

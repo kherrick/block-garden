@@ -16,6 +16,9 @@ export function isKeyPressed(shadow, key) {
     "keys" in host &&
     "touchKeys" in host
   ) {
+    if (globalThis.blockGarden?.state?.isCanvasActionDisabled) {
+      return false;
+    }
     return host.keys[key] || host.touchKeys[key];
   }
   return false;

@@ -416,7 +416,7 @@ export function gameLoop(
           progress = Math.max(0, 1.0 - timer / totalTime);
         }
 
-        updateStructure(gameState, key, progress, structure.type);
+        updateStructure(gameState, key, progress, structure.type, true);
       }
     },
   );

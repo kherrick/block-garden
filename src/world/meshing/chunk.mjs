@@ -213,9 +213,11 @@ export class Chunk {
     if (this.blocks[idx] !== type) {
       this.blocks[idx] = type;
       this.dirty = true;
+
+      return true;
     }
 
-    return true;
+    return false;
   }
 
   /**

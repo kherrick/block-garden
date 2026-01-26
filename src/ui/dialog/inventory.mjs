@@ -179,8 +179,8 @@ export class InventoryDialog {
     const categories = {
       plants: { title: "🌱 Plants & Seeds", blocks: [] },
       natural: { title: "⛰️ Natural Materials", blocks: [] },
-      system: { title: "⚙️ System Utilities", blocks: [] },
       lighting: { title: "🏮 Lighting", blocks: [] },
+      system: { title: "⚙️ System Utilities", blocks: [] },
     };
 
     blocks

@@ -556,6 +556,12 @@ export class BlockGarden extends HTMLElement {
             width: calc(100% - 0.5rem);
           }
 
+          #aboutBtn:focus-visible,
+          #privacyBtn:focus-visible {
+            outline: 0.125rem solid var(--bg-color-gray-600);
+            outline-offset: 0.125rem;
+          }
+
           #aboutBtn {
             background: var(--bg-color-green-500);
           }
@@ -614,7 +620,8 @@ export class BlockGarden extends HTMLElement {
             z-index: 3;
           }
 
-          .touch-btn:active {
+          .touch-btn:active,
+          .touch-btn.is-pressed {
             background: var(--bg-color-gray-alpha-20);
             transform: scale(0.95);
           }
@@ -915,6 +922,7 @@ export class BlockGarden extends HTMLElement {
             <div id="material">
               <div class="ui-grid__corner--heading" tabindex="0">🔍 Material</div>
             </div>
+            <div id="materialBar" class="materialBar" hidden="hidden"></div>
           </div>
 
           <div class="ui-grid__corner ui-grid__corner--top-right">
@@ -1132,7 +1140,7 @@ export class BlockGarden extends HTMLElement {
           </div>
         </div>
 
-        <div id="materialBar" class="materialBar" hidden="hidden"></div>
+
 
         <div id="toastContainer"></div>
       `;

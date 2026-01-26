@@ -13,6 +13,7 @@ import { processSaveData } from "../../utils/saveData.mjs";
 import { raycastFromCanvasCoords } from "../../utils/raycastFromCanvasCoords.mjs";
 import { runCompress } from "../../utils/compression.mjs";
 import { showColorCustomizationDialog } from "../../utils/colors/customColors.mjs";
+import { startDigHighlight, stopDigHighlight } from "../utils/digHighlight.mjs";
 import { waitForElement } from "../utils/waitForElement.mjs";
 
 import {
@@ -59,6 +60,23 @@ import { InventoryDialog } from "../dialog/inventory.mjs";
 /** @typedef {import('../../core/systems/game/init.mjs').CustomShadowHost} CustomShadowHost */
 
 /**
+ *
+ * @param {ShadowRoot} shadow
+ * @param {HTMLCanvasElement} cnvs
+ */
+function closeMenus(shadow, cnvs) {
+  shadow
+    .querySelectorAll(".ui-grid__corner--container")
+    .forEach((e) => e.setAttribute("hidden", "hidden"));
+
+  toggleMaterialBar(shadow, gameState, cnvs, true);
+
+  gameState.isCanvasActionDisabled = false;
+
+  cnvs.focus();
+}
+
+/**
  * @param {MouseEvent} e
  *
  * @returns {void}
@@ -74,10 +92,43 @@ function handleCornerClick(e) {
     if (isCornerContainerHidden && isCornerContainerHidden !== null) {
       cornerContainer.removeAttribute("hidden");
 
+      // Focus the first focusable element in the container
+      const focusableElements = cornerContainer.querySelectorAll(
+        "button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])",
+      );
+
+      if (focusableElements.length > 0) {
+        /** @type {HTMLElement} */ (focusableElements[0]).focus();
+      }
+
+      gameState.isCanvasActionDisabled = true;
+
       return;
     }
 
     cornerContainer?.setAttribute("hidden", "hidden");
+
+    // Check if any other corners are still open
+    const shadow = cornerContainer.getRootNode();
+    if (shadow instanceof ShadowRoot) {
+      const otherOpenCorners = shadow.querySelectorAll(
+        ".ui-grid__corner--container:not([hidden])",
+      );
+
+      const materialBar = shadow.getElementById("materialBar");
+      const isMaterialBarVisible =
+        materialBar && !materialBar.hasAttribute("hidden");
+
+      if (otherOpenCorners.length === 0 && !isMaterialBarVisible) {
+        gameState.isCanvasActionDisabled = false;
+
+        // Return focus to canvas
+        const canvas = shadow.getElementById("canvas");
+        if (canvas instanceof HTMLCanvasElement) {
+          canvas.focus();
+        }
+      }
+    }
   }
 }
 
@@ -137,6 +188,49 @@ export function updateFlightToggleButton(flightToggle, isFlying) {
  */
 // Shared state to track touch interactions
 let lastTouchTime = 0;
+// Timer for Material Bar auto-hide behavior
+let materialBarAutoHideTimer = null;
+
+/**
+ * Toggles the visibility of the material bar and manages game state/focus.
+ *
+ * @param {ShadowRoot} shadow
+ * @param {Object} gameState
+ * @param {HTMLCanvasElement} cnvs
+ * @param {boolean} [forceClose=false]
+ */
+function toggleMaterialBar(shadow, gameState, cnvs, forceClose = false) {
+  const materialBar = shadow.getElementById("materialBar");
+  const material = shadow.querySelector("#material .ui-grid__corner--heading");
+
+  if (!materialBar || !material) {
+    return;
+  }
+
+  if (forceClose) {
+    materialBar.setAttribute("hidden", "hidden");
+  } else {
+    materialBar.toggleAttribute("hidden");
+  }
+
+  const isHidden = materialBar.hasAttribute("hidden");
+  gameState.isCanvasActionDisabled = !isHidden;
+
+  if (isHidden) {
+    material.textContent = "🔍 Material";
+
+    cnvs.focus();
+  } else {
+    material.textContent = "❌ Material";
+
+    // Focus the active slot when opening
+    const activeSlotIndex = gameState.activeMaterialBarSlot.get();
+    const slots = materialBar.querySelectorAll(".materialBar-slot");
+    if (slots[activeSlotIndex]) {
+      /** @type {HTMLElement} */ (slots[activeSlotIndex]).focus();
+    }
+  }
+}
 
 /**
  *
@@ -158,22 +252,6 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
     globalThis.document,
     shadow,
   );
-
-  function toggleMaterialBar(forceClose = false) {
-    const materialBar = shadow.getElementById("materialBar");
-
-    if (forceClose) {
-      materialBar.setAttribute("hidden", "hidden");
-    } else {
-      materialBar.toggleAttribute("hidden");
-    }
-
-    if (materialBar.hasAttribute("hidden")) {
-      material.textContent = "🔍 Material";
-    } else {
-      material.textContent = "❌ Material";
-    }
-  }
 
   // Extras
   new extrasHandler((handler) => {
@@ -212,11 +290,28 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
   });
 
   initRadiusControlListeners(shadow);
-  initGenerationControlListeners(shadow);
+  initGenerationControlListeners(shadow, cnvs);
 
   const material = shadow.querySelector("#material .ui-grid__corner--heading");
   material.addEventListener("click", () => {
-    toggleMaterialBar();
+    toggleMaterialBar(shadow, gameState, cnvs);
+  });
+
+  material.addEventListener("keydown", (/** @type {KeyboardEvent} */ e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+
+      toggleMaterialBar(shadow, gameState, cnvs);
+
+      // Focus the first material bar slot after opening
+      const materialBar = shadow.getElementById("materialBar");
+      if (!materialBar.hasAttribute("hidden")) {
+        const firstSlot = materialBar.querySelector(".materialBar-slot");
+        if (firstSlot) {
+          /** @type {HTMLElement} */ (firstSlot).focus();
+        }
+      }
+    }
   });
 
   // Fast Growth Button
@@ -505,10 +600,27 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
 
       host.keys[e.key.toLowerCase()] = false;
 
+      const lowercaseKey = e.key.toLowerCase();
+      if (lowercaseKey === " ") {
+        shadow.getElementById("fly")?.classList.remove("is-pressed");
+        shadow.getElementById("jump")?.classList.remove("is-pressed");
+      } else if (lowercaseKey === "enter") {
+        stopDigHighlight(shadow);
+      } else {
+        const touchBtn = shadow.querySelector(
+          `.touch-btn[data-key="${lowercaseKey}"]`,
+        );
+        if (touchBtn) {
+          touchBtn.classList.remove("is-pressed");
+        }
+      }
+
       if (
         e.target instanceof HTMLInputElement ||
         e.target instanceof HTMLTextAreaElement ||
-        e.target instanceof HTMLSelectElement
+        e.target instanceof HTMLSelectElement ||
+        (e.target instanceof HTMLElement &&
+          e.target.classList.contains("ui-grid__corner--heading"))
       ) {
         return;
       }
@@ -521,7 +633,10 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
     const seedControls = /** @type {HTMLDialogElement} */ (
       shadow.querySelector(".seed-controls")
     );
-    if (!seedControls) return;
+
+    if (!seedControls) {
+      return;
+    }
 
     const isCurrentlyOpen = seedControls.open;
     const shouldHide =
@@ -648,6 +763,12 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
     Object.keys(host.keys).forEach((key) => {
       host.keys[key] = false;
     });
+
+    shadow.querySelectorAll(".touch-btn").forEach((btn) => {
+      btn.classList.remove("is-pressed");
+    });
+
+    stopDigHighlight(shadow);
   });
 
   // Keyboard events
@@ -666,22 +787,38 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
         (shadow.host);
       host.keys[lowercaseKey] = true;
 
+      if (lowercaseKey === " ") {
+        const btnId = gameState.flying.get() ? "fly" : "jump";
+
+        shadow.getElementById(btnId)?.classList.add("is-pressed");
+      } else if (lowercaseKey === "enter") {
+        startDigHighlight(shadow);
+      } else {
+        const touchBtn = shadow.querySelector(
+          `.touch-btn[data-key="${lowercaseKey}"]`,
+        );
+
+        if (touchBtn) {
+          touchBtn.classList.add("is-pressed");
+        }
+      }
+
       const isInputFocused =
         e.target instanceof HTMLInputElement ||
         e.target instanceof HTMLTextAreaElement ||
-        e.target instanceof HTMLSelectElement;
+        e.target instanceof HTMLSelectElement ||
+        (e.target instanceof HTMLElement &&
+          e.target.classList.contains("ui-grid__corner--heading"));
 
       if (lowercaseKey === "escape") {
-        shadow
-          .querySelectorAll(".ui-grid__corner--container")
-          .forEach((e) => e.setAttribute("hidden", "hidden"));
-
-        shadow.getElementById("materialBar").setAttribute("hidden", "hidden");
-
-        toggleMaterialBar(true);
+        closeMenus(shadow, cnvs);
       }
 
-      if (lowercaseKey === "backspace" || lowercaseKey === "delete") {
+      if (
+        lowercaseKey === "backspace" ||
+        lowercaseKey === "delete" ||
+        lowercaseKey === "tab"
+      ) {
         return;
       }
 
@@ -690,6 +827,8 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
         e.preventDefault();
 
         toggleWorldStatePanel();
+
+        gameState.isCanvasActionDisabled = true;
 
         return;
       }
@@ -713,18 +852,45 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
         }
       }
 
-      // If an input is focused or canvas actions are disabled, return early
-      if (
-        isInputFocused ||
-        globalThis.blockGarden.state.isCanvasActionDisabled
-      ) {
+      if (isInputFocused) {
+        return;
+      }
+
+      if (lowercaseKey >= "1" && lowercaseKey <= "9") {
+        e.preventDefault();
+
+        const index = parseInt(lowercaseKey) - 1;
+        const materialBar = shadow.getElementById("materialBar");
+        const isAlreadyOpen = !materialBar.hasAttribute("hidden");
+
+        if (!isAlreadyOpen) {
+          toggleMaterialBar(shadow, gameState, cnvs);
+        }
+
+        selectMaterialBarSlot(index);
+
+        // Reset the auto-hide timer for smoother sequential numeric transitions
+        if (materialBarAutoHideTimer) {
+          clearTimeout(materialBarAutoHideTimer);
+        }
+
+        materialBarAutoHideTimer = setTimeout(() => {
+          toggleMaterialBar(shadow, gameState, cnvs, true);
+          materialBarAutoHideTimer = null;
+        }, 800);
+
+        return;
+      }
+
+      // If canvas actions are disabled (e.g. other dialogs open), return early
+      if (globalThis.blockGarden.state.isCanvasActionDisabled) {
         return;
       }
 
       if (lowercaseKey === "m") {
         e.preventDefault();
 
-        toggleMaterialBar();
+        toggleMaterialBar(shadow, gameState, cnvs);
 
         return;
       }
@@ -741,17 +907,6 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
         e.preventDefault();
 
         inventoryDialog.open();
-
-        return;
-      }
-
-      if (lowercaseKey >= "1" && lowercaseKey <= "9") {
-        e.preventDefault();
-
-        const materialBar = shadow.getElementById("materialBar");
-        materialBar.removeAttribute("hidden");
-
-        selectMaterialBarSlot(parseInt(lowercaseKey) - 1);
 
         return;
       }
@@ -971,10 +1126,10 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
         globalThis.document.pointerLockElement === cnvs ||
         globalThis.document.pointerLockElement === shadow.host
       ) {
-        gameState.breakingInput.isHeld = true;
-        gameState.breakingInput.mode = "cursor";
         gameState.breakingInput.cursorX = e.clientX;
         gameState.breakingInput.cursorY = e.clientY;
+
+        startDigHighlight(shadow);
       }
     }
 
@@ -1008,6 +1163,8 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
     gameState.breakingInput.isHeld = false;
     gameState.placingInput.isHeld = false;
     gameState.cursorTarget = null;
+
+    stopDigHighlight(shadow);
   };
 
   cnvs.addEventListener("mouseup", clearInputs);
@@ -1676,10 +1833,11 @@ export function initCanvasEventListeners(shadow, cnvs, blocks, curBlock) {
  * Initialize material bar event listeners.
  *
  * @param {ShadowRoot} shadow
+ * @param {HTMLCanvasElement} cnvs
  *
  * @returns {void}
  */
-export function initMaterialBarEventListeners(shadow) {
+export function initMaterialBarEventListeners(shadow, cnvs) {
   const materialBarEl = shadow.getElementById("materialBar");
   if (!materialBarEl) {
     return;
@@ -1695,24 +1853,64 @@ export function initMaterialBarEventListeners(shadow) {
     if (slot instanceof HTMLElement) {
       const index = parseInt(slot.dataset.index);
 
+      e.stopPropagation();
+
       selectMaterialBarSlot(index);
+
+      // Manual selection: clear any pending timer and close the bar immediately
+      toggleMaterialBar(shadow, globalThis.blockGarden.state, cnvs, true);
     }
   });
 
   materialBarEl.addEventListener("keydown", (/** @type {any} */ e) => {
+    const slot =
+      e.target instanceof Element
+        ? e.target.closest(".materialBar-slot")
+        : null;
+
+    if (!(slot instanceof HTMLElement)) {
+      return;
+    }
+
+    // Handle Enter or Space to select the current slot
     if (e.key === "Enter" || e.key === " ") {
-      const slot =
-        e.target instanceof Element
-          ? e.target.closest(".materialBar-slot")
-          : null;
+      e.preventDefault();
+      e.stopPropagation();
 
-      if (slot instanceof HTMLElement) {
-        e.preventDefault();
+      const index = parseInt(slot.dataset.index);
+      selectMaterialBarSlot(index);
 
-        const index = parseInt(slot.dataset.index);
+      // Manual selection: clear any pending timer and close the bar immediately
+      if (materialBarAutoHideTimer) {
+        clearTimeout(materialBarAutoHideTimer);
 
-        selectMaterialBarSlot(index);
+        materialBarAutoHideTimer = null;
       }
+
+      toggleMaterialBar(shadow, globalThis.blockGarden.state, cnvs, true);
+
+      return;
+    }
+
+    // Handle arrow keys to navigate between slots
+    if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+      e.preventDefault();
+
+      const allSlots = Array.from(
+        materialBarEl.querySelectorAll(".materialBar-slot"),
+      );
+
+      const currentIndex = allSlots.indexOf(slot);
+
+      let nextIndex = currentIndex;
+
+      if (e.key === "ArrowLeft") {
+        nextIndex = currentIndex === 0 ? allSlots.length - 1 : currentIndex - 1;
+      } else if (e.key === "ArrowRight") {
+        nextIndex = currentIndex === allSlots.length - 1 ? 0 : currentIndex + 1;
+      }
+
+      /** @type {HTMLElement} */ (allSlots[nextIndex]).focus();
     }
   });
 }
@@ -1761,8 +1959,9 @@ function initRadiusControlListeners(shadow) {
  * Initializes listeners for granular world generation controls.
  *
  * @param {ShadowRoot} shadow
+ * @param {HTMLCanvasElement} cnvs
  */
-function initGenerationControlListeners(shadow) {
+function initGenerationControlListeners(shadow, cnvs) {
   const gameConfig = globalThis.blockGarden.config;
 
   const generationSettings = [
@@ -2087,6 +2286,7 @@ function initGenerationControlListeners(shadow) {
       await persistValue("config", "useCaves", CONFIG_DEFAULTS.USE_CAVES);
 
       showToast(shadow, "Applied Defaults");
+      closeMenus(shadow, cnvs);
     });
   }
 }

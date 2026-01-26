@@ -7,6 +7,10 @@
  * @returns {string}
  */
 export function formatName(name) {
+  if (name === null || name === undefined) {
+    return "";
+  }
+
   return name
     .trim()
     .replace(/[^a-zA-Z0-9\s-]/g, "")

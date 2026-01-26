@@ -210,14 +210,17 @@ export class BlockGardenSelect extends HTMLElement {
       activeIndex = 0;
     };
 
-    const closeList = () => {
+    const closeList = (shouldFocus = true) => {
+      const wasOpen = !(/** @type {HTMLElement} */ (this.#list).hidden);
       /** @type {HTMLElement} */
       (this.#list).hidden = true;
 
       this.#trigger.setAttribute("aria-expanded", "false");
 
-      /** @type {HTMLElement} */
-      (this.#trigger).focus();
+      if (wasOpen && shouldFocus) {
+        /** @type {HTMLElement} */
+        (this.#trigger).focus();
+      }
 
       activeIndex = -1;
     };
@@ -369,7 +372,7 @@ export class BlockGardenSelect extends HTMLElement {
           (e.target),
         )
       ) {
-        closeList();
+        closeList(false);
       }
     });
 

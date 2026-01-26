@@ -217,7 +217,7 @@ export function updatePhysics(shadow, ui, state, dt) {
         if (
           !isColliding(
             state,
-            getPlayerAABB(newX, y + 1.05, z, 0.4, playerHeight),
+            getPlayerAABB(newX, y + 1.05, z, playerWidth + 0.01, playerHeight),
           )
         ) {
           canStepUp = true;
@@ -260,7 +260,7 @@ export function updatePhysics(shadow, ui, state, dt) {
         if (
           !isColliding(
             state,
-            getPlayerAABB(x, y + 1.05, newZ, 0.4, playerHeight),
+            getPlayerAABB(x, y + 1.05, newZ, playerWidth + 0.01, playerHeight),
           )
         ) {
           canStepUp = true;

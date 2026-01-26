@@ -87,13 +87,22 @@ export async function initGame(gThis, shadow, cnvs) {
     return;
   }
 
-  shadow.addEventListener("focusout", (e) => {
-    const focusEvent = /** @type {FocusEvent} */ (e);
+  /**
+   * Adds a focusout listener that refocuses the canvas unless the new focus target
+   * is an interactive element (input, textarea, select, or specific UI component).
+   */
+  shadow.addEventListener("focusout", (/** @type {FocusEvent} */ e) => {
+    /** @type {Element|null} */
+    const target = /** @type {Element|null} */ (e.relatedTarget);
+
     if (
-      focusEvent.relatedTarget instanceof HTMLInputElement ||
-      focusEvent.relatedTarget instanceof HTMLTextAreaElement ||
-      focusEvent.relatedTarget instanceof HTMLSelectElement ||
-      /** @type {any} */ (focusEvent.relatedTarget)?.closest?.(".seed-controls")
+      target instanceof HTMLInputElement ||
+      target instanceof HTMLTextAreaElement ||
+      target instanceof HTMLSelectElement ||
+      target?.closest(".seed-controls") ||
+      target?.closest(".ui-grid__corner") ||
+      target?.closest(".materialBar") ||
+      target?.classList?.contains("ui-grid__corner--heading")
     ) {
       return;
     }
@@ -170,7 +179,7 @@ export async function initGame(gThis, shadow, cnvs) {
 
   initMaterialBarEffects(shadow, initMaterialBar(gameColors));
 
-  initMaterialBarEventListeners(shadow);
+  initMaterialBarEventListeners(shadow, cnvs);
 
   showToast(shadow, "Preparing Graphics...");
   await new Promise((r) => setTimeout(r, 0));

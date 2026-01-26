@@ -15,7 +15,7 @@ import {
 } from "../meshing/chunk.mjs";
 
 /**
- * Maximum light level (equivalent to direct sunlight/glowstone).
+ * Maximum light level (equivalent to direct sunlight/lightstone).
  *
  * @constant {number}
  */

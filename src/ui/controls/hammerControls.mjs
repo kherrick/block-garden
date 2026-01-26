@@ -4,6 +4,7 @@ import { raycastFromCanvasCoords } from "../../utils/raycastFromCanvasCoords.mjs
 import { placeBlock } from "../../utils/interaction.mjs";
 
 import { gameConfig } from "../../world/config/index.mjs";
+import { startDigHighlight, stopDigHighlight } from "../utils/digHighlight.mjs";
 
 /** @typedef {import('../../core/systems/game/init.mjs').CustomShadowHost} CustomShadowHost */
 
@@ -289,6 +290,8 @@ export function initHammerControls(stage, shadow, gameState) {
   const cancelBreaking = () => {
     gameState.breakingInput.isHeld = false;
     gameState.cursorTarget = null;
+
+    stopDigHighlight(shadow);
   };
 
   stage.on("press", (ev) => {
@@ -334,6 +337,8 @@ export function initHammerControls(stage, shadow, gameState) {
         }
       }
     }
+
+    startDigHighlight(shadow);
   });
 
   stage.on("pressup", cancelBreaking);

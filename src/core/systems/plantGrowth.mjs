@@ -5,6 +5,11 @@ import {
 
 import { generators } from "../../world/plants/index.mjs";
 
+// Controls for throttling visual updates
+const LOGIC_UPDATE_INTERVAL_MS = 200; // only update visuals every 200ms
+
+let _lastLogicUpdateMs = 0;
+
 /**
  * Check if a plant structure has been completely harvested (all blocks removed).
  * If so, remove the structure and its timer from the game state.
@@ -34,9 +39,11 @@ export function checkAndRemoveFarmedPlant(gameState, key) {
   // Check if all blocks in the structure are gone from the world
   let allBlocksRemoved = true;
   for (const block of structure.blocks) {
-    const k = `${block.x},${block.y},${block.z}`;
+    const k =
+      typeof block === "string" ? block : `${block.x},${block.y},${block.z}`;
 
     const currentId = gameState.world.get(k);
+
     if (currentId !== undefined) {
       // Block still exists in world
       allBlocksRemoved = false;
@@ -74,6 +81,9 @@ export function updatePlantGrowth(gameState) {
   }
 
   const dt = 0.02; // 20ms fixed timestep
+  const nowMs = performance.now();
+  const shouldUpdateVisuals =
+    nowMs - _lastLogicUpdateMs >= LOGIC_UPDATE_INTERVAL_MS;
 
   // Process timers
   const useFastGrowth = gameState.fastGrowth;
@@ -84,7 +94,7 @@ export function updatePlantGrowth(gameState) {
     const structure = gameState.plantStructures[key];
 
     if (newTime <= 0) {
-      // Mature!
+      // Mature! Force update to final stage
       if (structure && generators[structure.type]) {
         updateStructure(gameState, key, 1.0, structure.type);
       }
@@ -93,8 +103,8 @@ export function updatePlantGrowth(gameState) {
     } else {
       gameState.growthTimers[key] = newTime;
 
-      // Update structure visuals based on progress
-      if (structure && generators[structure.type]) {
+      // Update structure visuals based on progress (throttled)
+      if (structure && generators[structure.type] && shouldUpdateVisuals) {
         // Find plant block definition to get growthTime
         const plantDef = getBlockByName(structure.type);
         const totalTime = useFastGrowth
@@ -106,9 +116,15 @@ export function updatePlantGrowth(gameState) {
         updateStructure(gameState, key, progress, structure.type);
       }
 
-      // Check if plant has been completely harvested while growing
-      checkAndRemoveFarmedPlant(gameState, key);
+      // Check if plant has been completely harvested while growing (only every logic frame to save perf)
+      if (shouldUpdateVisuals) {
+        checkAndRemoveFarmedPlant(gameState, key);
+      }
     }
+  }
+
+  if (shouldUpdateVisuals) {
+    _lastLogicUpdateMs = nowMs;
   }
 
   // Clean up mature plant timers
@@ -120,7 +136,7 @@ export function updatePlantGrowth(gameState) {
   }
 }
 
-export function updateStructure(gameState, key, progress, type) {
+export function updateStructure(gameState, key, progress, type, force = false) {
   const structure = gameState.plantStructures[key];
   if (!structure) {
     return;
@@ -128,43 +144,64 @@ export function updateStructure(gameState, key, progress, type) {
 
   const [rootX, rootY, rootZ] = key.split(",").map(Number);
 
-  // Clean up old blocks
-  if (structure.blocks) {
-    for (const block of structure.blocks) {
-      let k;
-      let blockId;
-
-      if (typeof block === "string") {
-        k = block;
-        blockId = undefined; // If it's just a key, we'll delete whatever is there (usually the seed)
-      } else {
-        k = `${block.x},${block.y},${block.z}`;
-        blockId = block.blockId;
-      }
-
-      const currentId = gameState.world.get(k);
-
-      // Only remove if it's the block we expect or if it was just a coordinate string (seed)
-      if (blockId === undefined || currentId === blockId) {
-        gameState.world.delete(k);
-      }
-    }
-  }
-
   // Generate new blocks
   let newBlocks = [];
+
   const generator = generators[type];
   if (generator) {
     newBlocks = generator(rootX, rootY, rootZ, progress);
   } else {
     console.warn(`[PlantGrowth] Generator not found for type: ${type}`);
+
+    return;
   }
 
-  // Place new blocks
-  for (const block of newBlocks) {
-    const k = `${block.x},${block.y},${block.z}`;
+  // Build maps for comparison
+  const prevMap = new Map();
+  if (structure.blocks) {
+    for (const block of structure.blocks) {
+      if (typeof block === "string") {
+        prevMap.set(block, undefined); // Seed block coordinate
+      } else {
+        prevMap.set(`${block.x},${block.y},${block.z}`, block.blockId);
+      }
+    }
+  }
 
-    gameState.world.set(k, block.blockId);
+  const newMap = new Map();
+  for (const block of newBlocks) {
+    newMap.set(`${block.x},${block.y},${block.z}`, block.blockId);
+  }
+
+  // Remove blocks that are no longer in the structure
+  for (const [k, prevId] of prevMap) {
+    if (!newMap.has(k) || force) {
+      const currentId = gameState.world.get(k);
+      // Only delete if it's the block we expect (or if it was a seed block string)
+      if (
+        prevId === undefined ||
+        currentId === prevId ||
+        (force && currentId !== undefined)
+      ) {
+        gameState.world.delete(k);
+      }
+    }
+  }
+
+  // Add or update blocks that have changed
+  for (const [k, newId] of newMap) {
+    const prevEntry = prevMap.get(k);
+    const prevId = prevEntry;
+
+    if (prevId !== newId || force) {
+      // If it was a seed block (prevId === undefined), ensure we delete whatever is there first
+      // although world.set usually overwrites.
+      if (prevEntry === undefined && prevMap.has(k)) {
+        gameState.world.delete(k);
+      }
+
+      gameState.world.set(k, newId);
+    }
   }
 
   // Store for next update

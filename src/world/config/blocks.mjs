@@ -167,7 +167,7 @@ export const blockNames = {
   TEXT: "Text",
   TORCH: "Torch",
   LANTERN: "Lantern",
-  GLOWSTONE: "Glowstone",
+  LIGHTSTONE: "Lightstone",
 };
 
 export const FAST_GROWTH_TIME = 30;
@@ -606,6 +606,7 @@ const blockDefinitionsArray = [
     drops: null,
     solid: true,
     gravity: true,
+    emissive: 8,
   },
   {
     name: blockNames.LAVENDER_BUSH,
@@ -1125,10 +1126,10 @@ const blockDefinitionsArray = [
     emissive: 15,
   },
   {
-    name: blockNames.GLOWSTONE,
+    name: blockNames.LIGHTSTONE,
     id: 134,
     breakTime: 0.5,
-    drops: "GLOWSTONE",
+    drops: "LIGHTSTONE",
     solid: true,
     emissive: 20,
   },

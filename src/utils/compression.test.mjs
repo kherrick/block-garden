@@ -27,6 +27,7 @@ describe("compression module", () => {
 
     afterEach(() => {
       jest.clearAllMocks();
+
       if (global.CompressionStream) {
         delete global.CompressionStream;
       }
@@ -45,6 +46,7 @@ describe("compression module", () => {
       const mockCompressedBlob = new Blob(["compressed"], {
         type: "application/gzip",
       });
+
       global.Response = jest.fn(() => ({
         blob: jest.fn(async () => mockCompressedBlob),
       }));
@@ -60,11 +62,13 @@ describe("compression module", () => {
       };
 
       const mockEncode = jest.fn((str) => new Uint8Array(Buffer.from(str)));
+
       global.TextEncoder = jest.fn(() => ({
         encode: mockEncode,
       }));
 
       global.Blob.prototype.stream = jest.fn(() => mockStream);
+
       global.Response = jest.fn(() => ({
         blob: jest.fn(async () => new Blob()),
       }));
@@ -80,6 +84,7 @@ describe("compression module", () => {
       };
 
       global.Blob.prototype.stream = jest.fn(() => mockStream);
+
       global.Response = jest.fn(() => ({
         blob: jest.fn(async () => new Blob()),
       }));
@@ -104,6 +109,7 @@ describe("compression module", () => {
       };
 
       global.Blob.prototype.stream = jest.fn(() => mockStream);
+
       global.Response = jest.fn(() => ({
         blob: jest.fn(async () => new Blob()),
       }));
@@ -120,6 +126,7 @@ describe("compression module", () => {
       };
 
       global.Blob.prototype.stream = jest.fn(() => mockStream);
+
       global.Response = jest.fn(() => ({
         blob: jest.fn(async () => new Blob()),
       }));
@@ -131,47 +138,7 @@ describe("compression module", () => {
   });
 
   describe("compressToBinaryFile", () => {
-    let mockFileHandle;
-    let mockWritable;
-
-    beforeEach(() => {
-      mockWritable = {
-        write: jest.fn(async () => {}),
-        close: jest.fn(async () => {}),
-      };
-
-      mockFileHandle = {
-        createWritable: jest.fn(async () => mockWritable),
-      };
-
-      // Mock compressToBinaryBlob
-      jest.spyOn(global, "Blob").mockImplementation(() => ({
-        stream: jest.fn(),
-      }));
-    });
-
-    afterEach(() => {
-      jest.clearAllMocks();
-    });
-
-    test("calls createWritable on file handle", async () => {
-      // Mock the compression function
-      jest.unstable_mockModule("./compression.mjs", () => ({
-        compressToBinaryBlob: jest
-          .fn()
-          .mockResolvedValue(new Blob(["compressed"])),
-      }));
-
-      // We need to test the actual function behavior
-      // Since we can't easily mock the internal call, verify it exists
-      expect(typeof compressToBinaryFile).toBe("function");
-    });
-
-    test("writes blob to file handle", async () => {
-      expect(typeof compressToBinaryFile).toBe("function");
-    });
-
-    test("closes the file handle after writing", async () => {
+    test("function exists and is callable", () => {
       expect(typeof compressToBinaryFile).toBe("function");
     });
   });

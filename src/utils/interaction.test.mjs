@@ -2,6 +2,7 @@
  * @jest-environment node
  */
 import { jest } from "@jest/globals";
+
 import { removeBlock } from "./interaction.mjs";
 
 describe("Block Removal & Plant Harvesting", () => {
@@ -16,7 +17,7 @@ describe("Block Removal & Plant Harvesting", () => {
         face: { x: 1, y: 0, z: 0 },
       },
       world: {
-        get: jest.fn().mockReturnValue(0), // Blocks are gone
+        get: jest.fn().mockReturnValue(0),
         delete: jest.fn(),
         set: jest.fn(),
       },
@@ -40,6 +41,7 @@ describe("Block Removal & Plant Harvesting", () => {
         type: "MUSHROOM",
         blocks: [{ x: 10, y: 20, z: 30, blockId: 5 }],
       };
+
       gameState.growthTimers[structureKey] = 2.5;
 
       // Mock world.get to return undefined (block doesn't exist after deletion)
@@ -66,6 +68,7 @@ describe("Block Removal & Plant Harvesting", () => {
           { x: 10, y: 21, z: 30, blockId: 8 },
         ],
       };
+
       gameState.growthTimers[structureKey] = 1.0;
 
       // Mock world.get to say both blocks are gone now
@@ -88,6 +91,7 @@ describe("Block Removal & Plant Harvesting", () => {
           { x: 10, y: 21, z: 30, blockId: 8 },
         ],
       };
+
       gameState.growthTimers[structureKey] = 3.5;
 
       // Mock world.get - first block is being removed, but second still exists

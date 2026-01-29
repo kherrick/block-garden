@@ -100,14 +100,6 @@ export class AboutDialog {
         this.doc.exitPointerLock();
       }
 
-      globalThis.blockGarden.state.isCanvasActionDisabled = true;
-
-      this.dialog.addEventListener("close", () => {
-        setTimeout(() => {
-          globalThis.blockGarden.state.isCanvasActionDisabled = false;
-        }, 500);
-      });
-
       this.dialog.showModal();
 
       const autofocusElement = this.dialog.querySelector("[autofocus]");

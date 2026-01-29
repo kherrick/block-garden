@@ -52,6 +52,7 @@ import {
 } from "../dialog/storage.mjs";
 
 import { InventoryDialog } from "../dialog/inventory.mjs";
+import { canControlCanvas } from "../utils/canControlCanvas.mjs";
 
 /** @typedef {import('signal-polyfill').Signal.State} Signal.State */
 
@@ -70,8 +71,6 @@ function closeMenus(shadow, cnvs) {
     .forEach((e) => e.setAttribute("hidden", "hidden"));
 
   toggleMaterialBar(shadow, gameState, cnvs, true);
-
-  gameState.isCanvasActionDisabled = false;
 
   cnvs.focus();
 }
@@ -101,15 +100,13 @@ function handleCornerClick(e) {
         /** @type {HTMLElement} */ (focusableElements[0]).focus();
       }
 
-      gameState.isCanvasActionDisabled = true;
-
       return;
     }
 
     cornerContainer?.setAttribute("hidden", "hidden");
 
     // Check if any other corners are still open
-    const shadow = cornerContainer.getRootNode();
+    const shadow = cornerContainer?.getRootNode();
     if (shadow instanceof ShadowRoot) {
       const otherOpenCorners = shadow.querySelectorAll(
         ".ui-grid__corner--container:not([hidden])",
@@ -120,8 +117,6 @@ function handleCornerClick(e) {
         materialBar && !materialBar.hasAttribute("hidden");
 
       if (otherOpenCorners.length === 0 && !isMaterialBarVisible) {
-        gameState.isCanvasActionDisabled = false;
-
         // Return focus to canvas
         const canvas = shadow.getElementById("canvas");
         if (canvas instanceof HTMLCanvasElement) {
@@ -178,18 +173,8 @@ export function updateFlightToggleButton(flightToggle, isFlying) {
   flightToggle.style.backgroundColor = "var(--bg-color-green-500)";
 }
 
-/**
- *
- * @param {ShadowRoot} shadow
- * @param {HTMLCanvasElement} cnvs
- * @param {Signal.State} currentResolution - Signal State for current resolution
- *
- * @returns {void}
- */
 // Shared state to track touch interactions
 let lastTouchTime = 0;
-// Timer for Material Bar auto-hide behavior
-let materialBarAutoHideTimer = null;
 
 /**
  * Toggles the visibility of the material bar and manages game state/focus.
@@ -214,7 +199,6 @@ function toggleMaterialBar(shadow, gameState, cnvs, forceClose = false) {
   }
 
   const isHidden = materialBar.hasAttribute("hidden");
-  gameState.isCanvasActionDisabled = !isHidden;
 
   if (isHidden) {
     material.textContent = "🔍 Material";
@@ -610,59 +594,27 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
         const touchBtn = shadow.querySelector(
           `.touch-btn[data-key="${lowercaseKey}"]`,
         );
+
         if (touchBtn) {
           touchBtn.classList.remove("is-pressed");
         }
       }
-
-      if (
-        e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement ||
-        e.target instanceof HTMLSelectElement ||
-        (e.target instanceof HTMLElement &&
-          e.target.classList.contains("ui-grid__corner--heading"))
-      ) {
-        return;
-      }
-
-      e.preventDefault();
     },
   );
 
-  async function toggleWorldStatePanel(forceState) {
-    const seedControls = /** @type {HTMLDialogElement} */ (
-      shadow.querySelector(".seed-controls")
-    );
+  async function toggleWorldStatePanel() {
+    /** @type {HTMLDialogElement} **/
+    const seedControls = shadow.querySelector(".seed-controls");
 
-    if (!seedControls) {
-      return;
-    }
-
-    const isCurrentlyOpen = seedControls.open;
-    const shouldHide =
-      forceState === "hide" || (forceState === undefined && isCurrentlyOpen);
-
-    if (shouldHide) {
+    if (seedControls.hasAttribute("open")) {
       seedControls.close();
-      // Logic moved to "close" event listener for better consistency
     } else {
       seedControls.showModal();
-      globalThis.blockGarden.state.isCanvasActionDisabled = true;
 
       // Unlock pointer if locked
       if (globalThis.document.pointerLockElement) {
         globalThis.document.exitPointerLock();
       }
-
-      const closeBtn = /** @type {HTMLButtonElement} */ (
-        await waitForElement({
-          getElement: () => shadow.getElementById("closeWorldGeneration"),
-          intervalMs: 150,
-          timeoutMs: 1000,
-        })
-      );
-
-      closeBtn.focus();
     }
   }
 
@@ -670,27 +622,21 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
   if (seedControls) {
     seedControls.addEventListener("close", async () => {
       setTimeout(() => {
-        globalThis.blockGarden.state.isCanvasActionDisabled = false;
-      }, 500);
-
-      // Return focus to opening button
-      const worldStateBtn = /** @type {HTMLButtonElement} */ (
-        await waitForElement({
-          getElement: () => shadow.getElementById("worldState"),
-          intervalMs: 150,
-          timeoutMs: 1000,
-        })
-      );
-
-      worldStateBtn.focus();
+        // re-enable canvas after seed controls closed
+        gameState.isCanvasActionDisabled = false;
+      }, 300);
     });
   }
 
   const closeWorldGenerationBtn = shadow.getElementById("closeWorldGeneration");
   if (closeWorldGenerationBtn) {
-    closeWorldGenerationBtn.addEventListener("click", () =>
-      toggleWorldStatePanel("hide"),
-    );
+    closeWorldGenerationBtn.addEventListener("click", () => {
+      /** @type {HTMLDialogElement} **/ (
+        shadow.querySelector(".seed-controls")
+      ).close();
+
+      gameState.isCanvasActionDisabled = true;
+    });
   }
 
   // About button
@@ -787,29 +733,6 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
         (shadow.host);
       host.keys[lowercaseKey] = true;
 
-      if (lowercaseKey === " ") {
-        const btnId = gameState.flying.get() ? "fly" : "jump";
-
-        shadow.getElementById(btnId)?.classList.add("is-pressed");
-      } else if (lowercaseKey === "enter") {
-        startDigHighlight(shadow);
-      } else {
-        const touchBtn = shadow.querySelector(
-          `.touch-btn[data-key="${lowercaseKey}"]`,
-        );
-
-        if (touchBtn) {
-          touchBtn.classList.add("is-pressed");
-        }
-      }
-
-      const isInputFocused =
-        e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement ||
-        e.target instanceof HTMLSelectElement ||
-        (e.target instanceof HTMLElement &&
-          e.target.classList.contains("ui-grid__corner--heading"));
-
       if (lowercaseKey === "escape") {
         closeMenus(shadow, cnvs);
       }
@@ -822,35 +745,34 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
         return;
       }
 
+      // Added to activate buttons when pressing space
+      if (lowercaseKey === " ") {
+        if (e.target instanceof HTMLButtonElement) {
+          e.target.click();
+
+          return;
+        }
+      }
+
+      if (!canControlCanvas(shadow)) {
+        return;
+      }
+
       // Add 'S' key to show / hide the world generation panel
       if (lowercaseKey === "s" && e.ctrlKey) {
         e.preventDefault();
 
         toggleWorldStatePanel();
 
-        gameState.isCanvasActionDisabled = true;
-
         return;
       }
 
-      if (lowercaseKey === "enter" || lowercaseKey === " ") {
-        if (
-          (e.target instanceof HTMLInputElement &&
-            e.target.getAttribute("id") === "worldSeedInput") ||
-          (e.target instanceof HTMLButtonElement &&
-            e.target.getAttribute("id") === "generateWithSeed")
-        ) {
-          handleGenerateButton();
-
-          return;
-        }
-
-        if (e.target instanceof HTMLButtonElement && lowercaseKey === " ") {
-          e.target.click();
-
-          return;
-        }
-      }
+      const isInputFocused =
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement ||
+        e.target instanceof HTMLSelectElement ||
+        (e.target instanceof HTMLElement &&
+          e.target.classList.contains("ui-grid__corner--heading"));
 
       if (isInputFocused) {
         return;
@@ -869,21 +791,6 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
 
         selectMaterialBarSlot(index);
 
-        // Reset the auto-hide timer for smoother sequential numeric transitions
-        if (materialBarAutoHideTimer) {
-          clearTimeout(materialBarAutoHideTimer);
-        }
-
-        materialBarAutoHideTimer = setTimeout(() => {
-          toggleMaterialBar(shadow, gameState, cnvs, true);
-          materialBarAutoHideTimer = null;
-        }, 800);
-
-        return;
-      }
-
-      // If canvas actions are disabled (e.g. other dialogs open), return early
-      if (globalThis.blockGarden.state.isCanvasActionDisabled) {
         return;
       }
 
@@ -924,6 +831,22 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
           gameState.curBlock.set(nextBlockId);
 
           setMaterialBarItem(nextBlockId);
+        }
+      }
+
+      if (lowercaseKey === " ") {
+        const btnId = gameState.flying.get() ? "fly" : "jump";
+
+        shadow.getElementById(btnId)?.classList.add("is-pressed");
+      } else if (lowercaseKey === "enter") {
+        startDigHighlight(shadow);
+      } else {
+        const touchBtn = shadow.querySelector(
+          `.touch-btn[data-key="${lowercaseKey}"]`,
+        );
+
+        if (touchBtn) {
+          touchBtn.classList.add("is-pressed");
         }
       }
     },
@@ -1857,8 +1780,7 @@ export function initMaterialBarEventListeners(shadow, cnvs) {
 
       selectMaterialBarSlot(index);
 
-      // Manual selection: clear any pending timer and close the bar immediately
-      toggleMaterialBar(shadow, globalThis.blockGarden.state, cnvs, true);
+      cnvs.focus();
     }
   });
 
@@ -1880,14 +1802,7 @@ export function initMaterialBarEventListeners(shadow, cnvs) {
       const index = parseInt(slot.dataset.index);
       selectMaterialBarSlot(index);
 
-      // Manual selection: clear any pending timer and close the bar immediately
-      if (materialBarAutoHideTimer) {
-        clearTimeout(materialBarAutoHideTimer);
-
-        materialBarAutoHideTimer = null;
-      }
-
-      toggleMaterialBar(shadow, globalThis.blockGarden.state, cnvs, true);
+      cnvs.focus();
 
       return;
     }

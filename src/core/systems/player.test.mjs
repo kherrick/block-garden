@@ -26,7 +26,12 @@ describe("updatePlayer", () => {
     isKeyPressed.mockReset();
     placeBlock.mockReset();
 
-    mockShadow = {};
+    mockShadow = {
+      getElementById: () => ({
+        matches: () => false,
+      }),
+      querySelectorAll: () => [],
+    };
 
     mockState = {
       yaw: 0,
@@ -36,7 +41,6 @@ describe("updatePlayer", () => {
       dx: 0,
       dy: 0,
       dz: 0,
-      isCanvasActionDisabled: false,
       actionKeyPressTime: 0,
       breakingInput: {
         isHeld: false,
@@ -93,7 +97,6 @@ describe("updatePlayer", () => {
       dx: 0,
       dy: 0,
       dz: 0,
-      isCanvasActionDisabled: false,
       actionKeyPressTime: 0,
       breakingInput: {
         isHeld: false,
@@ -109,7 +112,6 @@ describe("updatePlayer", () => {
       dx: 0,
       dy: 0,
       dz: 0,
-      isCanvasActionDisabled: false,
       actionKeyPressTime: 0,
       breakingInput: {
         isHeld: false,
@@ -297,7 +299,6 @@ describe("updatePlayer", () => {
       dx: 10,
       dy: 0,
       dz: 0,
-      isCanvasActionDisabled: false,
       actionKeyPressTime: 0,
       breakingInput: {
         isHeld: false,
@@ -313,7 +314,6 @@ describe("updatePlayer", () => {
       dx: 10,
       dy: 0,
       dz: 0,
-      isCanvasActionDisabled: false,
       actionKeyPressTime: 0,
       breakingInput: {
         isHeld: false,
@@ -332,18 +332,5 @@ describe("updatePlayer", () => {
     // With no keys pressed, flying will decelerate faster due to higher acceleration
     // So we expect flyingDx to be less than walkingDx
     expect(flyingDx).toBeLessThan(walkingDx);
-  });
-
-  test("should not place block or break when canvas action is disabled", () => {
-    mockState.isCanvasActionDisabled = true;
-    mockState.actionKeyPressTime = 100;
-
-    isKeyPressed.mockReturnValue(false);
-
-    updatePlayer(mockShadow, mockState, 0.01);
-
-    expect(placeBlock).not.toHaveBeenCalled();
-    expect(mockState.breakingInput.isHeld).toBe(false);
-    expect(mockState.actionKeyPressTime).toBe(0);
   });
 });

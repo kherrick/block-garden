@@ -1,3 +1,5 @@
+import { canControlCanvas } from "../ui/utils/canControlCanvas.mjs";
+
 /**
  * Checks if a key or touch button is currently pressed.
  *
@@ -10,16 +12,21 @@
  */
 export function isKeyPressed(shadow, key) {
   const host = shadow.host;
+
   if (
     host &&
     typeof host === "object" &&
     "keys" in host &&
     "touchKeys" in host
   ) {
-    if (globalThis.blockGarden?.state?.isCanvasActionDisabled) {
-      return false;
+    if (host.keys[key] || host.touchKeys[key]) {
+      if (canControlCanvas(shadow)) {
+        return true;
+      }
     }
-    return host.keys[key] || host.touchKeys[key];
+
+    return false;
   }
+
   return false;
 }

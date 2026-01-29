@@ -250,8 +250,6 @@ export class LinkConfigurationDialog {
         this.doc.exitPointerLock();
       }
 
-      this.gThis.blockGarden.state.isCanvasActionDisabled = true;
-
       this.dialog.addEventListener("close", () => this.close());
       this.dialog.showModal();
 
@@ -266,10 +264,6 @@ export class LinkConfigurationDialog {
     if (this.dialog instanceof HTMLDialogElement) {
       this.dialog.close();
       this.dialog.remove();
-
-      setTimeout(() => {
-        this.gThis.blockGarden.state.isCanvasActionDisabled = false;
-      }, 500);
     }
   }
 }

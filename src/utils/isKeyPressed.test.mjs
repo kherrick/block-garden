@@ -1,3 +1,8 @@
+/**
+ * @jest-environment node
+ */
+import { jest } from "@jest/globals";
+
 import { isKeyPressed } from "./isKeyPressed.mjs";
 
 describe("isKeyPressed", () => {
@@ -12,6 +17,10 @@ describe("isKeyPressed", () => {
 
     mockShadow = {
       host: mockHost,
+      getElementById: () => ({
+        matches: jest.fn(),
+      }),
+      querySelectorAll: () => [],
     };
   });
 
@@ -104,22 +113,5 @@ describe("isKeyPressed", () => {
     mockHost.touchKeys["w"] = true;
 
     expect(isKeyPressed(mockShadow, "w")).toBe(true);
-  });
-
-  test("should return false when isCanvasActionDisabled is true", () => {
-    mockHost.keys["w"] = true;
-
-    // Direct global manipulation for test
-    const originalBlockGarden = globalThis.blockGarden;
-
-    globalThis.blockGarden = {
-      state: { isCanvasActionDisabled: true },
-    };
-
-    try {
-      expect(isKeyPressed(mockShadow, "w")).toBe(false);
-    } finally {
-      globalThis.blockGarden = originalBlockGarden;
-    }
   });
 });

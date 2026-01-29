@@ -96,7 +96,7 @@ export class BlockGarden extends HTMLElement {
           }
 
           .ui-grid__corner--heading:focus-visible {
-            outline: 0.125rem solid var(--bg-color-gray-600);
+            outline: 0.125rem solid var(--bg-color-white);
             outline-offset: -0.125rem;
           }
 

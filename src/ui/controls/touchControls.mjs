@@ -74,6 +74,8 @@ export function initTouchControls(shadow) {
       e.preventDefault();
       e.stopPropagation();
 
+      shadow.getElementById("canvas").focus();
+
       startHeldAction();
     });
 
@@ -95,6 +97,8 @@ export function initTouchControls(shadow) {
     btn.addEventListener("mousedown", (e) => {
       e.preventDefault();
       e.stopPropagation();
+
+      shadow.getElementById("canvas").focus();
 
       startHeldAction();
     });

@@ -276,8 +276,6 @@ export class UrlDialog {
         this.doc.exitPointerLock();
       }
 
-      globalThis.blockGarden.state.isCanvasActionDisabled = true;
-
       this.dialog.addEventListener("close", () => this.close());
       this.dialog.showModal();
 
@@ -293,10 +291,6 @@ export class UrlDialog {
     if (this.dialog instanceof HTMLDialogElement) {
       this.dialog.close();
       this.dialog.remove();
-
-      setTimeout(() => {
-        globalThis.blockGarden.state.isCanvasActionDisabled = false;
-      }, 500);
     }
   }
 }

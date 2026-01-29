@@ -81,8 +81,6 @@ export class TextConfigurationDialog {
         this.doc.exitPointerLock();
       }
 
-      this.gThis.blockGarden.state.isCanvasActionDisabled = true;
-
       this.dialog.addEventListener("close", () => this.close());
       this.dialog.showModal();
 
@@ -97,10 +95,6 @@ export class TextConfigurationDialog {
     if (this.dialog instanceof HTMLDialogElement) {
       this.dialog.close();
       this.dialog.remove();
-
-      setTimeout(() => {
-        this.gThis.blockGarden.state.isCanvasActionDisabled = false;
-      }, 500);
     }
   }
 }

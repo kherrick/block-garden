@@ -34,6 +34,9 @@ export class InventoryDialog {
   }
 
   async createDialog() {
+    // disable canvas while dialog is open
+    this.gThis.blockGarden.state.isCanvasActionDisabled = true;
+
     if (this.dialog) {
       return this.dialog;
     }
@@ -310,13 +313,17 @@ export class InventoryDialog {
 
   handleClose() {
     setTimeout(() => {
-      globalThis.blockGarden.state.isCanvasActionDisabled = false;
+      // re-enable canvas after dialog is closed
+      this.gThis.blockGarden.state.isCanvasActionDisabled = false;
 
       this.dialog.removeEventListener("close", this.handleClose);
-    }, 500);
+    }, 300);
   }
 
   open() {
+    // disable canvas while dialog is open
+    this.gThis.blockGarden.state.isCanvasActionDisabled = true;
+
     if (!this.dialog) {
       this.createDialog();
     }
@@ -335,8 +342,6 @@ export class InventoryDialog {
       this.doc.exitPointerLock();
     }
 
-    globalThis.blockGarden.state.isCanvasActionDisabled = true;
-
     this.dialog.addEventListener("close", this.handleClose);
   }
 
@@ -346,7 +351,6 @@ export class InventoryDialog {
     }
 
     this.isOpen = false;
-    // Don't auto-lock pointer
   }
 
   toggle() {

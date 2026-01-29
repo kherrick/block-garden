@@ -122,7 +122,6 @@ export function initHammerControls(stage, shadow, gameState) {
     }
 
     return (
-      globalThis.blockGarden.state.isCanvasActionDisabled ||
       target.closest(`
         dialog,
         #materialBar,
@@ -271,6 +270,10 @@ export function initHammerControls(stage, shadow, gameState) {
     // I should simply pass `hit` but ensure I don't call it if I missed?
     // Or I modify placeBlock to accept `useFallback`?
     // Or I check here.
+
+    if (gameState.isCanvasActionDisabled) {
+      return;
+    }
 
     if (gameConfig.useSplitControls.get()) {
       // Split controls active: use center hit (gameState.hit)

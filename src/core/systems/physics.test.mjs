@@ -124,7 +124,18 @@ describe("updatePhysics", () => {
 
     isKeyPressed.mockImplementation((_, key) => key === "shift");
 
-    updatePhysics(shadow, ui, state, 0.1);
+    updatePhysics(
+      {
+        ...shadow,
+        getElementById: () => ({
+          matches: jest.fn(),
+        }),
+        querySelectorAll: () => [],
+      },
+      ui,
+      state,
+      0.1,
+    );
 
     expect(state.dy).toBe(-state.flySpeed);
   });
@@ -143,7 +154,18 @@ describe("updatePhysics", () => {
     state.onGround = true;
 
     isKeyPressed.mockImplementation((_, key) => key === " ");
-    updatePhysics(shadow, ui, state, 0.1);
+    updatePhysics(
+      {
+        ...shadow,
+        getElementById: () => ({
+          matches: jest.fn(),
+        }),
+        querySelectorAll: () => [],
+      },
+      ui,
+      state,
+      0.1,
+    );
 
     // Jump sets dy=12, then gravity subtracts 45*0.1=4.5, so dy=7.5
     expect(state.dy).toBe(7.5);

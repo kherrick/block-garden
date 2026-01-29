@@ -1,5 +1,6 @@
 import { isKeyPressed } from "../../utils/isKeyPressed.mjs";
 import { placeBlock } from "../../utils/interaction.mjs";
+import { canControlCanvas } from "../../ui/utils/canControlCanvas.mjs";
 
 /** @typedef {import('../../core/systems/game/init.mjs').CustomShadowHost} CustomShadowHost */
 /** @typedef {import('../../core/systems/game/state.mjs').GameState} GameState */
@@ -12,6 +13,10 @@ import { placeBlock } from "../../utils/interaction.mjs";
  * @returns {void}
  */
 export function updatePlayer(shadow, state, dt) {
+  if (state.isCanvasActionDisabled) {
+    return;
+  }
+
   const { yaw, flying } = state;
   const isFlying = flying.get();
   const speed = isFlying ? 12 : 8; // Faster when flying
@@ -98,45 +103,40 @@ export function updatePlayer(shadow, state, dt) {
   }
 
   // action key interaction
-  if (state.isCanvasActionDisabled) {
-    // Ensure we reset state if it was somehow left active
-    state.actionKeyPressTime = 0;
-  } else {
-    if (isKeyPressed(shadow, "enter")) {
-      if (state.actionKeyPressTime === 0) {
-        // Just started pressing
-        state.actionKeyPressTime = performance.now();
-      } else if (state.actionKeyPressTime > 0) {
-        // Key is being held (not already handled)
-        const holdDuration = performance.now() - state.actionKeyPressTime;
-        if (holdDuration > 500) {
-          // Long press: start breaking input
-          state.breakingInput.isHeld = true;
-          state.breakingInput.mode = "center";
-
-          // Mark as handled (negative) but keep reference time
-          state.actionKeyPressTime = -state.actionKeyPressTime;
-        }
-      } else {
-        // Already breaking (negative time), ensure we keep input held
+  if (isKeyPressed(shadow, "enter")) {
+    if (state.actionKeyPressTime === 0) {
+      // Just started pressing
+      state.actionKeyPressTime = performance.now();
+    } else if (state.actionKeyPressTime > 0) {
+      // Key is being held (not already handled)
+      const holdDuration = performance.now() - state.actionKeyPressTime;
+      if (holdDuration > 500) {
+        // Long press: start breaking input
         state.breakingInput.isHeld = true;
         state.breakingInput.mode = "center";
+
+        // Mark as handled (negative) but keep reference time
+        state.actionKeyPressTime = -state.actionKeyPressTime;
       }
     } else {
-      // Key released
-      if (state.actionKeyPressTime < 0) {
-        state.breakingInput.isHeld = false;
-      } else if (state.actionKeyPressTime > 0) {
-        const holdDuration = performance.now() - state.actionKeyPressTime;
-        if (holdDuration <= 500) {
-          // Short press: place block
-          placeBlock(state);
-        }
-      }
-
-      // Reset for next press
-      state.actionKeyPressTime = 0;
+      // Already breaking (negative time), ensure we keep input held
+      state.breakingInput.isHeld = true;
+      state.breakingInput.mode = "center";
     }
+  } else {
+    // Key released
+    if (state.actionKeyPressTime < 0) {
+      state.breakingInput.isHeld = false;
+    } else if (state.actionKeyPressTime > 0) {
+      const holdDuration = performance.now() - state.actionKeyPressTime;
+      if (holdDuration <= 500) {
+        // Short press: place block
+        placeBlock(state);
+      }
+    }
+
+    // Reset for next press
+    state.actionKeyPressTime = 0;
   }
 
   // Smooth acceleration

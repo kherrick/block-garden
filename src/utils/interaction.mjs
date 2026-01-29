@@ -285,8 +285,6 @@ function activateLinkBlock(gameState, x, y, z) {
     document.exitPointerLock();
   }
 
-  gameState.isCanvasActionDisabled = true;
-
   shadow.append(dialog);
   dialog.showModal();
 
@@ -298,10 +296,6 @@ function activateLinkBlock(gameState, x, y, z) {
   const closeDialog = () => {
     dialog.close();
     dialog.remove();
-
-    setTimeout(() => {
-      gameState.isCanvasActionDisabled = false;
-    }, 500);
   };
 
   dialog.querySelector("#cancelTravel").addEventListener("click", closeDialog);
@@ -362,8 +356,6 @@ async function activateTextBlock(gameState, x, y, z) {
     document.exitPointerLock();
   }
 
-  gameState.isCanvasActionDisabled = true;
-
   shadow.append(dialog);
   dialog.showModal();
 
@@ -380,10 +372,6 @@ async function activateTextBlock(gameState, x, y, z) {
   const closeDialog = () => {
     dialog.close();
     dialog.remove();
-
-    setTimeout(() => {
-      gameState.isCanvasActionDisabled = false;
-    }, 500);
   };
 
   dialog

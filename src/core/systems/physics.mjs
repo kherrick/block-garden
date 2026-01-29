@@ -126,40 +126,46 @@ export function updatePhysics(shadow, ui, state, dt) {
     flySpeed,
   } = state;
 
-  // INPUT HANDLING
-  const space = isKeyPressed(shadow, " ");
-  const now = performance.now();
-  const isFlying = flying.get();
-  // RISING EDGE: SPACE
-  if (space && !state.spacePressed) {
-    if (now - state.lastSpacePressTime < 300) {
-      // Double tap detected
-      flying.set(!isFlying);
-      state.lastSpacePressTime = 0; // Reset
-    } else {
-      state.lastSpacePressTime = now;
+  let isFlying = false;
+
+  if (!state.isCanvasActionDisabled) {
+    // INPUT HANDLING
+    const space = isKeyPressed(shadow, " ");
+    const now = performance.now();
+
+    isFlying = flying.get();
+
+    // RISING EDGE: SPACE
+    if (space && !state.spacePressed) {
+      if (now - state.lastSpacePressTime < 300) {
+        // Double tap detected
+        flying.set(!isFlying);
+        state.lastSpacePressTime = 0; // Reset
+      } else {
+        state.lastSpacePressTime = now;
+      }
     }
-  }
 
-  // Jump if space is pressed and on ground
-  if (space && !isFlying && onGround) {
-    dy = 12;
-  }
-
-  state.spacePressed = space;
-
-  // FLIGHT MOVEMENT
-  if (isFlying) {
-    if (isKeyPressed(shadow, "shift")) {
-      dy = -flySpeed; // Descend
-    } else if (space) {
-      dy = flySpeed; // Ascend
-    } else {
-      dy = 0; // Hover
+    // Jump if space is pressed and on ground
+    if (space && !isFlying && onGround) {
+      dy = 12;
     }
-  } else {
-    // Normal gravity
-    dy -= 45 * dt;
+
+    state.spacePressed = space;
+
+    // FLIGHT MOVEMENT
+    if (isFlying) {
+      if (isKeyPressed(shadow, "shift")) {
+        dy = -flySpeed; // Descend
+      } else if (space) {
+        dy = flySpeed; // Ascend
+      } else {
+        dy = 0; // Hover
+      }
+    } else {
+      // Normal gravity
+      dy -= 45 * dt;
+    }
   }
 
   // Integrate movement

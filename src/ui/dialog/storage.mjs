@@ -145,8 +145,6 @@ export async function checkAutoSave(globalThis, shadow) {
       return false;
     }
 
-    globalThis.blockGarden.state.isCanvasActionDisabled = true;
-
     // Create and show auto save dialog
     const dialog = globalThis.document.createElement("dialog");
     dialog.style.cssText = `
@@ -189,18 +187,6 @@ export async function checkAutoSave(globalThis, shadow) {
           style="background: var(--bg-color-green-500);">Yes</button>
       </div>
     `;
-
-    dialog.addEventListener("cancel", () => {
-      setTimeout(() => {
-        globalThis.blockGarden.state.isCanvasActionDisabled = false;
-      }, 500);
-    });
-
-    dialog.addEventListener("close", () => {
-      setTimeout(() => {
-        globalThis.blockGarden.state.isCanvasActionDisabled = false;
-      }, 500);
-    });
 
     shadow.append(dialog);
 
@@ -308,10 +294,6 @@ export async function checkAutoSave(globalThis, shadow) {
       });
 
       dialog.addEventListener("cancel", () => {
-        setTimeout(() => {
-          globalThis.blockGarden.state.isCanvasActionDisabled = false;
-        }, 500);
-
         resolve(false);
       });
     });
@@ -340,8 +322,6 @@ export async function checkSharedSave(globalThis, shadow) {
     if (!sharedSave || !sharedSave.data) {
       return false;
     }
-
-    globalThis.blockGarden.state.isCanvasActionDisabled = true;
 
     // Create and show shared save dialog
     const dialog = globalThis.document.createElement("dialog");
@@ -381,18 +361,6 @@ export async function checkSharedSave(globalThis, shadow) {
         ">Yes</button>
       </div>
     `;
-
-    dialog.addEventListener("cancel", () => {
-      setTimeout(() => {
-        globalThis.blockGarden.state.isCanvasActionDisabled = false;
-      }, 500);
-    });
-
-    dialog.addEventListener("close", () => {
-      setTimeout(() => {
-        globalThis.blockGarden.state.isCanvasActionDisabled = false;
-      }, 500);
-    });
 
     shadow.append(dialog);
 
@@ -494,10 +462,6 @@ export async function checkSharedSave(globalThis, shadow) {
         });
 
       dialog.addEventListener("cancel", async () => {
-        setTimeout(() => {
-          globalThis.blockGarden.state.isCanvasActionDisabled = false;
-        }, 500);
-
         // Delete the shared save if dialog is cancelled
         await deleteSharedSave();
 
@@ -529,8 +493,6 @@ export async function checkUrlSave(globalThis, shadow) {
       return false;
     }
 
-    globalThis.blockGarden.state.isCanvasActionDisabled = true;
-
     try {
       const response = await fetch(gameSaveUrl);
 
@@ -553,8 +515,6 @@ export async function checkUrlSave(globalThis, shadow) {
           { stack: true, useSingle: false, duration: 5000 },
         );
 
-        globalThis.blockGarden.state.isCanvasActionDisabled = false;
-
         return false;
       }
 
@@ -571,8 +531,6 @@ export async function checkUrlSave(globalThis, shadow) {
 
       console.log("URL save loaded successfully");
 
-      globalThis.blockGarden.state.isCanvasActionDisabled = false;
-
       return true;
     } catch (error) {
       console.error("Failed to load URL save:", error);
@@ -582,13 +540,10 @@ export async function checkUrlSave(globalThis, shadow) {
         duration: 5000,
       });
 
-      globalThis.blockGarden.state.isCanvasActionDisabled = false;
-
       return false;
     }
   } catch (error) {
     console.error("Failed to check for URL save:", error);
-    globalThis.blockGarden.state.isCanvasActionDisabled = false;
 
     return false;
   }
@@ -1042,10 +997,6 @@ export class StorageDialog {
       this.saveCurrentGame();
     }
   }
-
-  // const loadBtn = /** @type {HTMLButtonElement} */ (
-  //   this.dialog.querySelector("#loadUrlBtn")
-  // );
 
   /** @returns {void} */
   initEventListeners() {

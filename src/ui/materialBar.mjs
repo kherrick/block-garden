@@ -1,6 +1,5 @@
 import { getBlockById } from "../world/config/blocks.mjs";
 
-/** @typedef {import('../world/config/blocks.mjs').BlockDefinition} BlockDefinition */
 /** @typedef {import('../utils/colors/index.mjs').Colors} Colors */
 
 /**
@@ -14,11 +13,10 @@ export function initMaterialBar(gameColors) {
    * @param {ShadowRoot} shadow
    * @param {number[]} materialBar
    * @param {number} activeSlot
-   * @param {BlockDefinition[]} blocks
    *
    * @returns {void}
    */
-  return function (shadow, materialBar, activeSlot, blocks) {
+  return function (shadow, materialBar, activeSlot) {
     const materialBarEl = shadow.getElementById("materialBar");
 
     if (!materialBarEl) {

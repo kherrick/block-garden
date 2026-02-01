@@ -7,11 +7,14 @@ export class TextConfigurationDialog {
     this.shadow = shadow;
     this.dialog = null;
 
-    this.close = this.close.bind(this);
+    this.handleClose = this.handleClose.bind(this);
     this.save = this.save.bind(this);
   }
 
   async createDialog() {
+    // disable canvas while dialog is open
+    this.gThis.blockGarden.state.isCanvasActionDisabled = true;
+
     if (this.dialog) {
       this.dialog.remove();
     }
@@ -55,7 +58,7 @@ export class TextConfigurationDialog {
     this.dialog = dialog;
 
     const closeBtn = dialog.querySelector("#closeTextConfigDialog");
-    closeBtn.addEventListener("click", this.close);
+    closeBtn.addEventListener("click", () => this.dialog.close());
 
     const saveBtn = dialog.querySelector("#saveTextConfigBtn");
     saveBtn.addEventListener("click", this.save);
@@ -72,16 +75,19 @@ export class TextConfigurationDialog {
 
     showToast(this.shadow, "Text block armed!");
 
-    this.close();
+    this.dialog.close();
   }
 
-  show() {
+  open() {
     if (this.dialog instanceof HTMLDialogElement) {
+      // disable canvas while dialog is open
+      this.gThis.blockGarden.state.isCanvasActionDisabled = true;
+
       if (this.doc.pointerLockElement) {
         this.doc.exitPointerLock();
       }
 
-      this.dialog.addEventListener("close", () => this.close());
+      this.dialog.addEventListener("close", () => this.handleClose());
       this.dialog.showModal();
 
       const autofocusElement = this.dialog.querySelector("[autofocus]");
@@ -91,10 +97,16 @@ export class TextConfigurationDialog {
     }
   }
 
-  close() {
+  handleClose() {
     if (this.dialog instanceof HTMLDialogElement) {
-      this.dialog.close();
       this.dialog.remove();
+
+      setTimeout(() => {
+        // re-enable canvas after dialog is closed
+        this.gThis.blockGarden.state.isCanvasActionDisabled = false;
+
+        this.dialog.removeEventListener("close", this.handleClose);
+      }, 300);
     }
   }
 }
@@ -104,7 +116,7 @@ export async function showTextConfigDialog(gThis, doc, shadow) {
 
   await textDialog.createDialog();
 
-  textDialog.show();
+  textDialog.open();
 
   return textDialog;
 }

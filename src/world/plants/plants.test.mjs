@@ -3,6 +3,8 @@
  */
 import { jest } from "@jest/globals";
 
+import { FAST_GROWTH_TIME } from "../config/index.mjs";
+
 // Mock block configuration
 jest.unstable_mockModule("../../world/config/blocks.mjs", () => ({
   blockNames: {
@@ -23,9 +25,11 @@ jest.unstable_mockModule("../../world/config/blocks.mjs", () => ({
     CACTUS: "CACTUS",
     CACTUS_SEGMENT: "CACTUS_SEGMENT",
   },
-}));
-
-jest.unstable_mockModule("../../world/config/getBlockIdByName.mjs", () => ({
+  blocks: {
+    getByName: (name) => ({ id: 100, name }),
+  },
+  getBlockById: jest.fn(),
+  getBlockByName: jest.fn(),
   getBlockIdByName: jest.fn((name) => {
     const blockIds = {
       WHEAT_GROWING: 101,
@@ -43,6 +47,7 @@ jest.unstable_mockModule("../../world/config/getBlockIdByName.mjs", () => ({
     };
     return blockIds[name] || 0;
   }),
+  FAST_GROWTH_TIME,
 }));
 
 describe("Plant Structure Generators", () => {

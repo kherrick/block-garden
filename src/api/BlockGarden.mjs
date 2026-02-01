@@ -137,6 +137,7 @@ export class BlockGarden {
         const avg = blockColorAccum[blockName].map((c) =>
           Math.round(c / count),
         );
+
         const cssKey = `--bg-block-${blockName.toLowerCase().replace(/_/g, "-")}-color`;
         idealColorMap[cssKey] = rgbToHex(avg[0], avg[1], avg[2]);
       }
@@ -172,7 +173,14 @@ export class BlockGarden {
   }
 
   getBlockIdByName(name, blocks = this.config.blocks) {
-    const block = blocks.find((block) => block.name === name);
+    if (blocks && blocks.getIdByName) {
+      return blocks.getIdByName(name);
+    }
+
+    // Fallback if blocks is just an array for some reason (e.g. tests)
+    const block = Array.isArray(blocks)
+      ? blocks.find((block) => block.name === name)
+      : null;
 
     return block ? block.id : -1;
   }
@@ -188,6 +196,7 @@ export class BlockGarden {
     if (typeof rawBlockName !== "string") {
       return null;
     }
+
     return rawBlockName.toUpperCase().replace(/-/g, "_");
   }
 
@@ -284,14 +293,11 @@ export class BlockGarden {
    * then writes the updated world state back.
    *
    * @param {{x:number, y:number, z:number, block:*}[]} updates - Array of block update descriptors.
+   * @param {Object} [options] - Batch options
    */
-  batchSetBlocks(updates) {
+  batchSetBlocks(updates, { skipLighting = false } = {}) {
     const world = this.getWorld();
-
-    updates.forEach(({ x, y, z, block }) =>
-      world.setBlock(x, y, z, block, true),
-    );
-
+    world.batchSetBlocks(updates, { skipLighting });
     this.setWorld(world);
   }
 
@@ -442,7 +448,7 @@ export class BlockGarden {
       currentZ += (bitmap[0].length + spacing) * directionZ;
     }
 
-    this.batchSetBlocks(updates);
+    this.batchSetBlocks(updates, { skipLighting: true });
 
     return {
       x,
@@ -533,7 +539,7 @@ export class BlockGarden {
       }
     }
 
-    this.batchSetBlocks(updates);
+    this.batchSetBlocks(updates, { skipLighting: true });
 
     return {
       x,

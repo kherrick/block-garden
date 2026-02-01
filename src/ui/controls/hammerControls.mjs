@@ -214,7 +214,7 @@ export function initHammerControls(stage, shadow, gameState) {
     }
 
     // Ignore Tap From Mouse
-    // We handle mouse placement in eventListeners.mjs via "mousedown" (Right Click).
+    // We handle mouse placement in mousedown (Right Click) logic.
     // HammerJS "tap" corresponds to Left Click on mouse, which we now use for Breaking.
     if (ev.pointerType === "mouse") {
       return;
@@ -244,48 +244,22 @@ export function initHammerControls(stage, shadow, gameState) {
           pitch: gameState.pitch,
         },
       );
-      // If we raycast from touch, we ONLY use the touch result.
-      // If it's null (miss), we pass null.
+
       hit = rayHit;
     }
-
-    // Pass the specific hit target. If hit is null (and we are in non-split mode),
-    // placeBlock will receive null.
-    // However, placeBlock still has: const hit = targetHit || gameState.hit;
-    // We need to prevent placeBlock from using the fallback if we INTENDED to use a specific hit (even if null).
-    // Or simpler: only call placeBlock if hit is valid?
-    // If I tap the sky, interaction should happen with sky (nothing).
-    // So if hit is null, we do NOTHING.
-    // This differs from "Split Controls ON" where hit is always gameState.hit (which might be null).
-    // If Split ON, gameState.hit is passed. if null, nothing happens.
-    // If Split OFF, rayHit is passed. If null, nothing happens.
-    // The issue was placeBlock's fallback: `targetHit || gameState.hit`.
-    // If rayHit is null, placeBlock sees null, and falls back to gameState.hit.
-
-    // Changing placeBlock is risky for other calls (if any).
-    // Better to handle it here: call placeBlock only if hit is valid, OR pass a non-null object that signifies "Miss" if needed?
-    // Actually, placeBlock returns false if (!hit ...).
-    // So if I pass null, and it falls back, that's bad.
-    // If I pass {hit: null}? No.
-    // I should simply pass `hit` but ensure I don't call it if I missed?
-    // Or I modify placeBlock to accept `useFallback`?
-    // Or I check here.
 
     if (gameState.isCanvasActionDisabled) {
       return;
     }
 
     if (gameConfig.useSplitControls.get()) {
-      // Split controls active: use center hit (gameState.hit)
+      // use center hit (gameState.hit)
       placeBlock(gameState);
     } else {
-      // Split controls inactive: use rayHit
       if (hit) {
-        // We have a direct hit, use it
-        // We pass it as targetHit. placeBlock uses it.
+        // use rayHit
         placeBlock(gameState, hit);
       }
-      // If no hit, do nothing. Do not fallback to center.
     }
   });
 

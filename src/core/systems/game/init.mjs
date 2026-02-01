@@ -28,12 +28,11 @@ import { showToast } from "../../../api/ui/toast.mjs";
 
 import { cancelGameLoop, gameLoop } from "./loop.mjs";
 import { colors as gameColors } from "../../../world/config/colors.mjs";
+import { FAST_GROWTH_TIME } from "../../../world/config/index.mjs";
 
-import {
-  initCanvasEventListeners,
-  initElementEventListeners,
-  initMaterialBarEventListeners,
-} from "../../../ui/controls/eventListeners.mjs";
+import { initCanvasEventListeners } from "../../../ui/controls/eventListeners/canvasListeners.mjs";
+import { initElementEventListeners } from "../../../ui/controls/eventListeners/elementListeners.mjs";
+import { initMaterialBarEventListeners } from "../../../ui/controls/eventListeners/materialBar.mjs";
 
 import { initState } from "./state.mjs";
 import { initEffects, initMaterialBarEffects } from "../../../ui/effects.mjs";
@@ -331,7 +330,6 @@ export async function initGame(gThis, shadow, cnvs) {
     // Set all growthTimers to FAST_GROWTH_TIME if enabled else restore to block default
     const { blocks } = gameConfig;
     const { growthTimers, plantStructures } = gameState;
-    const FAST_GROWTH_TIME = blocks.FAST_GROWTH_TIME || 30;
 
     Object.keys(growthTimers).forEach((key) => {
       if (gameState.fastGrowth) {
@@ -339,7 +337,7 @@ export async function initGame(gThis, shadow, cnvs) {
       } else {
         // Restore to block default
         const plantType = plantStructures[key]?.type;
-        const block = blocks.find((b) => b.name === plantType);
+        const block = blocks.getByName(plantType);
         growthTimers[key] = block?.growthTime || 10.0;
       }
     });

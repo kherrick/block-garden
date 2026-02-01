@@ -1,5 +1,4 @@
 import { gameConfig } from "../../world/config/index.mjs";
-import { getBlockIdByName } from "../../world/config/getBlockIdByName.mjs";
 
 import { setMaterialBarItem } from "../../core/systems/game/state.mjs";
 
@@ -259,7 +258,7 @@ export class InventoryDialog {
         html += `
           <div
             class="inventory-slot ${isSeedClass}"
-            data-id="${getBlockIdByName(block.name)}"
+            data-id="${block.id}"
             tabindex="0"
             title="${block.name}"
           >

@@ -15,9 +15,7 @@ import { blocks, blockNames } from "./blocks.mjs";
  * @returns {number} Block ID
  */
 function getBlockId(name) {
-  const block = blocks.find((b) => b.name === name);
-
-  return block ? block.id : -1;
+  return blocks.getIdByName(name);
 }
 
 /**

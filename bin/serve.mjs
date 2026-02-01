@@ -100,10 +100,10 @@ app.use((req, res, next) => {
 
   // remove /src from the request url
   const filePath = path.join(__dirname, path.sep, "..", path.sep, req.url);
-
   fs.stat(filePath, (err, stats) => {
     if (err) {
       next();
+
       return;
     }
 

@@ -238,7 +238,7 @@ export class DrawVideo extends BlockGarden {
         });
       }
 
-      this.batchSetBlocks(updates);
+      this.batchSetBlocks(updates, { skipLighting: true });
     };
 
     // Draw control buttons (recreate on each call to prevent destruction)
@@ -269,7 +269,7 @@ export class DrawVideo extends BlockGarden {
         }
       }
 
-      this.batchSetBlocks(updates);
+      this.batchSetBlocks(updates, { skipLighting: true });
     };
 
     // Clear the video frame area
@@ -280,7 +280,7 @@ export class DrawVideo extends BlockGarden {
           updates.push({ x: x + dx, y: y + dy, z, block: emptyBlock });
         }
       }
-      this.batchSetBlocks(updates);
+      this.batchSetBlocks(updates, { skipLighting: true });
     };
 
     // Initialize video elements
@@ -466,7 +466,7 @@ export class DrawVideo extends BlockGarden {
         }
       }
 
-      this.batchSetBlocks(updates);
+      this.batchSetBlocks(updates, { skipLighting: true });
     };
 
     // nearestColor helper

@@ -2,6 +2,8 @@ import { Signal } from "signal-polyfill";
 
 import { blockNames, blocks } from "./blocks.mjs";
 
+export const FAST_GROWTH_TIME = 30;
+
 /**
  * @typedef {import('./blocks.mjs').BlockArray} BlockArray
  */

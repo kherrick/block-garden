@@ -4,8 +4,8 @@ import { drawChunkMesh } from "../../../render/draw/chunkMesh.mjs";
 import { drawCrosshairs } from "../../../render/draw/crossHairs.mjs";
 import { drawSelectionHighlight } from "../../../render/draw/selectionHighlight.mjs";
 
-import { getBlockByName } from "../../../world/config/blocks.mjs";
 import { blocks as blockTypes } from "../../../world/config/blocks.mjs";
+import { FAST_GROWTH_TIME } from "../../../world/config/index.mjs";
 import {
   getBlendedLightDirection,
   getSkyColor,
@@ -409,9 +409,9 @@ export function gameLoop(
         let progress = 1.0;
         if (timer !== undefined) {
           // Re-calculate progress if timer is active
-          const plantDef = getBlockByName(structure.type);
+          const plantDef = blockTypes.getByName(structure.type);
           const totalTime = gameState.fastGrowth
-            ? 30 // hardcoded FAST_GROWTH_TIME import issue, can define or import
+            ? FAST_GROWTH_TIME
             : plantDef?.growthTime || 10.0;
           progress = Math.max(0, 1.0 - timer / totalTime);
         }

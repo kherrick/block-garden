@@ -1,8 +1,5 @@
-import {
-  getBlockByName,
-  FAST_GROWTH_TIME,
-} from "../../world/config/blocks.mjs";
-
+import { blocks as blockTypes } from "../../world/config/blocks.mjs";
+import { FAST_GROWTH_TIME } from "../../world/config/index.mjs";
 import { generators } from "../../world/plants/index.mjs";
 
 // Controls for throttling visual updates
@@ -106,7 +103,7 @@ export function updatePlantGrowth(gameState) {
       // Update structure visuals based on progress (throttled)
       if (structure && generators[structure.type] && shouldUpdateVisuals) {
         // Find plant block definition to get growthTime
-        const plantDef = getBlockByName(structure.type);
+        const plantDef = blockTypes.getByName(structure.type);
         const totalTime = useFastGrowth
           ? FAST_GROWTH_TIME
           : plantDef?.growthTime || 10.0;

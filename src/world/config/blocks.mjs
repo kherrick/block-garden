@@ -23,6 +23,8 @@
  *
  * @property {function(number): (BlockDefinition|undefined)} getById - Get a block definition by its ID
  * @property {function(string): (BlockDefinition|undefined)} getByName - Get a block definition by its name
+ * @property {function(string): number} getIdByName - Get a block ID by its name
+ * @property {function(number): (BlockDefinition|undefined)} getByIndex - Get a block definition by its index
  */
 
 /**
@@ -169,8 +171,6 @@ export const blockNames = {
   LANTERN: "Lantern",
   LIGHTSTONE: "Lightstone",
 };
-
-export const FAST_GROWTH_TIME = 30;
 
 /**
  * Array of block definitions.
@@ -1143,7 +1143,7 @@ const blockDefinitionsById = new Array(256).fill(undefined);
 /**
  * Build a lookup map for blocks by name.
  */
-const blockDefinitionsByName = new Map();
+const blockDefinitionsNameMap = new Map();
 
 /**
  * Build a map of block ID to array index.
@@ -1159,9 +1159,110 @@ blockDefinitionsArray.forEach((block, index) => {
   }
 
   if (block.name) {
-    blockDefinitionsByName.set(block.name, block);
+    blockDefinitionsNameMap.set(block.name, block);
   }
 });
+
+/**
+ * Get a block definition by its ID.
+ *
+ * @param {number} id
+ *
+ * @returns {BlockDefinition|undefined}
+ */
+export const getBlockById = (id) => blockDefinitionsById[id];
+
+/**
+ * Get a block definition by its name.
+ *
+ * @param {string} name
+ *
+ * @returns {BlockDefinition|undefined}
+ */
+export const getBlockByName = (name) => blockDefinitionsNameMap.get(name);
+
+/**
+ * Get the numeric ID of a block by its name.
+ *
+ * @param {string} name
+ *
+ * @returns {number} The ID of the block, or -1 if not found
+ */
+export const getBlockIdByName = (name) =>
+  blockDefinitionsNameMap.get(name)?.id ?? -1;
+
+/**
+ * Get a block definition by its array index.
+ *
+ * @param {number} index
+ *
+ * @returns {BlockDefinition|undefined}
+ */
+export const getBlockByIndex = (index) => blockDefinitionsArray[index];
+
+/**
+ * Cached sets for gravity and non-gravity blocks.
+ *
+ * @type {Set<BlockDefinition>}
+ */
+const gravityBlocksSet = new Set();
+/** @type {Set<BlockDefinition>} */
+const nonGravityBlocksSet = new Set();
+
+blockDefinitionsArray.forEach((block) => {
+  if (block.gravity === true) {
+    gravityBlocksSet.add(block);
+  } else {
+    nonGravityBlocksSet.add(block);
+  }
+});
+
+/**
+ * Get a Set of all blocks whose gravity is true.
+ *
+ * @param {BlockArray} _blocks - (Deprecated) Unused, uses internal cache
+ *
+ * @returns {Set<BlockDefinition>}
+ */
+export function getGravityBlocks(_blocks) {
+  return gravityBlocksSet;
+}
+
+/**
+ * Get new block ID based on current block ID and direction.
+ *
+ * @param {number} currentBlockId
+ * @param {BlockArray} blocks
+ * @param {boolean} isForward
+ *
+ * @returns {number}
+ */
+export function getNewBlockId(currentBlockId, blocks, isForward) {
+  const currentIndex = blockIdToIndexMap.get(currentBlockId);
+  if (currentIndex === undefined) return currentBlockId;
+
+  const blockCount = blockDefinitionsArray.length;
+  const newIndex = isForward
+    ? currentIndex === blockCount - 1
+      ? 1
+      : currentIndex + 1
+    : currentIndex === 1
+      ? blockCount - 1
+      : currentIndex - 1;
+
+  return blockDefinitionsArray[newIndex].id;
+}
+
+/**
+ * Get a Set of all blocks whose gravity is false.
+ *
+ * @param {BlockArray} _blocks - (Deprecated) Unused, uses internal cache
+ *
+ * @returns {Set<BlockDefinition>}
+ */
+export function getNonGravityBlocks(_blocks) {
+  return nonGravityBlocksSet;
+}
 
 /**
  * Augment blocks array with fast lookup methods for performance
@@ -1169,79 +1270,11 @@ blockDefinitionsArray.forEach((block, index) => {
  * @type {BlockArray}
  */
 const blocks = Object.assign(blockDefinitionsArray, {
-  getById: (id) => blockDefinitionsById[id],
-  getByName: (name) => blockDefinitionsByName.get(name),
+  getById: getBlockById,
+  getByName: getBlockByName,
+  getIdByName: getBlockIdByName,
+  getByIndex: getBlockByIndex,
 });
-
-/**
- * Get a Set of all blocks whose gravity is false.
- *
- * @param {BlockArray} blocks
- *
- * @returns {Set<BlockDefinition>}
- */
-export function getNonGravityBlocks(blocks) {
-  return new Set(
-    blocks.filter(
-      (block) => block.gravity === false || block.gravity === undefined,
-    ),
-  );
-}
-
-/**
- * Get a Set of all blocks whose gravity is true.
- *
- * @param {BlockArray} blocks
- *
- * @returns {Set<BlockDefinition>}
- */
-export function getGravityBlocks(blocks) {
-  return new Set(blocks.filter((block) => block.gravity === true));
-}
-
-/**
- * Get a block definition by its name.
- *
- * @param {string} name - The block name
- *
- * @returns {BlockDefinition|undefined}
- */
-export function getBlockByName(name) {
-  return blockDefinitionsByName.get(name);
-}
-
-/**
- * Get the array index of a block by its ID.
- *
- * @param {number} blockId - The block ID
- *
- * @returns {number|undefined} The array index, or undefined if not found
- */
-export function getBlockIndexById(blockId) {
-  return blockIdToIndexMap.get(blockId);
-}
-
-/**
- * Get a block definition by its ID.
- *
- * @param {number} blockId - The block ID
- *
- * @returns {BlockDefinition|undefined} The block definition, or undefined if not found
- */
-export function getBlockById(blockId) {
-  return blockDefinitionsById[blockId];
-}
-
-/**
- * Get a block definition by its array index.
- *
- * @param {number} index - The array index
- *
- * @returns {BlockDefinition|undefined} The block definition, or undefined if not found
- */
-export function getBlockByIndex(index) {
-  return blocks[index];
-}
 
 /** @type {BlockArray} */
 export { blocks };

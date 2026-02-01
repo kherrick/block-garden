@@ -28,6 +28,7 @@ export class GOL extends BlockGarden {
     console.log(
       `🎯 Game area: X[${x} to ${x + width - 1}], Y[${y} to ${y + height - 1}], Z[${z} to ${z + depth - 1}]`,
     );
+
     console.log(`🧱 Border block ID: ${borderBlock} (Bedrock)`);
     console.log(`🌹 Alive block ID: ${aliveBlock} (Rose)`);
     console.log(`❄️  Dead block ID: ${deadBlock} (Ice)`);
@@ -78,6 +79,7 @@ export class GOL extends BlockGarden {
             const dx = col - centerX;
             const dy = row - centerY;
             const dz = slice - centerZ;
+
             if (dx * dx + dy * dy + dz * dz <= radius * radius) {
               grid[row][col][slice] = 1;
             }
@@ -92,10 +94,14 @@ export class GOL extends BlockGarden {
       for (let dz = -1; dz <= 1; dz++) {
         for (let dy = -1; dy <= 1; dy++) {
           for (let dx = -1; dx <= 1; dx++) {
-            if (dx === 0 && dy === 0 && dz === 0) continue;
+            if (dx === 0 && dy === 0 && dz === 0) {
+              continue;
+            }
+
             const nr = row + dy;
             const nc = col + dx;
             const ns = slice + dz;
+
             if (
               nr >= 0 &&
               nr < height &&
@@ -109,6 +115,7 @@ export class GOL extends BlockGarden {
           }
         }
       }
+
       return count;
     };
 
@@ -118,7 +125,9 @@ export class GOL extends BlockGarden {
       for (let dz = -1; dz <= 1; dz++) {
         for (let dy = -1; dy <= 1; dy++) {
           for (let dx = -1; dx <= 1; dx++) {
-            if (dx === 0 && dy === 0 && dz === 0) continue;
+            if (dx === 0 && dy === 0 && dz === 0) {
+              continue;
+            }
 
             const nr = (row + dy + height) % height;
             const nc = (col + dx + width) % width;
@@ -138,6 +147,7 @@ export class GOL extends BlockGarden {
     // Render current grid state
     const renderGrid = () => {
       const updates = [];
+
       for (let row = 0; row < height; row++) {
         for (let col = 0; col < width; col++) {
           for (let slice = 0; slice < depth; slice++) {
@@ -152,12 +162,15 @@ export class GOL extends BlockGarden {
           }
         }
       }
-      this.batchSetBlocks(updates);
+
+      this.batchSetBlocks(updates, { skipLighting: true });
     };
 
     // Draw simple rectangular border frame (like 2D version but in 3D)
     const drawBorder = () => {
-      if (!showBorder) return;
+      if (!showBorder) {
+        return;
+      }
 
       const updates = [];
 
@@ -184,6 +197,7 @@ export class GOL extends BlockGarden {
           block: borderBlock,
         }); // back top edge
       }
+
       for (let iz = z - 1; iz <= z + depth; iz++) {
         updates.push({ x: x - 1, y: y + height, z: iz, block: borderBlock }); // left top edge
         updates.push({
@@ -205,7 +219,8 @@ export class GOL extends BlockGarden {
       console.log(
         `🧱 Placing ${updates.length} border blocks (wireframe edges only)`,
       );
-      this.batchSetBlocks(updates);
+
+      this.batchSetBlocks(updates, { skipLighting: true });
     };
 
     // Draw border FIRST, then game content (so we can see if border gets overwritten)

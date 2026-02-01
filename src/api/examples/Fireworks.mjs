@@ -18,8 +18,6 @@ export class Fireworks extends BlockGarden {
     z = Math.floor(z);
 
     const {
-      explosionRadius = 7,
-      explosionDuration = 20, // Frames for explosion expansion
       colors = [
         "Gold",
         "Ice",
@@ -70,14 +68,7 @@ export class Fireworks extends BlockGarden {
         } else {
           // Reached target! Switch to explosion
           phase = "explode";
-          this.initExplosion(
-            x,
-            Math.floor(currentY),
-            z,
-            colorIds,
-            explosionRadius,
-            particles,
-          );
+          this.initExplosion(x, Math.floor(currentY), z, colorIds, particles);
         }
       } else if (phase === "explode") {
         // Update particles
@@ -123,19 +114,21 @@ export class Fireworks extends BlockGarden {
         // If no particles left, stop
         if (particles.length === 0) {
           // Final flush of clears
-          this.batchSetBlocks(updates);
-          return; // Done
+          this.batchSetBlocks(updates, { skipLighting: true });
+
+          return;
         }
       }
 
-      this.batchSetBlocks(updates);
+      this.batchSetBlocks(updates, { skipLighting: true });
+
       requestAnimationFrame(animate);
     };
 
     animate();
   }
 
-  initExplosion(x, y, z, colors, radius, particlesArray) {
+  initExplosion(x, y, z, colors, particlesArray) {
     const particleCount = 50;
     for (let i = 0; i < particleCount; i++) {
       // Random direction in sphere

@@ -4,8 +4,8 @@ import { formatName } from "./formatWorldName.mjs";
 
 import { showToast } from "../api/ui/toast.mjs";
 
-import { getBlockById } from "../world/config/blocks.mjs";
-import { gameConfig } from "../world/config/index.mjs";
+import { blocks } from "../world/config/blocks.mjs";
+import { FAST_GROWTH_TIME, gameConfig } from "../world/config/index.mjs";
 
 import { getShadowRoot } from "../ui/utils/getShadowRoot.mjs";
 import { raycastFromCanvasCoords } from "./raycastFromCanvasCoords.mjs";
@@ -31,7 +31,7 @@ export function placeBlock(gameState, targetHit) {
   // Check if we are interacting with an existing block
   const blockType = gameState.world.get(`${hit.x},${hit.y},${hit.z}`);
   if (blockType !== undefined) {
-    const blockDef = getBlockById(blockType);
+    const blockDef = blocks.getById(blockType);
     if (blockDef && blockDef.name === "Link") {
       activateLinkBlock(gameState, hit.x, hit.y, hit.z);
 
@@ -76,7 +76,7 @@ export function placeBlock(gameState, targetHit) {
     const shadow = getShadowRoot(globalThis.document, "block-garden");
     if (shadow) {
       const targetBlockType = gameState.world.get(`${hit.x},${hit.y},${hit.z}`);
-      const targetBlockDef = getBlockById(targetBlockType);
+      const targetBlockDef = blocks.getById(targetBlockType);
       const blockName = targetBlockDef ? targetBlockDef.name : "Unknown";
 
       let msg = `${blockName} at [${hit.x}, ${hit.y}, ${hit.z}]`;
@@ -113,7 +113,7 @@ export function placeBlock(gameState, targetHit) {
   const curBlockId = gameState.curBlock.get();
   const key = `${newBlockX},${newBlockY},${newBlockZ}`;
 
-  const curBlockDef = getBlockById(curBlockId);
+  const curBlockDef = blocks.getById(curBlockId);
 
   let metadata = null;
   if (curBlockDef && curBlockDef.name === "Link") {
@@ -125,7 +125,7 @@ export function placeBlock(gameState, targetHit) {
   gameState.world.set(key, curBlockId, true, metadata);
 
   // Plant growth logic
-  const placedBlock = getBlockById(curBlockId);
+  const placedBlock = blocks.getById(curBlockId);
   if (placedBlock && placedBlock.isSeed) {
     if (!gameState.growthTimers) {
       gameState.growthTimers = {};
@@ -135,7 +135,6 @@ export function placeBlock(gameState, targetHit) {
       gameState.plantStructures = {};
     }
 
-    const FAST_GROWTH_TIME = 30;
     const growthTime = gameState.fastGrowth
       ? FAST_GROWTH_TIME
       : placedBlock.growthTime || 10.0;
@@ -285,6 +284,20 @@ function activateLinkBlock(gameState, x, y, z) {
     document.exitPointerLock();
   }
 
+  const handleClose = () => {
+    setTimeout(() => {
+      // re-enable canvas after dialog is closed
+      gameState.isCanvasActionDisabled = false;
+
+      dialog.removeEventListener("close", handleClose);
+    }, 300);
+  };
+
+  dialog.addEventListener("close", handleClose);
+
+  // disable canvas while dialog is open
+  gameState.isCanvasActionDisabled = true;
+
   shadow.append(dialog);
   dialog.showModal();
 
@@ -355,6 +368,20 @@ async function activateTextBlock(gameState, x, y, z) {
   if (document.pointerLockElement) {
     document.exitPointerLock();
   }
+
+  const handleClose = () => {
+    setTimeout(() => {
+      // re-enable canvas after dialog is closed
+      gameState.isCanvasActionDisabled = false;
+
+      dialog.removeEventListener("close", handleClose);
+    }, 300);
+  };
+
+  dialog.addEventListener("close", handleClose);
+
+  // disable canvas while dialog is open
+  gameState.isCanvasActionDisabled = true;
 
   shadow.append(dialog);
   dialog.showModal();
@@ -537,7 +564,7 @@ export function updateBreaking(gameState, dt) {
 
   // Update Progress (if active)
   if (gameState.breaking.active) {
-    const blockDef = getBlockById(gameState.breaking.currentBlockId);
+    const blockDef = blocks.getById(gameState.breaking.currentBlockId);
     if (!blockDef) {
       stopBreaking(gameState);
 

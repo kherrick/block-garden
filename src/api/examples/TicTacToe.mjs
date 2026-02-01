@@ -138,7 +138,7 @@ export class TicTacToe extends BlockGarden {
         }
       }
 
-      this.batchSetBlocks(updates);
+      this.batchSetBlocks(updates, { skipLighting: true });
     };
 
     // Draw the entire board
@@ -181,7 +181,7 @@ export class TicTacToe extends BlockGarden {
         });
       }
 
-      this.batchSetBlocks(updates);
+      this.batchSetBlocks(updates, { skipLighting: true });
     };
 
     // Draw reset button
@@ -199,7 +199,7 @@ export class TicTacToe extends BlockGarden {
         }
       }
 
-      this.batchSetBlocks(updates);
+      this.batchSetBlocks(updates, { skipLighting: true });
       console.log("🔄 Reset button drawn");
     };
 
@@ -249,7 +249,7 @@ export class TicTacToe extends BlockGarden {
         block: arrowBlock,
       });
 
-      this.batchSetBlocks(updates);
+      this.batchSetBlocks(updates, { skipLighting: true });
       console.log("➡️ Direction indicators drawn - FRONT is at Z=" + z);
     };
 
@@ -379,7 +379,7 @@ export class TicTacToe extends BlockGarden {
         }
       }
 
-      this.batchSetBlocks(updates);
+      this.batchSetBlocks(updates, { skipLighting: true });
     };
 
     // Clear winning line (both sides)
@@ -457,7 +457,7 @@ export class TicTacToe extends BlockGarden {
         }
       }
 
-      this.batchSetBlocks(updates);
+      this.batchSetBlocks(updates, { skipLighting: true });
     };
 
     // Handle block break (cell click)

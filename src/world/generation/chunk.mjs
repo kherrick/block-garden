@@ -21,8 +21,7 @@ import {
 } from "../../utils/noise.mjs";
 
 import { getBiome } from "../../utils/getBiome.mjs";
-import { blockNames } from "../config/blocks.mjs";
-import { getBlockIdByName } from "../config/getBlockIdByName.mjs";
+import { blockNames, getBlockIdByName } from "../config/blocks.mjs";
 
 /**
  * @typedef {import('../meshing/chunk.mjs').Chunk} Chunk

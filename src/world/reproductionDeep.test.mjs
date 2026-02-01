@@ -3,6 +3,8 @@
  */
 import { jest } from "@jest/globals";
 
+import { FAST_GROWTH_TIME } from "./config/index.mjs";
+
 // Mock global Worker
 global.Worker = class {
   constructor() {}
@@ -37,6 +39,7 @@ jest.unstable_mockModule("./config/index.mjs", () => ({
     useCaves: { get: () => true, set: jest.fn() },
     cloudDensity: { get: () => 100, set: jest.fn() },
   },
+  FAST_GROWTH_TIME,
 }));
 
 // Real imports

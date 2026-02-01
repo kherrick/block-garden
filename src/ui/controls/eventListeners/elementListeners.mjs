@@ -1,231 +1,77 @@
-import isNumber from "lodash.isnumber";
 import extrasHandler from "konami-code-js";
 
-import { copyToClipboard } from "../../utils/copyToClipboard.mjs";
-import { debounce } from "../../utils/debounce.mjs";
-import { effect } from "../../utils/effect.mjs";
-import { extractAttachments } from "../../utils/extractAttachments.mjs";
-import { extractJsonFromPng } from "../../utils/canvasToPngWithState.mjs";
-import { getRandomSeed } from "../../utils/getRandomSeed.mjs";
-import { persistValue } from "../../core/systems/persistence.mjs";
-import { placeBlock } from "../../utils/interaction.mjs";
-import { processSaveData } from "../../utils/saveData.mjs";
-import { raycastFromCanvasCoords } from "../../utils/raycastFromCanvasCoords.mjs";
-import { runCompress } from "../../utils/compression.mjs";
-import { showColorCustomizationDialog } from "../../utils/colors/customColors.mjs";
-import { startDigHighlight, stopDigHighlight } from "../utils/digHighlight.mjs";
-import { waitForElement } from "../utils/waitForElement.mjs";
-
+import { resizeCanvas } from "../../../api/ui/resizeCanvas.mjs";
+import { showToast } from "../../../api/ui/toast.mjs";
+import { createSaveState } from "../../../core/createSave.mjs";
+import { loadSaveState } from "../../../core/loadSave.mjs";
 import {
-  blockNames,
-  blocks,
-  FAST_GROWTH_TIME,
-  getBlockById,
-} from "../../world/config/blocks.mjs";
-import { BIOMES } from "../../world/config/biomes.mjs";
-import { createSaveState } from "../../core/createSave.mjs";
-import { CONFIG_DEFAULTS, gameConfig } from "../../world/config/index.mjs";
-import { loadSaveState } from "../../core/loadSave.mjs";
-import {
-  gameState,
   selectMaterialBarSlot,
   setMaterialBarItem,
-} from "../../core/systems/game/state.mjs";
+} from "../../../core/systems/game/state.mjs";
 
-import { generateWorld, initNewWorld } from "../../world/generation/world.mjs";
+import { persistValue } from "../../../core/systems/persistence.mjs";
 
-import { showAboutDialog } from "../dialog/about.mjs";
-import { showExamplesDialog } from "../dialog/examples.mjs";
-import { showPrivacyDialog } from "../dialog/privacy.mjs";
-import { showUrlDialog } from "../dialog/url.mjs";
-import { showLinkConfigDialog } from "../dialog/linkConfiguration.mjs";
-import { showTextConfigDialog } from "../dialog/textConfiguration.mjs";
+import { extractJsonFromPng } from "../../../utils/canvasToPngWithState.mjs";
+import { showColorCustomizationDialog } from "../../../utils/colors/customColors.mjs";
+import { runCompress } from "../../../utils/compression.mjs";
+import { copyToClipboard } from "../../../utils/copyToClipboard.mjs";
+import { effect } from "../../../utils/effect.mjs";
+import { extractAttachments } from "../../../utils/extractAttachments.mjs";
+import { placeBlock } from "../../../utils/interaction.mjs";
+import { raycastFromCanvasCoords } from "../../../utils/raycastFromCanvasCoords.mjs";
+import { processSaveData } from "../../../utils/saveData.mjs";
 
-import { resizeCanvas } from "../../api/ui/resizeCanvas.mjs";
-import { showToast } from "../../api/ui/toast.mjs";
+import { getNewBlockId } from "../../../world/config/blocks.mjs";
+import { CONFIG_DEFAULTS } from "../../../world/config/index.mjs";
+import { initNewWorld } from "../../../world/generation/world.mjs";
 
+import { showAboutDialog } from "../../dialog/about.mjs";
+import { showExamplesDialog } from "../../dialog/examples.mjs";
+import { InventoryDialog } from "../../dialog/inventory.mjs";
+import { showLinkConfigDialog } from "../../dialog/linkConfiguration.mjs";
+import { showPrivacyDialog } from "../../dialog/privacy.mjs";
 import {
   autoSaveGame,
   getSaveMode,
   setSaveMode,
   showStorageDialog,
-} from "../dialog/storage.mjs";
+} from "../../dialog/storage.mjs";
 
-import { InventoryDialog } from "../dialog/inventory.mjs";
-import { canControlCanvas } from "../utils/canControlCanvas.mjs";
+import { showTextConfigDialog } from "../../dialog/textConfiguration.mjs";
+import { showUrlDialog } from "../../dialog/url.mjs";
+
+import { canControlCanvas } from "../../utils/canControlCanvas.mjs";
+import { closeMenus } from "../../utils/closeMenus.mjs";
+import {
+  startDigHighlight,
+  stopDigHighlight,
+} from "../../utils/digHighlight.mjs";
+
+import { updateFlightToggleButton } from "../../utils/flightToggle.mjs";
+import { handleCornerClick } from "../../utils/handleCornerClick.mjs";
+import { handleGenerateButton } from "./handleGenerateButton.mjs";
+import { handleRandomSeedButton } from "./handleRandomSeedButton.mjs";
+import { initGenerationControlListeners } from "./initGenerationControlListeners.mjs";
+import { toggleMaterialBar } from "./materialBar.mjs";
+import { randomPlantSeeds } from "./planting.mjs";
+import { initRadiusControlListeners } from "./radiusControls.mjs";
+import { initResizeObserver } from "./resizeObserver.mjs";
+import { initTouchToggle } from "./touchToggle.mjs";
 
 /** @typedef {import('signal-polyfill').Signal.State} Signal.State */
 
-/** @typedef {import('../../world/config/blocks.mjs').BlockArray} BlockArray */
-
-/** @typedef {import('../../core/systems/game/init.mjs').CustomShadowHost} CustomShadowHost */
+/** @typedef {import('../../../core/systems/game/init.mjs').CustomShadowHost} CustomShadowHost */
 
 /**
+ * Initializes element event listeners.
  *
  * @param {ShadowRoot} shadow
  * @param {HTMLCanvasElement} cnvs
- */
-function closeMenus(shadow, cnvs) {
-  shadow
-    .querySelectorAll(".ui-grid__corner--container")
-    .forEach((e) => e.setAttribute("hidden", "hidden"));
-
-  toggleMaterialBar(shadow, gameState, cnvs, true);
-
-  cnvs.focus();
-}
-
-/**
- * @param {MouseEvent} e
- *
- * @returns {void}
- */
-function handleCornerClick(e) {
-  e.preventDefault();
-  e.stopPropagation();
-
-  const heading = e.currentTarget;
-  if (heading instanceof HTMLDivElement) {
-    const cornerContainer = heading.nextElementSibling;
-    const isCornerContainerHidden = cornerContainer?.getAttribute("hidden");
-    if (isCornerContainerHidden && isCornerContainerHidden !== null) {
-      cornerContainer.removeAttribute("hidden");
-
-      // Focus the first focusable element in the container
-      const focusableElements = cornerContainer.querySelectorAll(
-        "button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])",
-      );
-
-      if (focusableElements.length > 0) {
-        /** @type {HTMLElement} */ (focusableElements[0]).focus();
-      }
-
-      return;
-    }
-
-    cornerContainer?.setAttribute("hidden", "hidden");
-
-    // Check if any other corners are still open
-    const shadow = cornerContainer?.getRootNode();
-    if (shadow instanceof ShadowRoot) {
-      const otherOpenCorners = shadow.querySelectorAll(
-        ".ui-grid__corner--container:not([hidden])",
-      );
-
-      const materialBar = shadow.getElementById("materialBar");
-      const isMaterialBarVisible =
-        materialBar && !materialBar.hasAttribute("hidden");
-
-      if (otherOpenCorners.length === 0 && !isMaterialBarVisible) {
-        // Return focus to canvas
-        const canvas = shadow.getElementById("canvas");
-        if (canvas instanceof HTMLCanvasElement) {
-          canvas.focus();
-        }
-      }
-    }
-  }
-}
-
-// Helper to find block IDs
-const getBlockId = (name) => blocks.find((b) => b.name === name)?.id ?? -1;
-
-/**
- * @param {number} currentBlockId
- * @param {BlockArray} blocks
- * @param {boolean} isForward
- *
- * @returns {number}
- */
-function getNewBlockId(currentBlockId, blocks, isForward) {
-  const currentIndex = blocks.findIndex((b) => b.id === currentBlockId);
-  const blockCount = blocks.length;
-  const newIndex = isForward
-    ? currentIndex === blockCount - 1
-      ? 1
-      : currentIndex + 1
-    : currentIndex === 1
-      ? blockCount - 1
-      : currentIndex - 1;
-
-  return blocks[newIndex].id;
-}
-
-/**
- * Update the flight toggle when flying or not
- *
- * @param {HTMLElement} flightToggle
- * @param {boolean} isFlying
- *
- * @returns {void}
- */
-export function updateFlightToggleButton(flightToggle, isFlying) {
-  flightToggle.style.color = "var(--bg-color-white)";
-
-  if (isFlying) {
-    flightToggle.textContent = "🪽 Disable Flight";
-    flightToggle.style.backgroundColor = "var(--bg-color-red-500)";
-
-    return;
-  }
-
-  flightToggle.textContent = "🪽 Enable Flight";
-  flightToggle.style.backgroundColor = "var(--bg-color-green-500)";
-}
-
-// Shared state to track touch interactions
-let lastTouchTime = 0;
-
-/**
- * Toggles the visibility of the material bar and manages game state/focus.
- *
- * @param {ShadowRoot} shadow
- * @param {Object} gameState
- * @param {HTMLCanvasElement} cnvs
- * @param {boolean} [forceClose=false]
- */
-function toggleMaterialBar(shadow, gameState, cnvs, forceClose = false) {
-  const materialBar = shadow.getElementById("materialBar");
-  const material = shadow.querySelector("#material .ui-grid__corner--heading");
-
-  if (!materialBar || !material) {
-    return;
-  }
-
-  if (forceClose) {
-    materialBar.setAttribute("hidden", "hidden");
-  } else {
-    materialBar.toggleAttribute("hidden");
-  }
-
-  const isHidden = materialBar.hasAttribute("hidden");
-
-  if (isHidden) {
-    material.textContent = "🔍 Material";
-
-    cnvs.focus();
-  } else {
-    material.textContent = "❌ Material";
-
-    // Focus the active slot when opening
-    const activeSlotIndex = gameState.activeMaterialBarSlot.get();
-    const slots = materialBar.querySelectorAll(".materialBar-slot");
-    if (slots[activeSlotIndex]) {
-      /** @type {HTMLElement} */ (slots[activeSlotIndex]).focus();
-    }
-  }
-}
-
-/**
- *
- * @param {ShadowRoot} shadow
- * @param {HTMLCanvasElement} cnvs
- * @param {Signal.State} currentResolution - Signal State for current resolution
- *
- * @returns {void}
+ * @param {Signal.State} currentResolution
  */
 export function initElementEventListeners(shadow, cnvs, currentResolution) {
   const gameState = globalThis.blockGarden.state;
+  const config = globalThis.blockGarden.config;
 
   const host =
     /** @type {CustomShadowHost} */
@@ -236,6 +82,8 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
     globalThis.document,
     shadow,
   );
+
+  let lastTouchTime = 0;
 
   // Extras
   new extrasHandler((handler) => {
@@ -275,6 +123,8 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
 
   initRadiusControlListeners(shadow);
   initGenerationControlListeners(shadow, cnvs);
+  initTouchToggle(shadow);
+  initResizeObserver(shadow, currentResolution);
 
   const material = shadow.querySelector("#material .ui-grid__corner--heading");
   material.addEventListener("click", () => {
@@ -323,8 +173,6 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
   // Game Save Linking
   const gameSaveLinkingButton = shadow.getElementById("gameSaveLinkingButton");
   if (gameSaveLinkingButton) {
-    const config = globalThis.blockGarden.config;
-
     gameSaveLinkingButton.addEventListener("click", async () => {
       const newValue = !config.linkGameSave.get();
 
@@ -350,8 +198,6 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
   // Split Controls Toggle
   const toggleSplitControls = shadow.getElementById("toggleSplitControls");
   if (toggleSplitControls) {
-    const config = globalThis.blockGarden.config;
-
     toggleSplitControls.addEventListener("click", async () => {
       const newValue = !config.useSplitControls.get();
 
@@ -377,8 +223,6 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
   // Block Highlight Toggle
   const toggleBlockHighlight = shadow.getElementById("toggleBlockHighlight");
   if (toggleBlockHighlight) {
-    const config = globalThis.blockGarden.config;
-
     toggleBlockHighlight.addEventListener("click", async () => {
       const newValue = !config.useBlockHighlight.get();
 
@@ -404,8 +248,6 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
   // Damage Animation Toggle
   const toggleDamageAnimation = shadow.getElementById("toggleDamageAnimation");
   if (toggleDamageAnimation) {
-    const config = globalThis.blockGarden.config;
-
     toggleDamageAnimation.addEventListener("click", async () => {
       const newValue = !config.useDamageAnimation.get();
 
@@ -460,9 +302,6 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
       showTextConfigDialog(globalThis, globalThis.document, shadow);
     });
   }
-
-  // Visual Effect Toggles
-  const config = globalThis.blockGarden.config;
 
   const setupToggle = (id, signal, labelPrefix, configKey) => {
     const btn = shadow.getElementById(id);
@@ -554,12 +393,8 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
   const randomPlantButton = shadow.getElementById("randomPlantButton");
   if (randomPlantButton) {
     randomPlantButton.addEventListener("click", () => {
-      // Call the random planting logic again on the current world
-      if (typeof randomPlantSeeds === "function") {
-        randomPlantSeeds();
-
-        showToast(shadow, "Random planting at complete!");
-      }
+      randomPlantSeeds(shadow);
+      showToast(shadow, "Random planting complete!");
     });
   }
 
@@ -683,7 +518,6 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
 
   const customizeColors = shadow.getElementById("customizeColorsBtn");
   if (customizeColors) {
-    const config = globalThis.blockGarden.config;
     customizeColors.addEventListener("click", async () => {
       const initialResolution = config.currentResolution.get();
 
@@ -824,7 +658,7 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
         if (e.code === "Backquote" || e.code === "Accent") {
           const nextBlockId = getNewBlockId(
             gameState.curBlock.get(),
-            gameConfig.blocks,
+            config.blocks,
             !e.shiftKey,
           );
 
@@ -861,11 +695,11 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
         e,
       ) => {
         const newValue = e.detail.value;
-        gameConfig.currentResolution.set(newValue);
+        config.currentResolution.set(newValue);
 
         await persistValue("config", "currentResolution", newValue);
 
-        resizeCanvas(shadow, gameConfig.currentResolution);
+        resizeCanvas(shadow, config.currentResolution);
       },
     );
   }
@@ -911,10 +745,7 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
       // Set cursorTarget immediately for highlighting (before HammerJS press delay)
       const touchEvent = /** @type {TouchEvent} */ (e);
       if (isCanvas && touchEvent.touches && touchEvent.touches[0]) {
-        const gameState = globalThis.blockGarden.state;
-        const gameConfig = globalThis.blockGarden.config;
-
-        if (!gameConfig.useSplitControls.get()) {
+        if (!config.useSplitControls.get()) {
           const touch = touchEvent.touches[0];
           const canvas = /** @type {HTMLCanvasElement} */ (
             shadow.getElementById("canvas")
@@ -1005,11 +836,8 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
       return;
     }
 
-    const gameState = globalThis.blockGarden.state;
-    const gameConfig = globalThis.blockGarden.config;
-
     let hit = gameState.hit;
-    const useSplit = gameConfig.useSplitControls.get();
+    const useSplit = config.useSplitControls.get();
 
     if (!useSplit) {
       const eyeY = gameState.y - gameState.playerHeight / 2 + 1.62;
@@ -1113,7 +941,7 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
     }
 
     // Always update cursorTarget for highlighting if split controls are OFF
-    if (!gameConfig.useSplitControls.get()) {
+    if (!config.useSplitControls.get()) {
       const eyeY = gameState.y - gameState.playerHeight / 2 + 1.62;
       const { hit: rayHit } = raycastFromCanvasCoords(
         cnvs,
@@ -1155,58 +983,11 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
     worldStateBtn.addEventListener("click", () => toggleWorldStatePanel());
   }
 
-  function handleGenerateButton() {
-    /** @type string | null */
-    let seedInputValue = null;
-    const seedInput = shadow.getElementById("worldSeedInput");
-    if (seedInput instanceof HTMLInputElement) {
-      seedInputValue = seedInput.value;
-    }
-
-    const currentSeedDisplay = shadow.getElementById("currentSeed");
-
-    const seedValue = Number(seedInputValue);
-    if (!isNumber(seedValue) || isNaN(seedValue)) {
-      showToast(shadow, "Invalid seed. Please enter a number.");
-      return;
-    }
-
-    if (seedValue < 1 || seedValue > Number.MAX_SAFE_INTEGER) {
-      showToast(
-        shadow,
-        `Seed must be between 1 and ${Number.MAX_SAFE_INTEGER}.`,
-      );
-      return;
-    }
-
-    generateWorld(seedValue, globalThis.blockGarden.state);
-
-    console.log(`Generated new world with seed: ${seedValue}`);
-
-    currentSeedDisplay.textContent = String(seedValue);
-  }
-
-  function handleRandomSeedButton() {
-    const currentSeedDisplay = shadow.getElementById("currentSeed");
-    const seedInput = shadow.getElementById("worldSeedInput");
-    const randomSeed = getRandomSeed();
-
-    if (seedInput instanceof HTMLInputElement) {
-      seedInput.value = String(randomSeed);
-    }
-
-    currentSeedDisplay.textContent = String(randomSeed);
-
-    generateWorld(randomSeed, globalThis.blockGarden.state);
-
-    console.log(`Generated new world with random seed: ${randomSeed}`);
-  }
-
   const generateBtn = shadow.getElementById("generateWithSeed");
-  generateBtn.addEventListener("click", handleGenerateButton);
+  generateBtn.addEventListener("click", () => handleGenerateButton(shadow));
 
   const randomBtn = shadow.getElementById("randomSeed");
-  randomBtn.addEventListener("click", handleRandomSeedButton);
+  randomBtn.addEventListener("click", () => handleRandomSeedButton(shadow));
 
   const copySeedBtn = shadow.getElementById("copySeed");
   copySeedBtn.addEventListener("click", async function () {
@@ -1278,10 +1059,6 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
 
   const loadExternalGameFileBtn = shadow.getElementById("loadExternalGameFile");
   loadExternalGameFileBtn.addEventListener("click", async function () {
-    // try {
-    const currentSeedDisplay = shadow.getElementById("currentSeed");
-    const seedInput = shadow.getElementById("worldSeedInput");
-
     let file;
 
     // Feature detection for showOpenFilePicker
@@ -1445,9 +1222,8 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
         }
 
         // Validate JSON structure
-        let saveState;
         try {
-          saveState = JSON.parse(stateJSON);
+          JSON.parse(stateJSON);
         } catch (parseError) {
           throw new Error("Invalid game state file: not valid JSON.");
         }
@@ -1546,658 +1322,161 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
     });
   });
 
-  // Configurable constants
-  const PLANTING_CONFIG = {
-    TOSS_COUNT: 5, // Number of seeds to "toss"
-    TOSS_RADIUS: 20, // Max distance seeds can land
-    MIN_DISTANCE_FROM_PLAYER: 2, // Don't plant too close
-
-    // Blocks that should prevent planting in the entire column below them
-    BANNED_SURFACES: new Set([
-      getBlockId(blockNames.WATER),
-      getBlockId(blockNames.LAVA),
-    ]),
-  };
-
-  /**
-   * Get biome from surface block ID, with cloud fallback
-   */
-  function getBiomeBySurface(surfaceId) {
-    // Check standard biomes first
-    for (const biome of Object.values(BIOMES)) {
-      if (biome.surfaceBlockId === surfaceId) {
-        return biome;
-      }
-    }
-
-    // Clouds = any seed allowed
-    if (surfaceId === getBlockId(blockNames.CLOUD)) {
-      return {
-        name: "Clouds",
-        cropBlockIds: blocks.filter((b) => b.isSeed).map((b) => b.id),
-      };
-    }
-
-    return null;
-  }
-
-  /**
-   * Plant single seed at position
-   */
-  function plantSeedAt(key, allowedSeeds, world) {
-    if (allowedSeeds.length === 0) {
-      return;
-    }
-
-    const seedId =
-      allowedSeeds[Math.floor(Math.random() * allowedSeeds.length)];
-
-    const block = getBlockById(seedId);
-
-    world.set(key, seedId, true);
-
-    gameState.plantStructures[key] = {
-      type: block.name,
-      blocks: [key],
-    };
-
-    gameState.growthTimers[key] = gameState.fastGrowth
-      ? FAST_GROWTH_TIME
-      : block.growthTime || 10.0;
-  }
-
-  function randomPlantSeeds() {
-    const { world } = gameState;
-    const px = Math.floor(gameState.x);
-    const py = Math.floor(gameState.y);
-    const pz = Math.floor(gameState.z);
-
-    const usedKeys = new Set();
-    let seedsPlaced = 0;
-
-    for (let i = 0; i < PLANTING_CONFIG.TOSS_COUNT; i++) {
-      // Natural circular distribution using rejection sampling or polar coords
-      const angle = Math.random() * Math.PI * 2;
-      const dist = Math.sqrt(Math.random()) * PLANTING_CONFIG.TOSS_RADIUS;
-
-      if (dist < PLANTING_CONFIG.MIN_DISTANCE_FROM_PLAYER) continue;
-
-      const dx = Math.round(Math.cos(angle) * dist);
-      const dz = Math.round(Math.sin(angle) * dist);
-
-      const tx = px + dx;
-      const tz = pz + dz;
-
-      // Start search higher to better catch surfaces below elevated player
-      for (let y = py + 5; y >= 0; y--) {
-        const key = `${tx},${y},${tz}`;
-        const blockId = world.get(key);
-
-        // Skip air/undefined
-        if (blockId === undefined || blockId === getBlockId(blockNames.AIR)) {
-          continue;
-        }
-
-        // Quick ban check - skips entire column if we hit water/lava
-        if (PLANTING_CONFIG.BANNED_SURFACES.has(blockId)) break;
-
-        const block = getBlockById(blockId);
-        if (!block || !block.solid) continue;
-
-        // Valid planting surfaces
-        const biome = getBiomeBySurface(blockId);
-        if (biome && !usedKeys.has(key)) {
-          // Check if space ABOVE is clear
-          const aboveKey = `${tx},${y + 1},${tz}`;
-          const aboveId = world.get(aboveKey);
-
-          if (aboveId === undefined || aboveId === getBlockId(blockNames.AIR)) {
-            plantSeedAt(key, biome.cropBlockIds, world);
-            usedKeys.add(key);
-            seedsPlaced++;
-          }
-        }
-
-        break; // Found surface (or banned block), stop scanning column
-      }
-    }
-
-    console.log(
-      `[Interaction] Randomly tossed seeds. Placed ${seedsPlaced} plants.`,
-    );
-
-    // Ensure growthTimers are updated for fast growth if enabled
-    if (gameState.fastGrowth) {
-      shadow.dispatchEvent(new CustomEvent("block-garden-reset"));
-    }
-  }
-
-  const debouncedResize = debounce(() => {
-    resizeCanvas(shadow, currentResolution);
-  }, 200);
-
-  const resizeObserver = new ResizeObserver((entries) => {
-    debouncedResize();
-  });
-
-  resizeObserver.observe(shadow.host);
-
-  const toggleTouchControls = shadow.getElementById("toggleTouchControls");
-  if (toggleTouchControls) {
-    toggleTouchControls.addEventListener("click", async () => {
-      const newValue = !gameConfig.useTouchControls.get();
-      gameConfig.useTouchControls.set(newValue);
-
-      await persistValue("config", "useTouchControls", newValue);
-    });
-
-    effect(() => {
-      const enabled = gameConfig.useTouchControls.get();
-
-      toggleTouchControls.textContent = enabled
-        ? "Disable Touch Controls"
-        : "Enable Touch Controls";
-
-      toggleTouchControls.style.backgroundColor = enabled
-        ? "var(--bg-color-red-500)"
-        : "var(--bg-color-green-500)";
-
-      toggleTouchControls.style.color = "var(--bg-color-white)";
-    });
-  }
-}
-
-/**
- *
- * @param {ShadowRoot} shadow
- * @param {HTMLCanvasElement} cnvs
- * @param {Object} blocks
- * @param {Signal.State} curBlock
- *
- * @returns {void}
- */
-export function initCanvasEventListeners(shadow, cnvs, blocks, curBlock) {
-  cnvs.addEventListener("click", () => {
-    // @ts-ignore
-    const gameConfig = globalThis.blockGarden.config;
-    if (gameConfig.useSplitControls.get()) {
-      cnvs?.requestPointerLock();
-    }
-  });
-
-  globalThis.addEventListener(
-    "contextmenu",
-    (e) => {
-      // If we just activated a Link or Text block, prevent the context menu
-      const gameState = globalThis.blockGarden.state;
-      if (gameState.preventNextContextMenu) {
-        e.preventDefault();
-
-        gameState.preventNextContextMenu = false;
-
-        return;
-      }
-
-      const target = e.target;
-
-      // If the context menu is triggered on the canvas, prevent it (standard game behavior)
-      if (
-        target === cnvs ||
-        (target instanceof Element && cnvs.contains(target))
-      ) {
-        e.preventDefault();
-      }
-    },
-    true,
-  );
-}
-
-/**
- * Initialize material bar event listeners.
- *
- * @param {ShadowRoot} shadow
- * @param {HTMLCanvasElement} cnvs
- *
- * @returns {void}
- */
-export function initMaterialBarEventListeners(shadow, cnvs) {
-  const materialBarEl = shadow.getElementById("materialBar");
-  if (!materialBarEl) {
-    return;
-  }
-
-  // Add click listeners to material bar slots
-  materialBarEl.addEventListener("click", (e) => {
-    const slot =
-      e.target instanceof Element
-        ? e.target.closest(".materialBar-slot")
-        : null;
-
-    if (slot instanceof HTMLElement) {
-      const index = parseInt(slot.dataset.index);
-
-      e.stopPropagation();
-
-      selectMaterialBarSlot(index);
-
-      cnvs.focus();
-    }
-  });
-
-  materialBarEl.addEventListener("keydown", (/** @type {any} */ e) => {
-    const slot =
-      e.target instanceof Element
-        ? e.target.closest(".materialBar-slot")
-        : null;
-
-    if (!(slot instanceof HTMLElement)) {
-      return;
-    }
-
-    // Handle Enter or Space to select the current slot
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      e.stopPropagation();
-
-      const index = parseInt(slot.dataset.index);
-      selectMaterialBarSlot(index);
-
-      cnvs.focus();
-
-      return;
-    }
-
-    // Handle arrow keys to navigate between slots
-    if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
-      e.preventDefault();
-
-      const allSlots = Array.from(
-        materialBarEl.querySelectorAll(".materialBar-slot"),
-      );
-
-      const currentIndex = allSlots.indexOf(slot);
-
-      let nextIndex = currentIndex;
-
-      if (e.key === "ArrowLeft") {
-        nextIndex = currentIndex === 0 ? allSlots.length - 1 : currentIndex - 1;
-      } else if (e.key === "ArrowRight") {
-        nextIndex = currentIndex === allSlots.length - 1 ? 0 : currentIndex + 1;
-      }
-
-      /** @type {HTMLElement} */ (allSlots[nextIndex]).focus();
-    }
-  });
-}
-
-/**
- * Initialize radius control listeners
- *
- * @param {ShadowRoot} shadow
- */
-function initRadiusControlListeners(shadow) {
-  const gameConfig = globalThis.blockGarden.config;
-
-  const radiusSettings = [
-    { id: "viewRadius", signal: gameConfig.viewRadius },
-    { id: "cacheRadius", signal: gameConfig.cacheRadius },
-    { id: "renderRadius", signal: gameConfig.renderRadius },
-    { id: "worldRadius", signal: gameConfig.worldRadius },
-  ];
-
-  radiusSettings.forEach(({ id, signal }) => {
-    const input = shadow.getElementById(`${id}Input`);
-    const display = shadow.getElementById(`${id}Display`);
-
-    if (input instanceof HTMLInputElement && display) {
-      // Synchronize slider and display with signal
-      effect(() => {
-        const currentVal = signal.get();
-        input.value = String(currentVal);
-
-        display.textContent = String(
-          currentVal === null || currentVal > 2048 ? "∞" : currentVal,
-        );
-      });
-
-      // Update signal on change
-      input.addEventListener("input", (e) => {
-        if (e.target instanceof HTMLInputElement) {
-          signal.set(parseInt(e.target.value, 10));
-        }
-      });
-    }
-  });
-}
-
-/**
- * Initializes listeners for granular world generation controls.
- *
- * @param {ShadowRoot} shadow
- * @param {HTMLCanvasElement} cnvs
- */
-function initGenerationControlListeners(shadow, cnvs) {
-  const gameConfig = globalThis.blockGarden.config;
-
-  const generationSettings = [
-    { id: "terrainOctaves", signal: gameConfig.terrainOctaves, unit: "" },
-    { id: "mountainScale", signal: gameConfig.mountainScale, unit: "%" },
-    {
-      id: "caveThreshold",
-      signal: gameConfig.caveThreshold,
-      unit: "%",
-      displayId: "caveDensity",
-    },
-    {
-      id: "decorationDensity",
-      signal: gameConfig.decorationDensity,
-      unit: "%",
-    },
-    { id: "cloudDensity", signal: gameConfig.cloudDensity, unit: "%" },
-  ];
-
-  generationSettings.forEach(({ id, signal, unit, displayId }) => {
-    const input = shadow.getElementById(`${id}Input`);
-    const display = shadow.getElementById(`${displayId || id}Display`);
-
-    if (input instanceof HTMLInputElement && display) {
-      // Synchronize slider and display with signal
-      effect(() => {
-        const val = signal.get();
-        input.value = String(val);
-
-        display.textContent = `${val}${unit}`;
-      });
-
-      input.addEventListener("input", (e) => {
-        if (e.target instanceof HTMLInputElement) {
-          signal.set(parseInt(e.target.value, 10));
-        }
-      });
-    }
-  });
-
-  // Manual Length of Day Slider
-  const dayLengthInput = shadow.getElementById("dayLengthInput");
-  const dayLengthDisplay = shadow.getElementById("dayLengthDisplay");
-  const dayLengthContainer = shadow.getElementById("dayLengthContainer");
-
-  if (
-    dayLengthInput instanceof HTMLInputElement &&
-    dayLengthDisplay &&
-    dayLengthContainer
-  ) {
-    // Keep slider and display in sync
-    effect(() => {
-      const val = gameConfig.dayLength.get();
-      dayLengthInput.value = String(val);
-
-      // Just show the number, no math
-      dayLengthDisplay.textContent = String(val);
-
-      // Enable/disable depending on mode
-      const isCycleEnabled = gameConfig.useTimeCycle.get();
-      if (isCycleEnabled) {
-        dayLengthInput.removeAttribute("disabled");
-        dayLengthContainer.removeAttribute("hidden");
-      } else {
-        dayLengthInput.setAttribute("disabled", "disabled");
-        dayLengthContainer.setAttribute("hidden", "hidden");
-      }
-    });
-
-    // Update gameConfig on slider change with raw value
-    dayLengthInput.addEventListener("input", async (e) => {
-      if (e.target instanceof HTMLInputElement) {
-        const newValue = Number(e.target.value);
-        gameConfig.dayLength.set(newValue);
-
-        await persistValue("config", "dayLength", newValue);
-      }
-    });
-  }
-
-  // Manual Time of Day Slider
-  const manualTimeInput = shadow.getElementById("manualTimeOfDayInput");
-  const manualTimeDisplay = shadow.getElementById("manualTimeOfDayDisplay");
-  const manualTimeContainer = shadow.getElementById("manualTimeOfDayContainer");
-
-  if (
-    manualTimeInput instanceof HTMLInputElement &&
-    manualTimeDisplay &&
-    manualTimeContainer
-  ) {
-    // Synchronize slider and display with signal
-    effect(() => {
-      const val = gameConfig.manualTimeOfDay.get();
-      manualTimeInput.value = String(val);
-
-      // Convert 0-1 to 0:00-24:00 for display
-      const hours = Math.floor(val * 24);
-      const minutes = Math.floor((val * 24 - hours) * 60);
-      manualTimeDisplay.textContent = `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
-
-      // Enable/disable based on useTimeCycle
-      const isCycleEnabled = gameConfig.useTimeCycle.get();
-      if (isCycleEnabled) {
-        manualTimeInput.setAttribute("disabled", "disabled");
-        manualTimeContainer.setAttribute("hidden", "hidden");
-      } else {
-        manualTimeInput.removeAttribute("disabled");
-        manualTimeContainer.removeAttribute("hidden");
-      }
-    });
-
-    manualTimeInput.addEventListener("input", async (e) => {
-      if (e.target instanceof HTMLInputElement) {
-        const newValue = parseFloat(e.target.value);
-        const val = Math.max(0, Math.min(1, newValue));
-
-        gameConfig.manualTimeOfDay.set(val);
-        gameState.worldTime = val;
-
-        await persistValue("config", "manualTimeOfDay", newValue);
-        await persistValue("state", "worldTime", newValue);
-      }
-    });
-  }
-
-  const toggleCaves = shadow.getElementById("toggleCaves");
-  const caveThresholdInput = shadow.getElementById("caveThresholdInput");
-  const caveThresholdInputContainer = shadow.getElementById(
-    "caveThresholdInputContainer",
-  );
-
-  if (toggleCaves) {
-    effect(() => {
-      const val = gameConfig.useCaves.get();
-
-      toggleCaves.textContent = val ? "Disable Caves" : "Enable Caves";
-
-      toggleCaves.style.backgroundColor = val
-        ? "var(--bg-color-red-500)"
-        : "var(--bg-color-green-500)";
-
-      toggleCaves.style.color = "var(--bg-color-white)";
-
-      if (val) {
-        caveThresholdInput.removeAttribute("disabled");
-        caveThresholdInputContainer.removeAttribute("hidden");
-      } else {
-        caveThresholdInput.setAttribute("disabled", "disabled");
-        caveThresholdInputContainer.setAttribute("hidden", "hidden");
-      }
-    });
-
-    toggleCaves.addEventListener("click", () => {
-      const val = gameConfig.useCaves.get();
-      gameConfig.useCaves.set(!val);
-
-      if (val) {
-        caveThresholdInput.removeAttribute("disabled");
-        caveThresholdInputContainer.removeAttribute("hidden");
-      } else {
-        caveThresholdInput.setAttribute("disabled", "disabled");
-        caveThresholdInputContainer.setAttribute("hidden", "hidden");
-      }
-    });
-  }
-
   const applyDefaultPreset = shadow.getElementById("applyDefaultPreset");
   if (applyDefaultPreset) {
     applyDefaultPreset.addEventListener("click", async () => {
       gameState.fastGrowth = false;
       gameState.flying.set(false);
 
-      gameConfig.useTouchControls.set(CONFIG_DEFAULTS.USE_TOUCH_CONTROLS);
+      config.useTouchControls.set(CONFIG_DEFAULTS.USE_TOUCH_CONTROLS);
       await persistValue(
         "config",
         "useTouchControls",
         CONFIG_DEFAULTS.USE_TOUCH_CONTROLS,
       );
 
-      gameConfig.useAutoJump.set(CONFIG_DEFAULTS.USE_AUTO_JUMP);
+      config.useAutoJump.set(CONFIG_DEFAULTS.USE_AUTO_JUMP);
       await persistValue(
         "config",
         "useAutoJump",
         CONFIG_DEFAULTS.USE_AUTO_JUMP,
       );
 
-      gameConfig.linkGameSave.set(CONFIG_DEFAULTS.LINK_GAME_SAVE);
+      config.linkGameSave.set(CONFIG_DEFAULTS.LINK_GAME_SAVE);
       await persistValue(
         "config",
         "linkGameSave",
         CONFIG_DEFAULTS.LINK_GAME_SAVE,
       );
 
-      gameConfig.useSplitControls.set(CONFIG_DEFAULTS.USE_SPLIT_CONTROLS);
+      config.useSplitControls.set(CONFIG_DEFAULTS.USE_SPLIT_CONTROLS);
       await persistValue(
         "config",
         "useSplitControls",
         CONFIG_DEFAULTS.USE_SPLIT_CONTROLS,
       );
 
-      gameConfig.currentResolution.set(CONFIG_DEFAULTS.CURRENT_RESOLUTION);
+      config.currentResolution.set(CONFIG_DEFAULTS.CURRENT_RESOLUTION);
       await persistValue(
         "config",
         "currentResolution",
         CONFIG_DEFAULTS.CURRENT_RESOLUTION,
       );
 
-      gameConfig.useBlockHighlight.set(CONFIG_DEFAULTS.USE_BLOCK_HIGHLIGHT);
+      config.useBlockHighlight.set(CONFIG_DEFAULTS.USE_BLOCK_HIGHLIGHT);
       await persistValue(
         "config",
         "useBlockHighlight",
         CONFIG_DEFAULTS.USE_BLOCK_HIGHLIGHT,
       );
 
-      gameConfig.useDamageAnimation.set(CONFIG_DEFAULTS.USE_DAMAGE_ANIMATION);
+      config.useDamageAnimation.set(CONFIG_DEFAULTS.USE_DAMAGE_ANIMATION);
       await persistValue(
         "config",
         "useDamageAnimation",
         CONFIG_DEFAULTS.USE_DAMAGE_ANIMATION,
       );
 
-      gameConfig.useTextureAtlas.set(CONFIG_DEFAULTS.USE_TEXTURE_ATLAS);
+      config.useTextureAtlas.set(CONFIG_DEFAULTS.USE_TEXTURE_ATLAS);
       await persistValue(
         "config",
         "useTextureAtlas",
         CONFIG_DEFAULTS.USE_TEXTURE_ATLAS,
       );
 
-      gameConfig.useAmbientOcclusion.set(CONFIG_DEFAULTS.USE_AMBIENT_OCCLUSION);
+      config.useAmbientOcclusion.set(CONFIG_DEFAULTS.USE_AMBIENT_OCCLUSION);
       await persistValue(
         "config",
         "useAmbientOcclusion",
         CONFIG_DEFAULTS.USE_AMBIENT_OCCLUSION,
       );
 
-      gameConfig.useAODebug.set(CONFIG_DEFAULTS.USE_AO_DEBUG);
+      config.useAODebug.set(CONFIG_DEFAULTS.USE_AO_DEBUG);
       await persistValue("config", "useAODebug", CONFIG_DEFAULTS.USE_AO_DEBUG);
 
-      gameConfig.useTimeCycle.set(CONFIG_DEFAULTS.USE_TIME_CYCLE);
+      config.useTimeCycle.set(CONFIG_DEFAULTS.USE_TIME_CYCLE);
       await persistValue(
         "config",
         "useTimeCycle",
         CONFIG_DEFAULTS.USE_TIME_CYCLE,
       );
 
-      gameConfig.useDynamicLighting.set(CONFIG_DEFAULTS.USE_DYNAMIC_LIGHTING);
+      config.useDynamicLighting.set(CONFIG_DEFAULTS.USE_DYNAMIC_LIGHTING);
       await persistValue(
         "config",
         "useDynamicLighting",
         CONFIG_DEFAULTS.USE_DYNAMIC_LIGHTING,
       );
 
-      gameConfig.usePerFaceLighting.set(CONFIG_DEFAULTS.USE_PER_FACE_LIGHTING);
+      config.usePerFaceLighting.set(CONFIG_DEFAULTS.USE_PER_FACE_LIGHTING);
       await persistValue(
         "config",
         "usePerFaceLighting",
         CONFIG_DEFAULTS.USE_PER_FACE_LIGHTING,
       );
 
-      gameConfig.dayLength.set(CONFIG_DEFAULTS.DAY_LENGTH);
+      config.dayLength.set(CONFIG_DEFAULTS.DAY_LENGTH);
       await persistValue("config", "dayLength", CONFIG_DEFAULTS.DAY_LENGTH);
 
-      gameConfig.manualTimeOfDay.set(CONFIG_DEFAULTS.MANUAL_TIME_OF_DAY);
+      config.manualTimeOfDay.set(CONFIG_DEFAULTS.MANUAL_TIME_OF_DAY);
       await persistValue(
         "config",
         "manualTimeOfDay",
         CONFIG_DEFAULTS.MANUAL_TIME_OF_DAY,
       );
 
-      gameConfig.worldRadius.set(CONFIG_DEFAULTS.WORLD_RADIUS);
+      config.worldRadius.set(CONFIG_DEFAULTS.WORLD_RADIUS);
       await persistValue("config", "worldRadius", CONFIG_DEFAULTS.WORLD_RADIUS);
 
-      gameConfig.viewRadius.set(CONFIG_DEFAULTS.VIEW_RADIUS);
+      config.viewRadius.set(CONFIG_DEFAULTS.VIEW_RADIUS);
       await persistValue("config", "viewRadius", CONFIG_DEFAULTS.VIEW_RADIUS);
 
-      gameConfig.renderRadius.set(CONFIG_DEFAULTS.RENDER_RADIUS);
+      config.renderRadius.set(CONFIG_DEFAULTS.RENDER_RADIUS);
       await persistValue(
         "config",
         "renderRadius",
         CONFIG_DEFAULTS.RENDER_RADIUS,
       );
 
-      gameConfig.cacheRadius.set(CONFIG_DEFAULTS.CACHE_RADIUS);
+      config.cacheRadius.set(CONFIG_DEFAULTS.CACHE_RADIUS);
       await persistValue("config", "cacheRadius", CONFIG_DEFAULTS.CACHE_RADIUS);
 
-      gameConfig.terrainOctaves.set(CONFIG_DEFAULTS.TERRAIN_OCTAVES);
+      config.terrainOctaves.set(CONFIG_DEFAULTS.TERRAIN_OCTAVES);
       await persistValue(
         "config",
         "terrainOctaves",
         CONFIG_DEFAULTS.TERRAIN_OCTAVES,
       );
 
-      gameConfig.mountainScale.set(CONFIG_DEFAULTS.MOUNTAIN_SCALE);
+      config.mountainScale.set(CONFIG_DEFAULTS.MOUNTAIN_SCALE);
       await persistValue(
         "config",
         "mountainScale",
         CONFIG_DEFAULTS.MOUNTAIN_SCALE,
       );
 
-      gameConfig.decorationDensity.set(CONFIG_DEFAULTS.DECORATION_DENSITY);
+      config.decorationDensity.set(CONFIG_DEFAULTS.DECORATION_DENSITY);
       await persistValue(
         "config",
         "decorationDensity",
         CONFIG_DEFAULTS.DECORATION_DENSITY,
       );
 
-      gameConfig.cloudDensity.set(CONFIG_DEFAULTS.CLOUD_DENSITY);
+      config.cloudDensity.set(CONFIG_DEFAULTS.CLOUD_DENSITY);
       await persistValue(
         "config",
         "cloudDensity",
         CONFIG_DEFAULTS.CLOUD_DENSITY,
       );
 
-      gameConfig.caveThreshold.set(CONFIG_DEFAULTS.CAVE_THRESHOLD);
+      config.caveThreshold.set(CONFIG_DEFAULTS.CAVE_THRESHOLD);
       await persistValue(
         "config",
         "caveThreshold",
         CONFIG_DEFAULTS.CAVE_THRESHOLD,
       );
 
-      gameConfig.useCaves.set(CONFIG_DEFAULTS.USE_CAVES);
+      config.useCaves.set(CONFIG_DEFAULTS.USE_CAVES);
       await persistValue("config", "useCaves", CONFIG_DEFAULTS.USE_CAVES);
 
       showToast(shadow, "Applied Defaults");

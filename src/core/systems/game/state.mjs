@@ -1,11 +1,12 @@
 import isNumber from "lodash.isnumber";
 import { Signal } from "signal-polyfill";
 
-import { gameConfig } from "../../../world/config/index.mjs";
-import { getBlockById } from "../../../world/config/blocks.mjs";
-import { getBlockIdByName } from "../../../world/config/getBlockIdByName.mjs";
-
 import { getRandomSeed } from "../../../utils/getRandomSeed.mjs";
+import {
+  getBlockIdByName,
+  getBlockById,
+} from "../../../world/config/blocks.mjs";
+import { gameConfig } from "../../../world/config/index.mjs";
 
 import { CLOUD_HEIGHT_MIN } from "../../../world/generation/chunk.mjs";
 import { ChunkManager } from "../../../world/chunkManager.mjs";

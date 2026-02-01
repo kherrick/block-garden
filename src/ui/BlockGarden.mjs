@@ -41,12 +41,12 @@ export class BlockGarden extends HTMLElement {
             overflow: var(--bg-ui-host-overflow, hidden);
             position: relative;
             width: var(--bg-ui-host-width, 100vw);
+            touch-action: none;
             width: var(--bg-ui-host-width, 100dvw);
 
             ${generateColorVars("--bg-color-", gameColors["color"])}
             ${generateColorVars("--bg-block-", gameColors["block"])}
             ${generateColorVars("--bg-ui-", gameColors["ui"])}
-            touch-action: none;
           }
 
           canvas {
@@ -523,6 +523,107 @@ export class BlockGarden extends HTMLElement {
 
           #settings button {
             width: 100%;
+          }
+
+          #settings input[type="range"].form-range,
+          #settings input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            background: transparent;
+            cursor: pointer;
+            padding: 0.25rem 0;
+            touch-action: pan-y;
+            width: 100%;
+          }
+
+          #settings input[type="range"]:focus {
+            outline: none;
+          }
+
+          #settings input[type="range"]::-webkit-slider-runnable-track {
+            background-color: #dee2e6;
+            border-radius: 999px;
+            border: 1px solid #ced4da;
+            height: 0.6rem;
+          }
+
+          #settings input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            background-color: #0d6efd;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.35);
+            height: 1.5rem;
+            margin-top: calc(-0.4rem);
+            width: 1.5rem;
+          }
+
+          #settings input[type="range"]:focus::-webkit-slider-thumb {
+            box-shadow:
+              0 0 0 2px #fff,
+              0 0 0 5px rgba(13, 110, 253, 0.6);
+          }
+
+          #settings input[type="range"] {
+            -webkit-tap-highlight-color: transparent;
+          }
+
+          #settings input[type="range"]::-moz-range-track {
+            background-color: #dee2e6;
+            border-radius: 999px;
+            border: 1px solid #ced4da;
+            height: 0.6rem;
+          }
+
+          #settings input[type="range"]::-moz-range-thumb {
+            background-color: #0d6efd;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.35);
+            height: 1.5rem;
+            width: 1.5rem;
+          }
+
+          #settings input[type="range"]:focus::-moz-range-thumb {
+            box-shadow:
+              0 0 0 2px #fff,
+              0 0 0 5px rgba(13, 110, 253, 0.6);
+          }
+
+          #settings input[type="range"]::-ms-track {
+            background: transparent;
+            border-color: transparent;
+            color: transparent;
+            cursor: pointer;
+            height: 0.6rem;
+            width: 100%;
+          }
+
+          #settings input[type="range"]::-ms-fill-lower,
+          #settings input[type="range"]::-ms-fill-upper {
+            background-color: #dee2e6;
+            border-radius: 999px;
+            border: 1px solid #ced4da;
+          }
+
+          #settings input[type="range"]::-ms-thumb {
+            background-color: #0d6efd;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.35);
+            height: 1.5rem;
+            width: 1.5rem;
+          }
+
+          #settings input[type="range"].range-sm::-webkit-slider-thumb {
+            height: 1.1rem;
+            width: 1.1rem;
+          }
+
+          #settings input[type="range"].range-lg::-webkit-slider-thumb {
+            height: 1.8rem;
+            width: 1.8rem;
           }
 
           #cacheRadiusInput,

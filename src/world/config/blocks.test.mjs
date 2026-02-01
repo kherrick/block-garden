@@ -1,22 +1,9 @@
 /**
  * @jest-environment node
  */
-import {
-  blocks,
-  getBlockById,
-  getBlockIndexById,
-  getBlockByIndex,
-} from "./blocks.mjs";
+import { blocks, getBlockById, getBlockByIndex } from "./blocks.mjs";
 
 describe("Block helper functions", () => {
-  test("getBlockIndexById should return correct array index for a block ID", () => {
-    // Test a few known blocks
-    const dirtyIndex = getBlockIndexById(2); // Dirt has id: 2
-    expect(dirtyIndex).toBeDefined();
-    expect(typeof dirtyIndex).toBe("number");
-    expect(blocks[dirtyIndex].id).toBe(2);
-  });
-
   test("getBlockById should return correct block definition for a block ID", () => {
     const dirtBlock = getBlockById(2);
     expect(dirtBlock).toBeDefined();
@@ -45,9 +32,7 @@ describe("Block helper functions", () => {
 
   test("should map all block IDs to valid array indices", () => {
     // Verify that every block in the array can be found by its ID
-    blocks.forEach((block, index) => {
-      const foundIndex = getBlockIndexById(block.id);
-      expect(foundIndex).toBe(index);
+    blocks.forEach((block) => {
       expect(getBlockById(block.id)).toBe(block);
     });
   });

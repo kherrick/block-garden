@@ -121,7 +121,7 @@ export class DrawBitmap extends BlockGarden {
         continue;
       }
 
-      const blockDef = this.config.blocks.find((b) => b.id === blockId);
+      const blockDef = this.config.blocks.getById(blockId);
       if (blockDef && blockDef.gravity) {
         continue;
       }
@@ -225,7 +225,7 @@ export class DrawBitmap extends BlockGarden {
       }
     }
 
-    this.batchSetBlocks(updates);
+    this.batchSetBlocks(updates, { skipLighting: true });
   }
 }
 

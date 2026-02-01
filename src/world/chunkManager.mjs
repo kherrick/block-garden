@@ -15,6 +15,10 @@ import {
 } from "./lighting/lightSystem.mjs";
 
 /**
+ * @typedef {import('./config/blocks.mjs').BlockArray} BlockArray
+ */
+
+/**
  * @typedef {import('./config/blocks.mjs').BlockDefinition} BlockDefinition
  */
 
@@ -104,9 +108,7 @@ export class ChunkManager {
       if (this.blockTypes) {
         propagateLight(
           chunk,
-          /** @type {import('./config/blocks.mjs').BlockArray} */ (
-            this.blockTypes
-          ),
+          /** @type {BlockArray} */ (this.blockTypes),
           this,
         );
       }
@@ -172,13 +174,7 @@ export class ChunkManager {
 
     // Propagate light after persistence restore
     if (this.blockTypes) {
-      propagateLight(
-        chunk,
-        /** @type {import('./config/blocks.mjs').BlockArray} */ (
-          this.blockTypes
-        ),
-        this,
-      );
+      propagateLight(chunk, /** @type {BlockArray} */ (this.blockTypes), this);
     }
 
     chunk.dirty = true;
@@ -336,14 +332,84 @@ export class ChunkManager {
           floorX,
           floorY,
           floorZ,
-          /** @type {import('./config/blocks.mjs').BlockArray} */ (
-            this.blockTypes
-          ),
+          /** @type {BlockArray} */ (this.blockTypes),
         );
       }
     }
 
     return result;
+  }
+
+  /**
+   * Batches multiple block updates efficiently by deferring lighting recalculations.
+   *
+   * @param {{x:number, y:number, z:number, block:*}[]} updates - Array of block updates
+   * @param {Object} [options]
+   */
+  batchSetBlocks(updates, { skipLighting = false } = {}) {
+    /** @type {Set<string>} */
+    const affectedChunks = new Set();
+    const CHUNK_X = CHUNK_SIZE_X;
+    const CHUNK_Z = CHUNK_SIZE_Z;
+
+    // Apply all block updates with per-block lighting skipped
+    for (const update of updates) {
+      const { x, y, z, block } = update;
+      this.setBlock(x, y, z, block, true, null, true); // true = skipLighting
+
+      if (!skipLighting) {
+        // Track unique chunks for single lighting update
+        const cx = Math.floor(x / CHUNK_X);
+        const cz = Math.floor(z / CHUNK_Z);
+
+        affectedChunks.add(`${cx},${cz}`);
+      }
+    }
+
+    // Process lighting updates once per affected chunk
+    if (!skipLighting && this.blockTypes) {
+      for (const key of affectedChunks) {
+        const [cx, cz] = key.split(",").map(Number);
+
+        this.recalculateLighting(cx, cz);
+      }
+    }
+  }
+
+  /**
+   * Recalculate lighting for a specific chunk.
+   * Used for batch updates where per-block lighting updates were skipped.
+   *
+   * @param {number} chunkX
+   * @param {number} chunkZ
+   */
+  recalculateLighting(chunkX, chunkZ) {
+    const chunk = this.getChunk(chunkX, chunkZ);
+
+    if (chunk && this.blockTypes) {
+      propagateLight(chunk, /** @type {BlockArray} */ (this.blockTypes), this);
+      chunk.dirty = true;
+
+      // Also mark neighbors as dirty to ensure they remesh with new light values from borders
+      this.markNeighborsDirty(chunkX, chunkZ, 0, 0); // 0,0 touches -x, -z
+      this.markNeighborsDirty(chunkX, chunkZ, 15, 15); // 15,15 touches +x, +z
+
+      // We need to mark all 4 neighbors really
+      const neighbors = [
+        [chunkX - 1, chunkZ],
+        [chunkX + 1, chunkZ],
+        [chunkX, chunkZ - 1],
+        [chunkX, chunkZ + 1],
+      ];
+
+      for (const [nx, nz] of neighbors) {
+        const nChunk = this.getChunk(nx, nz);
+
+        if (nChunk) {
+          nChunk.dirty = true;
+        }
+      }
+    }
   }
 
   /**

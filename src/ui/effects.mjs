@@ -3,7 +3,7 @@ import { gameState } from "../core/systems/game/state.mjs";
 
 import { effect } from "../utils/effect.mjs";
 import { getRandomSeed } from "../utils/getRandomSeed.mjs";
-import { updateFlightToggleButton } from "./controls/eventListeners.mjs";
+import { updateFlightToggleButton } from "../ui/utils/flightToggle.mjs";
 
 /** @typedef {import('signal-polyfill').Signal.State} Signal.State */
 

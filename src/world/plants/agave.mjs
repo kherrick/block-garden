@@ -1,5 +1,4 @@
-import { blockNames } from "../../world/config/blocks.mjs";
-import { getBlockIdByName } from "../../world/config/getBlockIdByName.mjs";
+import { blockNames, getBlockIdByName } from "../../world/config/blocks.mjs";
 
 /**
  * @typedef {import('../../world/config/blocks.mjs').BlockDefinition} BlockDefinition

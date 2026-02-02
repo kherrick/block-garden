@@ -1,0 +1,4 @@
+https://kherrick.github.io/block-garden/
+https://kherrick.github.io/block-garden/about/
+https://kherrick.github.io/block-garden/privacy/
+https://kherrick.github.io/block-garden/src/api/examples/

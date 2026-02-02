@@ -1,0 +1,1280 @@
+/**
+ * Block property definition.
+ *
+ * @typedef {Object} BlockDefinition
+ *
+ * @property {number} [id] - Unique identifier for the block
+ * @property {string} name - Display name of the block
+ * @property {boolean} [crop=false] - Whether this block is a crop
+ * @property {boolean} [solid=false] - Whether a block is solid
+ * @property {boolean} [isSeed=false] - Whether this block is a seed/plant
+ * @property {string|string[]|null} [drops=null] - What material(s) drop when harvested
+ * @property {boolean} [gravity=false] - Whether a block falls
+ * @property {number|null} [breakTime=0] - How long it takes to break a block
+ * @property {number} [growthTime] - Time in seconds for plant to grow
+ * @property {number} [friction=0] - Friction value when player moves through block (0-1). 0=no friction, 1=full stop. Future use for water, lava, leaves, etc.
+ * @property {number} [emissive=0] - Light emission level (0-15). 0=none, 14=torch, 15=max/sun. Light propagates to nearby blocks.
+ */
+
+/**
+ * Custom methods added to the blocks array.
+ *
+ * @typedef {Object} BlockArrayExtensions
+ *
+ * @property {function(number): (BlockDefinition|undefined)} getById - Get a block definition by its ID
+ * @property {function(string): (BlockDefinition|undefined)} getByName - Get a block definition by its name
+ * @property {function(string): number} getIdByName - Get a block ID by its name
+ * @property {function(number): (BlockDefinition|undefined)} getByIndex - Get a block definition by its index
+ */
+
+/**
+ * Augmented array of block definitions with lookup methods.
+ *
+ * @typedef {BlockDefinition[] & BlockArrayExtensions} BlockArray
+ */
+
+/**
+ * Block placement in a plant structure.
+ *
+ * @typedef {Object} BlockPlacement
+ *
+ * @property {number} x - World X coordinate
+ * @property {number} y - World Y coordinate
+ * @property {number} z - World Z coordinate
+ * @property {number} blockId - Block ID (index into blocks array)
+ */
+
+export const blockNames = {
+  AIR: "Air",
+  AGAVE_BASE: "Agave Base",
+  AGAVE_FLOWER_STALK: "Agave Flower Stalk",
+  AGAVE_FLOWER: "Agave Flower",
+  AGAVE_GROWING: "Agave Growing",
+  AGAVE_SPIKE: "Agave Spike",
+  AGAVE: "Agave",
+  BAMBOO_GROWING: "Bamboo Growing",
+  BAMBOO_JOINT: "Bamboo Joint",
+  BAMBOO_LEAVES: "Bamboo Leaves",
+  BAMBOO_STALK: "Bamboo Stalk",
+  BAMBOO: "Bamboo",
+  BEDROCK: "Bedrock",
+  BERRY_BUSH_BERRIES: "Berry Bush Berries",
+  BERRY_BUSH_BRANCH: "Berry Bush Branch",
+  BERRY_BUSH_GROWING: "Berry Bush Growing",
+  BERRY_BUSH_LEAVES: "Berry Bush Leaves",
+  BERRY_BUSH: "Berry Bush",
+  BIRCH_BARK: "Birch Bark",
+  BIRCH_BRANCHES: "Birch Branches",
+  BIRCH_CATKINS: "Birch Catkins",
+  BIRCH_GROWING: "Birch Growing",
+  BIRCH_LEAVES: "Birch Leaves",
+  BIRCH_TRUNK: "Birch Trunk",
+  BIRCH: "Birch",
+  CACTUS_BODY: "Cactus Body",
+  CACTUS_FLOWER: "Cactus Flower",
+  CACTUS_GROWING: "Cactus Growing",
+  CACTUS: "Cactus",
+  CARROT_GROWING: "Carrot Growing",
+  CARROT_LEAVES: "Carrot Leaves",
+  CARROT_ROOT: "Carrot Root",
+  CARROT: "Carrot",
+  CLAY: "Clay",
+  CLOUD: "Cloud",
+  COAL: "Coal",
+  CORN_EAR: "Corn Ear",
+  CORN_GROWING: "Corn Growing",
+  CORN_LEAVES: "Corn Leaves",
+  CORN_SILK: "Corn Silk",
+  CORN_STALK: "Corn Stalk",
+  CORN: "Corn",
+  DIRT: "Dirt",
+  FERN_FROND: "Fern Frond",
+  FERN_GROWING: "Fern Growing",
+  FERN_STEM: "Fern Stem",
+  FERN: "Fern",
+  GOLD: "Gold",
+  GRASS: "Grass",
+  ICE: "Ice",
+  IRON: "Iron",
+  KELP_BLADE: "Kelp Blade",
+  KELP_BULB: "Kelp Bulb",
+  KELP_GROWING: "Kelp Growing",
+  KELP: "Kelp",
+  LAVA: "Lava",
+  LAVENDER_BUSH: "Lavender Bush",
+  LAVENDER_FLOWERS: "Lavender Flowers",
+  LAVENDER_GROWING: "Lavender Growing",
+  LAVENDER_STEM: "Lavender Stem",
+  LAVENDER: "Lavender",
+  LOTUS_BUD: "Lotus Bud",
+  LOTUS_FLOWER: "Lotus Flower",
+  LOTUS_GROWING: "Lotus Growing",
+  LOTUS_PAD: "Lotus Pad",
+  LOTUS_STEM: "Lotus Stem",
+  LOTUS: "Lotus",
+  MOSS: "Moss",
+  MUSHROOM_CAP: "Mushroom Cap",
+  MUSHROOM_GROWING: "Mushroom Growing",
+  MUSHROOM_STEM: "Mushroom Stem",
+  MUSHROOM: "Mushroom",
+  PINE_CONE: "Pine Cone",
+  PINE_NEEDLES: "Pine Needles",
+  PINE_TREE_GROWING: "Pine Tree Growing",
+  PINE_TREE: "Pine Tree",
+  PINE_TRUNK: "Pine Trunk",
+  PUMICE: "Pumice",
+  PUMPKIN_FRUIT: "Pumpkin Fruit",
+  PUMPKIN_GROWING: "Pumpkin Growing",
+  PUMPKIN_LEAVES: "Pumpkin Leaves",
+  PUMPKIN_STEM: "Pumpkin Stem",
+  PUMPKIN_VINE: "Pumpkin Vine",
+  PUMPKIN: "Pumpkin",
+  ROSE_BLOOM: "Rose Bloom",
+  ROSE_BUD: "Rose Bud",
+  ROSE_GROWING: "Rose Growing",
+  ROSE_LEAVES: "Rose Leaves",
+  ROSE_STEM: "Rose Stem",
+  ROSE_THORNS: "Rose Thorns",
+  ROSE: "Rose",
+  SAND: "Sand",
+  SNOW: "Snow",
+  STONE: "Stone",
+  SUNFLOWER_CENTER: "Sunflower Center",
+  SUNFLOWER_GROWING: "Sunflower Growing",
+  SUNFLOWER_LEAVES: "Sunflower Leaves",
+  SUNFLOWER_PETALS: "Sunflower Petals",
+  SUNFLOWER_STEM: "Sunflower Stem",
+  SUNFLOWER: "Sunflower",
+  TREE_GROWING: "Tree Growing",
+  TREE_LEAVES: "Tree Leaves",
+  TREE_TRUNK: "Tree Trunk",
+  TULIP_BULB: "Tulip Bulb",
+  TULIP_GROWING: "Tulip Growing",
+  TULIP_LEAVES: "Tulip Leaves",
+  TULIP_PETALS: "Tulip Petals",
+  TULIP_STEM: "Tulip Stem",
+  TULIP: "Tulip",
+  WATER: "Water",
+  WHEAT_GRAIN: "Wheat Grain",
+  WHEAT_GROWING: "Wheat Growing",
+  WHEAT_STALK: "Wheat Stalk",
+  WHEAT: "Wheat",
+  WILLOW_BRANCHES: "Willow Branches",
+  WILLOW_LEAVES: "Willow Leaves",
+  WILLOW_TREE_GROWING: "Willow Tree Growing",
+  WILLOW_TREE: "Willow Tree",
+  WILLOW_TRUNK: "Willow Trunk",
+  WOOD: "Wood",
+  LINK: "Link",
+  TEXT: "Text",
+  TORCH: "Torch",
+  LANTERN: "Lantern",
+  LIGHTSTONE: "Lightstone",
+};
+
+/**
+ * Array of block definitions.
+ *
+ * @type {BlockDefinition[]}
+ */
+const blockDefinitionsArray = [
+  {
+    name: blockNames.AIR,
+    id: 0,
+    breakTime: null,
+    drops: null,
+    solid: false,
+  },
+  {
+    name: blockNames.AGAVE_BASE,
+    id: 82,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.AGAVE_FLOWER_STALK,
+    id: 84,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.AGAVE_FLOWER,
+    id: 85,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.AGAVE_GROWING,
+    id: 81,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+    crop: true,
+  },
+  {
+    name: blockNames.AGAVE_SPIKE,
+    id: 83,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.AGAVE,
+    id: 80,
+    breakTime: 0.5,
+    drops: "AGAVE",
+    solid: true,
+    growthTime: 1920,
+    isSeed: true,
+    crop: true,
+  },
+  {
+    name: blockNames.BAMBOO_GROWING,
+    id: 43,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+    crop: true,
+  },
+  {
+    name: blockNames.BAMBOO_JOINT,
+    id: 53,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.BAMBOO_LEAVES,
+    id: 54,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.BAMBOO_STALK,
+    id: 52,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.BAMBOO,
+    id: 36,
+    breakTime: 0.5,
+    drops: "BAMBOO",
+    solid: true,
+    growthTime: 180,
+    isSeed: true,
+    crop: true,
+  },
+  {
+    name: blockNames.BEDROCK,
+    id: 19,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.BERRY_BUSH_BERRIES,
+    id: 51,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.BERRY_BUSH_BRANCH,
+    id: 49,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.BERRY_BUSH_GROWING,
+    id: 42,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+    crop: true,
+  },
+  {
+    name: blockNames.BERRY_BUSH_LEAVES,
+    id: 50,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.BERRY_BUSH,
+    id: 35,
+    breakTime: 0.5,
+    drops: "BERRY_BUSH",
+    solid: true,
+    growthTime: 360,
+    isSeed: true,
+    crop: true,
+  },
+  {
+    name: blockNames.BIRCH_BARK,
+    id: 117,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.BIRCH_BRANCHES,
+    id: 118,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.BIRCH_CATKINS,
+    id: 120,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.BIRCH_GROWING,
+    id: 115,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+    crop: true,
+  },
+  {
+    name: blockNames.BIRCH_LEAVES,
+    id: 119,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.BIRCH_TRUNK,
+    id: 116,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.BIRCH,
+    id: 114,
+    breakTime: 0.5,
+    drops: ["BIRCH", "WOOD"],
+    solid: true,
+    growthTime: 1260,
+    isSeed: true,
+    crop: true,
+  },
+  {
+    name: blockNames.CACTUS_BODY,
+    id: 30,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.CACTUS_FLOWER,
+    id: 31,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.CACTUS_GROWING,
+    id: 23,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+    crop: true,
+  },
+  {
+    name: blockNames.CACTUS,
+    id: 15,
+    breakTime: 0.5,
+    drops: "CACTUS",
+    solid: true,
+    growthTime: 2400,
+    isSeed: true,
+    crop: true,
+  },
+  {
+    name: blockNames.CARROT_GROWING,
+    id: 21,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+    crop: true,
+  },
+  {
+    name: blockNames.CARROT_LEAVES,
+    id: 26,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.CARROT_ROOT,
+    id: 27,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.CARROT,
+    id: 13,
+    breakTime: 0.5,
+    drops: "CARROT",
+    solid: true,
+    growthTime: 240,
+    isSeed: true,
+    crop: true,
+  },
+  {
+    name: blockNames.CLAY,
+    id: 6,
+    breakTime: 0.5,
+    drops: "CLAY",
+    solid: true,
+  },
+  {
+    name: blockNames.CLOUD,
+    id: 72,
+    breakTime: 0.5,
+    drops: "CLOUD",
+    solid: true,
+  },
+  {
+    name: blockNames.COAL,
+    id: 7,
+    breakTime: 0.5,
+    drops: "COAL",
+    solid: true,
+  },
+  {
+    name: blockNames.CORN_EAR,
+    id: 61,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.CORN_GROWING,
+    id: 45,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+    crop: true,
+  },
+  {
+    name: blockNames.CORN_LEAVES,
+    id: 60,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.CORN_SILK,
+    id: 62,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.CORN_STALK,
+    id: 59,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.CORN,
+    id: 38,
+    breakTime: 0.5,
+    drops: "CORN",
+    solid: true,
+    growthTime: 420,
+    isSeed: true,
+    crop: true,
+  },
+  {
+    name: blockNames.DIRT,
+    id: 2,
+    breakTime: 0.5,
+    drops: "DIRT",
+    solid: true,
+  },
+  {
+    name: blockNames.FERN_FROND,
+    id: 70,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.FERN_GROWING,
+    id: 48,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+    crop: true,
+  },
+  {
+    name: blockNames.FERN_STEM,
+    id: 69,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.FERN,
+    id: 41,
+    breakTime: 0.5,
+    drops: "FERN",
+    solid: true,
+    growthTime: 90,
+    isSeed: true,
+    crop: true,
+  },
+  {
+    name: blockNames.GOLD,
+    id: 9,
+    breakTime: 0.5,
+    drops: "GOLD",
+    solid: true,
+  },
+  {
+    name: blockNames.GRASS,
+    id: 1,
+    breakTime: 0.5,
+    drops: "GRASS",
+    solid: true,
+  },
+  {
+    name: blockNames.ICE,
+    id: 17,
+    breakTime: 0.5,
+    drops: "ICE",
+    solid: true,
+  },
+  {
+    name: blockNames.IRON,
+    id: 8,
+    breakTime: 0.5,
+    drops: "IRON",
+    solid: true,
+  },
+  {
+    name: blockNames.KELP_BLADE,
+    id: 93,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.KELP_BULB,
+    id: 94,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.KELP_GROWING,
+    id: 92,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+    crop: true,
+  },
+  {
+    name: blockNames.KELP,
+    id: 91,
+    breakTime: 0.5,
+    drops: "KELP",
+    solid: true,
+    growthTime: 150,
+    isSeed: true,
+    crop: true,
+  },
+  {
+    name: blockNames.LAVA,
+    id: 18,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+    gravity: true,
+    emissive: 8,
+  },
+  {
+    name: blockNames.LAVENDER_BUSH,
+    id: 89,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.LAVENDER_FLOWERS,
+    id: 90,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.LAVENDER_GROWING,
+    id: 87,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+    crop: true,
+  },
+  {
+    name: blockNames.LAVENDER_STEM,
+    id: 88,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.LAVENDER,
+    id: 86,
+    breakTime: 0.5,
+    drops: "LAVENDER",
+    solid: true,
+    growthTime: 200,
+    isSeed: true,
+    crop: true,
+  },
+  {
+    name: blockNames.LOTUS_BUD,
+    id: 112,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.LOTUS_FLOWER,
+    id: 113,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.LOTUS_GROWING,
+    id: 109,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+    crop: true,
+  },
+  {
+    name: blockNames.LOTUS_PAD,
+    id: 110,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.LOTUS_STEM,
+    id: 111,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.LOTUS,
+    id: 108,
+    breakTime: 0.5,
+    drops: "LOTUS",
+    solid: true,
+    growthTime: 390,
+    isSeed: true,
+    crop: true,
+  },
+  {
+    name: blockNames.MUSHROOM_CAP,
+    id: 29,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.MUSHROOM_GROWING,
+    id: 22,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+    crop: true,
+  },
+  {
+    name: blockNames.MUSHROOM_STEM,
+    id: 28,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.MUSHROOM,
+    id: 14,
+    breakTime: 0.5,
+    drops: "MUSHROOM",
+    solid: true,
+    growthTime: 120,
+    isSeed: true,
+    crop: true,
+  },
+  {
+    name: blockNames.PINE_CONE,
+    id: 65,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.PINE_NEEDLES,
+    id: 64,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.PINE_TREE_GROWING,
+    id: 46,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+    crop: true,
+  },
+  {
+    name: blockNames.PINE_TREE,
+    id: 39,
+    breakTime: 0.5,
+    drops: "PINE_TREE",
+    solid: true,
+    growthTime: 1440,
+    isSeed: true,
+    crop: true,
+  },
+  {
+    name: blockNames.PINE_TRUNK,
+    id: 63,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.PUMICE,
+    id: 71,
+    breakTime: 0.5,
+    drops: "PUMICE",
+    solid: true,
+  },
+  {
+    name: blockNames.PUMPKIN_FRUIT,
+    id: 106,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.PUMPKIN_GROWING,
+    id: 103,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+    crop: true,
+  },
+  {
+    name: blockNames.PUMPKIN_LEAVES,
+    id: 105,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.PUMPKIN_STEM,
+    id: 107,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.PUMPKIN_VINE,
+    id: 104,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.PUMPKIN,
+    id: 102,
+    breakTime: 0.5,
+    drops: "PUMPKIN",
+    solid: true,
+    growthTime: 660,
+    isSeed: true,
+    crop: true,
+  },
+  {
+    name: blockNames.ROSE_BLOOM,
+    id: 101,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.ROSE_BUD,
+    id: 100,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.ROSE_GROWING,
+    id: 96,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+    crop: true,
+  },
+  {
+    name: blockNames.ROSE_LEAVES,
+    id: 99,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.ROSE_STEM,
+    id: 97,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.ROSE_THORNS,
+    id: 98,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.ROSE,
+    id: 95,
+    breakTime: 0.5,
+    drops: "ROSE",
+    solid: true,
+    growthTime: 540,
+    isSeed: true,
+    crop: true,
+  },
+  {
+    name: blockNames.SAND,
+    id: 5,
+    breakTime: 0.5,
+    drops: "SAND",
+    solid: true,
+    gravity: true,
+  },
+  {
+    name: blockNames.SNOW,
+    id: 16,
+    breakTime: 0.5,
+    drops: "SNOW",
+    solid: true,
+  },
+  {
+    name: blockNames.STONE,
+    id: 3,
+    breakTime: 0.5,
+    drops: "STONE",
+    solid: true,
+  },
+  {
+    name: blockNames.SUNFLOWER_CENTER,
+    id: 57,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.SUNFLOWER_GROWING,
+    id: 44,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+    crop: true,
+  },
+  {
+    name: blockNames.SUNFLOWER_LEAVES,
+    id: 56,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.SUNFLOWER_PETALS,
+    id: 58,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.SUNFLOWER_STEM,
+    id: 55,
+    breakTime: 0.5,
+    drops: "SUNFLOWER",
+    solid: true,
+  },
+  {
+    name: blockNames.SUNFLOWER,
+    id: 37,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+    growthTime: 600,
+    isSeed: true,
+    crop: true,
+  },
+  {
+    name: blockNames.TREE_GROWING,
+    id: 34,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+    crop: true,
+  },
+  {
+    name: blockNames.TREE_LEAVES,
+    id: 11,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+    crop: true,
+  },
+  {
+    name: blockNames.TREE_TRUNK,
+    id: 10,
+    breakTime: 0.5,
+    drops: "WOOD",
+    solid: true,
+    crop: true,
+  },
+  {
+    name: blockNames.TULIP_BULB,
+    id: 79,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.TULIP_GROWING,
+    id: 75,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+    crop: true,
+  },
+  {
+    name: blockNames.TULIP_LEAVES,
+    id: 77,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.TULIP_PETALS,
+    id: 78,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.TULIP_STEM,
+    id: 76,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.TULIP,
+    id: 74,
+    breakTime: 0.5,
+    drops: "TULIP",
+    solid: true,
+    growthTime: 300,
+    isSeed: true,
+    crop: true,
+  },
+  {
+    name: blockNames.WATER,
+    id: 4,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+    gravity: true,
+  },
+  {
+    name: blockNames.WHEAT_GRAIN,
+    id: 25,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.WHEAT_GROWING,
+    id: 20,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+    crop: true,
+  },
+  {
+    name: blockNames.WHEAT_STALK,
+    id: 24,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.WHEAT,
+    id: 12,
+    breakTime: 0.5,
+    drops: "WHEAT",
+    solid: true,
+    growthTime: 480,
+    isSeed: true,
+    crop: true,
+  },
+  {
+    name: blockNames.WILLOW_BRANCHES,
+    id: 67,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.WILLOW_LEAVES,
+    id: 68,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.WILLOW_TREE_GROWING,
+    id: 47,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+    crop: true,
+  },
+  {
+    name: blockNames.WILLOW_TREE,
+    id: 40,
+    breakTime: 0.5,
+    drops: ["WILLOW_TREE", "WOOD"],
+    solid: true,
+    growthTime: 1800,
+    isSeed: true,
+    crop: true,
+  },
+  {
+    name: blockNames.WILLOW_TRUNK,
+    id: 66,
+    breakTime: 0.5,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.WOOD,
+    id: 73,
+    breakTime: 0.5,
+    drops: "WOOD",
+    solid: true,
+    crop: true,
+  },
+  {
+    name: blockNames.LINK,
+    id: 130,
+    breakTime: 30,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.TEXT,
+    id: 131,
+    breakTime: 30,
+    drops: null,
+    solid: true,
+  },
+  {
+    name: blockNames.TORCH,
+    id: 132,
+    breakTime: 0.1,
+    drops: "TORCH",
+    solid: false,
+    emissive: 10,
+  },
+  {
+    name: blockNames.LANTERN,
+    id: 133,
+    breakTime: 0.3,
+    drops: "LANTERN",
+    solid: true,
+    emissive: 15,
+  },
+  {
+    name: blockNames.LIGHTSTONE,
+    id: 134,
+    breakTime: 0.5,
+    drops: "LIGHTSTONE",
+    solid: true,
+    emissive: 20,
+  },
+];
+
+/**
+ * Build a lookup array for blocks by ID (max ID is 131, using 256 for buffer)
+ */
+const blockDefinitionsById = new Array(256).fill(undefined);
+
+/**
+ * Build a lookup map for blocks by name.
+ */
+const blockDefinitionsNameMap = new Map();
+
+/**
+ * Build a map of block ID to array index.
+ *
+ * @type {Map<number, number>}
+ */
+const blockIdToIndexMap = new Map();
+blockDefinitionsArray.forEach((block, index) => {
+  blockIdToIndexMap.set(block.id, index);
+
+  if (block.id !== undefined && block.id < 256) {
+    blockDefinitionsById[block.id] = block;
+  }
+
+  if (block.name) {
+    blockDefinitionsNameMap.set(block.name, block);
+  }
+});
+
+/**
+ * Get a block definition by its ID.
+ *
+ * @param {number} id
+ *
+ * @returns {BlockDefinition|undefined}
+ */
+export const getBlockById = (id) => blockDefinitionsById[id];
+
+/**
+ * Get a block definition by its name.
+ *
+ * @param {string} name
+ *
+ * @returns {BlockDefinition|undefined}
+ */
+export const getBlockByName = (name) => blockDefinitionsNameMap.get(name);
+
+/**
+ * Get the numeric ID of a block by its name.
+ *
+ * @param {string} name
+ *
+ * @returns {number} The ID of the block, or -1 if not found
+ */
+export const getBlockIdByName = (name) =>
+  blockDefinitionsNameMap.get(name)?.id ?? -1;
+
+/**
+ * Get a block definition by its array index.
+ *
+ * @param {number} index
+ *
+ * @returns {BlockDefinition|undefined}
+ */
+export const getBlockByIndex = (index) => blockDefinitionsArray[index];
+
+/**
+ * Cached sets for gravity and non-gravity blocks.
+ *
+ * @type {Set<BlockDefinition>}
+ */
+const gravityBlocksSet = new Set();
+/** @type {Set<BlockDefinition>} */
+const nonGravityBlocksSet = new Set();
+
+blockDefinitionsArray.forEach((block) => {
+  if (block.gravity === true) {
+    gravityBlocksSet.add(block);
+  } else {
+    nonGravityBlocksSet.add(block);
+  }
+});
+
+/**
+ * Get a Set of all blocks whose gravity is true.
+ *
+ * @param {BlockArray} _blocks - (Deprecated) Unused, uses internal cache
+ *
+ * @returns {Set<BlockDefinition>}
+ */
+export function getGravityBlocks(_blocks) {
+  return gravityBlocksSet;
+}
+
+/**
+ * Get new block ID based on current block ID and direction.
+ *
+ * @param {number} currentBlockId
+ * @param {BlockArray} blocks
+ * @param {boolean} isForward
+ *
+ * @returns {number}
+ */
+export function getNewBlockId(currentBlockId, blocks, isForward) {
+  const currentIndex = blockIdToIndexMap.get(currentBlockId);
+  if (currentIndex === undefined) return currentBlockId;
+
+  const blockCount = blockDefinitionsArray.length;
+  const newIndex = isForward
+    ? currentIndex === blockCount - 1
+      ? 1
+      : currentIndex + 1
+    : currentIndex === 1
+      ? blockCount - 1
+      : currentIndex - 1;
+
+  return blockDefinitionsArray[newIndex].id;
+}
+
+/**
+ * Get a Set of all blocks whose gravity is false.
+ *
+ * @param {BlockArray} _blocks - (Deprecated) Unused, uses internal cache
+ *
+ * @returns {Set<BlockDefinition>}
+ */
+export function getNonGravityBlocks(_blocks) {
+  return nonGravityBlocksSet;
+}
+
+/**
+ * Augment blocks array with fast lookup methods for performance
+ *
+ * @type {BlockArray}
+ */
+const blocks = Object.assign(blockDefinitionsArray, {
+  getById: getBlockById,
+  getByName: getBlockByName,
+  getIdByName: getBlockIdByName,
+  getByIndex: getBlockByIndex,
+});
+
+/** @type {BlockArray} */
+export { blocks };

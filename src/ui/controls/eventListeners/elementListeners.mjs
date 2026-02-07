@@ -486,7 +486,12 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
   }
 
   function handleInventoryClick() {
-    return () => {
+    return (/** @type {Event} */ e) => {
+      // Prevent ghost clicks on touch devices
+      if (e.type === "touchstart") {
+        e.preventDefault();
+      }
+
       inventoryDialog.toggle();
     };
   }

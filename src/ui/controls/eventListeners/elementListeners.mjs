@@ -747,7 +747,14 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
       if (lowercaseKey === "k") {
         e.preventDefault();
 
-        gameState.flying.set(!gameState.flying.get());
+        if (config.useCreativeMode.get()) {
+          gameState.flying.set(!gameState.flying.get());
+        } else {
+          showToast(
+            shadow,
+            "'Flight' cannot be enabled with 'Creative Mode' disabled.",
+          );
+        }
 
         return;
       }

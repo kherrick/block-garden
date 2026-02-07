@@ -353,14 +353,14 @@ export const gameState = {
   seedsInventory: new Signal.State({}),
   // Default blocks
   materialBar: new Signal.State([
-    getBlockIdByName("Dirt"),
-    getBlockIdByName("Sand"),
-    getBlockIdByName("Mushroom"),
     getBlockIdByName("Sunflower"),
+    getBlockIdByName("Mushroom"),
     getBlockIdByName("Lotus"),
     getBlockIdByName("Rose"),
     getBlockIdByName("Pine Tree"),
-    getBlockIdByName("Gold"),
+    getBlockIdByName("Dirt"),
+    getBlockIdByName("Sand"),
+    getBlockIdByName("Clay"),
     getBlockIdByName("Stone"),
   ]),
   activeMaterialBarSlot: new Signal.State(0),

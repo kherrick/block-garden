@@ -1,5 +1,3 @@
-import { gameConfig } from "../../core/world/config/index.mjs";
-
 import {
   setMaterialBarItem,
   toInventoryKey,
@@ -10,6 +8,7 @@ import {
 
 /**
  * @typedef {Object} CategoryBlock
+ *
  * @property {number} [id]
  * @property {string} name
  * @property {string | number} count
@@ -20,6 +19,7 @@ import {
 
 /**
  * @typedef {Object} BlockCategory
+ *
  * @property {string} title
  * @property {CategoryBlock[]} blocks
  */
@@ -31,13 +31,13 @@ export class InventoryDialog {
    * @param {ShadowRoot} shadow
    */
   constructor(globalThis, doc, shadow) {
-    this.gThis = /** @type {BlockGardenGlobalThis} */ (globalThis);
+    this.gThis = globalThis;
     this.doc = doc;
     this.shadow = shadow;
 
-    /** @type {HTMLDialogElement | null} */
     this.dialog = null;
     this.isOpen = false;
+
     /** @type {Object<string, string>} */
     this.blockColors = {};
 
@@ -58,8 +58,7 @@ export class InventoryDialog {
 
   async createDialog() {
     // disable canvas while dialog is open
-    const bg = /** @type {BlockGardenGlobalThis} */ (this.gThis);
-    bg.blockGarden.state.isCanvasActionDisabled = true;
+    this.gThis.blockGarden.state.isCanvasActionDisabled = true;
 
     if (this.dialog) {
       return this.dialog;
@@ -187,6 +186,14 @@ export class InventoryDialog {
           text-transform: uppercase;
         }
 
+        .inventory-note {
+          color: var(--bg-color-gray-600);
+          font-size: 0.65rem;
+          font-weight: normal;
+          margin-left: 0.5rem;
+          text-transform: none;
+        }
+
         .inventory-category-title:first-of-type {
           margin-top: 0;
         }
@@ -205,9 +212,7 @@ export class InventoryDialog {
 
     this.renderInventory();
 
-    const closeBtn = /** @type {HTMLElement | null} */ (
-      dialog.querySelector("#closeInventoryDialog")
-    );
+    const closeBtn = dialog.querySelector("#closeInventoryDialog");
     if (closeBtn) {
       closeBtn.addEventListener("click", () => this.close());
     }
@@ -222,9 +227,7 @@ export class InventoryDialog {
       return;
     }
 
-    const grid = /** @type {HTMLElement | null} */ (
-      this.dialog.querySelector("#inventoryGrid")
-    );
+    const grid = this.dialog.querySelector("#inventoryGrid");
     if (!grid) {
       return;
     }
@@ -246,10 +249,12 @@ export class InventoryDialog {
       return prefixes;
     });
 
+    const plantsAndSeedsTitle = "🌱 Plants & Seeds";
+
     // Categorize all blocks
     /** @type {Object<string, BlockCategory>} */
     const categories = {
-      plants: { title: "🌱 Plants & Seeds", blocks: [] },
+      plants: { title: plantsAndSeedsTitle, blocks: [] },
       natural: { title: "⛰️ Natural Materials", blocks: [] },
       lighting: { title: "🏮 Lighting", blocks: [] },
       system: { title: "⚙️ System Utilities", blocks: [] },
@@ -265,6 +270,7 @@ export class InventoryDialog {
 
         const showFullCatalog =
           this.gThis.blockGarden.config.showFullCatalog.get();
+
         const isLightingBlock =
           (block.emissive || 0) > 0 && block.name !== "Lava";
 
@@ -298,9 +304,10 @@ export class InventoryDialog {
         }
         // Plants
         else if (
-          block.isSeed ||
-          block.crop ||
-          plantPrefixes.some((p) => block.name.startsWith(p))
+          (block.isSeed ||
+            block.crop ||
+            plantPrefixes.some((p) => block.name.startsWith(p))) &&
+          !block.name.startsWith("Tree ")
         ) {
           categories.plants.blocks.push({
             ...block,
@@ -352,8 +359,7 @@ export class InventoryDialog {
         return;
       }
 
-      html += `<div class="inventory-category-title">${cat.title}</div>`;
-
+      html += `<div class="inventory-category-title">${cat.title}${cat.title === plantsAndSeedsTitle ? '<span class="inventory-note">*Items highlighted in green will grow when placed.</span>' : ""}</div>`;
       cat.blocks.forEach((block) => {
         const blockNameKey = block.name.toLowerCase().replace(/ /g, "-");
 

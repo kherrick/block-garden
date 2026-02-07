@@ -1064,15 +1064,16 @@ export class BlockGarden extends HTMLElement {
                   <div class="settings-actions--container">
                     <div class="ui-grid__corner--sub-heading">Game</div>
                     <button id="worldState">🌍 World State</button>
-                    <button id="toggleCreativeMode" hidden="hidden">Enable Creative Mode</button>
-                    <button id="toggleFullCatalog">Disable Full Inventory Catalog</button>
+                    <button id="toggleCreativeMode">Enable Creative Mode</button>
+                    <button id="toggleFlight">🪽 Enable Flight</button>
+                    <button id="toggleFullCatalog">Enable Full Material Inventory Catalog</button>
+                    <button id="showMaterialInventory">Show Material Inventory</button>
+                    <button id="toggleSplitControls">Enable Split Controls</button>
                     <button id="toggleTouchControls">Disable Touch Controls</button>
-                    <button id="randomPlantButton" hidden="hidden">Plant randomly</button>
-                    <button id="fastGrowthButton" hidden="hidden">Enable Fast Growth</button>
                     <button id="toggleAutoJump">Disable Auto Jump</button>
                     <button id="gameSaveLinkingButton" hidden="hidden">Enable Game Save Linking</button>
-                    <button id="toggleSplitControls">Enable Split Controls</button>
-                    <button id="toggleFlight">🪽 Enable Flight</button>
+                    <button id="fastGrowthButton" hidden="hidden">Enable Fast Growth</button>
+                    <button id="randomPlantButton" hidden="hidden">Plant randomly</button>
                     <button id="configureLinkBlock">🔗 Configure Link Block</button>
                     <button id="configureTextBlock">📝 Configure Text Block</button>
                     <button
@@ -1289,7 +1290,9 @@ export class BlockGarden extends HTMLElement {
   /** @returns {Promise<void>} */
   async connectedCallback() {
     const shadow = this.shadowRoot;
-    if (!shadow) return;
+    if (!shadow) {
+      return;
+    }
 
     const canvas = /** @type {HTMLCanvasElement} */ (
       shadow.querySelector("canvas")

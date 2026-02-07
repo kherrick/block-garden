@@ -98,7 +98,6 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
     shadow.getElementById("gameSaveLinkingButton")?.removeAttribute("hidden");
     shadow.getElementById("randomPlantButton")?.removeAttribute("hidden");
     shadow.getElementById("toggleAODebug")?.removeAttribute("hidden");
-    shadow.getElementById("toggleCreativeMode")?.removeAttribute("hidden");
 
     shadow
       .getElementById("customizeColorsBtnContainer")
@@ -288,31 +287,6 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
     });
   }
 
-  // Flight Toggle
-  const flightToggle =
-    /** @type {HTMLElement} */
-    (shadow.querySelector("#toggleFlight"));
-  if (flightToggle) {
-    flightToggle.addEventListener("click", () => {
-      if (config.useCreativeMode.get()) {
-        gameState.flying.set(!gameState.flying.get());
-      } else {
-        showToast(shadow, "Flight requires Creative Mode");
-      }
-    });
-
-    // Use effect to update UI whenever flying state changes
-    effect(() => {
-      const isCreative = config.useCreativeMode.get();
-      const isFlying = gameState.flying.get();
-
-      updateFlightToggleButton(flightToggle, isFlying);
-
-      flightToggle.style.opacity = isCreative ? "1" : "0.5";
-      flightToggle.style.cursor = isCreative ? "pointer" : "not-allowed";
-    });
-  }
-
   // Link Block Configuration
   const configureLinkBlock = shadow.getElementById("configureLinkBlock");
   if (configureLinkBlock) {
@@ -331,7 +305,7 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
 
   const setupToggle = (
     /** @type {string} */ id,
-    /** @type {any} */ signal,
+    /** @type {SignalState} */ signal,
     /** @type {string} */ labelPrefix,
     /** @type {string} */ configKey,
   ) => {
@@ -359,6 +333,18 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
 
       btn.addEventListener("click", async () => {
         const newValue = !signal.get();
+
+        if (
+          configKey === "showFullCatalog" &&
+          config.useCreativeMode.get() &&
+          newValue === false
+        ) {
+          showToast(
+            shadow,
+            "'Full Material Inventory Catalog' cannot be disabled with 'Creative Mode' enabled.",
+          );
+          return;
+        }
 
         signal.set(newValue);
 
@@ -426,10 +412,59 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
     "useCreativeMode",
   );
 
-  // Disable flight if creative mode is turned off
+  // Flight Toggle
+  const flightToggle =
+    /** @type {HTMLElement} */
+    (shadow.querySelector("#toggleFlight"));
+  flightToggle.addEventListener("click", () => {
+    if (config.useCreativeMode.get()) {
+      gameState.flying.set(!gameState.flying.get());
+    } else {
+      showToast(
+        shadow,
+        "'Flight' cannot be enabled with 'Creative Mode' disabled.",
+      );
+    }
+  });
+
+  // Use effect to update UI whenever flying state changes
   effect(() => {
     const isCreative = config.useCreativeMode.get();
-    if (!isCreative && gameState.flying.get()) {
+    const isFlying = gameState.flying.get();
+
+    updateFlightToggleButton(flightToggle, isFlying);
+
+    flightToggle.style.opacity = isCreative ? "1" : "0.5";
+    flightToggle.style.cursor = isCreative ? "pointer" : "not-allowed";
+  });
+
+  // Full Catalog and Flight handling
+  const toggleFullCatalog =
+    /** @type {HTMLElement} */
+    (shadow.querySelector("#toggleFullCatalog"));
+
+  effect(() => {
+    const isCreative = config.useCreativeMode.get();
+    if (isCreative) {
+      toggleFullCatalog.style.opacity = "0.5";
+      toggleFullCatalog.style.cursor = "not-allowed";
+
+      requestAnimationFrame(() => {
+        config.showFullCatalog.set(isCreative);
+      });
+
+      return;
+    }
+
+    toggleFullCatalog.style.opacity = "1";
+    toggleFullCatalog.style.cursor = "pointer";
+
+    requestAnimationFrame(() => {
+      config.showFullCatalog.set(isCreative);
+    });
+
+    // Disable flight if creative mode is disabled
+    if (gameState.flying.get()) {
       gameState.flying.set(false);
     }
   });
@@ -437,7 +472,7 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
   setupToggle(
     "toggleFullCatalog",
     config.showFullCatalog,
-    "Full Inventory Catalog",
+    "Full Material Inventory Catalog",
     "showFullCatalog",
   );
 
@@ -456,13 +491,24 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
     };
   }
 
-  /** @type {HTMLElement | null} */
   const inventoryButton = shadow.querySelector('[data-key="e"]');
-
-  if (inventoryButton) {
+  const showMaterialInventoryButton = shadow.getElementById(
+    "showMaterialInventory",
+  );
+  if (inventoryButton && showMaterialInventoryButton) {
     const handleInventoryClickFn = handleInventoryClick();
     inventoryButton.addEventListener("click", handleInventoryClickFn);
     inventoryButton.addEventListener("touchstart", handleInventoryClickFn);
+
+    showMaterialInventoryButton.addEventListener(
+      "click",
+      handleInventoryClickFn,
+    );
+
+    showMaterialInventoryButton.addEventListener(
+      "touchstart",
+      handleInventoryClickFn,
+    );
   }
 
   // @ts-ignore - addEventListener typing doesn't handle all event types perfectly
@@ -615,8 +661,8 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
   });
 
   // Keyboard events
-  // @ts-ignore - addEventListener type checking doesn't support async functions properly
-  shadow.addEventListener(
+  /** @type {any} */
+  (shadow).addEventListener(
     "keydown",
     /** @param {KeyboardEvent} e */
     async (e) => {
@@ -643,15 +689,6 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
         return;
       }
 
-      // Added to activate buttons when pressing space
-      if (lowercaseKey === " ") {
-        if (e.target instanceof HTMLButtonElement) {
-          e.target.click();
-
-          return;
-        }
-      }
-
       if (!canControlCanvas(shadow)) {
         return;
       }
@@ -669,6 +706,7 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
         e.target instanceof HTMLInputElement ||
         e.target instanceof HTMLTextAreaElement ||
         e.target instanceof HTMLSelectElement ||
+        e.target instanceof HTMLButtonElement ||
         (e.target instanceof HTMLElement &&
           e.target.classList.contains("ui-grid__corner--heading"));
 

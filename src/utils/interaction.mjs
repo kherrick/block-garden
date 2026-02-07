@@ -580,7 +580,9 @@ async function activateTextBlock(gameState, x, y, z) {
     dialog.querySelector("#closeTextDialog")
   );
 
-  if (closeTextBtn) closeTextBtn.addEventListener("click", closeDialog);
+  if (closeTextBtn) {
+    closeTextBtn.addEventListener("click", closeDialog);
+  }
 
   // Close on Escape is handled by dialog naturally but we need to reset gameState
   dialog.addEventListener("close", closeDialog);

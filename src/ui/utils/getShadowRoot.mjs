@@ -13,6 +13,11 @@
  * const canvas = shadowRoot?.getElementById('canvas');
  */
 export function getShadowRoot(doc, tagName) {
+  /**
+   * @param {any} e
+   * @param {string} n
+   * @returns {Element | null}
+   */
   const findElement = (e, n) => {
     if (!e) {
       return null;

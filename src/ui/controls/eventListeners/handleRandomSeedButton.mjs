@@ -1,6 +1,8 @@
 import { getRandomSeed } from "../../../utils/getRandomSeed.mjs";
 
-import { generateWorld } from "../../../world/generation/world.mjs";
+import { generateWorld } from "../../../core/world/generation/world.mjs";
+
+/** @typedef {import('../../../core/systems/game/state.mjs').BlockGardenGlobalThis} BlockGardenGlobalThis */
 
 /**
  * Handles the random seed button click.
@@ -16,9 +18,12 @@ export function handleRandomSeedButton(shadow) {
     seedInput.value = String(randomSeed);
   }
 
-  currentSeedDisplay.textContent = String(randomSeed);
+  if (currentSeedDisplay) {
+    currentSeedDisplay.textContent = String(randomSeed);
+  }
 
-  generateWorld(randomSeed, globalThis.blockGarden.state);
+  const gThis = /** @type {BlockGardenGlobalThis} */ (globalThis);
+  generateWorld(randomSeed, gThis.blockGarden.state);
 
   console.log(`Generated new world with random seed: ${randomSeed}`);
 }

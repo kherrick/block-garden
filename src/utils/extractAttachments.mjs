@@ -1,3 +1,9 @@
+/**
+ * @param {any} pdfDoc
+ * @param {any} PDFArray
+ * @param {any} PDFDict
+ * @param {any} PDFName
+ */
 async function extractRawAttachments(pdfDoc, PDFArray, PDFDict, PDFName) {
   if (!pdfDoc.catalog.has(PDFName.of("Names"))) return [];
   const Names = pdfDoc.catalog.lookup(PDFName.of("Names"), PDFDict);

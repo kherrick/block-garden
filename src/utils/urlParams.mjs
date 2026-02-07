@@ -1,7 +1,9 @@
+/** @typedef {import('../core/systems/game/state.mjs').BlockGardenGlobalThis} BlockGardenGlobalThis */
+
 /**
  * Extracts the `gameSave` parameter from the URL.
  *
- * @param {typeof globalThis} gThis
+ * @param {BlockGardenGlobalThis} gThis
  *
  * @returns {string|null} The value of the `gameSave` parameter, or null if not found.
  */
@@ -22,7 +24,7 @@ export function getGameSaveUrlParam(gThis) {
  * @param {URLSearchParams} searchParams
  * @param {string} key
  *
- * @returns {Number|undefined}
+ * @returns {number|undefined}
  */
 export function getNumberParam(searchParams, key) {
   const value = searchParams.get(key);
@@ -35,15 +37,26 @@ export function getNumberParam(searchParams, key) {
 }
 
 /**
+ * @typedef {Object} PlayerParams
+ * @property {number} [x]
+ * @property {number} [y]
+ * @property {number} [z]
+ * @property {number} [pitch]
+ * @property {number} [yaw]
+ * @property {boolean} [flying]
+ */
+
+/**
  * Extracts player position and camera angle parameters from the URL.
  *
- * @param {typeof globalThis} gThis
+ * @param {BlockGardenGlobalThis} gThis
  *
- * @returns {Object} Object with x, y, z, pitch, yaw (all numbers or undefined)
+ * @returns {PlayerParams} Object with x, y, z, pitch, yaw (all numbers or undefined)
  */
 export function getPlayerParamsFromUrl(gThis) {
   try {
     const searchParams = new URLSearchParams(location.search);
+    /** @type {any} */
     const params = {};
 
     for (const key of ["x", "y", "z", "pitch", "yaw"]) {
@@ -68,7 +81,7 @@ export function getPlayerParamsFromUrl(gThis) {
 /**
  * Remove `seed` and `gameSave` parameters from the URL.
  *
- * @param {typeof globalThis} gThis
+ * @param {BlockGardenGlobalThis} gThis
  *
  * @returns {void}
  */

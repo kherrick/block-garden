@@ -7,7 +7,7 @@ export class KonamiCode extends BlockGarden {
     const code = [38, 38, 40, 40, 37, 39, 37, 39, 66, 65];
 
     let message = "";
-    await this.pressKeySequence(code, 150, (ck) => {
+    await this.pressKeySequence(code, 150, (/** @type {number} */ ck) => {
       switch (ck) {
         case 38:
           message = "Up";
@@ -31,7 +31,9 @@ export class KonamiCode extends BlockGarden {
           break;
       }
 
-      showToast(this.shadow, message);
+      if (this.shadow) {
+        showToast(this.shadow, message);
+      }
     });
   }
 }
@@ -44,7 +46,7 @@ export async function demo(
   // Setup
   await api.setFullscreen();
 
-  const settingsElement = api.shadow.querySelector(settingsSelector);
+  const settingsElement = api.shadow?.querySelector(settingsSelector);
   if (settingsElement instanceof HTMLDivElement) {
     settingsElement.click();
   }
@@ -54,7 +56,9 @@ export async function demo(
   // Start KonamiCode
   console.log("🧬 KonamiCode started!");
 
-  showToast(api.shadow, "Beginning Konami Code sequence");
+  if (api.shadow) {
+    showToast(api.shadow, "Beginning Konami Code sequence");
+  }
   await sleep(2000);
 
   await api.start();

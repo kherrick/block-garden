@@ -1,5 +1,5 @@
 /**
- * @typedef {import('../world/chunkManager.mjs').ChunkManager} ChunkManager
+ * @typedef {import('../core/world/chunkManager.mjs').ChunkManager} ChunkManager
  */
 
 /**
@@ -141,5 +141,6 @@ export function ray(world, { x, y, z }, { yaw, pitch }) {
     }
   }
 
+  // @ts-ignore - reaching max distance without finding a block
   return null;
 }

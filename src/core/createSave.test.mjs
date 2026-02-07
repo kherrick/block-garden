@@ -4,7 +4,7 @@
 import { jest } from "@jest/globals";
 
 // Mock the chunk module
-jest.unstable_mockModule("../world/generation/chunk.mjs", () => {
+jest.unstable_mockModule("./world/generation/chunk.mjs", () => {
   const CHUNK_SIZE_X = 16;
   const CHUNK_SIZE_Y = 128;
   const CHUNK_SIZE_Z = 16;
@@ -70,7 +70,7 @@ jest.unstable_mockModule("../world/generation/chunk.mjs", () => {
 });
 
 const { createSaveState } = await import("./createSave.mjs");
-const { Chunk } = await import("../world/generation/chunk.mjs");
+const { Chunk } = await import("./world/generation/chunk.mjs");
 
 describe("createSaveState", () => {
   let mockChunk1;

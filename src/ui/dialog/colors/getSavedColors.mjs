@@ -20,11 +20,11 @@ export async function getSavedColors(key) {
         "properties",
       );
 
-      return savedColors;
+      return savedColors || {};
     }
   } catch (error) {
     console.error("Failed to load saved colors:", error);
   }
 
-  return null;
+  return {};
 }

@@ -19,7 +19,11 @@ export function isKeyPressed(shadow, key) {
     "keys" in host &&
     "touchKeys" in host
   ) {
-    if (host.keys[key] || host.touchKeys[key]) {
+    const hostKeys = /** @type {Record<string, boolean>} */ (host.keys);
+    const hostTouchKeys = /** @type {Record<string, boolean>} */ (
+      host.touchKeys
+    );
+    if (hostKeys[key] || hostTouchKeys[key]) {
       if (canControlCanvas(shadow)) {
         return true;
       }

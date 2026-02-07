@@ -70,6 +70,7 @@ function processPending() {
  * and invokes any registered cleanup
  */
 export function effect(callback) {
+  /** @type {((() => void) | void) | undefined} */
   let cleanup;
 
   const computed = new Signal.Computed(() => {

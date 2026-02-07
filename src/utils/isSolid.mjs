@@ -1,7 +1,7 @@
-/** @typedef {import('../world/chunkManager.mjs').ChunkManager} ChunkManager */
-/** @typedef {import('../world/config/blocks.mjs').BlockDefinition} BlockDefinition */
+/** @typedef {import('../core/world/chunkManager.mjs').ChunkManager} ChunkManager */
+/** @typedef {import('../core/world/config/blocks.mjs').BlockDefinition} BlockDefinition */
 
-import { getBlockById } from "../world/config/blocks.mjs";
+import { getBlockById } from "../core/world/config/blocks.mjs";
 
 /**
  * Tests whether a block at a given world position is solid.

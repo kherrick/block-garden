@@ -15,7 +15,7 @@
 
 import { isSolid } from "../../utils/isSolid.mjs";
 import { isKeyPressed } from "../../utils/isKeyPressed.mjs";
-import { gameConfig } from "../../world/config/index.mjs";
+import { gameConfig } from "../world/config/index.mjs";
 
 /**
  * Checks if two AABBs intersect.
@@ -138,8 +138,10 @@ export function updatePhysics(shadow, ui, state, dt) {
     // RISING EDGE: SPACE
     if (space && !state.spacePressed) {
       if (now - state.lastSpacePressTime < 300) {
-        // Double tap detected
-        flying.set(!isFlying);
+        // Double tap detected - only allow if creative mode is on
+        if (gameConfig.useCreativeMode.get()) {
+          flying.set(!isFlying);
+        }
         state.lastSpacePressTime = 0; // Reset
       } else {
         state.lastSpacePressTime = now;

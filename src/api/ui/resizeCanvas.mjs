@@ -1,6 +1,8 @@
-/** @typedef {import('signal-polyfill').Signal.State} Signal.State */
-
-/** @typedef {import('../../world/config/index.mjs').GameConfig} GameConfig */
+/**
+ * @template T
+ *
+ * @typedef {import('signal-polyfill').Signal.State<T>} State
+ */
 
 /**
  * Resizes the game canvas based on the configured resolution setting.
@@ -9,7 +11,7 @@
  * Updates CSS classes and fog scale accordingly.
  *
  * @param {ShadowRoot} shadow - Shadow root containing the canvas element
- * @param {Signal.State} currentResolution - Signal State for current resolution
+ * @param {State<string>} currentResolution - Signal State for current resolution
  *
  * @returns {void}
  */

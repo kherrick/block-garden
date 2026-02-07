@@ -1,3 +1,4 @@
+//@ts-nocheck
 /**
  * Bundled by jsDelivr using Rollup v2.79.2 and Terser v5.39.0.
  * Original file: /npm/simplex-noise@4.0.3/dist/esm/simplex-noise.js

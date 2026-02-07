@@ -2,6 +2,9 @@ import localForage from "localforage";
 
 import { resizeCanvas } from "../../api/ui/resizeCanvas.mjs";
 
+/** @typedef {import("../systems/game/state.mjs").GameState} GameState */
+/** @typedef {import("../world/config/index.mjs").GameConfig} GameConfig */
+
 /**
  * Generates a storage key using the block-garden namespace pattern.
  * Examples: "block-garden-state-fast-growth", "block-garden-config-use-split-controls"
@@ -70,6 +73,7 @@ export async function getPersistedValue(scope, name, defaultValue = null) {
  * @returns {Promise<Object>} Object with keys as "scope_name" and values from storage
  */
 export async function getPersistedValues(items) {
+  /** @type {Record<string, any>} */
   const result = {};
   for (const item of items) {
     const key = `${item.scope}_${item.name}`;
@@ -90,8 +94,8 @@ export async function getPersistedValues(items) {
 /**
  * Restore all persisted game preferences from storage and apply them to gameState and gameConfig.
  *
- * @param {Object} gameState - The game state object
- * @param {Object} gameConfig - The game config object with signal setters
+ * @param {GameState} gameState - The game state object
+ * @param {GameConfig} gameConfig - The game config object with signal setters
  * @param {ShadowRoot} shadow - The shadow DOM to update UI elements for non-signal values
  *
  * @returns {Promise<void>}

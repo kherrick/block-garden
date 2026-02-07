@@ -2,6 +2,8 @@ import { persistValue } from "../../../core/systems/persistence.mjs";
 
 import { effect } from "../../../utils/effect.mjs";
 
+/** @typedef {import('../../../core/systems/game/state.mjs').BlockGardenGlobalThis} BlockGardenGlobalThis */
+
 /**
  * Initializes listeners for granular world generation controls.
  *
@@ -9,8 +11,9 @@ import { effect } from "../../../utils/effect.mjs";
  * @param {HTMLCanvasElement} cnvs
  */
 export function initGenerationControlListeners(shadow, cnvs) {
-  const gameConfig = globalThis.blockGarden.config;
-  const gameState = globalThis.blockGarden.state;
+  const gThis = /** @type {BlockGardenGlobalThis} */ (globalThis);
+  const gameConfig = gThis.blockGarden.config;
+  const gameState = gThis.blockGarden.state;
 
   const generationSettings = [
     { id: "terrainOctaves", signal: gameConfig.terrainOctaves, unit: "" },
@@ -154,11 +157,14 @@ export function initGenerationControlListeners(shadow, cnvs) {
       toggleCaves.style.color = "var(--bg-color-white)";
 
       if (val) {
-        caveThresholdInput.removeAttribute("disabled");
-        caveThresholdInputContainer.removeAttribute("hidden");
+        if (caveThresholdInput) caveThresholdInput.removeAttribute("disabled");
+        if (caveThresholdInputContainer)
+          caveThresholdInputContainer.removeAttribute("hidden");
       } else {
-        caveThresholdInput.setAttribute("disabled", "disabled");
-        caveThresholdInputContainer.setAttribute("hidden", "hidden");
+        if (caveThresholdInput)
+          caveThresholdInput.setAttribute("disabled", "disabled");
+        if (caveThresholdInputContainer)
+          caveThresholdInputContainer.setAttribute("hidden", "hidden");
       }
     });
 
@@ -167,11 +173,14 @@ export function initGenerationControlListeners(shadow, cnvs) {
       gameConfig.useCaves.set(!val);
 
       if (val) {
-        caveThresholdInput.removeAttribute("disabled");
-        caveThresholdInputContainer.removeAttribute("hidden");
+        if (caveThresholdInput) caveThresholdInput.removeAttribute("disabled");
+        if (caveThresholdInputContainer)
+          caveThresholdInputContainer.removeAttribute("hidden");
       } else {
-        caveThresholdInput.setAttribute("disabled", "disabled");
-        caveThresholdInputContainer.setAttribute("hidden", "hidden");
+        if (caveThresholdInput)
+          caveThresholdInput.setAttribute("disabled", "disabled");
+        if (caveThresholdInputContainer)
+          caveThresholdInputContainer.setAttribute("hidden", "hidden");
       }
     });
   }

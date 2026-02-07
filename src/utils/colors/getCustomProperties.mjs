@@ -1,4 +1,6 @@
-import { colors } from "../../world/config/colors.mjs";
+import { colors } from "../../core/world/config/colors.mjs";
+
+/** @typedef {import('../../core/systems/game/state.mjs').BlockGardenGlobalThis} BlockGardenGlobalThis */
 
 import { buildStyleMapByPropNames } from "./buildStyleMapByPropNames.mjs";
 
@@ -10,7 +12,7 @@ import { buildStyleMapByPropNames } from "./buildStyleMapByPropNames.mjs";
  * Used for both general UI colors and game block colors, as defined in the colors object, and returns
  * them as a combined map.
  *
- * @param {typeof globalThis} gThis - The global context or window object that provides getComputedStyle.
+ * @param {BlockGardenGlobalThis} gThis - The global context or window object that provides getComputedStyle.
  * @param {ShadowRoot} shadow - The shadow root whose host's computed styles will be inspected.
  *
  * @returns {CombinedColorMap} An object mapping CSS custom property names (without the --bg- prefix) to their values.

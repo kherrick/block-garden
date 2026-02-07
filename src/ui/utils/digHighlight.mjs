@@ -1,7 +1,6 @@
-/**
- * @typedef {import('../../core/systems/game/state.mjs').GameState} GameState
- */
+/** @typedef {import('../../core/systems/game/state.mjs').GameState} GameState */
 
+/** @type {any} */
 let digHighlightTimeout = null;
 
 /**

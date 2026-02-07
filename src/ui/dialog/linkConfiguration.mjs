@@ -3,11 +3,18 @@ import { showToast } from "../../api/ui/toast.mjs";
 import { formatName } from "../../utils/formatWorldName.mjs";
 
 export class LinkConfigurationDialog {
+  /**
+   * @param {any} gThis
+   * @param {Document} doc
+   * @param {ShadowRoot} shadow
+   */
   constructor(gThis, doc, shadow) {
     this.gThis = gThis;
     this.doc = doc;
     this.shadow = shadow;
+    /** @type {HTMLDialogElement | null} */
     this.dialog = null;
+    /** @type {{key: string, value: string}[]} */
     this.params = [];
 
     this.handleClose = this.handleClose.bind(this);
@@ -89,69 +96,89 @@ export class LinkConfigurationDialog {
     this.dialog = dialog;
 
     const closeBtn = dialog.querySelector("#closeLinkConfigDialog");
-    closeBtn.addEventListener("click", () => this.dialog.close());
-
     const saveBtn = dialog.querySelector("#saveLinkConfigBtn");
-    saveBtn.addEventListener("click", this.save);
-
     const addParamBtn = dialog.querySelector("#addParamBtn");
-    addParamBtn.addEventListener("click", this.addParam);
-
     const worldNameInput = dialog.querySelector("#targetWorldName");
     const previewSpan = dialog.querySelector("#previewFilename");
 
+    if (closeBtn) {
+      closeBtn.addEventListener("click", () => this.dialog?.close());
+    }
+
+    if (saveBtn) {
+      saveBtn.addEventListener("click", this.save);
+    }
+
+    if (addParamBtn) {
+      addParamBtn.addEventListener("click", this.addParam);
+    }
+
     const updateSaveButtonState = () => {
       const isValid =
+        worldNameInput instanceof HTMLInputElement &&
         worldNameInput.checkValidity() &&
         worldNameInput.value.trim().length > 0;
 
-      saveBtn.disabled = !isValid;
-      saveBtn.style.background = !isValid
-        ? "var(--bg-color-gray-500)"
-        : "var(--bg-color-green-500)";
+      if (saveBtn instanceof HTMLButtonElement) {
+        saveBtn.disabled = !isValid;
+        saveBtn.style.background = !isValid
+          ? "var(--bg-color-gray-500)"
+          : "var(--bg-color-green-500)";
 
-      saveBtn.style.cursor = !isValid ? "not-allowed" : "pointer";
-      saveBtn.style.opacity = !isValid ? "0.6" : "1";
+        saveBtn.style.cursor = !isValid ? "not-allowed" : "pointer";
+        saveBtn.style.opacity = !isValid ? "0.6" : "1";
+      }
 
-      worldNameInput.style.borderColor = worldNameInput.checkValidity()
-        ? "var(--bg-color-gray-500)"
-        : "var(--bg-color-red-500)";
+      if (worldNameInput instanceof HTMLInputElement) {
+        worldNameInput.style.borderColor = worldNameInput.checkValidity()
+          ? "var(--bg-color-gray-500)"
+          : "var(--bg-color-red-500)";
+      }
     };
 
-    worldNameInput.addEventListener("input", (e) => {
-      const val = e.target.value;
+    if (worldNameInput instanceof HTMLInputElement) {
+      worldNameInput.addEventListener("input", (e) => {
+        const val = /** @type {HTMLInputElement} */ (e.target).value;
 
-      previewSpan.textContent = formatName(val) + ".pdf";
+        if (previewSpan) {
+          previewSpan.textContent = formatName(val) + ".pdf";
+        }
 
-      updateSaveButtonState();
-    });
+        updateSaveButtonState();
+      });
+    }
 
     const quickBtns = dialog.querySelectorAll(".quickSelectBtn");
     quickBtns.forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const name = btn.getAttribute("data-name");
+      const element = /** @type {HTMLElement} */ (btn);
+      element.addEventListener("click", () => {
+        const name = element.getAttribute("data-name") || "";
 
-        worldNameInput.value = name;
+        if (worldNameInput instanceof HTMLInputElement) {
+          worldNameInput.value = name;
+        }
 
-        previewSpan.textContent = formatName(name) + ".pdf";
+        if (previewSpan) {
+          previewSpan.textContent = formatName(name) + ".pdf";
+        }
 
         updateSaveButtonState();
       });
 
-      btn.addEventListener("mouseenter", () => {
-        btn.style.background = "var(--bg-color-blue-700)";
+      element.addEventListener("mouseenter", () => {
+        element.style.background = "var(--bg-color-blue-700)";
       });
 
-      btn.addEventListener("mouseleave", () => {
-        btn.style.background = "var(--bg-color-blue-500)";
+      element.addEventListener("mouseleave", () => {
+        element.style.background = "var(--bg-color-blue-500)";
       });
 
-      btn.addEventListener("mousedown", () => {
-        btn.style.transform = "scale(0.95)";
+      element.addEventListener("mousedown", () => {
+        element.style.transform = "scale(0.95)";
       });
 
-      btn.addEventListener("mouseup", () => {
-        btn.style.transform = "scale(1)";
+      element.addEventListener("mouseup", () => {
+        element.style.transform = "scale(1)";
       });
     });
 
@@ -161,7 +188,9 @@ export class LinkConfigurationDialog {
   }
 
   renderParams() {
+    if (!this.dialog) return;
     const list = this.dialog.querySelector("#paramsList");
+    if (!list) return;
     list.innerHTML = "";
 
     this.params.forEach((param, index) => {
@@ -177,10 +206,11 @@ export class LinkConfigurationDialog {
       keyInput.style.padding = "0.25rem";
       keyInput.style.borderRadius = "0.25rem";
       keyInput.style.border = "1px solid var(--bg-color-gray-500)";
-      keyInput.addEventListener(
-        "input",
-        (e) => (this.params[index].key = e.target.value),
-      );
+      keyInput.addEventListener("input", (e) => {
+        if (e.target instanceof HTMLInputElement) {
+          this.params[index].key = e.target.value;
+        }
+      });
 
       const valInput = this.doc.createElement("input");
       valInput.type = "text";
@@ -192,7 +222,10 @@ export class LinkConfigurationDialog {
       valInput.style.border = "1px solid var(--bg-color-gray-500)";
       valInput.addEventListener(
         "input",
-        (e) => (this.params[index].value = e.target.value),
+        (e) =>
+          (this.params[index].value = /** @type {HTMLInputElement} */ (
+            e.target
+          ).value),
       );
 
       const removeBtn = this.doc.createElement("button");
@@ -219,9 +252,12 @@ export class LinkConfigurationDialog {
   }
 
   save() {
-    const worldName = this.dialog
-      .querySelector("#targetWorldName")
-      .value.trim();
+    if (!this.dialog) return;
+
+    const worldNameInput = /** @type {HTMLInputElement | null} */ (
+      this.dialog.querySelector("#targetWorldName")
+    );
+    const worldName = worldNameInput?.value.trim();
 
     if (!worldName) {
       alert("Please enter a target world name.");
@@ -229,12 +265,15 @@ export class LinkConfigurationDialog {
       return;
     }
 
+    /** @type {Record<string, string>} */
     const params = {};
     this.params.forEach((p) => {
       if (p.key.trim()) {
         params[p.key.trim()] = p.value.trim();
       }
     });
+
+    if (!this.dialog) return;
 
     this.gThis.blockGarden.state.armedLinkConfig.set({
       worldName,
@@ -251,7 +290,7 @@ export class LinkConfigurationDialog {
       // disable canvas while dialog is open
       this.gThis.blockGarden.state.isCanvasActionDisabled = true;
 
-      if (this.doc.pointerLockElement) {
+      if (this.doc instanceof Document && this.doc.pointerLockElement) {
         this.doc.exitPointerLock();
       }
 
@@ -273,18 +312,28 @@ export class LinkConfigurationDialog {
         // re-enable canvas after dialog is closed
         this.gThis.blockGarden.state.isCanvasActionDisabled = false;
 
-        this.dialog.removeEventListener("close", this.handleClose);
+        if (this.dialog) {
+          this.dialog?.removeEventListener("close", this.handleClose);
+        }
       }, 300);
     }
   }
 }
 
+/**
+ * @param {any} gThis
+ * @param {Document} doc
+ * @param {ShadowRoot} shadow
+ */
 export async function showLinkConfigDialog(gThis, doc, shadow) {
+  if (!shadow) return null;
   const linkDialog = new LinkConfigurationDialog(gThis, doc, shadow);
 
-  await linkDialog.createDialog();
+  const dialog = await linkDialog.createDialog();
 
-  linkDialog.open();
+  if (dialog instanceof HTMLDialogElement) {
+    linkDialog.open();
+  }
 
   return linkDialog;
 }

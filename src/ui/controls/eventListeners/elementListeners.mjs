@@ -1,3 +1,4 @@
+/** @ts-ignore */
 import extrasHandler from "konami-code-js";
 
 import { resizeCanvas } from "../../../api/ui/resizeCanvas.mjs";
@@ -21,9 +22,9 @@ import { placeBlock } from "../../../utils/interaction.mjs";
 import { raycastFromCanvasCoords } from "../../../utils/raycastFromCanvasCoords.mjs";
 import { processSaveData } from "../../../utils/saveData.mjs";
 
-import { getNewBlockId } from "../../../world/config/blocks.mjs";
-import { CONFIG_DEFAULTS } from "../../../world/config/index.mjs";
-import { initNewWorld } from "../../../world/generation/world.mjs";
+import { getNewBlockId } from "../../../core/world/config/blocks.mjs";
+import { CONFIG_DEFAULTS } from "../../../core/world/config/index.mjs";
+import { initNewWorld } from "../../../core/world/generation/world.mjs";
 
 import { showAboutDialog } from "../../dialog/about.mjs";
 import { showExamplesDialog } from "../../dialog/examples.mjs";
@@ -58,48 +59,58 @@ import { initRadiusControlListeners } from "./radiusControls.mjs";
 import { initResizeObserver } from "./resizeObserver.mjs";
 import { initTouchToggle } from "./touchToggle.mjs";
 
-/** @typedef {import('signal-polyfill').Signal.State} Signal.State */
-
+/** @typedef {import('../../../api/BlockGarden.mjs').BlockGardenGlobalThis} BlockGardenGlobalThis */
+/** @typedef {import('signal-polyfill').Signal.State<any>} SignalState */
 /** @typedef {import('../../../core/systems/game/init.mjs').CustomShadowHost} CustomShadowHost */
+/** @typedef {any} GameState */
 
 /**
  * Initializes element event listeners.
  *
  * @param {ShadowRoot} shadow
  * @param {HTMLCanvasElement} cnvs
- * @param {Signal.State} currentResolution
+ * @param {SignalState} currentResolution
+ *
+ * @ts-ignore - Complex event handling with mixed types
  */
 export function initElementEventListeners(shadow, cnvs, currentResolution) {
-  const gameState = globalThis.blockGarden.state;
-  const config = globalThis.blockGarden.config;
+  const gThis = /** @type {BlockGardenGlobalThis} */ (globalThis);
+  const gameState = gThis.blockGarden.state;
+  const config = gThis.blockGarden.config;
 
   const host =
     /** @type {CustomShadowHost} */
     (shadow.host);
 
-  const inventoryDialog = new InventoryDialog(
-    globalThis,
-    globalThis.document,
-    shadow,
-  );
+  /**
+   * @type {Record<string, boolean>}
+   */
+  host.keys = host.keys || {};
+
+  const inventoryDialog = new InventoryDialog(gThis, gThis.document, shadow);
 
   let lastTouchTime = 0;
 
   // Extras
-  new extrasHandler((handler) => {
-    shadow.getElementById("examplesBtnContainer").removeAttribute("hidden");
-    shadow.getElementById("fastGrowthButton").removeAttribute("hidden");
-    shadow.getElementById("gameSaveLinkingButton").removeAttribute("hidden");
-    shadow.getElementById("randomPlantButton").removeAttribute("hidden");
-    shadow.getElementById("toggleAODebug").removeAttribute("hidden");
+  new extrasHandler((/** @type {any} */ handler) => {
+    shadow.getElementById("examplesBtnContainer")?.removeAttribute("hidden");
+    shadow.getElementById("fastGrowthButton")?.removeAttribute("hidden");
+    shadow.getElementById("gameSaveLinkingButton")?.removeAttribute("hidden");
+    shadow.getElementById("randomPlantButton")?.removeAttribute("hidden");
+    shadow.getElementById("toggleAODebug")?.removeAttribute("hidden");
+    shadow.getElementById("toggleCreativeMode")?.removeAttribute("hidden");
 
     shadow
       .getElementById("customizeColorsBtnContainer")
-      .removeAttribute("hidden");
+      ?.removeAttribute("hidden");
 
-    shadow
-      .querySelector('block-garden-option[value="fullscreen"]')
-      .removeAttribute("hidden");
+    /** @type {HTMLElement | null} */
+    const fullscreenOption = shadow.querySelector(
+      'block-garden-option[value="fullscreen"]',
+    );
+    if (fullscreenOption) {
+      fullscreenOption.removeAttribute("hidden");
+    }
 
     const customizeColorsDialog = shadow.getElementById(
       "customizeColorsDialog",
@@ -111,11 +122,14 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
         .forEach((node) => node.removeAttribute("hidden"));
     }
 
+    /** @type {HTMLElement | null} */
     const settingsContainer = shadow.querySelector(
       '#settings > [class="ui-grid__corner--container"]',
     );
 
-    settingsContainer.removeAttribute("hidden");
+    if (settingsContainer) {
+      settingsContainer.removeAttribute("hidden");
+    }
 
     gameState.hasEnabledExtras.set(true);
     handler.disable();
@@ -126,27 +140,31 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
   initTouchToggle(shadow);
   initResizeObserver(shadow, currentResolution);
 
+  /** @type {HTMLElement | null} */
   const material = shadow.querySelector("#material .ui-grid__corner--heading");
-  material.addEventListener("click", () => {
-    toggleMaterialBar(shadow, gameState, cnvs);
-  });
-
-  material.addEventListener("keydown", (/** @type {KeyboardEvent} */ e) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-
+  if (material) {
+    material.addEventListener("click", () => {
       toggleMaterialBar(shadow, gameState, cnvs);
+    });
 
-      // Focus the first material bar slot after opening
-      const materialBar = shadow.getElementById("materialBar");
-      if (!materialBar.hasAttribute("hidden")) {
-        const firstSlot = materialBar.querySelector(".materialBar-slot");
-        if (firstSlot) {
-          /** @type {HTMLElement} */ (firstSlot).focus();
+    material.addEventListener("keydown", (/** @type {KeyboardEvent} */ e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+
+        toggleMaterialBar(shadow, gameState, cnvs);
+
+        // Focus the first material bar slot after opening
+        /** @type {HTMLElement | null} */
+        const materialBar = shadow.getElementById("materialBar");
+        if (materialBar && !materialBar.hasAttribute("hidden")) {
+          const firstSlot = materialBar.querySelector(".materialBar-slot");
+          if (firstSlot) {
+            /** @type {HTMLElement} */ (firstSlot).focus();
+          }
         }
       }
-    }
-  });
+    });
+  }
 
   // Fast Growth Button
   const fastGrowthButton = shadow.getElementById("fastGrowthButton");
@@ -276,14 +294,22 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
     (shadow.querySelector("#toggleFlight"));
   if (flightToggle) {
     flightToggle.addEventListener("click", () => {
-      const newValue = !gameState.flying.get();
-
-      gameState.flying.set(newValue);
+      if (config.useCreativeMode.get()) {
+        gameState.flying.set(!gameState.flying.get());
+      } else {
+        showToast(shadow, "Flight requires Creative Mode");
+      }
     });
 
     // Use effect to update UI whenever flying state changes
     effect(() => {
-      updateFlightToggleButton(flightToggle, gameState.flying.get());
+      const isCreative = config.useCreativeMode.get();
+      const isFlying = gameState.flying.get();
+
+      updateFlightToggleButton(flightToggle, isFlying);
+
+      flightToggle.style.opacity = isCreative ? "1" : "0.5";
+      flightToggle.style.cursor = isCreative ? "pointer" : "not-allowed";
     });
   }
 
@@ -291,7 +317,7 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
   const configureLinkBlock = shadow.getElementById("configureLinkBlock");
   if (configureLinkBlock) {
     configureLinkBlock.addEventListener("click", () => {
-      showLinkConfigDialog(globalThis, globalThis.document, shadow);
+      showLinkConfigDialog(gThis, gThis.document, shadow);
     });
   }
 
@@ -299,11 +325,16 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
   const configureTextBlock = shadow.getElementById("configureTextBlock");
   if (configureTextBlock) {
     configureTextBlock.addEventListener("click", () => {
-      showTextConfigDialog(globalThis, globalThis.document, shadow);
+      showTextConfigDialog(gThis, gThis.document, shadow);
     });
   }
 
-  const setupToggle = (id, signal, labelPrefix, configKey) => {
+  const setupToggle = (
+    /** @type {string} */ id,
+    /** @type {any} */ signal,
+    /** @type {string} */ labelPrefix,
+    /** @type {string} */ configKey,
+  ) => {
     const btn = shadow.getElementById(id);
 
     if (btn) {
@@ -388,6 +419,27 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
 
   setupToggle("toggleAODebug", config.useAODebug, "AO Debug", "useAODebug");
   setupToggle("toggleAutoJump", config.useAutoJump, "Auto Jump", "useAutoJump");
+  setupToggle(
+    "toggleCreativeMode",
+    config.useCreativeMode,
+    "Creative Mode",
+    "useCreativeMode",
+  );
+
+  // Disable flight if creative mode is turned off
+  effect(() => {
+    const isCreative = config.useCreativeMode.get();
+    if (!isCreative && gameState.flying.get()) {
+      gameState.flying.set(false);
+    }
+  });
+
+  setupToggle(
+    "toggleFullCatalog",
+    config.showFullCatalog,
+    "Full Inventory Catalog",
+    "showFullCatalog",
+  );
 
   // Random Plant Again Button
   const randomPlantButton = shadow.getElementById("randomPlantButton");
@@ -404,11 +456,16 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
     };
   }
 
+  /** @type {HTMLElement | null} */
   const inventoryButton = shadow.querySelector('[data-key="e"]');
 
-  inventoryButton.addEventListener("click", handleInventoryClick());
-  inventoryButton.addEventListener("touchstart", handleInventoryClick());
+  if (inventoryButton) {
+    const handleInventoryClickFn = handleInventoryClick();
+    inventoryButton.addEventListener("click", handleInventoryClickFn);
+    inventoryButton.addEventListener("touchstart", handleInventoryClickFn);
+  }
 
+  // @ts-ignore - addEventListener typing doesn't handle all event types perfectly
   shadow.addEventListener(
     "keyup",
     /** @param {KeyboardEvent} e */
@@ -417,7 +474,7 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
         return;
       }
 
-      host.keys[e.key.toLowerCase()] = false;
+      host.keys[/** @type {any} */ (e.key.toLowerCase())] = false;
 
       const lowercaseKey = e.key.toLowerCase();
       if (lowercaseKey === " ") {
@@ -438,8 +495,12 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
   );
 
   async function toggleWorldStatePanel() {
-    /** @type {HTMLDialogElement} **/
+    /** @type {HTMLDialogElement | null} */
     const seedControls = shadow.querySelector(".seed-controls");
+
+    if (!seedControls) {
+      return;
+    }
 
     if (seedControls.hasAttribute("open")) {
       seedControls.close();
@@ -447,8 +508,8 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
       seedControls.showModal();
 
       // Unlock pointer if locked
-      if (globalThis.document.pointerLockElement) {
-        globalThis.document.exitPointerLock();
+      if (gThis.document.pointerLockElement) {
+        gThis.document.exitPointerLock();
       }
     }
   }
@@ -480,7 +541,7 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
   if (aboutBtn) {
     aboutBtn.addEventListener("click", async function () {
       try {
-        await showAboutDialog(globalThis.document, shadow);
+        await showAboutDialog(gThis.document, shadow);
       } catch (error) {
         console.error("Failed to open about dialog:", error);
 
@@ -493,7 +554,7 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
   if (examplesBtn) {
     examplesBtn.addEventListener("click", async function () {
       try {
-        await showExamplesDialog(globalThis.document, shadow);
+        await showExamplesDialog(gThis.document, shadow);
       } catch (error) {
         console.error("Failed to open examples dialog:", error);
 
@@ -507,7 +568,7 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
   if (privacyBtn) {
     privacyBtn.addEventListener("click", async function () {
       try {
-        await showPrivacyDialog(globalThis.document, shadow);
+        await showPrivacyDialog(gThis.document, shadow);
       } catch (error) {
         console.error("Failed to open privacy dialog:", error);
 
@@ -525,21 +586,23 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
         config.currentResolution.set("800");
         resizeCanvas(shadow, config.currentResolution);
 
-        const colorDialog = await showColorCustomizationDialog(globalThis);
-        colorDialog.dialog.addEventListener("close", () => {
-          config.currentResolution.set(initialResolution);
+        const colorDialog = await showColorCustomizationDialog(gThis);
+        if (colorDialog && colorDialog.dialog) {
+          colorDialog.dialog.addEventListener("close", () => {
+            config.currentResolution.set(initialResolution);
 
-          resizeCanvas(shadow, config.currentResolution);
-        });
+            resizeCanvas(shadow, config.currentResolution);
+          });
+        }
 
         return;
       }
 
-      await showColorCustomizationDialog(globalThis);
+      await showColorCustomizationDialog(gThis);
     });
   }
   // Clear keys on blur to prevent stuck keys when window/tab loses focus
-  globalThis.addEventListener("blur", () => {
+  gThis.addEventListener("blur", () => {
     Object.keys(host.keys).forEach((key) => {
       host.keys[key] = false;
     });
@@ -552,6 +615,7 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
   });
 
   // Keyboard events
+  // @ts-ignore - addEventListener type checking doesn't support async functions properly
   shadow.addEventListener(
     "keydown",
     /** @param {KeyboardEvent} e */
@@ -617,7 +681,8 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
 
         const index = parseInt(lowercaseKey) - 1;
         const materialBar = shadow.getElementById("materialBar");
-        const isAlreadyOpen = !materialBar.hasAttribute("hidden");
+        const isAlreadyOpen =
+          materialBar && !materialBar.hasAttribute("hidden");
 
         if (!isAlreadyOpen) {
           toggleMaterialBar(shadow, gameState, cnvs);
@@ -656,10 +721,12 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
         e.preventDefault();
 
         if (e.code === "Backquote" || e.code === "Accent") {
+          const hasUnlockedExtras = gameState.hasEnabledExtras.get();
           const nextBlockId = getNewBlockId(
             gameState.curBlock.get(),
             config.blocks,
             !e.shiftKey,
+            hasUnlockedExtras,
           );
 
           gameState.curBlock.set(nextBlockId);
@@ -688,43 +755,32 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
 
   const resolutionSelectEl = shadow.getElementById("resolutionSelect");
   if (resolutionSelectEl) {
-    resolutionSelectEl.addEventListener(
-      "change",
-      async (
-        /** @type {CustomEvent} */
-        e,
-      ) => {
-        const newValue = e.detail.value;
+    resolutionSelectEl.addEventListener("change", (/** @type {Event} */ e) => {
+      const newValue = /** @type {any} */ (e).detail?.value;
+      if (newValue) {
         config.currentResolution.set(newValue);
-
-        await persistValue("config", "currentResolution", newValue);
-
+        persistValue("config", "currentResolution", newValue);
         resizeCanvas(shadow, config.currentResolution);
-      },
-    );
+      }
+    });
   }
 
-  shadow.addEventListener(
-    "mousemove",
-    (
-      /** @type MouseEvent */
-      e,
-    ) => {
-      if (
-        shadow.pointerLockElement === cnvs ||
-        shadow.pointerLockElement === shadow.host ||
-        globalThis.document.pointerLockElement === cnvs ||
-        globalThis.document.pointerLockElement === shadow.host
-      ) {
-        gameState.yaw -= e.movementX * 0.0025;
-        const MAX_PITCH = Math.PI / 2 - 0.01;
-        gameState.pitch = Math.max(
-          -MAX_PITCH,
-          Math.min(MAX_PITCH, gameState.pitch - e.movementY * 0.0025),
-        );
-      }
-    },
-  );
+  // @ts-ignore - addEventListener typing doesn't support all event types perfectly
+  shadow.addEventListener("mousemove", (/** @type {MouseEvent} */ e) => {
+    if (
+      shadow.pointerLockElement === cnvs ||
+      shadow.pointerLockElement === shadow.host ||
+      gThis.document.pointerLockElement === cnvs ||
+      gThis.document.pointerLockElement === shadow.host
+    ) {
+      gameState.yaw -= e.movementX * 0.0025;
+      const MAX_PITCH = Math.PI / 2 - 0.01;
+      gameState.pitch = Math.max(
+        -MAX_PITCH,
+        Math.min(MAX_PITCH, gameState.pitch - e.movementY * 0.0025),
+      );
+    }
+  });
 
   // Prevent default touch behaviors and track touch time
   shadow.addEventListener(
@@ -874,8 +930,8 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
       if (
         shadow.pointerLockElement === cnvs ||
         shadow.pointerLockElement === shadow.host ||
-        globalThis.document.pointerLockElement === cnvs ||
-        globalThis.document.pointerLockElement === shadow.host
+        gThis.document.pointerLockElement === cnvs ||
+        gThis.document.pointerLockElement === shadow.host
       ) {
         gameState.breakingInput.cursorX = e.clientX;
         gameState.breakingInput.cursorY = e.clientY;
@@ -984,23 +1040,29 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
   }
 
   const generateBtn = shadow.getElementById("generateWithSeed");
-  generateBtn.addEventListener("click", () => handleGenerateButton(shadow));
+  if (generateBtn) {
+    generateBtn.addEventListener("click", () => handleGenerateButton(shadow));
+  }
 
   const randomBtn = shadow.getElementById("randomSeed");
-  randomBtn.addEventListener("click", () => handleRandomSeedButton(shadow));
+  if (randomBtn) {
+    randomBtn.addEventListener("click", () => handleRandomSeedButton(shadow));
+  }
 
   const copySeedBtn = shadow.getElementById("copySeed");
-  copySeedBtn.addEventListener("click", async function () {
-    const seedInput = shadow.getElementById("worldSeedInput");
+  if (copySeedBtn) {
+    copySeedBtn.addEventListener("click", async function () {
+      const seedInput = shadow.getElementById("worldSeedInput");
 
-    if (seedInput instanceof HTMLInputElement) {
-      await copyToClipboard(globalThis, seedInput.value);
-      showToast(
-        shadow,
-        `Game seed, ${seedInput.value}, has been copied successfully`,
-      );
-    }
-  });
+      if (seedInput instanceof HTMLInputElement) {
+        await copyToClipboard(gThis, seedInput.value);
+        showToast(
+          shadow,
+          `Game seed, ${seedInput.value}, has been copied successfully`,
+        );
+      }
+    });
+  }
 
   const saveMode = shadow.getElementById("saveModeToggle");
   getSaveMode().then(async (mode) => {
@@ -1008,122 +1070,144 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
 
     console.log("Save Mode:", resolvedMode);
 
+    if (!saveMode) {
+      return;
+    }
+
     if (resolvedMode === "auto") {
+      // @ts-ignore
       saveMode.innerText = "Save Mode Auto";
+      // @ts-ignore
       saveMode.style.backgroundColor = "var(--bg-color-green-500)";
 
       return;
     }
 
+    // @ts-ignore
     saveMode.innerText = "Save Mode Manual";
+    // @ts-ignore
     saveMode.style.backgroundColor = "var(--bg-color-red-500)";
   });
 
-  saveMode.addEventListener("click", async function () {
-    const mode = await getSaveMode();
-    const resolvedMode = mode === "auto" ? "auto" : "manual";
+  // @ts-ignore
+  if (saveMode) {
+    saveMode.addEventListener("click", async function () {
+      const mode = await getSaveMode();
+      const resolvedMode = mode === "auto" ? "auto" : "manual";
 
-    if (resolvedMode === "manual") {
-      saveMode.innerText = "Save Mode Auto";
-      saveMode.style.backgroundColor = "var(--bg-color-green-500)";
+      if (resolvedMode === "manual") {
+        saveMode.innerText = "Save Mode Auto";
+        saveMode.style.backgroundColor = "var(--bg-color-green-500)";
 
-      await setSaveMode("auto");
-      await autoSaveGame(globalThis);
+        await setSaveMode("auto");
+        await autoSaveGame(gThis);
 
-      return;
-    }
+        return;
+      }
 
-    if (resolvedMode === "auto") {
-      saveMode.innerText = "Save Mode Manual";
-      saveMode.style.backgroundColor = "var(--bg-color-red-500)";
+      if (resolvedMode === "auto") {
+        saveMode.innerText = "Save Mode Manual";
+        saveMode.style.backgroundColor = "var(--bg-color-red-500)";
 
-      await setSaveMode("manual");
-    }
-  });
+        await setSaveMode("manual");
+      }
+    });
+  }
 
   const saveCompressedBtn = shadow.getElementById("saveExternalGameFile");
-  saveCompressedBtn.addEventListener("click", async function () {
-    try {
-      const saveState = createSaveState(globalThis.blockGarden.state.world);
-      const stateJSON = JSON.stringify(saveState);
+  if (saveCompressedBtn) {
+    saveCompressedBtn.addEventListener("click", async function () {
+      try {
+        const saveState = createSaveState(gThis.blockGarden.state.world, gThis);
+        const stateJSON = JSON.stringify(saveState);
 
-      await runCompress(globalThis, stateJSON);
+        await runCompress(gThis, stateJSON);
 
-      console.log("Game state saved successfully");
-    } catch (error) {
-      console.error("Failed to save game state:", error);
+        console.log("Game state saved successfully");
+      } catch (error) {
+        console.error("Failed to save game state:", error);
 
-      alert("Failed to save game state. Check console for details.");
-    }
-  });
+        alert("Failed to save game state. Check console for details.");
+      }
+    });
+  }
 
   const loadExternalGameFileBtn = shadow.getElementById("loadExternalGameFile");
-  loadExternalGameFileBtn.addEventListener("click", async function () {
-    let file;
+  if (loadExternalGameFileBtn) {
+    loadExternalGameFileBtn.addEventListener("click", async function () {
+      let file;
 
-    // Feature detection for showOpenFilePicker
-    if (globalThis.showOpenFilePicker) {
-      const [fileHandle] = await globalThis.showOpenFilePicker({
-        types: [
-          {
-            description: "Block Garden Save Game Files",
-            accept: {
-              "application/gzip": [".bgs"],
-              "application/pdf": [".pdf"],
-              "text/plain": [".txt"],
+      // Feature detection for showOpenFilePicker
+      if (gThis.showOpenFilePicker) {
+        const [fileHandle] = await gThis.showOpenFilePicker({
+          types: [
+            {
+              description: "Block Garden Save Game Files",
+              accept: {
+                "application/gzip": [".bgs"],
+                "application/pdf": [".pdf"],
+                "text/plain": [".txt"],
+              },
             },
-          },
-        ],
-      });
+          ],
+        });
 
-      file = await fileHandle.getFile();
-    } else {
-      // Fallback for browsers without showOpenFilePicker
-      const input = globalThis.document.createElement("input");
-      input.type = "file";
-      input.accept =
-        ".bgs,.pdf,.txt,text/plain,application/pdf,application/gzip,application/*";
-      input.style.display = "none";
+        file = await fileHandle.getFile();
+      } else {
+        // Fallback for browsers without showOpenFilePicker
+        const input = gThis.document.createElement("input");
+        input.style.display = "none";
+        input.type = "file";
+        input.accept =
+          ".bgs,.pdf,.txt,text/plain,application/pdf,application/gzip,application/*";
 
-      shadow.append(input);
+        shadow.append(input);
 
-      const filePromise = new Promise((resolve) => {
-        input.onchange = () => resolve(input.files[0]);
-      });
+        const filePromise = new Promise((resolve) => {
+          input.onchange = () => {
+            const files = input.files;
+            if (files && files[0]) {
+              resolve(files[0]);
+            } else {
+              resolve(null);
+            }
+          };
+        });
 
-      input.click();
+        input.click();
 
-      file = await filePromise;
-      shadow.removeChild(input);
-    }
-
-    try {
-      const stateJSON = await processSaveData(file, file.name, globalThis);
-      const saveState = JSON.parse(stateJSON);
-
-      const loaded = await loadSaveState(globalThis, shadow, saveState);
-
-      if (!loaded) {
-        showToast(
-          shadow,
-          "Oops! This save state appears to be broken. Loading a new world...",
-          { stack: true, useSingle: false, duration: 5000 },
-        );
-
-        initNewWorld(globalThis.blockGarden.state.seed);
+        file = await filePromise;
+        shadow.removeChild(input);
       }
-    } catch (error) {
-      console.error("Failed to load external game file:", error);
 
-      showToast(shadow, "Oops! Failed to load file. Loading a new world...", {
-        stack: true,
-        useSingle: false,
-        duration: 5000,
-      });
+      try {
+        const stateJSON = await processSaveData(file, file.name, gThis);
+        const saveState = JSON.parse(stateJSON);
 
-      initNewWorld(globalThis.blockGarden.state.seed);
-    }
-  });
+        const loaded = await loadSaveState(gThis, shadow, saveState);
+
+        if (!loaded) {
+          showToast(
+            shadow,
+            "Oops! This save state appears to be broken. Loading a new world...",
+            { stack: true, useSingle: false, duration: 5000 },
+          );
+
+          initNewWorld(gThis.blockGarden.state.seed);
+        }
+      } catch (error) {
+        console.error("Failed to load external game file:", error);
+
+        showToast(shadow, "Oops! Failed to load file. Loading a new world...", {
+          stack: true,
+          useSingle: false,
+          duration: 5000,
+        });
+
+        initNewWorld(gThis.blockGarden.state.seed);
+      }
+    });
+  }
 
   let canShareFiles = false;
   const shareExternalGameFileBtn = shadow.getElementById(
@@ -1142,7 +1226,7 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
     }
   }
 
-  if (canShareFiles) {
+  if (canShareFiles && shareExternalGameFileBtn) {
     shadow
       .querySelectorAll(".seed-controls--share")
       .forEach((s) => s.removeAttribute("hidden"));
@@ -1151,9 +1235,9 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
       try {
         let file;
 
-        if (globalThis.showOpenFilePicker) {
+        if (gThis.showOpenFilePicker) {
           // Modern File System Access API
-          const [fileHandle] = await globalThis.showOpenFilePicker({
+          const [fileHandle] = await gThis.showOpenFilePicker({
             types: [
               {
                 description: "Block Garden Save Game Files",
@@ -1174,7 +1258,7 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
           file = await fileHandle.getFile();
         } else {
           // Primary fallback: <input type="file">
-          const input = globalThis.document.createElement("input");
+          const input = gThis.document.createElement("input");
           input.type = "file";
           input.multiple = false;
           input.style.display = "none";
@@ -1191,6 +1275,7 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
                 reject(new DOMException("No file selected", "AbortError"));
               }
             };
+
             input.onerror = () => reject(new Error("File input failed"));
           });
 
@@ -1207,15 +1292,18 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
           stateJSON = (await file.text()).replace(/\s+/g, "");
         } else if (file.name.toLowerCase().endsWith(".pdf")) {
           const [results] = await extractAttachments(file);
+
           stateJSON = await extractJsonFromPng(new Blob([results.data]));
         } else if (file.name.toLowerCase().endsWith(".bgs")) {
           // Handle .bgs (gzip compressed)
           const decompressedStream = file
             .stream()
             .pipeThrough(new globalThis.DecompressionStream("gzip"));
+
           const decompressedBlob = await new globalThis.Response(
             decompressedStream,
           ).blob();
+
           stateJSON = await decompressedBlob.text();
         } else {
           throw new Error(`Unsupported file type: ${file.name}`);
@@ -1253,8 +1341,10 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
           const a = document.createElement("a");
           a.href = url;
           a.download = shareFile.name;
+
           document.body.appendChild(a);
           a.click();
+
           document.body.removeChild(a);
 
           URL.revokeObjectURL(url);
@@ -1262,10 +1352,11 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
           console.log("Game state downloaded:", shareFile.name);
         }
       } catch (error) {
-        if (error.name !== "AbortError") {
-          console.error("Share failed:", error);
+        const err = /** @type {any} */ (error);
+        if (err.name !== "AbortError") {
+          console.error("Share failed:", err);
 
-          alert(`Share failed: ${error.message}`);
+          alert(`Share failed: ${err.message}`);
         } else {
           console.log("User cancelled file selection");
         }
@@ -1278,7 +1369,7 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
   if (openStorageBtn) {
     openStorageBtn.addEventListener("click", async function () {
       try {
-        await showStorageDialog(globalThis, globalThis.document, shadow);
+        await showStorageDialog(gThis, gThis.document, shadow);
       } catch (error) {
         console.error("Failed to open storage dialog:", error);
 
@@ -1292,7 +1383,7 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
   if (loadExternalGameUrlBtn) {
     loadExternalGameUrlBtn.addEventListener("click", async function () {
       try {
-        await showUrlDialog(globalThis, globalThis.document, shadow);
+        await showUrlDialog(gThis, gThis.document, shadow);
       } catch (error) {
         console.error("Failed to open URL dialog:", error);
 
@@ -1303,23 +1394,20 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
 
   const corners = shadow.querySelectorAll(".ui-grid__corner");
   corners.forEach((corner) => {
-    const heading = corner.querySelector(".ui-grid__corner--heading");
-
-    heading.addEventListener(
-      "click",
-      (
-        /** @type MouseEvent */
-        e,
-      ) => handleCornerClick(e),
+    const heading = /** @type {HTMLHeadingElement} */ (
+      corner.querySelector(".ui-grid__corner--heading")
     );
 
-    heading.addEventListener("keydown", (/** @type {any} */ e) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
+    if (heading) {
+      heading.addEventListener("click", (e) => handleCornerClick(e));
+      heading.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
 
-        handleCornerClick(e);
-      }
-    });
+          handleCornerClick(e);
+        }
+      });
+    }
   });
 
   const applyDefaultPreset = shadow.getElementById("applyDefaultPreset");

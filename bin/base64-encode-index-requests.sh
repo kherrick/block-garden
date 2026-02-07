@@ -21,7 +21,7 @@ if [[ $1 == "encode-all" ]]; then
     || exit 1
 fi
 
-base64Encoded="$(bin/urlToBase64.mjs http://localhost:8080/dist/src/world/generation/terrain.worker-bundle-min.mjs)" \
+base64Encoded="$(bin/urlToBase64.mjs http://localhost:8080/dist/src/core/world/generation/terrain.worker-bundle-min.mjs)" \
   && bin/file-search-replace.mjs './generation/terrain.worker.mjs' "dist/block-garden-bundle-min.mjs" 'data:text/javascript;base64,' "$base64Encoded" \
   || exit 1
 

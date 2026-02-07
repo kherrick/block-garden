@@ -1,5 +1,7 @@
 export const optionTagName = "block-garden-option";
 
+/** @typedef {import('../../core/systems/game/state.mjs').BlockGardenGlobalThis} BlockGardenGlobalThis */
+
 /**
  * Option component for Block Garden Select
  */
@@ -17,6 +19,7 @@ export class BlockGardenOption extends HTMLElement {
   }
 }
 
-if (!globalThis.customElements?.get(optionTagName)) {
-  globalThis.customElements.define(optionTagName, BlockGardenOption);
+const gThis = /** @type {BlockGardenGlobalThis} */ (globalThis);
+if (!gThis.customElements?.get(optionTagName)) {
+  gThis.customElements.define(optionTagName, BlockGardenOption);
 }

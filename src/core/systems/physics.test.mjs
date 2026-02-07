@@ -34,10 +34,13 @@ jest.unstable_mockModule("../../utils/isKeyPressed.mjs", () => ({
   isKeyPressed: jest.fn(() => false),
 }));
 
-jest.unstable_mockModule("../../world/config/index.mjs", () => ({
+jest.unstable_mockModule("../world/config/index.mjs", () => ({
   gameConfig: {
     worldRadius: {
       get: jest.fn(() => 2072), // Default infinity
+    },
+    useCreativeMode: {
+      get: jest.fn(() => true),
     },
   },
 }));
@@ -46,7 +49,7 @@ jest.unstable_mockModule("../../world/config/index.mjs", () => ({
 const { intersects, updatePhysics } = await import("./physics.mjs");
 const { isKeyPressed } = await import("../../utils/isKeyPressed.mjs");
 const { isSolid } = await import("../../utils/isSolid.mjs");
-const { gameConfig } = await import("../../world/config/index.mjs");
+const { gameConfig } = await import("../world/config/index.mjs");
 
 // Mocks for dependencies
 const makeState = (overrides = {}) => ({

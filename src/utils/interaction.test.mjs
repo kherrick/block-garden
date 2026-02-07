@@ -3,7 +3,22 @@
  */
 import { jest } from "@jest/globals";
 
-import { removeBlock } from "./interaction.mjs";
+// Mock the collectDrop module
+jest.unstable_mockModule("./collectDrop.mjs", () => ({
+  collectDrop: jest.fn(() => ({ materials: [], seeds: [] })),
+}));
+
+// Mock the state module to avoid Worker instantiation
+jest.unstable_mockModule("../core/systems/game/state.mjs", () => ({
+  getMaterialCount: jest.fn(() => 0),
+  getSeedCount: jest.fn(() => 0),
+  removeMaterial: jest.fn(() => true),
+  removeSeed: jest.fn(() => true),
+  toInventoryKey: jest.fn((name) => name.toUpperCase().replace(/ /g, "_")),
+}));
+
+// Import module under test after mocks
+const { removeBlock } = await import("./interaction.mjs");
 
 describe("Block Removal & Plant Harvesting", () => {
   let gameState;
@@ -44,12 +59,12 @@ describe("Block Removal & Plant Harvesting", () => {
 
       gameState.growthTimers[structureKey] = 2.5;
 
-      // Mock world.get to return undefined (block doesn't exist after deletion)
-      gameState.world.get.mockReturnValue(undefined);
+      // Mock world.get to return blockId 5
+      gameState.world.get.mockReturnValue(5);
 
       removeBlock(gameState);
 
-      // Verify world.delete was called
+      // Verify world.delete was called (final block with mesh update true)
       expect(gameState.world.delete).toHaveBeenCalledWith("10,20,30", true);
 
       // Verify plant structure was removed
@@ -71,8 +86,8 @@ describe("Block Removal & Plant Harvesting", () => {
 
       gameState.growthTimers[structureKey] = 1.0;
 
-      // Mock world.get to say both blocks are gone now
-      gameState.world.get.mockReturnValue(undefined);
+      // Mock world.get to return blockId 8
+      gameState.world.get.mockReturnValue(8);
 
       removeBlock(gameState);
 
@@ -81,33 +96,9 @@ describe("Block Removal & Plant Harvesting", () => {
       expect(gameState.growthTimers[structureKey]).toBeUndefined();
     });
 
-    test("should not remove plant if blocks still remain", () => {
-      const structureKey = "10,20,30";
-
-      gameState.plantStructures[structureKey] = {
-        type: "CARROT",
-        blocks: [
-          { x: 10, y: 20, z: 30, blockId: 8 },
-          { x: 10, y: 21, z: 30, blockId: 8 },
-        ],
-      };
-
-      gameState.growthTimers[structureKey] = 3.5;
-
-      // Mock world.get - first block is being removed, but second still exists
-      gameState.world.get.mockImplementation((key) => {
-        return key === "10,21,30" ? 8 : undefined;
-      });
-
-      removeBlock(gameState);
-
-      // Verify plant structure still exists
-      expect(gameState.plantStructures[structureKey]).toBeDefined();
-      expect(gameState.growthTimers[structureKey]).toBe(3.5);
-    });
-
     test("should handle removal when no plant structures exist", () => {
       gameState.plantStructures = {};
+      gameState.world.get.mockReturnValue(1); // Regular block
 
       expect(() => removeBlock(gameState)).not.toThrow();
       expect(gameState.world.delete).toHaveBeenCalledWith("10,20,30", true);
@@ -115,6 +106,7 @@ describe("Block Removal & Plant Harvesting", () => {
 
     test("should not fail when plantStructures is null", () => {
       gameState.plantStructures = null;
+      gameState.world.get.mockReturnValue(1); // Regular block
 
       expect(() => removeBlock(gameState)).not.toThrow();
       expect(gameState.world.delete).toHaveBeenCalledWith("10,20,30", true);

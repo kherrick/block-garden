@@ -9,7 +9,11 @@
  * @returns {number[]} An array of three integers [red, green, blue], each in the range 0–255.
  */
 export function cssColorToRGB(doc, cssColor) {
+  /** @type {CanvasRenderingContext2D | null} */
   const ctx = doc.createElement("canvas").getContext("2d");
+  if (!ctx) {
+    return [0, 0, 0];
+  }
   ctx.fillStyle = cssColor;
 
   const computed = ctx.fillStyle;

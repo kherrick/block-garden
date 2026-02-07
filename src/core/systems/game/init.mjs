@@ -1,3 +1,4 @@
+/** @ts-ignore */
 import Hammer from "hammerjs";
 import localForage from "localforage";
 
@@ -27,8 +28,8 @@ import { getSavedColors } from "../../../ui/dialog/colors/getSavedColors.mjs";
 import { showToast } from "../../../api/ui/toast.mjs";
 
 import { cancelGameLoop, gameLoop } from "./loop.mjs";
-import { colors as gameColors } from "../../../world/config/colors.mjs";
-import { FAST_GROWTH_TIME } from "../../../world/config/index.mjs";
+import { colors as gameColors } from "../../world/config/colors.mjs";
+import { FAST_GROWTH_TIME } from "../../world/config/index.mjs";
 
 import { initCanvasEventListeners } from "../../../ui/controls/eventListeners/canvasListeners.mjs";
 import { initElementEventListeners } from "../../../ui/controls/eventListeners/elementListeners.mjs";
@@ -40,17 +41,30 @@ import { initHammerControls } from "../../../ui/controls/hammerControls.mjs";
 import { initMaterialBar } from "../../../ui/materialBar.mjs";
 import { initTouchControls } from "../../../ui/controls/touchControls.mjs";
 
-import { initGameDependencies } from "../../../render/webGLContext.mjs";
-import { initNewWorld } from "../../../world/generation/world.mjs";
+import { initGameDependencies } from "../../render/webGLContext.mjs";
+import { initNewWorld } from "../../world/generation/world.mjs";
 
 /**
- * @typedef {Element & { keys: object, touchKeys: object }} CustomShadowHost
+ * @typedef {Element & { keys: Record<string, boolean>, touchKeys: Record<string, boolean> }} CustomShadowHost
+ */
+
+/**
+ * @typedef {import('../../world/config/index.mjs').GameConfig} GameConfig
+ * @typedef {import('./state.mjs').BlockGardenGlobalThis} BlockGardenGlobalThis
+ * @typedef {import('./state.mjs').GameState} GameState
+ * @typedef {import('./state.mjs').InitStateReturn} InitStateReturn
+ */
+
+/**
+ * @typedef {Object} PackageJSON
+ *
+ * @property {string} version
  */
 
 /**
  * Initializes the environment for the game.
  *
- * @param {typeof globalThis} gThis
+ * @param {BlockGardenGlobalThis} gThis
  * @param {ShadowRoot} shadow
  * @param {HTMLCanvasElement} cnvs
  *
@@ -90,28 +104,33 @@ export async function initGame(gThis, shadow, cnvs) {
    * Adds a focusout listener that refocuses the canvas unless the new focus target
    * is an interactive element (input, textarea, select, or specific UI component).
    */
-  shadow.addEventListener("focusout", (/** @type {FocusEvent} */ e) => {
-    /** @type {Element|null} */
-    const target = /** @type {Element|null} */ (e.relatedTarget);
+  shadow.addEventListener(
+    "focusout",
+    /** @type {EventListener} */ (
+      (/** @type {FocusEvent} */ e) => {
+        /** @type {Element|null} */
+        const target = /** @type {Element|null} */ (e.relatedTarget);
 
-    if (
-      target instanceof HTMLInputElement ||
-      target instanceof HTMLTextAreaElement ||
-      target instanceof HTMLSelectElement ||
-      target?.closest(".seed-controls") ||
-      target?.closest(".ui-grid__corner") ||
-      target?.closest(".materialBar") ||
-      target?.classList?.contains("ui-grid__corner--heading")
-    ) {
-      return;
-    }
+        if (
+          target instanceof HTMLInputElement ||
+          target instanceof HTMLTextAreaElement ||
+          target instanceof HTMLSelectElement ||
+          target?.closest(".seed-controls") ||
+          target?.closest(".ui-grid__corner") ||
+          target?.closest(".materialBar") ||
+          target?.classList?.contains("ui-grid__corner--heading")
+        ) {
+          return;
+        }
 
-    cnvs.focus();
-  });
+        cnvs.focus();
+      }
+    ),
+  );
 
   cnvs.focus();
 
-  let pkg = {};
+  let pkg = /** @type {PackageJSON} */ ({});
   let version = "1";
 
   try {
@@ -125,7 +144,7 @@ export async function initGame(gThis, shadow, cnvs) {
   await new Promise((r) => setTimeout(r, 0));
 
   const { computedSignals, gameConfig, gameState, invalidSeedProvided } =
-    await initState(gThis, version);
+    /** @type {InitStateReturn} */ await initState(gThis, version);
 
   if (invalidSeedProvided) {
     showToast(
@@ -151,6 +170,12 @@ export async function initGame(gThis, shadow, cnvs) {
 
   // Build color maps
   const styles = gThis.getComputedStyle(shadow.host);
+  if (!styles) {
+    console.error("Failed to get computed styles for host.");
+
+    return;
+  }
+
   const blockColorMap = Object.fromEntries(
     Object.entries(
       buildStyleMapByPropNamesWithoutPrefixesOrSuffixes(
@@ -175,15 +200,31 @@ export async function initGame(gThis, shadow, cnvs) {
   initCanvasEventListeners(shadow, cnvs, gameConfig.blocks, gameState.curBlock);
   initHammerControls(Hammer(shadow.host), shadow, gameState);
   initTouchControls(shadow);
-
   initMaterialBarEffects(shadow, initMaterialBar(gameColors));
-
   initMaterialBarEventListeners(shadow, cnvs);
 
   showToast(shadow, "Preparing Graphics...");
   await new Promise((r) => setTimeout(r, 0));
 
   // Only pass cnvs to initGameDependencies, and call it once
+  const deps = initGameDependencies(cnvs, gameConfig.blocks);
+
+  if (!deps) {
+    const errorMsg = "Failed to initialize WebGL dependencies.";
+
+    console.error(errorMsg);
+
+    shadow.dispatchEvent(
+      new CustomEvent("block-garden-load", {
+        detail: { isLoading: false, error: errorMsg },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+
+    return;
+  }
+
   const {
     gl,
     cbuf,
@@ -208,7 +249,7 @@ export async function initGame(gThis, shadow, cnvs) {
     uMinLight,
     celestialContext,
     worldProgram,
-  } = initGameDependencies(cnvs, gameConfig.blocks);
+  } = deps;
 
   // Get required UI buttons for flight controls
   const ui = {
@@ -338,22 +379,25 @@ export async function initGame(gThis, shadow, cnvs) {
         // Restore to block default
         const plantType = plantStructures[key]?.type;
         const block = blocks.getByName(plantType);
+
         growthTimers[key] = block?.growthTime || 10.0;
       }
     });
 
-    let colors;
-    if (e instanceof CustomEvent) {
-      colors = e?.detail?.colors ?? {};
+    let colorsToUse;
+
+    if (
+      e instanceof CustomEvent &&
+      e.detail?.colors &&
+      Object.keys(e.detail.colors).length
+    ) {
+      colorsToUse = e.detail.colors;
+    } else {
+      colorsToUse = initialColors;
     }
 
     // Build color map for blocks
-    let colorMap;
-    if (Object.keys(colors).length && colors.constructor === Object) {
-      colorMap = transformStyleMap(colors, "--bg-block-", "-color");
-    } else {
-      colorMap = transformStyleMap(initialColors, "--bg-block-", "-color");
-    }
+    const colorMap = transformStyleMap(colorsToUse, "--bg-block-", "-color");
 
     // Build color maps
     const bm = Object.fromEntries(

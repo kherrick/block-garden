@@ -1,7 +1,10 @@
 import { BlockGarden } from "../BlockGarden.mjs";
 
 import { applyColorsToShadowHost } from "../../utils/colors/applyColorsToShadowHost.mjs";
-import { blockNames, getGravityBlocks } from "../../world/config/blocks.mjs";
+import {
+  blockNames,
+  getGravityBlocks,
+} from "../../core/world/config/blocks.mjs";
 import { cssColorToRGB } from "../../utils/colors/cssColorToRGB.mjs";
 
 export class DrawVideo extends BlockGarden {

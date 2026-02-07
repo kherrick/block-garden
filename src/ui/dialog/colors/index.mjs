@@ -5,6 +5,7 @@ import { debounce } from "../../../utils/debounce.mjs";
 import { resetColors } from "./resetColors.mjs";
 import { saveColors } from "./saveColors.mjs";
 
+/** @typedef {import('../../../api/BlockGarden.mjs').BlockGardenGlobalThis} BlockGardenGlobalThis */
 /** @typedef {import('../../../utils/colors/index.mjs').CombinedColorMap} CombinedColorMap */
 
 // Color customization system for Block Garden
@@ -12,17 +13,22 @@ export const COLOR_STORAGE_KEY = "block-garden-custom-colors";
 
 export class ColorCustomizationDialog {
   /**
-   * @param {object} gThis - The global context or window object.
+   * @param {BlockGardenGlobalThis} gThis - The global context or window object.
    * @param {Document} doc - The document associated with the app.
    * @param {ShadowRoot} shadow - The shadow root whose host's computed styles will be inspected.
    */
   constructor(gThis, doc, shadow) {
+    /** @type {BlockGardenGlobalThis} */
     this.gThis = gThis;
+    /** @type {Document} */
     this.doc = doc;
+    /** @type {ShadowRoot} */
     this.shadow = shadow;
+    /** @type {HTMLDialogElement | null} */
     this.dialog = null;
-    /** @type CombinedColorMap */
+    /** @type {CombinedColorMap} */
     this.colors = {};
+    /** @type {CombinedColorMap} */
     this.originalColors = {};
 
     this.close = this.close.bind(this);
@@ -182,9 +188,13 @@ export class ColorCustomizationDialog {
 
   /** @returns {void} */
   renderColorInputs() {
-    const container = this.dialog.querySelector("#colorInputsContainer");
+    const container = this.dialog?.querySelector("#colorInputsContainer");
+    if (!container) {
+      return;
+    }
 
     // Group properties by category (extracted from property name)
+    /** @type {Object<string, Array<{property: string, value: string}>>} */
     const grouped = {};
 
     for (const [property, value] of Object.entries(this.colors)) {
@@ -228,15 +238,16 @@ export class ColorCustomizationDialog {
 
       categoryDiv.append(categoryTitle);
 
-      const [firstColorInGroup] = grouped[category];
-      if (firstColorInGroup.property.startsWith("--bg-color")) {
+      const colorGroup = grouped[category];
+      const [firstColorInGroup] = colorGroup;
+      if (firstColorInGroup?.property.startsWith("--bg-color")) {
         categoryDiv.setAttribute("hidden", "hidden");
       }
 
       container.append(categoryDiv);
 
       // Render inputs for this category
-      for (const { property, value } of grouped[category]) {
+      for (const { property, value } of colorGroup) {
         const inputGroup = this.doc.createElement("div");
         inputGroup.style.cssText = `
           display: flex;
@@ -361,6 +372,10 @@ export class ColorCustomizationDialog {
     // Try to use canvas to convert
     const canvas = this.doc.createElement("canvas");
     const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      return "#000000";
+    }
+
     ctx.fillStyle = color;
 
     return ctx.fillStyle;
@@ -396,13 +411,21 @@ export class ColorCustomizationDialog {
 
   /** @returns {void} */
   initEventListeners() {
-    const closeBtn = this.dialog.querySelector("#closeColorDialog");
-    const saveBtn = this.dialog.querySelector("#saveColorsBtn");
-    const resetBtn = this.dialog.querySelector("#resetColorsBtn");
+    const closeBtn = this.dialog?.querySelector("#closeColorDialog");
+    const saveBtn = this.dialog?.querySelector("#saveColorsBtn");
+    const resetBtn = this.dialog?.querySelector("#resetColorsBtn");
 
-    closeBtn.addEventListener("click", this.close);
-    saveBtn.addEventListener("click", this.handleSave);
-    resetBtn.addEventListener("click", this.handleReset);
+    if (closeBtn) {
+      closeBtn.addEventListener("click", this.close);
+    }
+
+    if (saveBtn) {
+      saveBtn.addEventListener("click", this.handleSave);
+    }
+
+    if (resetBtn) {
+      resetBtn.addEventListener("click", this.handleReset);
+    }
   }
 
   /** @returns {void} */
@@ -460,17 +483,20 @@ export class ColorCustomizationDialog {
   handleDialogClose() {
     this.removeEventListeners();
 
-    this.dialog.remove();
+    if (this.dialog) {
+      this.dialog.remove();
+    }
   }
 
   /** @returns {void} */
   removeEventListeners() {
+    if (!this.dialog) return;
     const closeBtn = this.dialog.querySelector("#closeColorDialog");
     const saveBtn = this.dialog.querySelector("#saveColorsBtn");
     const resetBtn = this.dialog.querySelector("#resetColorsBtn");
 
-    closeBtn.removeEventListener("click", this.close);
-    saveBtn.removeEventListener("click", this.handleSave);
-    resetBtn.removeEventListener("click", this.handleReset);
+    if (closeBtn) closeBtn.removeEventListener("click", this.close);
+    if (saveBtn) saveBtn.removeEventListener("click", this.handleSave);
+    if (resetBtn) resetBtn.removeEventListener("click", this.handleReset);
   }
 }

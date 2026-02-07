@@ -6,7 +6,8 @@
  * @returns {boolean}
  */
 export function canControlCanvas(shadow) {
-  if (shadow.getElementById("ui-grid").matches(":focus-within")) {
+  const uiGrid = shadow.getElementById("ui-grid");
+  if (uiGrid?.matches(":focus-within")) {
     return false;
   }
 

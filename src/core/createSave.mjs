@@ -2,10 +2,11 @@ import {
   CHUNK_SIZE_X,
   CHUNK_SIZE_Y,
   CHUNK_SIZE_Z,
-} from "../world/meshing/chunk.mjs";
+} from "./world/meshing/chunk.mjs";
 
 /**
- * @typedef {import('../world/chunkManager.mjs').ChunkManager} ChunkManager
+ * @typedef {import('../core/world/chunkManager.mjs').ChunkManager} ChunkManager
+ * @typedef {import('./systems/game/state.mjs').BlockGardenGlobalThis} BlockGardenGlobalThis
  */
 
 /**
@@ -13,10 +14,13 @@ import {
  *
  * @param {ChunkManager} world - The chunk manager
  *
+ * @param {BlockGardenGlobalThis} gThis
+ *
  * @returns {Object} Serializable save file
  */
 export function createSaveState(world, gThis) {
   // Save world blocks from all loaded chunks (including air blocks where player dug)
+  /** @type {Record<number, Record<number, Record<number, number> & { metadata?: Record<number, any> }>>} */
   const worldData = {};
 
   for (const chunk of world.getAllChunks()) {
@@ -54,6 +58,7 @@ export function createSaveState(world, gThis) {
             if (!worldData[worldX][worldZ].metadata) {
               worldData[worldX][worldZ].metadata = {};
             }
+
             worldData[worldX][worldZ].metadata[y] = metadata;
           }
         }
@@ -61,29 +66,15 @@ export function createSaveState(world, gThis) {
     }
   }
 
-  // Try to get state/config from gThis, fallback to globalThis, fallback to empty
-  let state = gThis?.blockGarden?.state;
-  let config = gThis?.blockGarden?.config;
-  if (
-    !state &&
-    typeof globalThis !== "undefined" &&
-    globalThis.blockGarden?.state
-  ) {
-    state = globalThis.blockGarden.state;
-  }
-
-  if (
-    !config &&
-    typeof globalThis !== "undefined" &&
-    globalThis.blockGarden?.config
-  ) {
-    config = globalThis.blockGarden.config;
-  }
+  // get state/config from gThis
+  let state = gThis.blockGarden.state;
+  let config = gThis.blockGarden.config;
 
   // Only use state/config for seed
-  const seed = state?.seed ?? config?.seed ?? null;
+  const seed = state?.seed ?? null;
 
   // Prepare stored chunks for save (merge currently loaded chunks' modifications)
+  /** @type {Record<string, any>} */
   const storedChunksData = {};
 
   // Add modifications from unloaded chunks
@@ -96,11 +87,13 @@ export function createSaveState(world, gThis) {
     const mods = chunk.getModifications();
     if (mods.size > 0) {
       const key = world.getChunkKey(chunk.chunkX, chunk.chunkZ);
+
       storedChunksData[key] = Object.fromEntries(mods);
     }
   }
 
   // Add metadata from unloaded chunks
+  /** @type {Record<string, any>} */
   const storedMetadataData = {};
   if (world.storedMetadata) {
     for (const [key, metadata] of world.storedMetadata) {
@@ -112,11 +105,13 @@ export function createSaveState(world, gThis) {
   for (const chunk of world.getAllChunks()) {
     if (chunk.metadata?.size > 0) {
       const key = world.getChunkKey(chunk.chunkX, chunk.chunkZ);
+
       storedMetadataData[key] = Object.fromEntries(chunk.metadata);
     }
   }
 
   // Add stored plant states
+  /** @type {Record<string, any>} */
   const storedPlantStatesData = {};
   for (const [key, state] of world.storedPlantStates) {
     storedPlantStatesData[key] = state;
@@ -161,7 +156,10 @@ export function createSaveState(world, gThis) {
       flying: state?.flying?.get ? state.flying.get() : null,
       materialsInventory: state?.materialsInventory?.get
         ? state.materialsInventory.get()
-        : null,
+        : {},
+      seedsInventory: state?.seedsInventory?.get
+        ? state.seedsInventory.get()
+        : {},
       materialBar: state?.materialBar?.get ? state.materialBar.get() : null,
       activeMaterialBarSlot: state?.activeMaterialBarSlot?.get
         ? state.activeMaterialBarSlot.get()

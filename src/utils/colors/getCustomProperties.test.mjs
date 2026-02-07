@@ -4,7 +4,7 @@
 import { jest } from "@jest/globals";
 
 import { getCustomProperties } from "./getCustomProperties.mjs";
-import { colors } from "../../world/config/colors.mjs";
+import { colors } from "../../core/world/config/colors.mjs";
 
 describe("getCustomProperties", () => {
   let mockHost;

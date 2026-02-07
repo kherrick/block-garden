@@ -1,22 +1,22 @@
-import { drawBreakingOverlay } from "../../../render/draw/breakingOverlay.mjs";
-import { drawCelestialBodies } from "../../../render/draw/celestialBodies.mjs";
-import { drawChunkMesh } from "../../../render/draw/chunkMesh.mjs";
-import { drawCrosshairs } from "../../../render/draw/crossHairs.mjs";
-import { drawSelectionHighlight } from "../../../render/draw/selectionHighlight.mjs";
+import { drawBreakingOverlay } from "../../render/draw/breakingOverlay.mjs";
+import { drawCelestialBodies } from "../../render/draw/celestialBodies.mjs";
+import { drawChunkMesh } from "../../render/draw/chunkMesh.mjs";
+import { drawCrosshairs } from "../../render/draw/crossHairs.mjs";
+import { drawSelectionHighlight } from "../../render/draw/selectionHighlight.mjs";
 
-import { blocks as blockTypes } from "../../../world/config/blocks.mjs";
-import { FAST_GROWTH_TIME } from "../../../world/config/index.mjs";
+import { blocks as blockTypes } from "../../world/config/blocks.mjs";
+import { FAST_GROWTH_TIME } from "../../world/config/index.mjs";
 import {
   getBlendedLightDirection,
   getSkyColor,
   normalizeTime,
-} from "../../../world/time/timeSystem.mjs";
+} from "../../world/time/timeSystem.mjs";
 
 import {
   deleteChunkMesh,
   smartMeshChunk,
   uploadChunkMesh,
-} from "../../../world/meshing/chunkMesher.mjs";
+} from "../../world/meshing/chunkMesher.mjs";
 
 import { I, look, mul, persp } from "../../../utils/math.mjs";
 import { ray } from "../../../utils/ray.mjs";
@@ -32,7 +32,13 @@ import {
 
 import { persistValue } from "../persistence.mjs";
 
-/** @typedef {import("../../../utils/ray.mjs").PointWithFace} PointWithFace */
+/**
+ * @typedef {import("../../../utils/ray.mjs").PointWithFace} PointWithFace
+ * @typedef {import("../../render/celestialShader.mjs").CelestialContext} CelestialContext
+ * @typedef {import("../../render/graphics.mjs").Cube} Cube
+ * @typedef {import("../../world/config/index.mjs").GameConfig} GameConfig
+ * @typedef {import("./state.mjs").GameState} GameState
+ */
 
 // Fixed timestep configuration
 const TARGET_FPS = 50;
@@ -41,6 +47,7 @@ const MAX_UPDATES_PER_FRAME = 20; // Prevent spiral of death
 
 let lastFrameTime = performance.now();
 let accumulatedTime = 0;
+/** @type {number | undefined} */
 let animationFrameId;
 
 // State needed for interpolation
@@ -73,25 +80,31 @@ let lastRenderZ = 0;
  * @param {ShadowRoot} shadow
  * @param {HTMLCanvasElement} cnvs
  * @param {{[k: string]: number[]}} colorMap
- * @param {Object} gameState
- * @param {Object} gameConfig
- * @param {Object} ui
+ * @param {GameState} gameState
+ * @param {GameConfig} gameConfig
+ * @param {any} ui
  * @param {WebGL2RenderingContext} gl
- * @param {Object} cbuf
- * @param {Object} uvbuf
- * @param {Object} aobuf
- * @param {Object} cube
- * @param {Object} uL
- * @param {Object} uM
- * @param {Object} uMVP
- * @param {Object} uT
- * @param {Object} uUT
- * @param {Object} uUAO
- * @param {Object} uULG
- * @param {Object} uUAOD
- * @param {Object} celestialContext
+ * @param {WebGLBuffer} cbuf
+ * @param {WebGLBuffer} uvbuf
+ * @param {WebGLBuffer} aobuf
+ * @param {Cube} cube
+ * @param {WebGLUniformLocation | null} uL
+ * @param {WebGLUniformLocation | null} uM
+ * @param {WebGLUniformLocation | null} uMVP
+ * @param {WebGLUniformLocation | null} uT
+ * @param {WebGLUniformLocation | null} uUT
+ * @param {WebGLUniformLocation | null} uUAO
+ * @param {WebGLUniformLocation | null} uULG
+ * @param {WebGLUniformLocation | null} uUAOD
+ * @param {CelestialContext | null} celestialContext
  * @param {WebGLProgram} worldProgram
- * @param {WebGLUniformLocation} uMinLight
+ * @param {WebGLUniformLocation | null} uMinLight
+ * @param {WebGLBuffer} luvbuf
+ * @param {WebGLBuffer} caobuf
+ * @param {WebGLBuffer} pbuf
+ * @param {WebGLBuffer} nbuf
+ * @param {WebGLBuffer} breakCbuf
+ * @param {WebGLBuffer} breakUvbuf
  */
 export function gameLoop(
   shadow,
@@ -302,8 +315,8 @@ export function gameLoop(
   gl.clearColor(r, g, b, a);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-  const fx = Math.sin(yaw),
-    fz = Math.cos(yaw);
+  const fx = Math.sin(yaw);
+  const fz = Math.cos(yaw);
   const cosPitch = Math.cos(pitch);
 
   const VIEW_DISTANCE = gameConfig.viewRadius.get();
@@ -313,7 +326,6 @@ export function gameLoop(
   // Celestial bodies need a stable projection matrix with a large far plane
   // to prevent clipping when the world's viewRadius is small.
   const P_celestial = persp(I(), Math.PI / 3, aspect, 0.1, 1000.0);
-
   const V = look(
     I(),
     [eyeX, eyeY, eyeZ],
@@ -339,10 +351,12 @@ export function gameLoop(
   const isNight = timeForMinLight < 0.2 || timeForMinLight > 0.8;
   const minLightVal = isNight ? 0.05 : 0.3;
 
-  gl.uniform1f(uMinLight, minLightVal);
+  if (uMinLight) {
+    gl.uniform1f(uMinLight, minLightVal);
+  }
 
   // Dynamic lighting: use active cycle time if enabled, otherwise use manual override
-  if (gameConfig.useDynamicLighting.get()) {
+  if (uL && gameConfig.useDynamicLighting.get()) {
     // Determine time source: active cycle or manual override
     const timeForLighting = gameConfig.useTimeCycle.get()
       ? gameState.worldTime
@@ -358,7 +372,7 @@ export function gameLoop(
       light.y * light.intensity,
       light.z * light.intensity,
     );
-  } else {
+  } else if (uL) {
     // Default "high noon" fixed light (pointing down from above)
     gl.uniform3f(uL, 0.0, -1.0, 0.0);
   }
@@ -392,7 +406,7 @@ export function gameLoop(
     deleteChunkMesh,
     gameState.growthTimers,
     gameState.plantStructures,
-    (restoredKeys) => {
+    (/** @type {string[]} */ restoredKeys) => {
       // Force visual refresh for restored plants
       for (const key of restoredKeys) {
         // Skip if structure no longer exists (was fully harvested)

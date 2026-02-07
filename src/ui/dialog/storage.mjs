@@ -4,6 +4,11 @@ import {
   deleteSharedSave,
   retrieveSharedSave,
 } from "../../core/shareTarget.mjs";
+
+/**
+ * @typedef {import('../../api/BlockGarden.mjs').BlockGardenGlobalThis} BlockGardenGlobalThis
+ */
+
 import { createSaveState } from "../../core/createSave.mjs";
 import { loadSaveState } from "../../core/loadSave.mjs";
 
@@ -13,6 +18,7 @@ import {
 } from "../../utils/canvasToPngWithState.mjs";
 
 import { arrayBufferToBase64, base64toBlob } from "../../utils/conversion.mjs";
+
 import { compressToBinaryBlob } from "../../utils/compression.mjs";
 import { extractAttachments } from "../../utils/extractAttachments.mjs";
 import { formatName } from "../../utils/formatWorldName.mjs";
@@ -35,10 +41,38 @@ const SAVE_MODE_KEY = "block-garden-autosave-mode";
 const STORAGE_KEY_PREFIX = "block-garden-save-";
 
 /**
+ * @typedef {Object} GameData
+ *
+ * @property {string} name
+ * @property {number} timestamp
+ * @property {string} data
+ * @property {boolean} [isAutoSave]
+ */
+
+/**
+ * @typedef {Object} SharedSaveData
+ *
+ * @property {string} data
+ * @property {number} timestamp
+ * @property {string} [type]
+ * @property {string} [contents]
+ */
+
+/**
+ * @typedef {Object} SavedGame
+ *
+ * @property {string} key
+ * @property {string} name
+ * @property {number} timestamp
+ * @property {string} data
+ * @property {boolean} [isAutoSave]
+ */
+
+/**
  * Get current save mode
  *
  * @returns {Promise<string>}
- * */
+ */
 export async function getSaveMode() {
   try {
     const mode = await localForage.getItem(SAVE_MODE_KEY);
@@ -74,7 +108,7 @@ let lastAutoSaveTime = 0;
 /**
  * Auto save functionality
  *
- * @param {typeof globalThis} globalThis
+ * @param {BlockGardenGlobalThis} globalThis
  *
  * @returns {Promise<void>}
  */
@@ -97,14 +131,16 @@ export async function autoSaveGame(globalThis) {
     }
 
     // Create save state
-    const saveState = createSaveState(
-      globalThis.blockGarden.state.world,
-      globalThis,
-    );
+    const bg = globalThis;
+    const saveState = createSaveState(bg.blockGarden.state.world, bg);
     const stateJSON = JSON.stringify(saveState);
 
     // Compress to binary blob
     const compressedBlob = await compressToBinaryBlob(stateJSON);
+
+    if (!compressedBlob) {
+      throw new Error("Failed to compress data");
+    }
 
     // Convert to base64
     const arrayBuffer = await compressedBlob.arrayBuffer();
@@ -130,13 +166,14 @@ export async function autoSaveGame(globalThis) {
 /**
  * Check for auto save on load
  *
- * @param {typeof globalThis} globalThis
+ * @param {BlockGardenGlobalThis} globalThis
  * @param {ShadowRoot} shadow
  *
  * @returns {Promise<boolean>}
  */
 export async function checkAutoSave(globalThis, shadow) {
   try {
+    /** @type {GameData | null} */
     const autoSave = await localForage.getItem(AUTO_SAVE_KEY);
     const isAutoSaveEnabled =
       (await localForage.getItem(SAVE_MODE_KEY)) === "auto";
@@ -201,45 +238,79 @@ export async function checkAutoSave(globalThis, shadow) {
       const autoSaveNo = dialog.querySelector("#autoSaveNo");
       const autoSaveYes = dialog.querySelector("#autoSaveYes");
 
-      autoSaveYes.addEventListener("click", async () => {
-        autoSaveNo.setAttribute("disabled", "disabled");
-        autoSaveYes.setAttribute("disabled", "disabled");
-
-        try {
-          const compressedBlob = base64toBlob(
-            globalThis,
-            autoSave.data,
-            "application/gzip",
-          );
-
-          // Decompress
-          let stateJSON;
-
-          if ("DecompressionStream" in globalThis) {
-            const decompressedStream = compressedBlob
-              .stream()
-              .pipeThrough(new globalThis.DecompressionStream("gzip"));
-
-            const decompressedBlob = await new globalThis.Response(
-              decompressedStream,
-            ).blob();
-
-            stateJSON = await decompressedBlob.text();
-          } else {
-            throw new Error("DecompressionStream not supported");
+      if (autoSaveYes) {
+        autoSaveYes.addEventListener("click", async () => {
+          if (autoSaveNo) {
+            autoSaveNo.setAttribute("disabled", "disabled");
           }
+          autoSaveYes.setAttribute("disabled", "disabled");
 
-          // Parse and load save state
-          const saveState = JSON.parse(stateJSON);
-
-          const loaded = await loadSaveState(globalThis, shadow, saveState);
-
-          if (!loaded) {
-            showToast(
-              shadow,
-              "Oops! This auto-save appears to be broken. Continuing with normal load...",
-              { stack: true, useSingle: false, duration: 5000 },
+          try {
+            const compressedBlob = base64toBlob(
+              globalThis,
+              autoSave.data,
+              "application/gzip",
             );
+
+            // Decompress
+            let stateJSON;
+
+            if ("DecompressionStream" in globalThis) {
+              const decompressedStream = compressedBlob
+                .stream()
+                .pipeThrough(new globalThis.DecompressionStream("gzip"));
+
+              const decompressedBlob = await new globalThis.Response(
+                decompressedStream,
+              ).blob();
+
+              stateJSON = await decompressedBlob.text();
+            } else {
+              throw new Error("DecompressionStream not supported");
+            }
+
+            // Parse and load save state
+            const saveState = JSON.parse(stateJSON);
+
+            const loaded = await loadSaveState(globalThis, shadow, saveState);
+
+            if (!loaded) {
+              showToast(
+                shadow,
+                "Oops! This auto-save appears to be broken. Continuing with normal load...",
+                { stack: true, useSingle: false, duration: 5000 },
+              );
+
+              dialog.close();
+              dialog.remove();
+
+              resolve(false);
+
+              return;
+            }
+
+            const seedInput = shadow.getElementById("worldSeedInput");
+            const currentSeedDisplay = shadow.getElementById("currentSeed");
+
+            const bg = globalThis;
+
+            if (seedInput instanceof HTMLInputElement) {
+              seedInput.value = bg.blockGarden.state.seed.toString();
+            }
+
+            if (currentSeedDisplay) {
+              currentSeedDisplay.textContent =
+                bg.blockGarden.state.seed.toString();
+            }
+
+            console.log("Auto save loaded successfully");
+          } catch (error) {
+            console.error("Failed to load auto save:", error);
+            showToast(shadow, "Oops! Failed to load auto-save. Continuing...", {
+              stack: true,
+              useSingle: false,
+              duration: 5000,
+            });
 
             dialog.close();
             dialog.remove();
@@ -249,49 +320,26 @@ export async function checkAutoSave(globalThis, shadow) {
             return;
           }
 
-          const seedInput = shadow.getElementById("worldSeedInput");
-          const currentSeedDisplay = shadow.getElementById("currentSeed");
+          dialog.close();
+          dialog.remove();
 
-          if (seedInput instanceof HTMLInputElement) {
-            seedInput.value = globalThis.blockGarden.state.seed;
+          resolve(true);
+        });
+      }
+
+      if (autoSaveNo) {
+        autoSaveNo.addEventListener("click", () => {
+          autoSaveNo.setAttribute("disabled", "disabled");
+          if (autoSaveYes) {
+            autoSaveYes.setAttribute("disabled", "disabled");
           }
-
-          if (currentSeedDisplay) {
-            currentSeedDisplay.textContent = globalThis.blockGarden.state.seed;
-          }
-
-          console.log("Auto save loaded successfully");
-        } catch (error) {
-          console.error("Failed to load auto save:", error);
-          showToast(shadow, "Oops! Failed to load auto-save. Continuing...", {
-            stack: true,
-            useSingle: false,
-            duration: 5000,
-          });
 
           dialog.close();
           dialog.remove();
 
           resolve(false);
-
-          return;
-        }
-
-        dialog.close();
-        dialog.remove();
-
-        resolve(true);
-      });
-
-      autoSaveNo.addEventListener("click", () => {
-        autoSaveNo.setAttribute("disabled", "disabled");
-        autoSaveYes.setAttribute("disabled", "disabled");
-
-        dialog.close();
-        dialog.remove();
-
-        resolve(false);
-      });
+        });
+      }
 
       dialog.addEventListener("cancel", () => {
         resolve(false);
@@ -309,7 +357,7 @@ export async function checkAutoSave(globalThis, shadow) {
  *
  * Displays a dialog asking user to load the shared save
  *
- * @param {typeof globalThis} globalThis
+ * @param {BlockGardenGlobalThis} globalThis
  *
  * @param {ShadowRoot} shadow
  *
@@ -317,7 +365,10 @@ export async function checkAutoSave(globalThis, shadow) {
  */
 export async function checkSharedSave(globalThis, shadow) {
   try {
-    const sharedSave = await retrieveSharedSave();
+    const sharedSaveData = await retrieveSharedSave();
+
+    /** @type {any} */
+    const sharedSave = sharedSaveData;
 
     if (!sharedSave || !sharedSave.data) {
       return false;
@@ -372,67 +423,22 @@ export async function checkSharedSave(globalThis, shadow) {
     }
 
     return new Promise((resolve) => {
-      dialog
-        .querySelector("#sharedSaveYes")
-        .addEventListener("click", async () => {
-          try {
-            let saveState = sharedSave.data;
+      const sharedSaveYes = dialog.querySelector("#sharedSaveYes");
+      if (!sharedSaveYes) {
+        resolve(false);
+        return;
+      }
 
-            const loaded = await loadSaveState(globalThis, shadow, saveState);
+      sharedSaveYes.addEventListener("click", async () => {
+        try {
+          let saveState = sharedSave.data;
 
-            if (!loaded) {
-              showToast(
-                shadow,
-                "Oops! This shared save appears to be broken. Continuing with normal load...",
-                { stack: true, useSingle: false, duration: 5000 },
-              );
+          const loaded = await loadSaveState(globalThis, shadow, saveState);
 
-              dialog.close();
-              dialog.remove();
-
-              resolve(false);
-
-              return;
-            }
-
-            // handle loading pdfs
-            if (saveState?.type === "pdf") {
-              const blob = base64toBlob(
-                globalThis,
-                saveState.contents,
-                "application/pdf",
-              );
-
-              const [results] = await extractAttachments(
-                new File([blob], "block-garden-game-card.png"),
-              );
-
-              saveState = JSON.parse(
-                await extractJsonFromPng(new Blob([results.data])),
-              );
-            }
-
-            const { seed } = saveState.config;
-            const seedInput = shadow.getElementById("worldSeedInput");
-            const currentSeedDisplay = shadow.getElementById("currentSeed");
-
-            if (seedInput instanceof HTMLInputElement) {
-              seedInput.value = seed;
-            }
-
-            if (currentSeedDisplay) {
-              currentSeedDisplay.textContent = seed;
-            }
-
-            // Delete the shared save after loading it
-            await deleteSharedSave();
-
-            console.log("Shared save loaded successfully");
-          } catch (error) {
-            console.error("Failed to load shared save:", error);
+          if (!loaded) {
             showToast(
               shadow,
-              "Oops! Failed to load shared save. Continuing...",
+              "Oops! This shared save appears to be broken. Continuing with normal load...",
               { stack: true, useSingle: false, duration: 5000 },
             );
 
@@ -444,22 +450,74 @@ export async function checkSharedSave(globalThis, shadow) {
             return;
           }
 
-          dialog.close();
-          dialog.remove();
-          resolve(true);
-        });
+          // handle loading pdfs
+          if (saveState?.type === "pdf") {
+            const blob = base64toBlob(
+              globalThis,
+              saveState.contents,
+              "application/pdf",
+            );
 
-      dialog
-        .querySelector("#sharedSaveNo")
-        .addEventListener("click", async () => {
-          // Delete the shared save if user declines
+            const [results] = await extractAttachments(
+              new File([blob], "block-garden-game-card.png"),
+            );
+
+            saveState = JSON.parse(
+              await extractJsonFromPng(new Blob([results.data])),
+            );
+          }
+
+          const { seed } = saveState.config || {};
+          const seedInput = shadow.getElementById("worldSeedInput");
+          const currentSeedDisplay = shadow.getElementById("currentSeed");
+
+          if (seedInput instanceof HTMLInputElement) {
+            seedInput.value = seed;
+          }
+
+          if (currentSeedDisplay) {
+            currentSeedDisplay.textContent = seed;
+          }
+
+          // Delete the shared save after loading it
           await deleteSharedSave();
+
+          console.log("Shared save loaded successfully");
+        } catch (error) {
+          console.error("Failed to load shared save:", error);
+          showToast(shadow, "Oops! Failed to load shared save. Continuing...", {
+            stack: true,
+            useSingle: false,
+            duration: 5000,
+          });
 
           dialog.close();
           dialog.remove();
 
           resolve(false);
-        });
+
+          return;
+        }
+
+        dialog.close();
+        dialog.remove();
+        resolve(true);
+      });
+
+      const sharedSaveNo = dialog.querySelector("#sharedSaveNo");
+      if (!sharedSaveNo) {
+        return;
+      }
+
+      sharedSaveNo.addEventListener("click", async () => {
+        // Delete the shared save if user declines
+        await deleteSharedSave();
+
+        dialog.close();
+        dialog.remove();
+
+        resolve(false);
+      });
 
       dialog.addEventListener("cancel", async () => {
         // Delete the shared save if dialog is cancelled
@@ -480,7 +538,7 @@ export async function checkSharedSave(globalThis, shadow) {
  *
  * Shows a toast on failure and updates the UI seed display on success.
  *
- * @param {typeof globalThis} globalThis
+ * @param {BlockGardenGlobalThis} globalThis
  * @param {ShadowRoot} shadow
  *
  * @returns {Promise<boolean>} True if a URL save was successfully loaded, false otherwise.
@@ -521,12 +579,14 @@ export async function checkUrlSave(globalThis, shadow) {
       const seedInput = shadow.getElementById("worldSeedInput");
       const currentSeedDisplay = shadow.getElementById("currentSeed");
 
+      const bg = globalThis;
+
       if (seedInput instanceof HTMLInputElement) {
-        seedInput.value = globalThis.blockGarden.state.seed;
+        seedInput.value = bg.blockGarden.state.seed.toString();
       }
 
       if (currentSeedDisplay) {
-        currentSeedDisplay.textContent = globalThis.blockGarden.state.seed;
+        currentSeedDisplay.textContent = bg.blockGarden.state.seed.toString();
       }
 
       console.log("URL save loaded successfully");
@@ -554,37 +614,81 @@ export async function checkUrlSave(globalThis, shadow) {
  */
 export class StorageDialog {
   /**
-   * @param {typeof globalThis} globalThis - The global context.
+   * @param {BlockGardenGlobalThis} globalThis - The global context.
    * @param {Document} doc - The document associated with the app.
    * @param {ShadowRoot} shadow - The shadow root whose host's computed styles will be inspected.
    */
   constructor(globalThis, doc, shadow) {
+    /** @type {BlockGardenGlobalThis} */
     this.gThis = globalThis;
+    /** @type {Document} */
     this.doc = doc;
+    /** @type {ShadowRoot} */
     this.shadow = shadow;
+    /** @type {HTMLDialogElement | null} */
     this.dialog = null;
+    /** @type {SavedGame[]} */
     this.savedGames = [];
 
-    this.close = this.close.bind(this);
-    this.deleteSelectedGame = this.deleteSelectedGame.bind(this);
-    this.getPDFGameStateAttachment = this.getPDFGameStateAttachment.bind(this);
-    this.getSelectedGameAsPNG = this.getSelectedGameAsPNG.bind(this);
-    this.handleDragLeave = this.handleDragLeave.bind(this);
-    this.handleDragOver = this.handleDragOver.bind(this);
-    this.handleFileDrop = this.handleFileDrop.bind(this);
-    this.handleFileSelect = this.handleFileSelect.bind(this);
-    this.handleWorldNameInput = this.handleWorldNameInput.bind(this);
-    this.loadSelectedGame = this.loadSelectedGame.bind(this);
-    this.saveCurrentGame = this.saveCurrentGame.bind(this);
-    this.shareSelectedGame = this.shareSelectedGame.bind(this);
-    this.shareSelectedGameAsPDF = this.shareSelectedGameAsPDF.bind(this);
+    // @ts-ignore - Methods are defined later in the class
+    this.close = /** @type {StorageDialog} */ (this).close.bind(this);
+    // @ts-ignore
+    this.deleteSelectedGame = /** @type {StorageDialog} */ (
+      this
+    ).deleteSelectedGame.bind(this);
+    // @ts-ignore
+    this.getPDFGameStateAttachment = /** @type {StorageDialog} */ (
+      this
+    ).getPDFGameStateAttachment.bind(this);
+    // @ts-ignore
+    this.getSelectedGameAsPNG = /** @type {StorageDialog} */ (
+      this
+    ).getSelectedGameAsPNG.bind(this);
+    // @ts-ignore
+    this.handleDragLeave = /** @type {StorageDialog} */ (
+      this
+    ).handleDragLeave.bind(this);
+    // @ts-ignore
+    this.handleDragOver = /** @type {StorageDialog} */ (
+      this
+    ).handleDragOver.bind(this);
+    // @ts-ignore
+    this.handleFileDrop = /** @type {StorageDialog} */ (
+      this
+    ).handleFileDrop.bind(this);
+    // @ts-ignore
+    this.handleFileSelect = /** @type {StorageDialog} */ (
+      this
+    ).handleFileSelect.bind(this);
+    // @ts-ignore
+    this.handleWorldNameInput = /** @type {StorageDialog} */ (
+      this
+    ).handleWorldNameInput.bind(this);
+    // @ts-ignore
+    this.loadSelectedGame = /** @type {StorageDialog} */ (
+      this
+    ).loadSelectedGame.bind(this);
+    // @ts-ignore
+    this.saveCurrentGame = /** @type {StorageDialog} */ (
+      this
+    ).saveCurrentGame.bind(this);
+    // @ts-ignore
+    this.shareSelectedGame = /** @type {StorageDialog} */ (
+      this
+    ).shareSelectedGame.bind(this);
+    // @ts-ignore
+    this.shareSelectedGameAsPDF = /** @type {StorageDialog} */ (
+      this
+    ).shareSelectedGameAsPDF.bind(this);
   }
 
-  /** @returns {Promise<HTMLDialogElement>} */
+  /**
+   * @returns {Promise<HTMLDialogElement>}
+   */
   async createDialog() {
-    const existingDialog =
-      /** @type {HTMLDialogElement} */
-      (this.shadow.getElementById("storageDialog"));
+    const existingDialog = /** @type {HTMLDialogElement | null} */ (
+      this.shadow.getElementById("storageDialog")
+    );
 
     if (existingDialog) {
       existingDialog.remove();
@@ -819,9 +923,21 @@ export class StorageDialog {
     this.renderSavedGamesList();
   }
 
-  /** @returns {void} */
+  /**
+   * @returns {void}
+   */
   renderSavedGamesList() {
-    const listContainer = this.dialog.querySelector("#savedGamesList");
+    if (!this.dialog) {
+      return;
+    }
+
+    const listContainer = /** @type {HTMLElement | null} */ (
+      this.dialog.querySelector("#savedGamesList")
+    );
+
+    if (!listContainer) {
+      return;
+    }
 
     if (this.savedGames.length === 0) {
       listContainer.innerHTML = `
@@ -833,7 +949,7 @@ export class StorageDialog {
       return;
     }
 
-    listContainer.innerHTML = this.savedGames
+    const html = this.savedGames
       .map(
         (game, index) => `
         <div
@@ -867,17 +983,23 @@ export class StorageDialog {
       )
       .join("");
 
+    listContainer.innerHTML = html;
+
     // Add click handlers for game selection
     listContainer.querySelectorAll(".saved-game-item").forEach((item) => {
       item.addEventListener(
         "keydown",
-        /** @param {KeyboardEvent} e */ async (e) => {
+        /** @param {Event} evt */ (evt) => {
+          if (!(evt instanceof KeyboardEvent)) {
+            return;
+          }
+
           if (
-            e.target instanceof HTMLElement &&
-            e.target.getAttribute("type") === "radio" &&
-            e.key.toLowerCase() === "enter"
+            evt.target instanceof HTMLElement &&
+            evt.target.getAttribute("type") === "radio" &&
+            evt.key.toLowerCase() === "enter"
           ) {
-            await this.loadSelectedGame();
+            this.loadSelectedGame();
           }
         },
       );
@@ -902,10 +1024,16 @@ export class StorageDialog {
     });
   }
 
-  /** @returns {void} */
+  /**
+   * @returns {void}
+   */
   updateButtonStates() {
-    const selected = this.dialog.querySelector(
-      'input[name="selectedGame"]:checked',
+    if (!this.dialog) {
+      return;
+    }
+
+    const selected = /** @type {HTMLInputElement | null} */ (
+      this.dialog.querySelector('input[name="selectedGame"]:checked')
     );
 
     const isSelected = !!selected;
@@ -973,7 +1101,8 @@ export class StorageDialog {
       if (canShare) {
         shareBtn.removeAttribute("hidden");
 
-        if (this.gThis.blockGarden.state.hasEnabledExtras.get()) {
+        const bg = /** @type {BlockGardenGlobalThis} */ (this.gThis);
+        if (bg.blockGarden.state.hasEnabledExtras.get()) {
           shareAsPdfBtn.removeAttribute("hidden");
         }
       }
@@ -998,109 +1127,207 @@ export class StorageDialog {
     }
   }
 
-  /** @returns {void} */
+  /**
+   * @returns {void}
+   */
   initEventListeners() {
-    const closeBtn =
-      /** @type {HTMLButtonElement} */
-      (this.dialog.querySelector("#closeStorageDialog"));
-    const saveBtn = this.dialog.querySelector("#saveToStorageBtn");
-    const loadBtn = this.dialog.querySelector("#loadSelectedBtn");
-    const deleteBtn = this.dialog.querySelector("#deleteSelectedBtn");
-    const shareBtn = this.dialog.querySelector("#shareSelectedBtn");
-    const shareAsPdfBtn = this.dialog.querySelector("#shareSelectedAsPdfBtn");
-    const worldNameInput = this.dialog.querySelector("#worldNameInput");
-    const gameDropZone = this.dialog.querySelector("#gameDropZone");
-    const fileInput = this.dialog.querySelector("#fileInput");
+    if (!this.dialog) {
+      return;
+    }
 
-    closeBtn.addEventListener("click", this.close);
-    saveBtn.addEventListener("click", this.saveCurrentGame);
-    loadBtn.addEventListener("click", this.loadSelectedGame);
-    deleteBtn.addEventListener("click", this.deleteSelectedGame);
-    shareBtn.addEventListener("click", this.shareSelectedGame);
-    shareAsPdfBtn.addEventListener("click", this.shareSelectedGameAsPDF);
-    worldNameInput.addEventListener("keydown", this.handleWorldNameInput);
+    const closeBtn = /** @type {HTMLButtonElement | null} */ (
+      this.dialog.querySelector("#closeStorageDialog")
+    );
+    const saveBtn = /** @type {HTMLElement | null} */ (
+      this.dialog.querySelector("#saveToStorageBtn")
+    );
+    const loadBtn = /** @type {HTMLElement | null} */ (
+      this.dialog.querySelector("#loadSelectedBtn")
+    );
+    const deleteBtn = /** @type {HTMLElement | null} */ (
+      this.dialog.querySelector("#deleteSelectedBtn")
+    );
+    const shareBtn = /** @type {HTMLElement | null} */ (
+      this.dialog.querySelector("#shareSelectedBtn")
+    );
+    const shareAsPdfBtn = /** @type {HTMLElement | null} */ (
+      this.dialog.querySelector("#shareSelectedAsPdfBtn")
+    );
+    const worldNameInput = /** @type {HTMLInputElement | null} */ (
+      this.dialog.querySelector("#worldNameInput")
+    );
+    const gameDropZone = /** @type {HTMLElement | null} */ (
+      this.dialog.querySelector("#gameDropZone")
+    );
+    const fileInput = /** @type {HTMLInputElement | null} */ (
+      this.dialog.querySelector("#fileInput")
+    );
+
+    if (closeBtn) {
+      closeBtn.addEventListener("click", this.close);
+    }
+    if (saveBtn) {
+      saveBtn.addEventListener("click", () => this.saveCurrentGame());
+    }
+    if (loadBtn) {
+      loadBtn.addEventListener("click", () => this.loadSelectedGame());
+    }
+    if (deleteBtn) {
+      deleteBtn.addEventListener("click", () => this.deleteSelectedGame());
+    }
+    if (shareBtn) {
+      shareBtn.addEventListener("click", () => this.shareSelectedGame());
+    }
+    if (shareAsPdfBtn) {
+      shareAsPdfBtn.addEventListener("click", () =>
+        this.shareSelectedGameAsPDF(),
+      );
+    }
+    if (worldNameInput) {
+      worldNameInput.addEventListener("keydown", (e) =>
+        this.handleWorldNameInput(e),
+      );
+    }
 
     // Drag and drop for file upload
-    gameDropZone.addEventListener("dragover", this.handleDragOver);
-    gameDropZone.addEventListener("dragleave", this.handleDragLeave);
-    gameDropZone.addEventListener("drop", this.handleFileDrop);
+    if (gameDropZone) {
+      gameDropZone.addEventListener("dragover", (e) => this.handleDragOver(e));
+      gameDropZone.addEventListener("dragleave", (e) =>
+        this.handleDragLeave(e),
+      );
+      gameDropZone.addEventListener("drop", (e) => this.handleFileDrop(e));
+    }
 
     // File input change event
-    fileInput.addEventListener("change", this.handleFileSelect);
+    if (fileInput) {
+      fileInput.addEventListener("change", (e) => this.handleFileSelect(e));
+    }
   }
 
   /** @returns {void} */
   removeEventListeners() {
-    const closeBtn = this.dialog.querySelector("#closeStorageDialog");
-    const saveBtn = this.dialog.querySelector("#saveToStorageBtn");
-    const loadBtn = this.dialog.querySelector("#loadSelectedBtn");
-    const deleteBtn = this.dialog.querySelector("#deleteSelectedBtn");
-    const shareBtn = this.dialog.querySelector("#shareSelectedBtn");
-    const shareAsPDFBtn = this.dialog.querySelector("#shareSelectedAsPdfBtn");
-    const worldNameInput = this.dialog.querySelector("#worldNameInput");
-    const gameDropZone = this.dialog.querySelector("#gameDropZone");
-    const fileInput = this.dialog.querySelector("#fileInput");
+    if (!this.dialog) return;
 
-    closeBtn.removeEventListener("click", this.close);
-    saveBtn.removeEventListener("click", this.saveCurrentGame);
-    loadBtn.removeEventListener("click", this.loadSelectedGame);
-    deleteBtn.removeEventListener("click", this.deleteSelectedGame);
-    shareBtn.removeEventListener("click", this.shareSelectedGame);
-    shareAsPDFBtn.removeEventListener("click", this.shareSelectedGameAsPDF);
-    worldNameInput.removeEventListener("keydown", this.handleWorldNameInput);
+    const closeBtn = /** @type {HTMLElement | null} */ (
+      this.dialog.querySelector("#closeStorageDialog")
+    );
+    const saveBtn = /** @type {HTMLElement | null} */ (
+      this.dialog.querySelector("#saveToStorageBtn")
+    );
+    const loadBtn = /** @type {HTMLElement | null} */ (
+      this.dialog.querySelector("#loadSelectedBtn")
+    );
+    const deleteBtn = /** @type {HTMLElement | null} */ (
+      this.dialog.querySelector("#deleteSelectedBtn")
+    );
+    const shareBtn = /** @type {HTMLElement | null} */ (
+      this.dialog.querySelector("#shareSelectedBtn")
+    );
+    const shareAsPDFBtn = /** @type {HTMLElement | null} */ (
+      this.dialog.querySelector("#shareSelectedAsPdfBtn")
+    );
+    const worldNameInput = /** @type {HTMLInputElement | null} */ (
+      this.dialog.querySelector("#worldNameInput")
+    );
+    const gameDropZone = /** @type {HTMLElement | null} */ (
+      this.dialog.querySelector("#gameDropZone")
+    );
+    const fileInput = /** @type {HTMLInputElement | null} */ (
+      this.dialog.querySelector("#fileInput")
+    );
+
+    closeBtn?.removeEventListener("click", this.close);
+    saveBtn?.removeEventListener("click", this.saveCurrentGame);
+    loadBtn?.removeEventListener("click", this.loadSelectedGame);
+    deleteBtn?.removeEventListener("click", this.deleteSelectedGame);
+    shareBtn?.removeEventListener("click", this.shareSelectedGame);
+    shareAsPDFBtn?.removeEventListener("click", this.shareSelectedGameAsPDF);
+    worldNameInput?.removeEventListener("keydown", this.handleWorldNameInput);
 
     // Drag and drop
-    gameDropZone.removeEventListener("dragover", this.handleDragOver);
-    gameDropZone.removeEventListener("dragleave", this.handleDragLeave);
-    gameDropZone.removeEventListener("drop", this.handleFileDrop);
+    gameDropZone?.removeEventListener("dragover", this.handleDragOver);
+    gameDropZone?.removeEventListener("dragleave", this.handleDragLeave);
+    gameDropZone?.removeEventListener("drop", this.handleFileDrop);
 
     // File input
-    fileInput.removeEventListener("change", this.handleFileSelect);
+    fileInput?.removeEventListener("change", this.handleFileSelect);
   }
 
-  /** @returns {void} */
+  /**
+   * @param {DragEvent} e
+   * @returns {void}
+   */
   handleDragOver(e) {
     e.preventDefault();
     e.stopPropagation();
 
-    const gameDropZone = this.dialog.querySelector("#gameDropZone");
+    if (!this.dialog) {
+      return;
+    }
+
+    const gameDropZone = /** @type {HTMLElement | null} */ (
+      this.dialog.querySelector("#gameDropZone")
+    );
     if (gameDropZone instanceof HTMLElement) {
       gameDropZone.style.borderColor = "var(--bg-color-blue-500)";
       gameDropZone.style.backgroundColor = "rgba(100, 200, 255, 0.1)";
     }
   }
 
-  /** @returns {void} */
+  /**
+   * @param {DragEvent} e
+   * @returns {void}
+   */
   handleDragLeave(e) {
     e.preventDefault();
     e.stopPropagation();
 
-    const gameDropZone = this.dialog.querySelector("#gameDropZone");
+    if (!this.dialog) {
+      return;
+    }
+
+    const gameDropZone = /** @type {HTMLElement | null} */ (
+      this.dialog.querySelector("#gameDropZone")
+    );
     if (gameDropZone instanceof HTMLElement) {
       gameDropZone.style.borderColor = "var(--bg-color-gray-400)";
       gameDropZone.style.backgroundColor = "";
     }
   }
 
-  /** @returns {void} */
+  /**
+   * @param {DragEvent} e
+   * @returns {void}
+   */
   handleFileDrop(e) {
     e.preventDefault();
     e.stopPropagation();
 
-    const gameDropZone = this.dialog.querySelector("#gameDropZone");
+    if (!this.dialog) {
+      return;
+    }
+
+    const gameDropZone = /** @type {HTMLElement | null} */ (
+      this.dialog.querySelector("#gameDropZone")
+    );
     if (gameDropZone instanceof HTMLElement) {
       gameDropZone.style.borderColor = "var(--bg-color-gray-400)";
       gameDropZone.style.backgroundColor = "";
     }
 
-    const files = e.dataTransfer.files;
-    this.processFiles(files);
+    const files = e.dataTransfer?.files;
+    if (files) {
+      this.processFiles(files);
+    }
   }
 
   /** @returns {void} */
-  handleFileSelect(e) {
-    const files = e.target.files;
-    this.processFiles(files);
+  handleFileSelect(/** @type {Event} */ e) {
+    const target = /** @type {HTMLInputElement | null} */ (e.target);
+    const files = target?.files;
+    if (files) {
+      this.processFiles(files);
+    }
   }
 
   /**
@@ -1156,17 +1383,18 @@ export class StorageDialog {
         stateJSON = await extractJsonFromPng(new Blob([results.data]));
       } else {
         // Gzip compressed .bgs file
-        const compressedBlob = new globalThis.Blob([fileBuffer], {
+        const bg = /** @type {BlockGardenGlobalThis} */ (globalThis);
+        const compressedBlob = new bg.Blob([fileBuffer], {
           type: "application/gzip",
         });
 
         // Decompress
-        if ("DecompressionStream" in globalThis) {
+        if ("DecompressionStream" in bg) {
           const decompressedStream = compressedBlob
             .stream()
-            .pipeThrough(new globalThis.DecompressionStream("gzip"));
+            .pipeThrough(new bg.DecompressionStream("gzip"));
 
-          const decompressedBlob = await new globalThis.Response(
+          const decompressedBlob = await new bg.Response(
             decompressedStream,
           ).blob();
 
@@ -1178,7 +1406,11 @@ export class StorageDialog {
 
       // Parse and load save state
       const saveState = JSON.parse(stateJSON);
-      await loadSaveState(globalThis, this.shadow, saveState);
+      await loadSaveState(
+        /** @type {BlockGardenGlobalThis} */ (globalThis),
+        this.shadow,
+        saveState,
+      );
 
       // Update UI elements
       const { seed } = saveState.config;
@@ -1194,9 +1426,13 @@ export class StorageDialog {
       console.log(`Game loaded from file: ${fileName}`);
 
       // Reset file input
-      const fileInput = this.dialog.querySelector("#fileInput");
-      if (fileInput instanceof HTMLInputElement) {
-        fileInput.value = "";
+      if (this.dialog) {
+        const fileInput = /** @type {HTMLInputElement | null} */ (
+          this.dialog.querySelector("#fileInput")
+        );
+        if (fileInput instanceof HTMLInputElement) {
+          fileInput.value = "";
+        }
       }
 
       this.close();
@@ -1206,11 +1442,19 @@ export class StorageDialog {
     }
   }
 
-  /** @returns {Promise<void>} */
+  /**
+   * @returns {Promise<void>}
+   */
   async saveCurrentGame() {
-    const worldNameInput = this.dialog.querySelector("#worldNameInput");
+    if (!this.dialog) {
+      return;
+    }
 
-    let worldName;
+    const worldNameInput = /** @type {HTMLInputElement | null} */ (
+      this.dialog.querySelector("#worldNameInput")
+    );
+
+    let worldName = "";
     if (worldNameInput instanceof HTMLInputElement) {
       worldName = worldNameInput.value.trim();
     }
@@ -1221,10 +1465,9 @@ export class StorageDialog {
     }
 
     try {
-      // Create save state
       const saveState = createSaveState(
-        globalThis.blockGarden.state.world,
-        globalThis,
+        this.gThis.blockGarden.state.world,
+        this.gThis,
       );
       const stateJSON = JSON.stringify(saveState);
 
@@ -1232,8 +1475,11 @@ export class StorageDialog {
       const compressedBlob = await compressToBinaryBlob(stateJSON);
 
       // Convert to base64
+      if (!compressedBlob) {
+        throw new Error("Failed to compress data");
+      }
       const arrayBuffer = await compressedBlob.arrayBuffer();
-      const base64Data = arrayBufferToBase64(globalThis, arrayBuffer);
+      const base64Data = arrayBufferToBase64(this.gThis, arrayBuffer);
 
       // Create storage entry
       const gameData = {
@@ -1260,29 +1506,35 @@ export class StorageDialog {
     }
   }
 
-  /** @returns {Promise<void>} */
+  /**
+   * @returns {Promise<void>}
+   */
   async loadSelectedGame() {
     this.updateButtonStates();
 
-    const selected = this.dialog.querySelector(
-      'input[name="selectedGame"]:checked',
+    if (!this.dialog) {
+      return;
+    }
+
+    const selected = /** @type {HTMLInputElement | null} */ (
+      this.dialog.querySelector('input[name="selectedGame"]:checked')
     );
 
     if (!selected) {
       return;
     }
 
-    let game;
-    if (selected instanceof HTMLInputElement) {
-      const gameIndex = parseInt(selected.value);
+    const gameIndex = parseInt(selected.value);
+    const game = this.savedGames[gameIndex];
 
-      game = this.savedGames[gameIndex];
+    if (!game) {
+      return;
     }
 
     try {
       // Convert base64 back to binary
       const compressedBlob = base64toBlob(
-        globalThis,
+        this.gThis,
         game.data,
         "application/gzip",
       );
@@ -1290,30 +1542,26 @@ export class StorageDialog {
       // Decompress
       let stateJSON;
 
-      if ("DecompressionStream" in globalThis) {
+      if ("DecompressionStream" in this.gThis) {
         const decompressedStream = compressedBlob
           .stream()
-          .pipeThrough(new globalThis.DecompressionStream("gzip"));
+          .pipeThrough(new this.gThis.DecompressionStream("gzip"));
 
-        const decompressedBlob = await new globalThis.Response(
+        const decompressedBlob = await new this.gThis.Response(
           decompressedStream,
         ).blob();
 
         stateJSON = await decompressedBlob.text();
-      } else {
-        throw new Error("DecompressionStream not supported");
+        this.close();
+
+        const seedDialog = /** @type {HTMLDialogElement | null} */ (
+          this.shadow?.querySelector(".seed-controls")
+        );
+
+        if (seedDialog) {
+          seedDialog.close();
+        }
       }
-
-      // Parse and load save state
-      const saveState = JSON.parse(stateJSON);
-
-      await loadSaveState(globalThis, this.shadow, saveState);
-
-      this.close();
-
-      /** @type {HTMLDialogElement} */ (
-        this.shadow.querySelector(".seed-controls")
-      ).close();
     } catch (error) {
       console.error("Failed to load game from storage:", error);
 
@@ -1321,23 +1569,29 @@ export class StorageDialog {
     }
   }
 
-  /** @returns {Promise<void>} */
+  /**
+   * @returns {Promise<void>}
+   */
   async deleteSelectedGame() {
     this.updateButtonStates();
 
-    const selected = this.dialog.querySelector(
-      'input[name="selectedGame"]:checked',
+    if (!this.dialog) {
+      return;
+    }
+
+    const selected = /** @type {HTMLInputElement | null} */ (
+      this.dialog.querySelector('input[name="selectedGame"]:checked')
     );
 
     if (!selected) {
       return;
     }
 
-    let game;
-    if (selected instanceof HTMLInputElement) {
-      const gameIndex = parseInt(selected.value);
+    const gameIndex = parseInt(selected.value);
+    const game = this.savedGames[gameIndex];
 
-      game = this.savedGames[gameIndex];
+    if (!game) {
+      return;
     }
 
     if (confirm(`Are you sure you want to delete "${game.name}"?`)) {
@@ -1355,7 +1609,9 @@ export class StorageDialog {
     }
   }
 
-  /** @returns {Promise<{ game: any, file: File }>} */
+  /**
+   * @returns {Promise<{ game: SavedGame, file: File }>}
+   */
   async getPDFGameStateAttachment() {
     const currentTime = getDateTime();
     const pdfLib =
@@ -1370,16 +1626,16 @@ export class StorageDialog {
 
     // Parse game state to extract stats
     let gameState;
-    if ("DecompressionStream" in globalThis) {
+    if ("DecompressionStream" in this.gThis) {
       const decompressedStream = base64toBlob(
-        globalThis,
+        this.gThis,
         game.data,
         "application/gzip",
       )
         .stream()
-        .pipeThrough(new globalThis.DecompressionStream("gzip"));
+        .pipeThrough(new this.gThis.DecompressionStream("gzip"));
 
-      const decompressedBlob = await new globalThis.Response(
+      const decompressedBlob = await new this.gThis.Response(
         decompressedStream,
       ).blob();
 
@@ -1505,7 +1761,11 @@ export class StorageDialog {
 
     let imageLink = "https://kherrick.github.io/block-garden/";
 
-    if (globalThis?.blockGarden?.config?.linkGameSave?.get() === true) {
+    if (
+      /** @type {any} */ (
+        globalThis
+      )?.blockGarden?.config?.linkGameSave?.get() === true
+    ) {
       const formattedGameName = formatName(game.name);
 
       imageLink += `?gameSave=${imageLink}assets/game-saves/${formattedGameName}.pdf`;
@@ -1576,7 +1836,11 @@ export class StorageDialog {
     const leftMargin = boxX + 20;
     const lineHeight = 18;
 
-    if (globalThis?.blockGarden?.config?.linkGameSave?.get() === false) {
+    if (
+      /** @type {any} */ (
+        globalThis
+      )?.blockGarden?.config?.linkGameSave?.get() === false
+    ) {
       // Game stats with bold labels
       page.drawText("Saved On:", {
         x: leftMargin,
@@ -1673,7 +1937,11 @@ export class StorageDialog {
 
     // Attach PNG backup
     let pngFilename = "";
-    if (globalThis?.blockGarden?.config?.linkGameSave?.get() === true) {
+    if (
+      /** @type {any} */ (
+        globalThis
+      )?.blockGarden?.config?.linkGameSave?.get() === true
+    ) {
       pngFilename = `block-garden-game-card.png`;
     } else {
       pngFilename = `block-garden-game-card-${currentTime}.png`;
@@ -1689,7 +1957,11 @@ export class StorageDialog {
     const blob = new Blob([pdfBytes], { type: "application/pdf" });
 
     let pdfFilename = "";
-    if (globalThis?.blockGarden?.config?.linkGameSave?.get() === true) {
+    if (
+      /** @type {any} */ (
+        globalThis
+      )?.blockGarden?.config?.linkGameSave?.get() === true
+    ) {
       pdfFilename = `Block-Garden-Game-Save.pdf`;
     } else {
       pdfFilename = `Block-Garden-Game-Save-${currentTime}.pdf`;
@@ -1704,27 +1976,33 @@ export class StorageDialog {
     };
   }
 
-  /** @returns {Promise<{ game: any, pngSave: Blob}>} */
+  /**
+   * @returns {Promise<{ game: SavedGame, pngSave: Blob}>}
+   */
   async getSelectedGameAsPNG() {
-    const selected = this.dialog.querySelector(
-      'input[name="selectedGame"]:checked',
+    if (!this.dialog) {
+      throw new Error("Dialog not initialized");
+    }
+
+    const selected = /** @type {HTMLInputElement | null} */ (
+      this.dialog.querySelector('input[name="selectedGame"]:checked')
     );
 
     if (!selected) {
-      return;
+      throw new Error("No game selected");
     }
 
-    let game;
-    if (selected instanceof HTMLInputElement) {
-      const gameIndex = parseInt(selected.value);
+    const gameIndex = parseInt(selected.value);
+    const game = this.savedGames[gameIndex];
 
-      game = this.savedGames[gameIndex];
+    if (!game) {
+      throw new Error("Game not found");
     }
 
     let stateJSON;
-    if ("DecompressionStream" in globalThis) {
+    if ("DecompressionStream" in this.gThis) {
       const decompressedStream = base64toBlob(
-        globalThis,
+        this.gThis,
         game.data,
         "application/gzip",
       )
@@ -1739,10 +2017,12 @@ export class StorageDialog {
       throw new Error("DecompressionStream not supported");
     }
 
-    const cnvs = getShadowRoot(
-      globalThis.document,
-      "block-garden",
-    ).querySelector("canvas");
+    const shadowRoot = getShadowRoot(globalThis.document, "block-garden");
+    const cnvs = shadowRoot ? shadowRoot.querySelector("canvas") : null;
+
+    if (!cnvs) {
+      throw new Error("Canvas element not found");
+    }
 
     const pngSave = await canvasToPngWithState(cnvs, stateJSON);
 
@@ -1773,7 +2053,8 @@ export class StorageDialog {
       }
     } catch (error) {
       // Only log if it's not a user cancellation
-      if (error.name !== "AbortError") {
+      const err = /** @type {any} */ (error);
+      if (err?.name !== "AbortError") {
         console.error("Failed to share game:", error);
         alert("Failed to share game. Check console for details.");
       } else {
@@ -1782,33 +2063,40 @@ export class StorageDialog {
     }
   }
 
-  /** @returns {Promise<void>} */
+  /**
+   * @returns {Promise<void>}
+   */
   async shareSelectedGame() {
     const currentTime = getDateTime();
-    const selected = this.dialog.querySelector(
-      'input[name="selectedGame"]:checked',
+
+    if (!this.dialog) {
+      return;
+    }
+
+    const selected = /** @type {HTMLInputElement | null} */ (
+      this.dialog.querySelector('input[name="selectedGame"]:checked')
     );
 
     if (!selected) {
       return;
     }
 
-    let game;
-    if (selected instanceof HTMLInputElement) {
-      const gameIndex = parseInt(selected.value);
+    const gameIndex = parseInt(selected.value);
+    const game = this.savedGames[gameIndex];
 
-      game = this.savedGames[gameIndex];
+    if (!game) {
+      return;
     }
 
     let stateJSON;
-    if ("DecompressionStream" in globalThis) {
+    if ("DecompressionStream" in this.gThis) {
       const decompressedStream = base64toBlob(
-        globalThis,
+        this.gThis,
         game.data,
         "application/gzip",
       )
         .stream()
-        .pipeThrough(new globalThis.DecompressionStream("gzip"));
+        .pipeThrough(new this.gThis.DecompressionStream("gzip"));
 
       const decompressedBlob = await new globalThis.Response(
         decompressedStream,
@@ -1846,8 +2134,10 @@ export class StorageDialog {
       }
     } catch (error) {
       // Only log if it's not a user cancellation
-      if (error.name !== "AbortError") {
+      const err = /** @type {Error} */ (error);
+      if (err.name !== "AbortError") {
         console.error("Failed to share game:", error);
+
         alert("Failed to share game. Check console for details.");
       } else {
         console.log("Game sharing was cancelled by the user");
@@ -1855,7 +2145,9 @@ export class StorageDialog {
     }
   }
 
-  /** @returns {void} */
+  /**
+   * @returns {void}
+   */
   show() {
     if (this.dialog instanceof HTMLDialogElement) {
       if (!this.dialog.isConnected) {
@@ -1871,13 +2163,20 @@ export class StorageDialog {
     }
   }
 
-  /** @returns {void} */
+  /**
+   * @returns {void}
+   */
   close() {
     this.removeEventListeners();
 
-    this.dialog instanceof HTMLDialogElement && this.dialog.close();
+    if (this.dialog instanceof HTMLDialogElement) {
+      this.dialog.close();
+    }
 
-    const sd = this.shadow.getElementById("storageDialog");
+    const sd = /** @type {HTMLDialogElement | null} */ (
+      this.shadow.getElementById("storageDialog")
+    );
+
     if (sd instanceof HTMLDialogElement) {
       sd.close();
     }
@@ -1887,19 +2186,19 @@ export class StorageDialog {
 /**
  * Export function to create and show dialog
  *
- * @param {typeof globalThis} globalThis
+ * @param {BlockGardenGlobalThis} gThis
  * @param {Document} doc
  * @param {ShadowRoot} shadow
  *
  * @returns {Promise<StorageDialog|void>}
  */
-export async function showStorageDialog(globalThis, doc, shadow) {
+export async function showStorageDialog(gThis, doc, shadow) {
   const sd = shadow.getElementById("storageDialog");
   if (sd instanceof HTMLDialogElement) {
     sd.remove();
   }
 
-  const storageDialog = new StorageDialog(globalThis, doc, shadow);
+  const storageDialog = new StorageDialog(gThis, doc, shadow);
 
   await storageDialog.createDialog();
 

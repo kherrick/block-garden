@@ -1,20 +1,35 @@
 export const selectTagName = "block-garden-select";
 
 /**
+ * @typedef {Object} SelectOption
+ * @property {string} name - Option name/label
+ * @property {string} value - Option value
+ */
+
+/** @typedef {import('../../core/systems/game/state.mjs').BlockGardenGlobalThis} BlockGardenGlobalThis */
+
+/**
  * Select component for Block Garden
  */
 export class BlockGardenSelect extends HTMLElement {
+  /** @type {ShadowRoot | null} */
   #shadow;
+  /** @type {HTMLElement | null} */
   #trigger;
+  /** @type {HTMLElement | null} */
   #list;
+  /** @type {HTMLElement | null} */
   #selected;
+  /** @type {HTMLInputElement | null} */
   #hiddenInput;
+  /** @type {HTMLLIElement[]} */
   #items = [];
 
   constructor() {
     super();
 
-    const template = globalThis.document.createElement("template");
+    const gThis = /** @type {BlockGardenGlobalThis} */ (globalThis);
+    const template = gThis.document.createElement("template");
     template.innerHTML = `
       <style>
         [hidden] {
@@ -172,7 +187,9 @@ export class BlockGardenSelect extends HTMLElement {
     this.#shadow = this.attachShadow({ mode: "open" });
     this.#shadow.appendChild(template.content.cloneNode(true));
 
-    this.#trigger = this.#shadow.querySelector(".block-garden-select");
+    this.#trigger = /** @type {HTMLElement | null} */ (
+      this.#shadow.querySelector(".block-garden-select")
+    );
     this.#list = this.#shadow.querySelector("#selectList");
     this.#selected = this.#shadow.querySelector("#selectedValue");
     this.#hiddenInput = this.#shadow.querySelector("#valueInput");
@@ -203,37 +220,47 @@ export class BlockGardenSelect extends HTMLElement {
 
     const openList = () => {
       this.#refreshOptions(); // Rescan options before opening
-      /** @type {HTMLElement} */
-      (this.#list).hidden = false;
-      this.#trigger.setAttribute("aria-expanded", "true");
-      this.#items[0]?.focus();
+      if (this.#list) {
+        this.#list.hidden = false;
+      }
+      this.#trigger?.setAttribute("aria-expanded", "true");
+      const firstItem = this.#items[0];
+      if (firstItem instanceof HTMLElement) {
+        firstItem.focus();
+      }
       activeIndex = 0;
     };
 
     const closeList = (shouldFocus = true) => {
-      const wasOpen = !(/** @type {HTMLElement} */ (this.#list).hidden);
-      /** @type {HTMLElement} */
-      (this.#list).hidden = true;
+      const wasOpen = this.#list && !this.#list.hidden;
+      if (this.#list) {
+        this.#list.hidden = true;
+      }
 
-      this.#trigger.setAttribute("aria-expanded", "false");
+      this.#trigger?.setAttribute("aria-expanded", "false");
 
       if (wasOpen && shouldFocus) {
-        /** @type {HTMLElement} */
-        (this.#trigger).focus();
+        const triggerEl = this.#trigger;
+        if (triggerEl instanceof HTMLElement) {
+          triggerEl.focus();
+        }
       }
 
       activeIndex = -1;
     };
 
-    const selectItem = (item) => {
+    const selectItem = (/** @type {HTMLElement} */ item) => {
       const value = item.dataset.value;
-      const label = item.textContent.trim();
+      const label = item.textContent?.trim() || "";
 
-      this.#selected.textContent = label;
-      this.#selected.classList.remove("placeholder");
+      if (this.#selected) {
+        this.#selected.textContent = label;
+        this.#selected.classList.remove("placeholder");
+      }
 
-      /** @type {HTMLInputElement} */
-      (this.#hiddenInput).value = value;
+      if (this.#hiddenInput) {
+        this.#hiddenInput.value = value || "";
+      }
 
       this.#items.forEach((i) => i.setAttribute("aria-selected", "false"));
       item.setAttribute("aria-selected", "true");
@@ -250,7 +277,7 @@ export class BlockGardenSelect extends HTMLElement {
     };
 
     // keyboard on trigger
-    this.#trigger.addEventListener(
+    this.#trigger?.addEventListener(
       "keydown",
       (
         /** @type {KeyboardEvent} */
@@ -261,8 +288,9 @@ export class BlockGardenSelect extends HTMLElement {
           case " ":
             e.preventDefault();
 
-            /** @type {HTMLElement} */
-            (this.#list).hidden ? openList() : closeList();
+            if (this.#list) {
+              this.#list.hidden ? openList() : closeList();
+            }
 
             break;
           case "ArrowDown":
@@ -281,10 +309,10 @@ export class BlockGardenSelect extends HTMLElement {
     );
 
     // roving tabindex for list
-    this.#list.addEventListener("keydown", (e) => {
+    this.#list?.addEventListener("keydown", (e) => {
       const item =
         /** @type {HTMLElement} */
-        (e.target).closest(".select-item");
+        (e.target)?.closest(".select-item");
 
       if (!item) {
         return;
@@ -300,7 +328,9 @@ export class BlockGardenSelect extends HTMLElement {
         case " ":
           e.preventDefault();
 
-          selectItem(item);
+          if (item instanceof HTMLElement) {
+            selectItem(item);
+          }
 
           break;
         case "Escape":
@@ -312,7 +342,10 @@ export class BlockGardenSelect extends HTMLElement {
 
           activeIndex = (activeIndex + 1) % this.#items.length;
 
-          this.#items[activeIndex].focus();
+          const nextItem = this.#items[activeIndex];
+          if (nextItem instanceof HTMLElement) {
+            nextItem.focus();
+          }
 
           break;
         case "ArrowUp":
@@ -321,13 +354,19 @@ export class BlockGardenSelect extends HTMLElement {
           activeIndex =
             activeIndex === 0 ? this.#items.length - 1 : activeIndex - 1;
 
-          this.#items[activeIndex].focus();
+          const prevItem = this.#items[activeIndex];
+          if (prevItem instanceof HTMLElement) {
+            prevItem.focus();
+          }
 
           break;
         case "Home":
           e.preventDefault();
 
-          this.#items[0].focus();
+          const homeItem = this.#items[0];
+          if (homeItem instanceof HTMLElement) {
+            homeItem.focus();
+          }
 
           activeIndex = 0;
 
@@ -335,7 +374,10 @@ export class BlockGardenSelect extends HTMLElement {
         case "End":
           e.preventDefault();
 
-          this.#items[this.#items.length - 1].focus();
+          const endItem = this.#items[this.#items.length - 1];
+          if (endItem instanceof HTMLElement) {
+            endItem.focus();
+          }
 
           activeIndex = this.#items.length - 1;
 
@@ -344,28 +386,32 @@ export class BlockGardenSelect extends HTMLElement {
     });
 
     // click on combobox itself
-    this.#trigger.addEventListener("click", (e) => {
+    this.#trigger?.addEventListener("click", (e) => {
       e.stopPropagation();
 
-      /** @type {HTMLElement} */
-      (this.#list).hidden ? openList() : closeList();
+      if (this.#list) {
+        this.#list.hidden ? openList() : closeList();
+      }
     });
 
     // click inside shadowRoot list
-    this.#shadow.addEventListener("click", (e) => {
-      const item =
-        /** @type {HTMLElement} */
-        (e.target).closest(".select-item");
+    this.#shadow?.addEventListener("click", (e) => {
+      const item = /** @type {HTMLElement | null} */ (
+        /** @type {Element} */ (e.target).closest?.(".select-item")
+      );
 
       if (item) {
         e.stopPropagation();
 
-        selectItem(item);
+        if (item) {
+          selectItem(item);
+        }
       }
     });
 
     // outside click
-    globalThis.document.addEventListener("click", (e) => {
+    const gThis = /** @type {BlockGardenGlobalThis} */ (globalThis);
+    gThis.document.addEventListener("click", (e) => {
       if (
         !this.contains(
           /** @type {Node} */
@@ -378,25 +424,33 @@ export class BlockGardenSelect extends HTMLElement {
 
     // value API
     Object.defineProperty(this, "value", {
-      get: () =>
-        /** @type {HTMLInputElement} */
-        (this.#hiddenInput).value,
+      get: () => {
+        if (this.#hiddenInput instanceof HTMLInputElement) {
+          return this.#hiddenInput.value;
+        }
+        return "";
+      },
       set: (val) => {
-        /** @type {HTMLInputElement} */
-        (this.#hiddenInput).value = val;
+        if (this.#hiddenInput instanceof HTMLInputElement) {
+          this.#hiddenInput.value = val;
+        }
 
-        const item = this.#list.querySelector(`[data-value="${val}"]`);
-        if (item) {
-          this.#selected.textContent = item.textContent.trim();
-          this.#selected.classList.remove("placeholder");
+        const item = this.#list?.querySelector(`[data-value="${val}"]`);
+        if (item instanceof HTMLElement) {
+          if (this.#selected) {
+            this.#selected.textContent = item.textContent?.trim() || "";
+            this.#selected.classList.remove("placeholder");
+          }
 
           // Update aria-selected on items
           this.#items.forEach((i) => i.setAttribute("aria-selected", "false"));
           item.setAttribute("aria-selected", "true");
         } else {
           // fallback when items not yet rendered
-          this.#selected.textContent = val;
-          this.#selected.classList.remove("placeholder");
+          if (this.#selected) {
+            this.#selected.textContent = val;
+            this.#selected.classList.remove("placeholder");
+          }
         }
       },
     });
@@ -408,13 +462,15 @@ export class BlockGardenSelect extends HTMLElement {
 
   // re-scan
   #refreshOptions() {
+    if (!this.#list) return;
     this.#list.innerHTML = "";
     this.#items = [];
 
     Array.from(this.querySelectorAll("block-garden-option")).forEach(
       (option) => {
         if (option.hasAttribute("hidden")) return; // skip hidden options
-        const li = globalThis.document.createElement("li");
+        const gThis = /** @type {BlockGardenGlobalThis} */ (globalThis);
+        const li = gThis.document.createElement("li");
         li.className = "select-item";
         li.setAttribute("role", "option");
         li.tabIndex = -1;
@@ -424,8 +480,10 @@ export class BlockGardenSelect extends HTMLElement {
 
         li.textContent = option.textContent.trim();
 
-        this.#list.appendChild(li);
-        this.#items.push(li);
+        if (this.#list) {
+          this.#list.appendChild(li);
+          this.#items.push(li);
+        }
       },
     );
   }
@@ -434,13 +492,15 @@ export class BlockGardenSelect extends HTMLElement {
     return ["value"];
   }
 
+  /** @param {string} name */
   attributeChangedCallback(name) {
     if (name === "value") {
-      this.value = this.getAttribute("value");
+      this.value = this.getAttribute("value") || "";
     }
   }
 }
 
-if (!globalThis.customElements?.get(selectTagName)) {
-  globalThis.customElements.define(selectTagName, BlockGardenSelect);
+const gThis = /** @type {BlockGardenGlobalThis} */ (globalThis);
+if (!gThis.customElements?.get(selectTagName)) {
+  gThis.customElements.define(selectTagName, BlockGardenSelect);
 }

@@ -18,6 +18,7 @@ export function buildStyleMapByPropNamesWithoutPrefixesOrSuffixes(
   prefix = "",
   suffix = "",
 ) {
+  /** @type {Record<string, string>|undefined} */
   let styleMap;
 
   for (const propName of propNames) {
@@ -35,5 +36,7 @@ export function buildStyleMapByPropNamesWithoutPrefixesOrSuffixes(
     styleMap[resolvedPropName] = cssStyleDeclaration.getPropertyValue(propName);
   }
 
-  return styleMap;
+  return /** @type {ColorMapWithoutPrefixes | BlockColorMapWithoutPrefixes} */ (
+    styleMap
+  );
 }

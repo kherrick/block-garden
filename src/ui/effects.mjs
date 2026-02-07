@@ -1,15 +1,18 @@
-import { gameConfig } from "../world/config/index.mjs";
+import { gameConfig } from "../core/world/config/index.mjs";
 import { gameState } from "../core/systems/game/state.mjs";
 
 import { effect } from "../utils/effect.mjs";
 import { getRandomSeed } from "../utils/getRandomSeed.mjs";
 import { updateFlightToggleButton } from "../ui/utils/flightToggle.mjs";
 
-/** @typedef {import('signal-polyfill').Signal.State} Signal.State */
+/**
+ * @typedef {Object} SignalState
+ * @property {() => any} get
+ */
 
 /**
  * @param {ShadowRoot} shadow
- * @param {Signal.State} currentBlock
+ * @param {SignalState} currentBlock
  *
  * @returns {void}
  */
@@ -17,15 +20,19 @@ export function initEffects(shadow, currentBlock) {
   // Set up reactive effects for UI updates
   effect(() => {
     const blockName = shadow.getElementById("blockName");
-    blockName.textContent = currentBlock.get();
+    if (blockName) blockName.textContent = currentBlock.get();
   });
 
   effect(() => {
-    const touchControls = shadow.querySelector(".touch-controls");
-    if (touchControls && gameConfig.useTouchControls.get()) {
-      touchControls.removeAttribute("hidden");
-    } else {
-      touchControls.setAttribute("hidden", "");
+    const touchControls = /** @type {HTMLElement | null} */ (
+      shadow.querySelector(".touch-controls")
+    );
+    if (touchControls) {
+      if (gameConfig.useTouchControls.get()) {
+        touchControls.removeAttribute("hidden");
+      } else {
+        touchControls.setAttribute("hidden", "");
+      }
     }
   });
 
@@ -51,12 +58,18 @@ export function initEffects(shadow, currentBlock) {
     const seedInput = shadow.getElementById("worldSeedInput");
 
     if (seedInput instanceof HTMLInputElement && !seedInput.value) {
-      const currentSeedDisplay = shadow.getElementById("currentSeed");
-      const currentWorldSeed = globalThis.blockGarden.state.seed;
+      const currentSeedDisplay = /** @type {HTMLElement | null} */ (
+        shadow.getElementById("currentSeed")
+      );
+      const gThis =
+        /** @type {import('../core/systems/game/state.mjs').BlockGardenGlobalThis} */ (
+          globalThis
+        );
+      const currentWorldSeed = gThis.blockGarden.state.seed;
 
       if (currentSeedDisplay && currentWorldSeed) {
-        seedInput.value = currentWorldSeed;
-        currentSeedDisplay.textContent = currentWorldSeed;
+        seedInput.value = String(currentWorldSeed);
+        currentSeedDisplay.textContent = String(currentWorldSeed);
 
         return;
       }
@@ -65,7 +78,9 @@ export function initEffects(shadow, currentBlock) {
 
       seedInput.value = randomSeed;
 
-      currentSeedDisplay.textContent = randomSeed;
+      if (currentSeedDisplay) {
+        currentSeedDisplay.textContent = randomSeed;
+      }
     }
   });
 }
@@ -79,8 +94,12 @@ export function initEffects(shadow, currentBlock) {
  * @returns {void}
  */
 export function initMaterialBarEffects(shadow, renderCallback) {
-  const gameState = globalThis.blockGarden?.state;
-  const config = globalThis.blockGarden?.config;
+  const gThis =
+    /** @type {import('../core/systems/game/state.mjs').BlockGardenGlobalThis} */ (
+      globalThis
+    );
+  const gameState = gThis.blockGarden?.state;
+  const config = gThis.blockGarden?.config;
 
   if (!gameState || !config) {
     console.error(
@@ -95,7 +114,8 @@ export function initMaterialBarEffects(shadow, renderCallback) {
       shadow,
       gameState.materialBar.get(),
       gameState.activeMaterialBarSlot.get(),
-      config.blocks,
+      gameState.materialsInventory.get(),
+      gameState.seedsInventory.get(),
     );
   });
 }

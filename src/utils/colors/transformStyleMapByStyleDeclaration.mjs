@@ -17,13 +17,10 @@ export function transformStyleMapByStyleDeclaration(
   suffix = "-color",
   keyTransform = (key) => key,
 ) {
-  let CombinedColorMap;
+  /** @type {Record<string, any>} */
+  const result = {};
 
   for (const propName of cssStyleDeclaration) {
-    if (!CombinedColorMap) {
-      CombinedColorMap = {};
-    }
-
     let resolvedPropName = propName.slice(prefix.length);
     resolvedPropName = resolvedPropName.slice(
       0,
@@ -38,9 +35,9 @@ export function transformStyleMapByStyleDeclaration(
         .trim()
         .replace(/^['"]|['"]$/g, "");
 
-      CombinedColorMap[blockKey] = rawValue;
+      result[blockKey] = rawValue;
     }
   }
 
-  return CombinedColorMap;
+  return /** @type {CombinedColorMap} */ (result);
 }

@@ -1,7 +1,13 @@
 import { gameState } from "../../../core/systems/game/state.mjs";
-import { BIOMES } from "../../../world/config/biomes.mjs";
-import { FAST_GROWTH_TIME } from "../../../world/config/index.mjs";
-import { blockNames, blocks } from "../../../world/config/blocks.mjs";
+
+import { BIOMES } from "../../../core/world/config/biomes.mjs";
+import { blockNames, blocks } from "../../../core/world/config/blocks.mjs";
+import { FAST_GROWTH_TIME } from "../../../core/world/config/index.mjs";
+
+/**
+ * @typedef {import('../../../core/world/config/blocks.mjs').BlockDefinition} BlockDefinition
+ * @typedef {import('../../../core/world/chunkManager.mjs').ChunkManager} ChunkManager
+ */
 
 /**
  * Configurable constants for planting.
@@ -21,7 +27,8 @@ export const PLANTING_CONFIG = {
  * Get biome from surface block ID, with cloud fallback
  *
  * @param {number} surfaceId
- * @returns {Object|null}
+ *
+ * @returns {{ name: string, cropBlockIds: number[] }|null}
  */
 export function getBiomeBySurface(surfaceId) {
   // Check standard biomes first
@@ -35,7 +42,12 @@ export function getBiomeBySurface(surfaceId) {
   if (surfaceId === blocks.getIdByName(blockNames.CLOUD)) {
     return {
       name: "Clouds",
-      cropBlockIds: blocks.filter((b) => b.isSeed).map((b) => b.id),
+      cropBlockIds: /** @type {number[]} */ (
+        blocks
+          .filter((b) => b.isSeed)
+          .map((b) => b.id)
+          .filter((id) => id !== undefined)
+      ),
     };
   }
 
@@ -47,20 +59,25 @@ export function getBiomeBySurface(surfaceId) {
  *
  * @param {string} key
  * @param {number[]} allowedSeeds
- * @param {Object} world
+ * @param {ChunkManager} world
+ *
+ * @returns {void}
  */
 export function plantSeedAt(key, allowedSeeds, world) {
   if (allowedSeeds.length === 0) {
     return;
   }
 
-  const seedId = allowedSeeds[Math.floor(Math.random() * allowedSeeds.length)];
+  const blockId = allowedSeeds[Math.floor(Math.random() * allowedSeeds.length)];
+  const block = blocks.getById(blockId);
+  if (!block) {
+    return;
+  }
 
-  const block = blocks.getById(seedId);
+  world.set(key, blockId, true);
 
-  world.set(key, seedId, true);
-
-  gameState.plantStructures[key] = {
+  /** @type {any} */
+  (gameState.plantStructures)[key] = {
     type: block.name,
     blocks: [key],
   };
@@ -89,7 +106,9 @@ export function randomPlantSeeds(shadow) {
     const angle = Math.random() * Math.PI * 2;
     const dist = Math.sqrt(Math.random()) * PLANTING_CONFIG.TOSS_RADIUS;
 
-    if (dist < PLANTING_CONFIG.MIN_DISTANCE_FROM_PLAYER) continue;
+    if (dist < PLANTING_CONFIG.MIN_DISTANCE_FROM_PLAYER) {
+      continue;
+    }
 
     const dx = Math.round(Math.cos(angle) * dist);
     const dz = Math.round(Math.sin(angle) * dist);
@@ -111,10 +130,14 @@ export function randomPlantSeeds(shadow) {
       }
 
       // Quick ban check - skips entire column if we hit water/lava
-      if (PLANTING_CONFIG.BANNED_SURFACES.has(blockId)) break;
+      if (PLANTING_CONFIG.BANNED_SURFACES.has(blockId)) {
+        break;
+      }
 
       const block = blocks.getById(blockId);
-      if (!block || !block.solid) continue;
+      if (!block || !block.solid) {
+        continue;
+      }
 
       // Valid planting surfaces
       const biome = getBiomeBySurface(blockId);

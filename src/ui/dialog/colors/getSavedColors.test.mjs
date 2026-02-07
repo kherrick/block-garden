@@ -46,21 +46,21 @@ describe("getSavedColors", () => {
     );
   });
 
-  test("should return null when no saved colors", async () => {
+  test("should return empty object when no saved colors", async () => {
     localForage.getItem.mockResolvedValue(null);
 
     const result = await getSavedColors("test-key");
 
-    expect(result).toBeNull();
+    expect(result).toEqual({});
     expect(localForage.getItem).toHaveBeenCalledWith("test-key");
   });
 
-  test("should return null when saved colors is not an object", async () => {
+  test("should return empty object when saved colors is not an object", async () => {
     localForage.getItem.mockResolvedValue("not an object");
 
     const result = await getSavedColors("test-key");
 
-    expect(result).toBeNull();
+    expect(result).toEqual({});
   });
 
   test("should handle errors gracefully", async () => {
@@ -68,7 +68,7 @@ describe("getSavedColors", () => {
 
     const result = await getSavedColors("test-key");
 
-    expect(result).toBeNull();
+    expect(result).toEqual({});
     expect(console.error).toHaveBeenCalledWith(
       "Failed to load saved colors:",
       expect.any(Error),

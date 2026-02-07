@@ -53,7 +53,7 @@ export async function storeSharedSave(saveData, fileName) {
       timestamp: Date.now(),
     };
 
-    await new Promise((resolve, reject) => {
+    await new Promise((/** @type {Function} */ resolve, reject) => {
       const putRequest = store.put(sharedSave);
       putRequest.onerror = () => reject(putRequest.error);
       putRequest.onsuccess = () => resolve();
@@ -76,7 +76,7 @@ export async function retrieveSharedSave() {
     const transaction = db.transaction(SHARED_SAVE_STORE_NAME, "readonly");
     const store = transaction.objectStore(SHARED_SAVE_STORE_NAME);
 
-    return await new Promise((resolve, reject) => {
+    return await new Promise((/** @type {Function} */ resolve, reject) => {
       const getRequest = store.get(SHARED_SAVE_KEY);
       getRequest.onerror = () => reject(getRequest.error);
       getRequest.onsuccess = () => resolve(getRequest.result);
@@ -97,7 +97,7 @@ export async function deleteSharedSave() {
     const transaction = db.transaction(SHARED_SAVE_STORE_NAME, "readwrite");
     const store = transaction.objectStore(SHARED_SAVE_STORE_NAME);
 
-    await new Promise((resolve, reject) => {
+    await new Promise((/** @type {Function} */ resolve, reject) => {
       const deleteRequest = store.delete(SHARED_SAVE_KEY);
       deleteRequest.onerror = () => reject(deleteRequest.error);
       deleteRequest.onsuccess = () => resolve();

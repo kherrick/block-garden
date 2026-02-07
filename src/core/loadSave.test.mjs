@@ -19,7 +19,7 @@ class MockSignal {
 }
 
 // Mock the chunk module
-jest.unstable_mockModule("../world/generation/chunk.mjs", () => {
+jest.unstable_mockModule("./world/generation/chunk.mjs", () => {
   const CHUNK_SIZE_X = 16;
   const CHUNK_SIZE_Y = 128;
   const CHUNK_SIZE_Z = 16;
@@ -92,6 +92,28 @@ jest.unstable_mockModule("../world/generation/chunk.mjs", () => {
 // Mock noise initialization
 jest.unstable_mockModule("../utils/noise.mjs", () => ({
   initNoise: jest.fn(),
+}));
+
+// Mock blocks
+jest.unstable_mockModule("./world/config/blocks.mjs", () => ({
+  blocks: {
+    getById: jest.fn((id) => ({ name: `Block${id}`, id })),
+  },
+  blockNames: {},
+  getBlocks: jest.fn(() => []),
+  getBlockById: jest.fn((id) => ({ name: `Block${id}`, id })),
+  getBlockIdByName: jest.fn((name) => 1),
+}));
+
+// Mock state module's toInventoryKey function
+jest.unstable_mockModule("../core/systems/game/state.mjs", () => ({
+  toInventoryKey: jest.fn((name) => name.toUpperCase().replace(/ /g, "_")),
+  addMaterial: jest.fn(),
+  addSeed: jest.fn(),
+  removeSeed: jest.fn(),
+  removeMaterial: jest.fn(),
+  getMaterialCount: jest.fn(),
+  getSeedCount: jest.fn(),
 }));
 
 // Mock globalThis utilities

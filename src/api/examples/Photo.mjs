@@ -1,4 +1,4 @@
-import { blockNames } from "../../world/config/blocks.mjs";
+import { blockNames } from "../../core/world/config/blocks.mjs";
 
 import { applyColorsToShadowHost } from "../../utils/colors/applyColorsToShadowHost.mjs";
 import { cssColorToRGB } from "../../utils/colors/cssColorToRGB.mjs";

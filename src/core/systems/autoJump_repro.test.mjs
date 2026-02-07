@@ -5,7 +5,7 @@ jest.unstable_mockModule("../../utils/isSolid.mjs", () => ({
   isSolid: jest.fn(),
 }));
 
-jest.unstable_mockModule("../../world/config/index.mjs", () => ({
+jest.unstable_mockModule("../world/config/index.mjs", () => ({
   gameConfig: {
     useAutoJump: { get: () => true },
     worldRadius: { get: () => 10000 },

@@ -37,12 +37,15 @@ export class PrivacyDialog {
       const parsed = parser.parseFromString(documentText, "text/html");
       const content = parsed.querySelector(`.${dialogClass}`);
 
-      dialog.innerHTML = content.innerHTML;
+      if (content) {
+        dialog.innerHTML = content.innerHTML;
+      }
 
       this.shadow.append(dialog);
-      this.shadow
-        .querySelector(`.${part}-content_close-btn`)
-        .removeAttribute("hidden");
+      const closeBtn = this.shadow.querySelector(`.${part}-content_close-btn`);
+      if (closeBtn) {
+        closeBtn.removeAttribute("hidden");
+      }
     }
 
     this.dialog = dialog;
@@ -64,18 +67,30 @@ export class PrivacyDialog {
 
   /** @returns {void} */
   initEventListeners() {
+    if (!this.dialog) {
+      return;
+    }
+
     const closeBtn = this.dialog.querySelector(".privacy-content_close-btn");
 
-    closeBtn.addEventListener("click", this.close);
+    if (closeBtn) {
+      closeBtn.addEventListener("click", this.close);
+    }
 
     this.dialog.addEventListener("click", this.handleDialogClick);
   }
 
   /** @returns {void} */
   removeEventListeners() {
+    if (!this.dialog) {
+      return;
+    }
+
     const closeBtn = this.dialog.querySelector(".privacy-content_close-btn");
 
-    closeBtn.removeEventListener("click", this.close);
+    if (closeBtn) {
+      closeBtn.removeEventListener("click", this.close);
+    }
 
     this.dialog.removeEventListener("click", this.handleDialogClick);
   }

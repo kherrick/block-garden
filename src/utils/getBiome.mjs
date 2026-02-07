@@ -5,7 +5,7 @@
  */
 
 import { biomeNoise } from "./noise.mjs";
-import { BIOMES } from "../world/config/biomes.mjs";
+import { BIOMES } from "../core/world/config/biomes.mjs";
 
 /**
  * Get the biome for a given world position.
@@ -20,7 +20,7 @@ import { BIOMES } from "../world/config/biomes.mjs";
  * @param {number} z - World Z coordinate
  * @param {number} seed - World seed
  *
- * @returns {import('../world/config/biomes.mjs').Biome} Biome definition
+ * @returns {import('../core/world/config/biomes.mjs').Biome} Biome definition
  */
 export function getBiome(x, z, seed) {
   // Use different seed offsets for temperature and humidity

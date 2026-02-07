@@ -1,6 +1,8 @@
 import { characters as Characters } from "./misc/characters.mjs";
 import { sleep } from "./misc/sleep.mjs";
 
+import { blockNames } from "../core/world/config/blocks.mjs";
+
 import { cssColorToRGB } from "../utils/colors/cssColorToRGB.mjs";
 import { getShadowRoot } from "../ui/utils/getShadowRoot.mjs";
 import { nearestColor } from "../utils/colors/nearestColor.mjs";
@@ -10,23 +12,28 @@ import { transformStyleMapByStyleDeclaration } from "../utils/colors/transformSt
 import { createKeyEvent } from "./player/createKeyEvent.mjs";
 import { pressKey } from "./player/pressKey.mjs";
 
-import { blockNames } from "../world/config/blocks.mjs";
-
 import { resizeCanvas } from "./ui/resizeCanvas.mjs";
 
 /**
- * @typedef {import('../world/config/blocks.mjs').BlockDefinition} BlockDefinition
+ * @typedef {import('../core/systems/game/state.mjs').BlockGardenGlobalThis} BlockGardenGlobalThis
+ * @typedef {import('../core/world/config/blocks.mjs').BlockNames} BlockNames
  */
 
+/**
+ * @description The BlockGarden API provides a set of methods for interacting with the BlockGarden game.
+ */
 export class BlockGarden {
   /**
    * Initializes references to global objects and configuration.
+   *
    * Sets up shortcuts to globalThis, document, config, state, and blocks.
    */
   constructor() {
-    this.gThis = globalThis;
-    this.doc = this.gThis.document;
+    this.gThis =
+      /** @type {BlockGardenGlobalThis} */
+      (globalThis);
 
+    this.doc = this.gThis.document;
     this.config = this.gThis.blockGarden.config;
     this.state = this.gThis.blockGarden.state;
     this.computed = this.gThis.blockGarden.computed;
@@ -40,7 +47,7 @@ export class BlockGarden {
   /**
    * Getter that returns the shadow root of the "block-garden" element within the document.
    *
-   * @returns {ShadowRoot} The shadow root object for the block-garden element.
+   * @returns {ShadowRoot|null} The shadow root object for the block-garden element.
    */
   get shadow() {
     return getShadowRoot(this.doc, "block-garden");
@@ -70,23 +77,28 @@ export class BlockGarden {
    * @param {Uint8ClampedArray|number[]} pixels - RGBA pixel data.
    * @param {number} width - Width of the image data.
    * @param {number} height - Height of the image data.
-   * @param {Set} [bannedBlocks=new Set()] - Set of blocks to exclude.
+   * @param {Set<string>} [bannedBlocks=new Set()] - Set of blocks to exclude.
    *
    * @returns {Object.<string, string>} Mapping of CSS props to color hexes.
    */
   getIdealColorMapForPixels(pixels, width, height, bannedBlocks = new Set()) {
+    if (!this.shadow) {
+      return {};
+    }
+
     const blockColorMap = transformStyleMapByStyleDeclaration(
       this.gThis.getComputedStyle(this.shadow.host),
       "--bg-block-",
     );
 
-    const paletteRGB = [];
+    /** @type {Object.<string, string>} */
     const rgbToBlockName = {};
     const blockNamesList = [];
+    const paletteRGB = [];
 
     for (const [rawBlockName, cssColor] of Object.entries(blockColorMap)) {
       const blockName = this.normalizeBlockName(rawBlockName);
-      if (bannedBlocks.has(blockName)) {
+      if (!blockName || bannedBlocks.has(blockName)) {
         continue;
       }
 
@@ -100,7 +112,9 @@ export class BlockGarden {
       blockNamesList.push(blockName);
     }
 
+    /** @type {Object.<string, number[]>} */
     const blockColorAccum = {};
+    /** @type {Object.<string, number>} */
     const blockColorCount = {};
 
     for (const blockName of blockNamesList) {
@@ -151,19 +165,21 @@ export class BlockGarden {
    *
    * @param {string} rawBlockName
    *
-   * @returns {string}
+   * @returns {string|null}
    */
   getBlockNameFromCss(rawBlockName) {
     const cssKey = rawBlockName.replace("--bg-color-", "").toLowerCase();
 
     // Direct match
     const directKey = cssKey.toUpperCase().replace(/-/g, "_");
-    if (blockNames[directKey]) {
+    /** @type {BlockNames} */
+    const blockNamesMap = blockNames;
+    if (blockNamesMap[directKey]) {
       return directKey;
     }
 
     // Fuzzy match against blockNames
-    for (const [key] of Object.entries(blockNames)) {
+    for (const [key] of Object.entries(blockNamesMap)) {
       if (key.toLowerCase().replace(/_/g, "-") === cssKey) {
         return key;
       }
@@ -172,6 +188,14 @@ export class BlockGarden {
     return null;
   }
 
+  /**
+   * Get the ID of a block by its name
+   *
+   * @param {string} name - Block name to look up
+   * @param {any} [blocks] - Blocks collection
+   *
+   * @returns {number} Block ID or -1 if not found
+   */
   getBlockIdByName(name, blocks = this.config.blocks) {
     if (blocks && blocks.getIdByName) {
       return blocks.getIdByName(name);
@@ -188,9 +212,16 @@ export class BlockGarden {
   /**
    * Helper to normalize a raw block name from CSS (e.g. "dirt" -> "DIRT")
    *
+   * @param {string|any} rawBlockName - The block name to normalize
+   *
+   * @returns {string|null} The normalized block name
+   */
+  /**
+   * Normalizes a block name from CSS format to block constant format.
+   *
    * @param {string} rawBlockName
    *
-   * @returns {string}
+   * @returns {string|null}
    */
   normalizeBlockName(rawBlockName) {
     if (typeof rawBlockName !== "string") {
@@ -203,9 +234,9 @@ export class BlockGarden {
   /**
    * Check if an object is a map of strings to strings
    *
-   * @param {any} obj
+   * @param {any} obj - The object to check
    *
-   * @returns {boolean}
+   * @returns {boolean} True if obj is a string map
    */
   isStringMap(obj) {
     if (typeof obj !== "object" || obj === null) {
@@ -217,6 +248,13 @@ export class BlockGarden {
 
   /**
    * Rotate pixels by an angle in degrees
+   *
+   * @param {Uint8ClampedArray|number[]} pixels - Pixel data
+   * @param {number} width - Width of pixel data
+   * @param {number} height - Height of pixel data
+   * @param {number} [angleDeg=0] - Rotation angle in degrees
+   *
+   * @returns {Object} Object with rotated pixels, width, and height
    */
   rotatePixels(pixels, width, height, angleDeg = 0) {
     if (angleDeg === 0) {
@@ -230,19 +268,30 @@ export class BlockGarden {
     const newHeight = Math.floor(height * cosRad + width * sinRad);
 
     const canvas = this.doc.createElement("canvas");
+    /** @type {CanvasRenderingContext2D|null} */
     const ctx = canvas.getContext("2d");
     canvas.width = width;
     canvas.height = height;
 
+    if (!ctx) {
+      throw new Error("Failed to get canvas context");
+    }
+
     const imgData = ctx.createImageData(width, height);
     imgData.data.set(pixels);
+
     ctx.putImageData(imgData, 0, 0);
 
     const rotatedCanvas = this.doc.createElement("canvas");
     rotatedCanvas.width = newWidth;
     rotatedCanvas.height = newHeight;
 
+    /** @type {CanvasRenderingContext2D|null} */
     const rotatedCtx = rotatedCanvas.getContext("2d");
+    if (!rotatedCtx) {
+      throw new Error("Failed to get rotated canvas context");
+    }
+
     rotatedCtx.save();
     rotatedCtx.translate(newWidth / 2, newHeight / 2);
     rotatedCtx.rotate(rad);
@@ -294,6 +343,7 @@ export class BlockGarden {
    *
    * @param {{x:number, y:number, z:number, block:*}[]} updates - Array of block update descriptors.
    * @param {Object} [options] - Batch options
+   * @param {boolean} [options.skipLighting] - Whether to skip lighting updates
    */
   batchSetBlocks(updates, { skipLighting = false } = {}) {
     const world = this.getWorld();
@@ -326,6 +376,13 @@ export class BlockGarden {
     const originalSetBlock = world.setBlock.bind(world);
     const airId = this.getBlockIdByName("Air");
 
+    /**
+     * @param {number} x
+     * @param {number} y
+     * @param {number} z
+     * @param {any} blockType
+     * @param {boolean} [updateChunk]
+     */
     world.setBlock = (x, y, z, blockType, updateChunk) => {
       const result = originalSetBlock(x, y, z, blockType, updateChunk);
 
@@ -561,7 +618,9 @@ export class BlockGarden {
    * @returns {Promise<void>}
    */
   async holdKey(keyCode) {
-    this.shadow.dispatchEvent(createKeyEvent("keydown", keyCode));
+    if (this.shadow) {
+      this.shadow.dispatchEvent(createKeyEvent("keydown", keyCode));
+    }
   }
 
   /**
@@ -572,11 +631,16 @@ export class BlockGarden {
    * @returns {Promise<void>}
    */
   async releaseKey(keyCode) {
-    this.shadow.dispatchEvent(createKeyEvent("keyup", keyCode));
+    if (this.shadow) {
+      this.shadow.dispatchEvent(createKeyEvent("keyup", keyCode));
+    }
   }
 
   /**
    * Release all provided keys.
+   *
+   * @param {number[]} keys - Array of key codes to release
+   * @param {number} [delay=50] - Delay after releasing all keys
    *
    * @returns {Promise<void>}
    */
@@ -594,9 +658,14 @@ export class BlockGarden {
    * @param {number} keyCode - The keyCode of the key to press repeatedly.
    * @param {number} times - Number of times to press the key.
    * @param {number} [delay=100] - Delay in milliseconds between presses.
+   *
    * @returns {Promise<void>}
    */
   async pressKeyRepeat(keyCode, times, delay = 100) {
+    if (!this.shadow) {
+      return;
+    }
+
     for (let i = 0; i < times; i++) {
       await pressKey(this.shadow, keyCode, delay / 2);
       await sleep(delay);
@@ -613,6 +682,10 @@ export class BlockGarden {
    * @returns {Promise<void>}
    */
   async pressKeySequence(keyCodes, delay = 100, cb = undefined) {
+    if (!this.shadow) {
+      return;
+    }
+
     for (const keyCode of keyCodes) {
       if (cb) {
         cb(keyCode);
@@ -630,7 +703,15 @@ export class BlockGarden {
    * @returns {void}
    */
   showFullScreen() {
+    if (!this.shadow) {
+      return;
+    }
+
     const resolutionSelect = this.shadow.getElementById("resolutionSelect");
+    if (!resolutionSelect) {
+      return;
+    }
+
     const fullscreenOption = resolutionSelect.querySelector(
       '[value="fullscreen"]',
     );
@@ -649,17 +730,32 @@ export class BlockGarden {
    * @returns {void}
    */
   setFullscreen() {
+    if (!this.shadow) {
+      return;
+    }
+
     this.showFullScreen();
     this.config.currentResolution.set("fullscreen");
 
     resizeCanvas(this.shadow, this.config.currentResolution);
   }
 
+  /**
+   * Extract a block key from a CSS property name
+   *
+   * @param {string} prop - CSS property name
+   *
+   * @returns {string|null} Block key or null
+   */
   extractBlockKey(prop) {
     const match = prop.match(/--bg-(block|color)-(.+?)(?:-color)?$/i);
     if (match) {
       const candidate = this.normalizeBlockName(match[2]);
-      return blockNames[candidate] ? candidate : null;
+      if (!candidate) return null;
+
+      /** @type {BlockNames} */
+      const blockNamesMap = blockNames;
+      return blockNamesMap[candidate] ? candidate : null;
     }
 
     return null;

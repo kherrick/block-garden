@@ -3,7 +3,7 @@
  */
 import { jest } from "@jest/globals";
 
-jest.unstable_mockModule("../world/config/blocks.mjs", () => ({
+jest.unstable_mockModule("../core/world/config/blocks.mjs", () => ({
   getBlockById: jest.fn().mockImplementation((id) => {
     const blocks = {
       0: { name: "Air", solid: false },

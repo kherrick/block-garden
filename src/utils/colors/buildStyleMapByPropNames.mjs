@@ -10,6 +10,7 @@
  * @returns {ColorMap | BlockColorMap} An object mapping the suffix of each property name to its CSS value.
  */
 export function buildStyleMapByPropNames(cssStyleDeclaration, propNames) {
+  /** @type {Record<string, string> | undefined} */
   let styleMap;
 
   for (const propName of propNames) {
@@ -25,5 +26,5 @@ export function buildStyleMapByPropNames(cssStyleDeclaration, propNames) {
       cssStyleDeclaration.getPropertyValue(resolvedPropName);
   }
 
-  return styleMap;
+  return /** @type {ColorMap | BlockColorMap} */ (styleMap);
 }

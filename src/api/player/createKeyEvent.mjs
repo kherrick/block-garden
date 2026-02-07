@@ -6,8 +6,8 @@ import { codeMap as CodeMap, keyMap as KeyMap } from "../misc/keys.mjs";
  *
  * @param {string} type - The event type ('keydown', 'keyup', etc.).
  * @param {number} keyCode - The numeric key code for the event.
- * @param {Object} [codeMap=CodeMap] - Map from keyCode to code string.
- * @param {Object} [keyMap=KeyMap] - Map from keyCode to key string.
+ * @param {Record<number, string>} [codeMap=CodeMap] - Map from keyCode to code string.
+ * @param {Record<number, string>} [keyMap=KeyMap] - Map from keyCode to key string.
  *
  * @returns {KeyboardEvent} The constructed KeyboardEvent object.
  */

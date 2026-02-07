@@ -1,28 +1,29 @@
+/** @typedef {import('../../../core/systems/game/state.mjs').BlockGardenGlobalThis} BlockGardenGlobalThis */
 /**
  * Initializes canvas event listeners.
  *
  * @param {ShadowRoot} shadow
  * @param {HTMLCanvasElement} cnvs
  * @param {Object} blocks
- * @param {Signal.State} curBlock
+ * @param {import('signal-polyfill').Signal.State<number>} curBlock
  *
  * @returns {void}
  */
-/** @typedef {import('signal-polyfill').Signal.State} Signal.State */
 export function initCanvasEventListeners(shadow, cnvs, blocks, curBlock) {
   cnvs.addEventListener("click", () => {
-    // @ts-ignore
-    const gameConfig = globalThis.blockGarden.config;
+    const gThis = /** @type {BlockGardenGlobalThis} */ (globalThis);
+    const gameConfig = gThis.blockGarden.config;
     if (gameConfig.useSplitControls.get()) {
       cnvs?.requestPointerLock();
     }
   });
 
-  globalThis.addEventListener(
+  const gThis = /** @type {BlockGardenGlobalThis} */ (globalThis);
+  gThis.addEventListener(
     "contextmenu",
     (e) => {
       // If we just activated a Link or Text block, prevent the context menu
-      const gameState = globalThis.blockGarden.state;
+      const gameState = gThis.blockGarden.state;
       if (gameState.preventNextContextMenu) {
         e.preventDefault();
 

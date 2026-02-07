@@ -1,18 +1,19 @@
 import isNumber from "lodash.isnumber";
 
+import { cancelGameLoop } from "./systems/game/loop.mjs";
+import { toInventoryKey } from "./systems/game/state.mjs";
+
+import { blocks, getBlocks } from "./world/config/blocks.mjs";
+import { propagateLight } from "./world/lighting/lightSystem.mjs";
+import { worldToChunk } from "./world/meshing/chunk.mjs";
+
 import { base64toBlob } from "../utils/conversion.mjs";
 import { extractAttachments } from "../utils/extractAttachments.mjs";
 import { extractJsonFromPng } from "../utils/canvasToPngWithState.mjs";
 import { initNoise } from "../utils/noise.mjs";
-import { worldToChunk } from "../world/meshing/chunk.mjs";
-import { propagateLight } from "../world/lighting/lightSystem.mjs";
 
 /**
- * @typedef {import('signal-polyfill').Signal} Signal
- */
-
-/**
- * @typedef {import('../world/config/blocks.mjs').BlockArray} BlockArray
+ * @typedef {import('./systems/game/state.mjs').BlockGardenGlobalThis} BlockGardenGlobalThis
  */
 
 /**
@@ -21,9 +22,9 @@ import { propagateLight } from "../world/lighting/lightSystem.mjs";
  * Reconstructs complex objects like world maps and fog maps from serialized data.
  * Updates all Signal values to restore previous game state.
  *
- * @param {typeof globalThis} gThis - Global this or window object with blockGarden property
+ * @param {BlockGardenGlobalThis} gThis - Global this or window object with blockGarden property
  * @param {ShadowRoot} shadow - Shadow root for canvas resizing
- * @param {Object} state - Save state object created by createSaveState
+ * @param {any} state - Save state object created by createSaveState
  *
  * @returns {Promise<boolean>} - true if save state was successfully loaded, false if invalid
  */
@@ -131,12 +132,13 @@ export async function loadSaveState(gThis, shadow, state) {
         return;
       }
 
-      if (options.min !== undefined) {
-        result = Math.max(options.min, result);
+      const opts = /** @type {any} */ (options);
+      if (opts.min !== undefined) {
+        result = Math.max(opts.min, result);
       }
 
-      if (options.max !== undefined) {
-        result = Math.min(options.max, result);
+      if (opts.max !== undefined) {
+        result = Math.min(opts.max, result);
       }
     } else if (type === "boolean") {
       result = Boolean(value);
@@ -149,11 +151,11 @@ export async function loadSaveState(gThis, shadow, state) {
     }
 
     // Apply to Signal or raw property
-    const target = obj[key];
+    const target = /** @type {any} */ (obj)[key];
     if (target && typeof target.set === "function") {
       target.set(result);
     } else {
-      obj[key] = result;
+      /** @type {any} */ (obj)[key] = result;
     }
   };
 
@@ -162,6 +164,7 @@ export async function loadSaveState(gThis, shadow, state) {
     min: 1,
     max: Number.MAX_SAFE_INTEGER,
   });
+
   applyValue(gameState, "version", config.version, "string");
 
   // Restore granular generation settings to gameConfig Signals
@@ -223,16 +226,40 @@ export async function loadSaveState(gThis, shadow, state) {
   applyValue(gameState, "curBlock", stateData.curBlock, "number");
 
   // Restore UI and inventory state
+  if (stateData.materialsInventory) {
+    if (Array.isArray(stateData.materialsInventory)) {
+      console.log(
+        "[Load] Migrating inventory array format to count-based object",
+      );
+
+      const migratedInventory = /** @type {{[key: string]: number}} */ ({});
+      stateData.materialsInventory.forEach((/** @type {number} */ blockId) => {
+        const block = blocks.getById(blockId);
+        if (block) {
+          const name = toInventoryKey(block.name);
+
+          migratedInventory[name] = (migratedInventory[name] || 0) + 1;
+        }
+      });
+
+      gameState.materialsInventory.set(migratedInventory);
+    } else if (typeof stateData.materialsInventory === "object") {
+      applyValue(
+        gameState,
+        "materialsInventory",
+        stateData.materialsInventory,
+        "object",
+      );
+    }
+  }
+
+  // Restore seeds inventory (new format only)
   if (
-    stateData.materialsInventory &&
-    Array.isArray(stateData.materialsInventory)
+    stateData.seedsInventory &&
+    typeof stateData.seedsInventory === "object" &&
+    !Array.isArray(stateData.seedsInventory)
   ) {
-    applyValue(
-      gameState,
-      "materialsInventory",
-      stateData.materialsInventory,
-      "object",
-    );
+    applyValue(gameState, "seedsInventory", stateData.seedsInventory, "object");
   }
 
   if (stateData.materialBar && Array.isArray(stateData.materialBar)) {
@@ -271,11 +298,7 @@ export async function loadSaveState(gThis, shadow, state) {
   });
 
   // Cancel any running game loop before reset (if available)
-  if (typeof gThis.cancelGameLoop === "function") {
-    gThis.cancelGameLoop();
-  } else if (typeof gThis.globalThis?.cancelGameLoop === "function") {
-    gThis.globalThis.cancelGameLoop();
-  }
+  cancelGameLoop();
 
   // Clear existing world
   world.clear();
@@ -323,6 +346,7 @@ export async function loadSaveState(gThis, shadow, state) {
         const { chunkX, chunkZ } = worldToChunk(x, z);
 
         const chunkKey = `${chunkX},${chunkZ}`;
+
         if (!world.storedPlantStates.has(chunkKey)) {
           world.storedPlantStates.set(chunkKey, {
             structures: {},
@@ -330,13 +354,16 @@ export async function loadSaveState(gThis, shadow, state) {
           });
         }
 
+        /** @type {Record<string, any> | undefined} */
         const stored = world.storedPlantStates.get(chunkKey);
-        if (structures[key]) {
-          stored.structures[key] = structures[key];
-        }
+        if (stored) {
+          if (structures[key]) {
+            stored.structures[key] = structures[key];
+          }
 
-        if (timers[key]) {
-          stored.timers[key] = timers[key];
+          if (timers[key]) {
+            stored.timers[key] = timers[key];
+          }
         }
       }
     });
@@ -410,7 +437,7 @@ export async function loadSaveState(gThis, shadow, state) {
     for (const chunk of gameState.world.chunks.values()) {
       propagateLight(
         chunk,
-        /** @type {BlockArray} */ (gameState.world.blockTypes),
+        getBlocks(gameState.world.blockTypes),
         gameState.world,
       );
 

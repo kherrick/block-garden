@@ -1,17 +1,26 @@
 import { ray } from "./ray.mjs";
 
+/** @typedef {import('./ray.mjs').Rotation} Rotation */
+
+/**
+ * @typedef {Object} RaycastResult
+ * @property {import('./ray.mjs').PointWithFace|null} hit
+ * @property {number} yaw
+ * @property {number} pitch
+ */
+
 /**
  * Converts canvas coordinates to a raycast result
  *
  * @param {HTMLCanvasElement} canvas - The game canvas
  * @param {number} clientX - Mouse/touch X coordinate relative to viewport
  * @param {number} clientY - Mouse/touch Y coordinate relative to viewport
- * @param {Object} world - The world/chunk manager
- * @param {Object} cameraPos - Camera position {x, y, z}
- * @param {Object} cameraRot - Camera rotation {yaw, pitch}
+ * @param {import('../core/world/chunkManager.mjs').ChunkManager} world - The world/chunk manager
+ * @param {import('./ray.mjs').Coords} cameraPos - Camera position {x, y, z}
+ * @param {Rotation} cameraRot - Camera rotation {yaw, pitch}
  * @param {number} fov - Field of view in radians (default Math.PI/3)
  *
- * @returns {Object} Ray result with hit information
+ * @returns {RaycastResult} Ray result with hit information
  */
 export function raycastFromCanvasCoords(
   canvas,

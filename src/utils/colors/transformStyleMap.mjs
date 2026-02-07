@@ -17,13 +17,10 @@ export function transformStyleMap(
   suffix = "",
   keyTransform = (key) => key,
 ) {
-  let CombinedColorMap;
+  /** @type {Record<string, any>} */
+  const result = {};
 
   for (const [key, value] of Object.entries(styleMap)) {
-    if (!CombinedColorMap) {
-      CombinedColorMap = {};
-    }
-
     if (!key.startsWith(prefix)) {
       continue;
     }
@@ -35,8 +32,8 @@ export function transformStyleMap(
     );
 
     const blockKey = keyTransform(resolvedBlockKey);
-    CombinedColorMap[blockKey] = value.trim().replace(/^['"]|['"]$/g, "");
+    result[blockKey] = value.trim().replace(/^['"]|['"]$/g, "");
   }
 
-  return CombinedColorMap;
+  return /** @type {CombinedColorMap} */ (result);
 }

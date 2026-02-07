@@ -1,4 +1,8 @@
-// CRC32 helper for PNG chunks
+/**
+ * CRC32 helper for PNG chunks
+ * @param {Uint8Array} buf
+ * @returns {number}
+ */
 function crc32(buf) {
   let c = -1;
 
@@ -12,7 +16,12 @@ function crc32(buf) {
   return (c ^ -1) >>> 0;
 }
 
-// Build a PNG chunk: length + type + data + crc
+/**
+ * Build a PNG chunk: length + type + data + crc
+ * @param {string} typeStr
+ * @param {Uint8Array} dataBytes
+ * @returns {Uint8Array}
+ */
 function makeChunk(typeStr, dataBytes) {
   const type = new TextEncoder().encode(typeStr); // 4 bytes
   const length = dataBytes.length;
@@ -34,9 +43,15 @@ function makeChunk(typeStr, dataBytes) {
   return chunk;
 }
 
-// Embed JSON string as a PNG tEXt chunk with keyword "gamestate"
+/**
+ * Embed JSON string as a PNG tEXt chunk with keyword "gamestate"
+ * @param {Uint8Array} originalPngUint8
+ * @param {string} jsonString
+ * @returns {Uint8Array}
+ */
 function embedJsonInPng(originalPngUint8, jsonString) {
   const signature = originalPngUint8.slice(0, 8);
+  /** @type {Array<{type: string, data: Uint8Array}>} */
   const chunks = [];
   let offset = 8;
 
@@ -48,6 +63,7 @@ function embedJsonInPng(originalPngUint8, jsonString) {
     );
 
     const length = view.getUint32(0);
+    /** @type {string} */
     const type = String.fromCharCode(
       originalPngUint8[offset + 4],
       originalPngUint8[offset + 5],
@@ -71,6 +87,7 @@ function embedJsonInPng(originalPngUint8, jsonString) {
   const textChunk = makeChunk("tEXt", textBytes);
 
   // Reassemble: signature + IHDR + (existing chunks until before IEND) + tEXt + IEND
+  /** @type {Uint8Array[]} */
   const outParts = [signature];
 
   // Always keep IHDR first
@@ -100,6 +117,12 @@ function embedJsonInPng(originalPngUint8, jsonString) {
   return out;
 }
 
+/**
+ * @param {HTMLCanvasElement} canvas
+ * @param {any} gameStateObj
+ * @param {number} [size=400]
+ * @returns {Promise<Blob>}
+ */
 export async function canvasToPngWithState(canvas, gameStateObj, size = 400) {
   const jsonString = JSON.stringify(gameStateObj);
 
@@ -109,17 +132,25 @@ export async function canvasToPngWithState(canvas, gameStateObj, size = 400) {
   outCanvas.height = size;
 
   // Create 2D context with explicit color space management
+  /** @type {CanvasRenderingContext2D | null} */
   const outCtx = outCanvas.getContext("2d", {
     colorSpace: "srgb",
     willReadFrequently: true,
   });
 
+  if (!outCtx) {
+    throw new Error("Failed to get 2D context for output canvas");
+  }
+
   // Detect source canvas color space (if supported)
+  /** @type {CanvasRenderingContext2D | null} */
   const srcCtx = canvas.getContext("2d");
+  /** @type {string} */
   let srcColorSpace = "srgb"; // Default fallback
 
-  if (srcCtx && srcCtx.getContextAttributes) {
-    const attrs = srcCtx.getContextAttributes();
+  if (srcCtx && /** @type {any} */ (srcCtx).getContextAttributes) {
+    /** @type {any} */
+    const attrs = /** @type {any} */ (srcCtx).getContextAttributes();
     // Check if color space management is supported
     if (attrs.colorSpace) {
       srcColorSpace = attrs.colorSpace;
@@ -160,12 +191,20 @@ export async function canvasToPngWithState(canvas, gameStateObj, size = 400) {
   // Embed JSON into PNG
   const modifiedPngBytes = embedJsonInPng(pngBytes, jsonString);
 
-  return new Blob([modifiedPngBytes], { type: "image/png" });
+  return new Blob([/** @type {any} */ (modifiedPngBytes)], {
+    type: "image/png",
+  });
 }
 
+/**
+ * @param {HTMLCanvasElement} canvas
+ * @param {any} gameStateObj
+ * @returns {Promise<void>}
+ */
 export async function downloadCanvasWithState(canvas, gameStateObj) {
   const blob = await canvasToPngWithState(canvas, gameStateObj);
   const url = URL.createObjectURL(blob);
+  /** @type {HTMLAnchorElement} */
   const a = document.createElement("a");
 
   a.href = url;
@@ -175,6 +214,10 @@ export async function downloadCanvasWithState(canvas, gameStateObj) {
   URL.revokeObjectURL(url);
 }
 
+/**
+ * @param {Blob | File} fileOrBlob
+ * @returns {Promise<any>}
+ */
 export async function extractJsonFromPng(fileOrBlob) {
   const arrayBuffer = await fileOrBlob.arrayBuffer();
   const bytes = new Uint8Array(arrayBuffer);
@@ -184,6 +227,7 @@ export async function extractJsonFromPng(fileOrBlob) {
   while (offset < bytes.length) {
     const view = new DataView(bytes.buffer, bytes.byteOffset + offset);
     const length = view.getUint32(0);
+    /** @type {string} */
     const type = String.fromCharCode(
       bytes[offset + 4],
       bytes[offset + 5],

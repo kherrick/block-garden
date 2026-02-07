@@ -1,6 +1,7 @@
 import { gameState } from "../../core/systems/game/state.mjs";
 
 /** @typedef {import('../../core/systems/game/init.mjs').CustomShadowHost} CustomShadowHost */
+/** @typedef {import('../../core/systems/game/state.mjs').GameState} GameState */
 
 /**
  * Touch controls
@@ -18,12 +19,16 @@ export function initTouchControls(shadow) {
 
   touchButtons.forEach((btn) => {
     const key = btn.getAttribute("data-key");
+    if (!key) return;
 
     let isPressed = false;
+    /** @type {number | null} */
     let intervalId = null;
 
     function executeKeyAction() {
-      host.touchKeys[key] = true;
+      if (key) {
+        host.touchKeys[/** @type {string} */ (key)] = true;
+      }
 
       if (btn instanceof HTMLButtonElement) {
         btn.style.background = "var(--bg-color-gray-alpha-30)";
@@ -56,9 +61,12 @@ export function initTouchControls(shadow) {
 
       gameState.uiButtonActive = false;
 
-      host.touchKeys[key] = false;
+      if (key) {
+        host.touchKeys[/** @type {string} */ (key)] = false;
+      }
 
       if (btn instanceof HTMLButtonElement) {
+        btn.style.background = "var(--bg-color-gray-alpha-33)"; // Restore to block default or theme variable
         btn.style.background = "var(--bg-ui-touch-btn-background-color)";
       }
 
@@ -74,7 +82,8 @@ export function initTouchControls(shadow) {
       e.preventDefault();
       e.stopPropagation();
 
-      shadow.getElementById("canvas").focus();
+      const canvas = shadow.getElementById("canvas");
+      if (canvas) canvas.focus();
 
       startHeldAction();
     });
@@ -98,7 +107,8 @@ export function initTouchControls(shadow) {
       e.preventDefault();
       e.stopPropagation();
 
-      shadow.getElementById("canvas").focus();
+      const canvas = shadow.getElementById("canvas");
+      if (canvas) canvas.focus();
 
       startHeldAction();
     });

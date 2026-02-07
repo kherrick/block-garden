@@ -4,12 +4,14 @@ import { showToast } from "../../api/ui/toast.mjs";
 
 import { loadSaveState } from "../../core/loadSave.mjs";
 
+/** @typedef {import('../../api/BlockGarden.mjs').BlockGardenGlobalThis} BlockGardenGlobalThis */
+
 /**
  * Create and manage the URL loading dialog
  */
 export class UrlDialog {
   /**
-   * @param {typeof globalThis} globalThis - The global context.
+   * @param {BlockGardenGlobalThis} globalThis - The global context.
    * @param {Document} doc - The document associated with the app.
    * @param {ShadowRoot} shadow - The shadow root whose host's computed styles will be inspected.
    */
@@ -17,6 +19,7 @@ export class UrlDialog {
     this.gThis = globalThis;
     this.doc = doc;
     this.shadow = shadow;
+    /** @type {HTMLDialogElement | null} */
     this.dialog = null;
 
     this.close = this.close.bind(this);
@@ -119,7 +122,7 @@ export class UrlDialog {
     this.dialog = dialog;
     const gamePath =
       "https://kherrick.github.io/block-garden/assets/game-saves/";
-    const games = {
+    const games = /** @type {Record<number, any>} */ ({
       1: {
         file: "Flowers.pdf",
       },
@@ -132,73 +135,101 @@ export class UrlDialog {
       4: {
         file: "The-Garden.pdf",
       },
-    };
-    const closeBtn = dialog.querySelector("#closeUrlDialogButton");
-    closeBtn.addEventListener("click", this.close);
+    });
+    const closeBtn = /** @type {HTMLElement | null} */ (
+      dialog.querySelector("#closeUrlDialogButton")
+    );
+    if (closeBtn) closeBtn.addEventListener("click", this.close);
 
-    function setGame(index) {
-      const urlInput = /** @type {HTMLInputElement} */ (
+    function setGame(/** @type {number} */ index) {
+      const urlInput = /** @type {HTMLInputElement | null} */ (
         dialog.querySelector("#saveUrlInput")
       );
 
-      urlInput.value = `${gamePath}${games[index].file}`;
+      if (urlInput) {
+        urlInput.value = `${gamePath}${games[index].file}`;
+      }
     }
 
-    const game1Btn = dialog.querySelector("#exampleGame1");
-    game1Btn.addEventListener("click", () => setGame(1));
-    game1Btn.addEventListener("keydown", (e) => {
-      if (e instanceof KeyboardEvent && e.key.toLowerCase() === " ") {
-        setGame(1);
-      }
-    });
+    const game1Btn = /** @type {HTMLElement | null} */ (
+      dialog.querySelector("#exampleGame1")
+    );
+    if (game1Btn) game1Btn.addEventListener("click", () => setGame(1));
+    if (game1Btn)
+      game1Btn.addEventListener("keydown", (e) => {
+        if (e instanceof KeyboardEvent && e.key.toLowerCase() === " ") {
+          setGame(1);
+        }
+      });
 
-    const game2Btn = dialog.querySelector("#exampleGame2");
-    game2Btn.addEventListener("click", () => setGame(2));
-    game2Btn.addEventListener("keydown", (e) => {
-      if (e instanceof KeyboardEvent && e.key.toLowerCase() === " ") {
-        setGame(2);
-      }
-    });
+    const game2Btn = /** @type {HTMLElement | null} */ (
+      dialog.querySelector("#exampleGame2")
+    );
+    if (game2Btn) game2Btn.addEventListener("click", () => setGame(2));
+    if (game2Btn) {
+      game2Btn.addEventListener("keydown", (e) => {
+        if (e instanceof KeyboardEvent && e.key.toLowerCase() === " ") {
+          setGame(2);
+        }
+      });
+    }
 
-    const game3Btn = dialog.querySelector("#exampleGame3");
-    game3Btn.addEventListener("click", () => setGame(3));
-    game3Btn.addEventListener("keydown", (e) => {
-      if (e instanceof KeyboardEvent && e.key.toLowerCase() === " ") {
-        setGame(3);
-      }
-    });
+    const game3Btn = /** @type {HTMLElement | null} */ (
+      dialog.querySelector("#exampleGame3")
+    );
+    if (game3Btn) game3Btn.addEventListener("click", () => setGame(3));
+    if (game3Btn) {
+      game3Btn.addEventListener("keydown", (e) => {
+        if (e instanceof KeyboardEvent && e.key.toLowerCase() === " ") {
+          setGame(3);
+        }
+      });
+    }
 
-    const game4Btn = dialog.querySelector("#exampleGame4");
-    game4Btn.addEventListener("click", () => setGame(4));
-    game4Btn.addEventListener("keydown", (e) => {
-      if (e instanceof KeyboardEvent && e.key.toLowerCase() === " ") {
-        setGame(4);
-      }
-    });
+    const game4Btn = /** @type {HTMLElement | null} */ (
+      dialog.querySelector("#exampleGame4")
+    );
+    if (game4Btn) game4Btn.addEventListener("click", () => setGame(4));
+    if (game4Btn) {
+      game4Btn.addEventListener("keydown", (e) => {
+        if (e instanceof KeyboardEvent && e.key.toLowerCase() === " ") {
+          setGame(4);
+        }
+      });
+    }
 
-    const loadBtn = dialog.querySelector("#loadUrlBtn");
-    loadBtn.addEventListener("click", this.handleLoad);
-    loadBtn.addEventListener("keydown", (e) => {
-      if (e instanceof KeyboardEvent && e.key.toLowerCase() === " ") {
-        this.handleLoad();
-      }
-    });
+    const loadBtn = /** @type {HTMLElement | null} */ (
+      dialog.querySelector("#loadUrlBtn")
+    );
+    if (loadBtn) loadBtn.addEventListener("click", this.handleLoad);
+    if (loadBtn) {
+      loadBtn.addEventListener("keydown", (e) => {
+        if (e instanceof KeyboardEvent && e.key.toLowerCase() === " ") {
+          this.handleLoad();
+        }
+      });
+    }
 
-    const urlInput = dialog.querySelector("#saveUrlInput");
-    urlInput.addEventListener("keydown", (e) => {
-      if (e instanceof KeyboardEvent && e.key.toLowerCase() === "enter") {
-        this.handleLoad();
-      }
-    });
+    const urlInput = /** @type {HTMLElement | null} */ (
+      dialog.querySelector("#saveUrlInput")
+    );
+    if (urlInput)
+      urlInput.addEventListener("keydown", (e) => {
+        if (e instanceof KeyboardEvent && e.key.toLowerCase() === "enter") {
+          this.handleLoad();
+        }
+      });
 
     return dialog;
   }
 
   async handleLoad() {
-    const urlInput = /** @type {HTMLInputElement} */ (
+    if (!this.dialog) return;
+    const urlInput = /** @type {HTMLInputElement | null} */ (
       this.dialog.querySelector("#saveUrlInput")
     );
 
+    if (!urlInput) return;
     const url = urlInput.value.trim();
 
     if (!url) {
@@ -207,12 +238,14 @@ export class UrlDialog {
       return;
     }
 
-    const loadBtn = /** @type {HTMLButtonElement} */ (
+    const loadBtn = /** @type {HTMLButtonElement | null} */ (
       this.dialog.querySelector("#loadUrlBtn")
     );
 
-    loadBtn.disabled = true;
-    loadBtn.textContent = "Loading...";
+    if (loadBtn) {
+      loadBtn.disabled = true;
+      loadBtn.textContent = "Loading...";
+    }
 
     try {
       const response = await fetch(url);
@@ -234,9 +267,10 @@ export class UrlDialog {
 
         this.close();
 
-        /** @type {HTMLDialogElement} */ (
-          this.shadow.querySelector(".seed-controls")
-        ).close();
+        const seedControls = this.shadow.querySelector(".seed-controls");
+        if (seedControls instanceof HTMLDialogElement) {
+          seedControls.close();
+        }
       } else {
         showToast(
           this.shadow,
@@ -244,7 +278,27 @@ export class UrlDialog {
           { stack: true, useSingle: false, duration: 5000 },
         );
 
-        const loadBtn = /** @type {HTMLButtonElement} */ (
+        if (this.dialog) {
+          const loadBtn = /** @type {HTMLButtonElement | null} */ (
+            this.dialog.querySelector("#loadUrlBtn")
+          );
+
+          if (loadBtn) {
+            loadBtn.disabled = false;
+            loadBtn.textContent = "Load";
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load game from URL:", error);
+
+      showToast(
+        this.shadow,
+        `Error: ${error instanceof Error ? error.message : String(error)}`,
+      );
+
+      if (this.dialog) {
+        const loadBtn = /** @type {HTMLButtonElement | null} */ (
           this.dialog.querySelector("#loadUrlBtn")
         );
 
@@ -252,19 +306,6 @@ export class UrlDialog {
           loadBtn.disabled = false;
           loadBtn.textContent = "Load";
         }
-      }
-    } catch (error) {
-      console.error("Failed to load game from URL:", error);
-
-      showToast(this.shadow, `Error: ${error.message}`);
-
-      const loadBtn = /** @type {HTMLButtonElement} */ (
-        this.dialog.querySelector("#loadUrlBtn")
-      );
-
-      if (loadBtn) {
-        loadBtn.disabled = false;
-        loadBtn.textContent = "Load";
       }
     }
   }
@@ -298,7 +339,7 @@ export class UrlDialog {
 /**
  * Export function to create and show dialog
  *
- * @param {typeof globalThis} globalThis
+ * @param {BlockGardenGlobalThis} globalThis
  * @param {Document} doc
  * @param {ShadowRoot} shadow
  *

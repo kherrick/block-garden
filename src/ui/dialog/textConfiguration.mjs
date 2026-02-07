@@ -1,6 +1,11 @@
 import { showToast } from "../../api/ui/toast.mjs";
 
 export class TextConfigurationDialog {
+  /**
+   * @param {any} gThis
+   * @param {Document} doc
+   * @param {ShadowRoot} shadow
+   */
   constructor(gThis, doc, shadow) {
     this.gThis = gThis;
     this.doc = doc;
@@ -57,17 +62,28 @@ export class TextConfigurationDialog {
     this.shadow.append(dialog);
     this.dialog = dialog;
 
-    const closeBtn = dialog.querySelector("#closeTextConfigDialog");
-    closeBtn.addEventListener("click", () => this.dialog.close());
+    const closeBtn = /** @type {HTMLElement | null} */ (
+      dialog.querySelector("#closeTextConfigDialog")
+    );
+    if (closeBtn)
+      closeBtn.addEventListener("click", () => {
+        if (this.dialog) this.dialog.close();
+      });
 
-    const saveBtn = dialog.querySelector("#saveTextConfigBtn");
-    saveBtn.addEventListener("click", this.save);
+    const saveBtn = /** @type {HTMLElement | null} */ (
+      dialog.querySelector("#saveTextConfigBtn")
+    );
+    if (saveBtn) saveBtn.addEventListener("click", this.save);
 
     return dialog;
   }
 
   save() {
-    const text = this.dialog.querySelector("#blockTextValue").value;
+    const textInput = /** @type {HTMLInputElement | null} */ (
+      this.dialog?.querySelector("#blockTextValue")
+    );
+    if (!textInput) return;
+    const text = textInput.value;
 
     this.gThis.blockGarden.state.armedTextConfig.set({
       text,
@@ -75,7 +91,9 @@ export class TextConfigurationDialog {
 
     showToast(this.shadow, "Text block armed!");
 
-    this.dialog.close();
+    if (this.dialog instanceof HTMLDialogElement) {
+      this.dialog.close();
+    }
   }
 
   open() {
@@ -99,18 +117,25 @@ export class TextConfigurationDialog {
 
   handleClose() {
     if (this.dialog instanceof HTMLDialogElement) {
-      this.dialog.remove();
+      const dialog = this.dialog;
+      dialog.remove();
 
       setTimeout(() => {
         // re-enable canvas after dialog is closed
         this.gThis.blockGarden.state.isCanvasActionDisabled = false;
 
-        this.dialog.removeEventListener("close", this.handleClose);
+        dialog.removeEventListener("close", this.handleClose);
       }, 300);
     }
   }
 }
 
+/**
+ * @param {any} gThis
+ * @param {Document} doc
+ * @param {ShadowRoot} shadow
+ * @returns {Promise<TextConfigurationDialog>}
+ */
 export async function showTextConfigDialog(gThis, doc, shadow) {
   const textDialog = new TextConfigurationDialog(gThis, doc, shadow);
 

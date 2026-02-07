@@ -1,5 +1,7 @@
 import { getDateTime } from "./getDateTime.mjs";
 
+/** @typedef {import('../core/systems/game/state.mjs').BlockGardenGlobalThis} BlockGardenGlobalThis */
+
 /**
  * Compresses a string using the CompressionStream API (gzip format).
  *
@@ -36,7 +38,10 @@ export async function compressToBinaryBlob(str) {
  */
 export async function compressToBinaryFile(str, outputFileHandle) {
   const compressedBlob = await compressToBinaryBlob(str);
+  if (!compressedBlob) return;
+
   const writable = await outputFileHandle.createWritable();
+  if (!writable) return;
 
   await writable.write(compressedBlob);
   await writable.close();
@@ -69,7 +74,7 @@ export async function decompressFromBinaryFile(inputFile, outputFileHandle) {
 /**
  * Compress string and save binary gzip file
  *
- * @param {typeof globalThis} gThis
+ * @param {BlockGardenGlobalThis} gThis
  * @param {string} stringData
  *
  * @returns {Promise<void>}
@@ -79,9 +84,10 @@ export async function runCompress(gThis, stringData) {
 
   let outputFileHandle;
 
-  if (gThis.showSaveFilePicker) {
+  const gThisAny = /** @type {any} */ (gThis);
+  if (gThisAny.showSaveFilePicker) {
     // Modern browsers (Chrome, Edge)
-    outputFileHandle = await gThis.showSaveFilePicker({
+    outputFileHandle = await gThisAny.showSaveFilePicker({
       suggestedName: filename,
     });
 
@@ -89,18 +95,21 @@ export async function runCompress(gThis, stringData) {
   } else {
     // Graceful fallback (Safari, Firefox, others)
     const compressedBlob = await compressToBinaryBlob(stringData);
-    const url = URL.createObjectURL(compressedBlob);
+    if (!compressedBlob) return;
 
-    const anchor = gThis.document.createElement("a");
+    const url = URL.createObjectURL(compressedBlob);
+    const doc = /** @type {any} */ (gThis).document;
+
+    const anchor = doc.createElement("a");
 
     anchor.href = url;
     anchor.download = filename;
 
-    gThis.document.body.append(anchor);
+    doc.body.append(anchor);
 
     anchor.click();
 
-    gThis.document.body.removeChild(anchor);
+    doc.body.removeChild(anchor);
 
     URL.revokeObjectURL(url); // Clean up
   }
@@ -109,12 +118,13 @@ export async function runCompress(gThis, stringData) {
 /**
  * Decompress gzip binary file
  *
- * @param {typeof globalThis} gThis
+ * @param {BlockGardenGlobalThis} gThis
  *
  * @returns {Promise<void>}
  */
 export async function runDecompress(gThis) {
-  const [inputFileHandle] = await gThis.showOpenFilePicker({
+  const gThisAny = /** @type {any} */ (gThis);
+  const [inputFileHandle] = await gThisAny.showOpenFilePicker({
     types: [
       { description: "Gzip Files", accept: { "application/gzip": [".bgs"] } },
     ],
@@ -122,7 +132,7 @@ export async function runDecompress(gThis) {
 
   const inputFile = await inputFileHandle.getFile();
 
-  const outputFileHandle = await gThis.showSaveFilePicker({
+  const outputFileHandle = await gThisAny.showSaveFilePicker({
     suggestedName: "decompressed.txt",
   });
 

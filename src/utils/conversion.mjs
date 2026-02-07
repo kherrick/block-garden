@@ -1,9 +1,11 @@
+/** @typedef {import('../core/systems/game/state.mjs').BlockGardenGlobalThis} BlockGardenGlobalThis */
+
 /**
  * Encodes an ArrayBuffer as a base64-encoded string.
  *
  * Useful for serializing binary data for storage or transmission.
  *
- * @param {typeof globalThis} gThis - Global this (window object) for access to btoa
+ * @param {BlockGardenGlobalThis} gThis - Global this (window object) for access to btoa
  * @param {ArrayBuffer} buffer - The binary buffer to encode
  *
  * @returns {string} Base64-encoded string representation of the buffer
@@ -25,7 +27,7 @@ export function arrayBufferToBase64(gThis, buffer) {
  *
  * Inverse operation of arrayBufferToBase64.
  *
- * @param {typeof globalThis} gThis - Global this (window object) for access to atob
+ * @param {BlockGardenGlobalThis} gThis - Global this (window object) for access to atob
  * @param {string} base64Data - Base64-encoded string to decode
  *
  * @returns {ArrayBuffer} The decoded binary data as an ArrayBuffer
@@ -52,7 +54,7 @@ export function base64ToArrayBuffer(gThis, base64Data) {
  *
  * Useful for creating downloadable files or sending data as file uploads.
  *
- * @param {typeof globalThis} gThis - Global this (window object)
+ * @param {BlockGardenGlobalThis} gThis - Global this (window object)
  * @param {string} base64Data - Base64-encoded string to convert
  * @param {string} mimeType - MIME type for the resulting Blob (e.g., 'application/json')
  *
@@ -102,7 +104,9 @@ export async function fileToBase64(file) {
 
       if (result instanceof ArrayBuffer) {
         const uint8Array = new Uint8Array(result);
-        const base64String = btoa(String.fromCharCode.apply(null, uint8Array));
+        const base64String = btoa(
+          String.fromCharCode.apply(null, Array.from(uint8Array)),
+        );
 
         resolve(base64String);
       } else {

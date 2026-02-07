@@ -1,12 +1,15 @@
 import { effect } from "../../../utils/effect.mjs";
 
+/** @typedef {import('../../../core/systems/game/state.mjs').BlockGardenGlobalThis} BlockGardenGlobalThis */
+
 /**
  * Initialize radius control listeners
  *
  * @param {ShadowRoot} shadow
  */
 export function initRadiusControlListeners(shadow) {
-  const gameConfig = globalThis.blockGarden.config;
+  const gThis = /** @type {BlockGardenGlobalThis} */ (globalThis);
+  const gameConfig = gThis.blockGarden.config;
 
   const radiusSettings = [
     { id: "viewRadius", signal: gameConfig.viewRadius },

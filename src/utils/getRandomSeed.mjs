@@ -32,7 +32,11 @@ export function getCryptoRandomInt(min, max) {
   limit = maxUint32 - (maxUint32 % range);
 
   do {
-    rand32 = globalThis.crypto.getRandomValues(new Uint32Array(1))[0];
+    const gThis =
+      /** @type {import('../core/systems/game/state.mjs').BlockGardenGlobalThis} */ (
+        globalThis
+      );
+    rand32 = gThis.crypto.getRandomValues(new Uint32Array(1))[0];
   } while (rand32 > limit);
 
   return min + (rand32 % range);
@@ -50,8 +54,13 @@ export function getCryptoRandomInt(min, max) {
  * @returns {number} Random seed suitable for world generation
  */
 export function getRandomSeed(minValue = 1, maxValue = 4294967295) {
-  return typeof globalThis.crypto === "object" &&
-    typeof globalThis.crypto.getRandomValues === "function"
+  const gThis =
+    /** @type {import('../core/systems/game/state.mjs').BlockGardenGlobalThis} */ (
+      globalThis
+    );
+
+  return typeof gThis.crypto === "object" &&
+    typeof gThis.crypto.getRandomValues === "function"
     ? getCryptoRandomInt(minValue, maxValue)
     : getRandomInRange(minValue, maxValue);
 }

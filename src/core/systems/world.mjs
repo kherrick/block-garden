@@ -2,7 +2,7 @@
  * @typedef {import('../../core/systems/game/state.mjs').GameState} GameState
  */
 
-import { getBlockById } from "../../world/config/blocks.mjs";
+import { getBlockById } from "../world/config/blocks.mjs";
 
 /** Maximum gravity updates per frame to prevent CPU spikes */
 const GRAVITY_UPDATES_PER_FRAME = 200;

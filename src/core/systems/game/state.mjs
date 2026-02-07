@@ -1,17 +1,58 @@
 import isNumber from "lodash.isnumber";
+
 import { Signal } from "signal-polyfill";
 
+import { getBlockById, getBlockIdByName } from "../../world/config/blocks.mjs";
+
+import { ChunkManager } from "../../world/chunkManager.mjs";
+import { gameConfig } from "../../world/config/index.mjs";
+import { CLOUD_HEIGHT_MIN } from "../../world/generation/chunk.mjs";
+
 import { getRandomSeed } from "../../../utils/getRandomSeed.mjs";
-import {
-  getBlockIdByName,
-  getBlockById,
-} from "../../../world/config/blocks.mjs";
-import { gameConfig } from "../../../world/config/index.mjs";
 
-import { CLOUD_HEIGHT_MIN } from "../../../world/generation/chunk.mjs";
-import { ChunkManager } from "../../../world/chunkManager.mjs";
+/**
+ * @template T
+ *
+ * @typedef {import("signal-polyfill").Signal.State<T>} State
+ */
 
+/** @typedef {import('../../world/config/blocks.mjs').BlockDefinition} BlockDefinition */
+/** @typedef {import('../../world/config/index.mjs').GameConfig} GameConfig */
 /** @typedef {import("../../../utils/ray.mjs").PointWithFace} PointWithFace */
+/** @typedef {import("../../world/config/blocks.mjs").BlockPlacement} BlockPlacement */
+
+/**
+ * @typedef {Object.<string, any>} BlockGardenGlobalDemo
+ */
+
+/**
+ * @typedef {Object} BlockGardenGlobal
+ *
+ * @property {GameConfig} config - Game configuration state
+ * @property {GameState} state - Game state
+ * @property {Object} computed - Computed signals
+ * @property {BlockGardenGlobalDemo} [demo] - Demo APIs
+ * @property {function(string, function): any} setConfig
+ * @property {function(number, GameState): void} generateWorld - Generates a new world
+ * @property {function(string): any} getConfig
+ * @property {function(string, (current: any) => any): void} updateConfig
+ * @property {function(string, any): any} setState
+ * @property {function(string): any} getState
+ * @property {function(string, (current: any) => any): void} updateState
+ */
+
+/**
+ * Extension of globalThis with blockGarden property.
+ *
+ * @typedef {typeof globalThis & { blockGarden: BlockGardenGlobal, showOpenFilePicker: function }} BlockGardenGlobalThis
+ */
+
+/**
+ * @typedef {Object} PlantStructure
+ *
+ * @property {string} type - The plant type name
+ * @property {BlockPlacement[]} blocks - Array of block coordinates/definitions
+ */
 
 /**
  * Game configuration state.
@@ -43,25 +84,36 @@ import { ChunkManager } from "../../../world/chunkManager.mjs";
  * @property {number} x
  * @property {number} y
  * @property {number} z
- * @property {Object.<string, number>} growthTimers
- * @property {Object.<string, Object>} plantStructures
- * @property {PointWithFace} hit
- * @property {Signal.State} materialsInventory
- * @property {Signal.State} arrowsControlCamera
- * @property {Signal.State} curBlock
- * @property {Signal.State} shouldReset
- * @property {Signal.State} hasEnabledExtras
- * @property {Signal.State} flying
- * @property {Signal.State} materialBar
- * @property {Signal.State} activeMaterialBarSlot
- * @property {Signal.State} armedLinkConfig
- * @property {Signal.State} armedTextConfig
+ * @property {Record<string, number>} growthTimers
+ * @property {Record<string, PlantStructure>} plantStructures
+ * @property {PointWithFace|null} hit
+ * @property {Record<string, any>} [inventory] - Legacy inventory support
+ * @property {State<Record<string, number>>} materialsInventory - Materials inventory: { "DIRT": 10, ... }
+ * @property {State<Record<string, number>>} seedsInventory - Seeds inventory: { "WHEAT": 1, ... }
+ * @property {State<boolean>} arrowsControlCamera
+ * @property {State<number>} curBlock
+ * @property {State<boolean>} shouldReset
+ * @property {State<boolean>} hasEnabledExtras
+ * @property {State<boolean>} flying
+ * @property {State<number[]>} materialBar
+ * @property {State<number>} activeMaterialBarSlot
+ * @property {State<any>} armedLinkConfig
+ * @property {State<any>} armedTextConfig
  * @property {{active: boolean, startTime: number, blockPos: {x: number, y: number, z: number}|null, currentBlockId: number|null, breakPercentage: number}} breaking
  * @property {{isHeld: boolean, mode: string, cursorX: number, cursorY: number}} breakingInput
  * @property {{active: boolean, lastPlaceTime: number, interval: number}} placing
  * @property {{isHeld: boolean, mode: string, cursorX: number, cursorY: number}} placingInput
  * @property {{x: number, y: number, z: number}|null} cursorTarget - Block under cursor for immediate highlighting
  * @property {boolean} panStartedOnCanvas - Whether the current pan gesture started on the canvas
+ */
+
+/**
+ * @typedef {Object} InitStateReturn
+ *
+ * @property {any} computedSignals
+ * @property {GameConfig} gameConfig
+ * @property {GameState} gameState
+ * @property {boolean} invalidSeedProvided
  */
 
 /** @type number */
@@ -91,8 +143,10 @@ if (params.has("seed")) {
  * Selects a slot in the materialBar.
  *
  * @param {number} index - Index of the slot (0-8)
+ *
+ * @returns {void}
  */
-export function selectMaterialBarSlot(index) {
+export function selectMaterialBarSlot(/** @type {number} */ index) {
   if (index < 0 || index >= 9) {
     return;
   }
@@ -107,14 +161,149 @@ export function selectMaterialBarSlot(index) {
  * Sets the item in the active materialBar slot.
  *
  * @param {number} blockId - ID of the block
+ *
+ * @returns {void}
  */
-export function setMaterialBarItem(blockId) {
+export function setMaterialBarItem(/** @type {number} */ blockId) {
   const index = gameState.activeMaterialBarSlot.get();
   const materialBar = [...gameState.materialBar.get()];
   materialBar[index] = blockId;
 
   gameState.materialBar.set(materialBar);
   gameState.curBlock.set(blockId);
+}
+
+/**
+ * Gets the count of a material in the inventory.
+ *
+ * @param {string} materialName - The material name (e.g., "DIRT")
+ *
+ * @returns {number} The count of the material
+ */
+export function getMaterialCount(/** @type {string} */ materialName) {
+  return (
+    /** @type {Record<string, number>} */ (gameState.materialsInventory.get())[
+      materialName
+    ] || 0
+  );
+}
+
+/**
+ * Adds material(s) to the inventory.
+ *
+ * @param {string} materialName - The material name (e.g., "DIRT")
+ * @param {number} [count=1] - Amount to add
+ *
+ * @returns {void}
+ */
+export function addMaterial(/** @type {string} */ materialName, count = 1) {
+  const inv = /** @type {Record<string, number>} */ ({
+    ...gameState.materialsInventory.get(),
+  });
+
+  inv[materialName] = (inv[materialName] || 0) + count;
+
+  gameState.materialsInventory.set(inv);
+}
+
+/**
+ * Removes material(s) from the inventory.
+ *
+ * @param {string} materialName - The material name (e.g., "DIRT")
+ * @param {number} [count=1] - Amount to remove
+ *
+ * @returns {boolean} True if successful, false if not enough materials
+ */
+export function removeMaterial(/** @type {string} */ materialName, count = 1) {
+  const inv = /** @type {Record<string, number>} */ ({
+    ...gameState.materialsInventory.get(),
+  });
+
+  if ((inv[materialName] || 0) < count) {
+    return false;
+  }
+
+  inv[materialName] -= count;
+
+  if (inv[materialName] <= 0) {
+    delete inv[materialName];
+  }
+
+  gameState.materialsInventory.set(inv);
+
+  return true;
+}
+
+/**
+ * Gets the count of a seed in the inventory.
+ *
+ * @param {string} seedName - The seed name (e.g., "WHEAT")
+ *
+ * @returns {number} The count of the seed
+ */
+export function getSeedCount(/** @type {string} */ seedName) {
+  return (
+    /** @type {Record<string, number>} */ (gameState.seedsInventory.get())[
+      seedName
+    ] || 0
+  );
+}
+
+/**
+ * Adds seed(s) to the inventory.
+ *
+ * @param {string} seedName - The seed name (e.g., "WHEAT")
+ * @param {number} [count=1] - Amount to add
+ *
+ * @returns {void}
+ */
+export function addSeed(/** @type {string} */ seedName, count = 1) {
+  const inv = /** @type {Record<string, number>} */ ({
+    ...gameState.seedsInventory.get(),
+  });
+
+  inv[seedName] = (inv[seedName] || 0) + count;
+
+  gameState.seedsInventory.set(inv);
+}
+
+/**
+ * Removes seed(s) from the inventory.
+ *
+ * @param {string} seedName - The seed name (e.g., "WHEAT")
+ * @param {number} [count=1] - Amount to remove
+ *
+ * @returns {boolean} True if successful, false if not enough seeds
+ */
+export function removeSeed(/** @type {string} */ seedName, count = 1) {
+  const inv = /** @type {Record<string, number>} */ ({
+    ...gameState.seedsInventory.get(),
+  });
+
+  if ((inv[seedName] || 0) < count) {
+    return false;
+  }
+
+  inv[seedName] -= count;
+
+  if (inv[seedName] <= 0) {
+    delete inv[seedName];
+  }
+
+  gameState.seedsInventory.set(inv);
+
+  return true;
+}
+
+/**
+ * Converts a block name to an inventory key.
+ *
+ * @param {string} name - The block display name
+ *
+ * @returns {string} The inventory key (uppercase with underscores)
+ */
+export function toInventoryKey(/** @type {string} */ name) {
+  return name.toUpperCase().replace(/ /g, "_");
 }
 
 /**
@@ -143,7 +332,7 @@ export const gameState = {
   playerHeight: 1.8,
   playerWidth: 0.6,
   flySpeed: 10,
-  flying: new Signal.State(false),
+  flying: new Signal.State(true),
   onGround: false,
   preventNextContextMenu: false,
   hit: null,
@@ -158,7 +347,10 @@ export const gameState = {
   arrowsControlCamera: new Signal.State(true),
   actionKeyPressTime: 0,
   hasEnabledExtras: new Signal.State(false),
-  materialsInventory: new Signal.State([]),
+  // Materials inventory: { "DIRT": 10, "STONE": 5, ... }
+  materialsInventory: new Signal.State({}),
+  // Seeds inventory: { "WHEAT": 1, "CARROT": 1, ... }
+  seedsInventory: new Signal.State({}),
   // Default blocks
   materialBar: new Signal.State([
     getBlockIdByName("Dirt"),
@@ -235,11 +427,16 @@ export const computedSignals = {
  *
  * @returns {void}
  */
-export function updateState(key, updater) {
-  const current = gameState[key]?.get();
+export function updateState(
+  /** @type {string} */ key,
+  /** @type {(current: any) => any} */ updater,
+) {
+  /** @type {any} */
+  const gameStateTyped = gameState;
+  const current = gameStateTyped[key]?.get();
 
   if (current !== undefined) {
-    gameState[key].set(updater(current));
+    gameStateTyped[key].set(updater(current));
   }
 }
 
@@ -254,10 +451,12 @@ export function updateState(key, updater) {
  * @returns {void}
  */
 export function updateConfig(key, updater) {
-  const current = gameConfig[key]?.get();
+  /** @type {any} */
+  const gameConfigTyped = gameConfig;
+  const current = gameConfigTyped[key]?.get();
 
   if (current !== undefined) {
-    gameConfig[key].set(updater(current));
+    gameConfigTyped[key].set(updater(current));
   }
 }
 
@@ -271,8 +470,11 @@ export function updateConfig(key, updater) {
  *
  * @returns {any} The return value from Signal.set()
  */
-export function setConfig(key, value) {
-  return gameConfig[key]?.set(value);
+export function setConfig(/** @type {string} */ key, /** @type {any} */ value) {
+  /** @type {any} */
+  const gameConfigTyped = gameConfig;
+
+  return gameConfigTyped[key]?.set(value);
 }
 
 /**
@@ -284,8 +486,11 @@ export function setConfig(key, value) {
  *
  * @returns {any} The current value of the Signal
  */
-export function getConfig(key) {
-  return gameConfig[key]?.get();
+export function getConfig(/** @type {string} */ key) {
+  /** @type {any} */
+  const gameConfigTyped = gameConfig;
+
+  return gameConfigTyped[key]?.get();
 }
 
 /**
@@ -298,8 +503,11 @@ export function getConfig(key) {
  *
  * @returns {any} The return value from Signal.set()
  */
-export function setState(key, value) {
-  return gameState[key]?.set(value);
+export function setState(/** @type {string} */ key, /** @type {any} */ value) {
+  /** @type {any} */
+  const gameStateTyped = gameState;
+
+  return gameStateTyped[key]?.set(value);
 }
 
 /**
@@ -311,8 +519,11 @@ export function setState(key, value) {
  *
  * @returns {any} The current value of the Signal
  */
-export function getState(key) {
-  return gameState[key]?.get();
+export function getState(/** @type {string} */ key) {
+  /** @type {any} */
+  const gameStateTyped = gameState;
+
+  return gameStateTyped[key]?.get();
 }
 
 /**
@@ -320,21 +531,40 @@ export function getState(key) {
  *
  * Sets up reactive state access for the game and external APIs.
  *
- * @param {typeof globalThis} gThis - Global this or window object
+ * @param {BlockGardenGlobalThis} gThis - Global this or window object
  * @param {string} version - Game version string to set in config
  *
- * @returns {Promise<{computedSignals, gameConfig, gameState: GameState, invalidSeedProvided: boolean}>} Object containing both config and state
+ * @returns {Promise<InitStateReturn>} Object containing both config and state
  */
 export async function initState(gThis, version) {
   gameConfig.version.set(version);
 
-  // Until we have a proper inventory we will intialize
-  // materials inventory with all blocks, except for air
-  const allMaterialBlocks = gameConfig.blocks
-    .filter((block) => block.name !== "Air")
-    .map((block) => block.id);
+  // // Initialize with starter materials
+  // const starterMaterials = {
+  //   DIRT: 10,
+  //   STONE: 10,
+  //   SAND: 10,
+  //   GRASS: 10,
+  // };
 
-  gameState.materialsInventory.set(allMaterialBlocks);
+  // gameState.materialsInventory.set(starterMaterials);
+
+  // Initialize with 1 seed of each plantable type
+  /** @type {Object.<string, number>|null} */
+  let starterSeeds = null;
+  gameConfig.blocks
+    .filter((b) => b.isSeed)
+    .forEach((b) => {
+      if (starterSeeds === null) {
+        starterSeeds = /** @type {Record<string, number>} */ ({});
+      }
+
+      starterSeeds[toInventoryKey(b.name)] = 1;
+    });
+
+  if (starterSeeds !== null) {
+    gameState.seedsInventory.set(starterSeeds);
+  }
 
   // Set block types on ChunkManager for gravity queue
   gameState.world.blockTypes = gameConfig.blocks;
@@ -361,5 +591,4 @@ export async function initState(gThis, version) {
     invalidSeedProvided,
   };
 }
-
 export { gameConfig };

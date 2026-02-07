@@ -1,3 +1,4 @@
+//@ts-nocheck
 /**
  * Adapted for block-garden
  * Bundled by jsDelivr using Rollup v2.79.2 and Terser v5.39.0.

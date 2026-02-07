@@ -1,5 +1,5 @@
 import { autoSaveGame } from "./dialog/storage.mjs";
-import { colors as gameColors } from "../world/config/colors.mjs";
+import { colors as gameColors } from "../core/world/config/colors.mjs";
 import { generateColorVars } from "../utils/colors/generateColorVars.mjs";
 import { initGame } from "../core/systems/game/init.mjs";
 
@@ -7,12 +7,16 @@ import "./components/select.mjs";
 
 export const tagName = "block-garden";
 
+/** @typedef {import('../core/systems/game/state.mjs').BlockGardenGlobalThis} BlockGardenGlobalThis */
+
 /**
  * @extends HTMLElement
  */
 export class BlockGarden extends HTMLElement {
   constructor() {
     super();
+
+    this.gThis = /** @type {BlockGardenGlobalThis} */ (globalThis);
 
     if (!this.shadowRoot) {
       const template = globalThis.document.createElement("template");
@@ -226,6 +230,27 @@ export class BlockGarden extends HTMLElement {
             width: 3rem;
           }
 
+          .materialBar-slot.is-disabled {
+            filter: grayscale(1);
+            opacity: 0.6;
+            cursor: not-allowed;
+          }
+
+          .materialBar-slot-count {
+            background-color: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 1rem;
+            color: white;
+            font-size: 0.5rem;
+            font-weight: bold;
+            left: 0.125rem;
+            padding: 0.0625rem 0.25rem;
+            pointer-events: none;
+            position: absolute;
+            top: 0.125rem;
+            z-index: 1;
+          }
+
           .materialBar-slot-cube {
             height: 1.5rem;
             perspective: 1000px;
@@ -271,6 +296,11 @@ export class BlockGarden extends HTMLElement {
             box-shadow: 0 0 0.625rem rgba(255, 255, 255, 0.2);
             transform: scale(1.15);
             z-index: 10;
+          }
+
+          .materialBar-slot.is-disabled:hover {
+            border-color: var(--bg-color-gray-600);
+            transform: none;
           }
 
           .materialBar-slot:hover,
@@ -1034,6 +1064,8 @@ export class BlockGarden extends HTMLElement {
                   <div class="settings-actions--container">
                     <div class="ui-grid__corner--sub-heading">Game</div>
                     <button id="worldState">🌍 World State</button>
+                    <button id="toggleCreativeMode" hidden="hidden">Enable Creative Mode</button>
+                    <button id="toggleFullCatalog">Disable Full Inventory Catalog</button>
                     <button id="toggleTouchControls">Disable Touch Controls</button>
                     <button id="randomPlantButton" hidden="hidden">Plant randomly</button>
                     <button id="fastGrowthButton" hidden="hidden">Enable Fast Growth</button>
@@ -1257,13 +1289,17 @@ export class BlockGarden extends HTMLElement {
   /** @returns {Promise<void>} */
   async connectedCallback() {
     const shadow = this.shadowRoot;
-    const canvas = shadow.querySelector("canvas");
+    if (!shadow) return;
 
-    await initGame(globalThis, shadow, canvas);
+    const canvas = /** @type {HTMLCanvasElement} */ (
+      shadow.querySelector("canvas")
+    );
+
+    await initGame(this.gThis, shadow, canvas);
   }
 
   /** @returns {Promise<void>} */
   async disconnectedCallback() {
-    await autoSaveGame(globalThis);
+    await autoSaveGame(this.gThis);
   }
 }

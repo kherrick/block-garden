@@ -1,20 +1,44 @@
-import { gameConfig } from "../../world/config/index.mjs";
+import { gameConfig } from "../../core/world/config/index.mjs";
 
-import { setMaterialBarItem } from "../../core/systems/game/state.mjs";
+import {
+  setMaterialBarItem,
+  toInventoryKey,
+} from "../../core/systems/game/state.mjs";
+
+/** @typedef {import('../../api/BlockGarden.mjs').BlockGardenGlobalThis} BlockGardenGlobalThis */
+/** @typedef {import('../../core/systems/game/state.mjs').GameState} GameState */
+
+/**
+ * @typedef {Object} CategoryBlock
+ * @property {number} [id]
+ * @property {string} name
+ * @property {string | number} count
+ * @property {boolean} [isSeed]
+ * @property {boolean} [crop]
+ * @property {number} [emissive]
+ */
+
+/**
+ * @typedef {Object} BlockCategory
+ * @property {string} title
+ * @property {CategoryBlock[]} blocks
+ */
 
 export class InventoryDialog {
   /**
-   * @param {typeof globalThis} globalThis
+   * @param {BlockGardenGlobalThis} globalThis
    * @param {Document} doc
    * @param {ShadowRoot} shadow
    */
   constructor(globalThis, doc, shadow) {
-    this.gThis = globalThis;
+    this.gThis = /** @type {BlockGardenGlobalThis} */ (globalThis);
     this.doc = doc;
     this.shadow = shadow;
 
+    /** @type {HTMLDialogElement | null} */
     this.dialog = null;
     this.isOpen = false;
+    /** @type {Object<string, string>} */
     this.blockColors = {};
 
     this.initBlockColors();
@@ -24,7 +48,7 @@ export class InventoryDialog {
 
   async initBlockColors() {
     try {
-      const colorsModule = await import("../../world/config/colors.mjs");
+      const colorsModule = await import("../../core/world/config/colors.mjs");
 
       this.blockColors = colorsModule.colors.block || {};
     } catch (e) {
@@ -34,7 +58,8 @@ export class InventoryDialog {
 
   async createDialog() {
     // disable canvas while dialog is open
-    this.gThis.blockGarden.state.isCanvasActionDisabled = true;
+    const bg = /** @type {BlockGardenGlobalThis} */ (this.gThis);
+    bg.blockGarden.state.isCanvasActionDisabled = true;
 
     if (this.dialog) {
       return this.dialog;
@@ -68,6 +93,7 @@ export class InventoryDialog {
           gap: 0.5rem;
           justify-content: center;
           padding: 0.5rem;
+          position: relative;
           transition: all 0.2s;
         }
 
@@ -77,6 +103,18 @@ export class InventoryDialog {
           outline: 0.125rem solid var(--bg-color-gray-600);
           outline-offset: 0.125rem;
           transform: translateY(-0.25rem);
+        }
+
+        .inventory-slot.is-disabled {
+          cursor: not-allowed;
+          filter: grayscale(1);
+          opacity: 0.5;
+        }
+
+        .inventory-slot.is-disabled:hover {
+          background-color: rgba(0, 0, 0, 0.3);
+          outline: none;
+          transform: none;
         }
 
         .inventory-slot-cube {
@@ -91,6 +129,19 @@ export class InventoryDialog {
         .inventory-slot.is-seed {
           background-color: rgba(76, 175, 80, 0.3);
           box-shadow: inset 0 0 10px rgba(76, 175, 80, 0.2);
+        }
+
+        .inventory-slot-count {
+          background: rgba(0, 0, 0, 0.6);
+          border-radius: 1rem;
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          color: white;
+          font-size: 0.625rem;
+          font-weight: bold;
+          padding: 0.125rem 0.375rem;
+          position: absolute;
+          right: 0.25rem;
+          top: 0.25rem;
         }
 
         .cube-face {
@@ -110,8 +161,8 @@ export class InventoryDialog {
         }
 
         .cube-right {
-            filter: brightness(0.8);
-            transform: rotateY(90deg) translateZ(1rem);
+          filter: brightness(0.8);
+          transform: rotateY(90deg) translateZ(1rem);
         }
 
         .inventory-slot-name {
@@ -154,8 +205,12 @@ export class InventoryDialog {
 
     this.renderInventory();
 
-    const closeBtn = dialog.querySelector("#closeInventoryDialog");
-    closeBtn.addEventListener("click", () => this.close());
+    const closeBtn = /** @type {HTMLElement | null} */ (
+      dialog.querySelector("#closeInventoryDialog")
+    );
+    if (closeBtn) {
+      closeBtn.addEventListener("click", () => this.close());
+    }
 
     dialog.addEventListener("cancel", () => this.close());
 
@@ -163,12 +218,26 @@ export class InventoryDialog {
   }
 
   renderInventory() {
-    const grid = this.dialog.querySelector("#inventoryGrid");
-    const blocks = gameConfig.blocks;
+    if (!this.dialog) {
+      return;
+    }
+
+    const grid = /** @type {HTMLElement | null} */ (
+      this.dialog.querySelector("#inventoryGrid")
+    );
+    if (!grid) {
+      return;
+    }
+
+    const blocks = this.gThis.blockGarden.config.blocks;
+    const isCreative = this.gThis.blockGarden.config?.useCreativeMode.get();
+    const state = this.gThis.blockGarden.state;
+    const materials = state.materialsInventory.get();
+    const seeds = state.seedsInventory.get();
 
     // Identify all seed blocks for grouping
-    const seeds = blocks.filter((b) => b.isSeed);
-    const plantPrefixes = seeds.flatMap((s) => {
+    const seedBlocks = blocks.filter((b) => b.isSeed);
+    const plantPrefixes = seedBlocks.flatMap((s) => {
       const prefixes = [s.name];
       if (s.name.endsWith(" Tree")) {
         prefixes.push(s.name.replace(" Tree", ""));
@@ -178,6 +247,7 @@ export class InventoryDialog {
     });
 
     // Categorize all blocks
+    /** @type {Object<string, BlockCategory>} */
     const categories = {
       plants: { title: "🌱 Plants & Seeds", blocks: [] },
       natural: { title: "⛰️ Natural Materials", blocks: [] },
@@ -188,15 +258,43 @@ export class InventoryDialog {
     blocks
       .filter((block) => block.name !== "Air")
       .forEach((block) => {
+        const nameKey = toInventoryKey(block.name);
+        const count = block.isSeed
+          ? seeds[nameKey] || 0
+          : materials[nameKey] || 0;
+
+        const showFullCatalog =
+          this.gThis.blockGarden.config.showFullCatalog.get();
+        const isLightingBlock =
+          (block.emissive || 0) > 0 && block.name !== "Lava";
+
+        // In non-creative mode, we hide things we don't have unless showFullCatalog is enabled
+        // However, lighting blocks are always available
+        if (!isCreative && count <= 0 && !showFullCatalog && !isLightingBlock) {
+          return;
+        }
+
         const name = block.name.toUpperCase();
 
-        // System
+        // System - Link and Text blocks are unlocked by extrasHandler.
+        // They are available in both creative and non-creative modes once unlocked.
+        // In the future, these could be craftable instead.
+        const hasUnlockedExtras = state.hasEnabledExtras?.get?.() ?? false;
         if (name === "LINK" || name === "TEXT") {
-          categories.system.blocks.push(block);
+          if (hasUnlockedExtras) {
+            categories.system.blocks.push({
+              ...block,
+              count: isCreative ? "\u221E" : count,
+            });
+          }
         }
-        // Lighting
-        else if (block.emissive > 0) {
-          categories.lighting.blocks.push(block);
+        // Lighting - always available (even in non-creative mode) with infinite count
+        // Use actual count with crafting implementation
+        else if (isLightingBlock) {
+          categories.lighting.blocks.push({
+            ...block,
+            count: "\u221E",
+          });
         }
         // Plants
         else if (
@@ -204,11 +302,17 @@ export class InventoryDialog {
           block.crop ||
           plantPrefixes.some((p) => block.name.startsWith(p))
         ) {
-          categories.plants.blocks.push(block);
+          categories.plants.blocks.push({
+            ...block,
+            count: isCreative ? "\u221E" : count,
+          });
         }
         // Natural
         else {
-          categories.natural.blocks.push(block);
+          categories.natural.blocks.push({
+            ...block,
+            count: isCreative ? "\u221E" : count,
+          });
         }
       });
 
@@ -235,6 +339,7 @@ export class InventoryDialog {
     });
 
     // Sort other categories alphabetically
+    /** @type {(a: CategoryBlock, b: CategoryBlock) => number} */
     const alphaSort = (a, b) => a.name.localeCompare(b.name);
     categories.natural.blocks.sort(alphaSort);
     categories.system.blocks.sort(alphaSort);
@@ -243,7 +348,9 @@ export class InventoryDialog {
     // Build HTML
     let html = "";
     Object.values(categories).forEach((cat) => {
-      if (cat.blocks.length === 0) return;
+      if (cat.blocks.length === 0) {
+        return;
+      }
 
       html += `<div class="inventory-category-title">${cat.title}</div>`;
 
@@ -254,14 +361,19 @@ export class InventoryDialog {
           this.blockColors[blockNameKey] || `var(--bg-color-gray-500)`;
 
         const isSeedClass = block.isSeed ? "is-seed" : "";
+        // Blocks are disabled if in non-creative mode AND count is 0 (but always enabled if count is ∞)
+        const isDisabled = !isCreative && block.count === 0;
+        const disabledClass = isDisabled ? "is-disabled" : "";
 
         html += `
           <div
-            class="inventory-slot ${isSeedClass}"
+            class="inventory-slot ${isSeedClass} ${disabledClass}"
             data-id="${block.id}"
-            tabindex="0"
-            title="${block.name}"
+            data-count="${block.count}"
+            tabindex="${isDisabled ? "-1" : "0"}"
+            title="${block.name}${!isCreative ? ` (${block.count})` : ""}"
           >
+            ${!isCreative || typeof block.count === "number" ? `<div class="inventory-slot-count">${block.count}</div>` : ""}
             <div class="inventory-slot-cube">
               <div class="cube-face cube-front" style="background-color: ${colorVar};"></div>
               <div class="cube-face cube-top" style="background-color: ${colorVar};"></div>
@@ -280,21 +392,24 @@ export class InventoryDialog {
         const target =
           e.currentTarget instanceof HTMLElement ? e.currentTarget : null;
 
-        if (target) {
+        if (target && !target.classList.contains("is-disabled")) {
           const id = Number(target.dataset.id);
 
           this.handleBlockClick(id);
         }
       });
 
-      slot.addEventListener("keydown", (/** @type {KeyboardEvent} */ e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
+      slot.addEventListener("keydown", (/** @type {Event} */ evt) => {
+        if (!(evt instanceof KeyboardEvent)) {
+          return;
+        }
 
+        if (evt.key === "Enter" || evt.key === " ") {
           const target =
-            e.currentTarget instanceof HTMLElement ? e.currentTarget : null;
+            evt.currentTarget instanceof HTMLElement ? evt.currentTarget : null;
 
-          if (target) {
+          if (target && !target.classList.contains("is-disabled")) {
+            evt.preventDefault();
             const id = Number(target.dataset.id);
 
             this.handleBlockClick(id);
@@ -304,6 +419,11 @@ export class InventoryDialog {
     });
   }
 
+  /**
+   * @param {number} blockId
+   *
+   * @returns {void}
+   */
   handleBlockClick(blockId) {
     setMaterialBarItem(blockId);
 
@@ -315,7 +435,9 @@ export class InventoryDialog {
       // re-enable canvas after dialog is closed
       this.gThis.blockGarden.state.isCanvasActionDisabled = false;
 
-      this.dialog.removeEventListener("close", this.handleClose);
+      if (this.dialog) {
+        this.dialog.removeEventListener("close", this.handleClose);
+      }
     }, 300);
   }
 
@@ -325,15 +447,21 @@ export class InventoryDialog {
 
     if (!this.dialog) {
       this.createDialog();
+    } else {
+      this.renderInventory();
     }
 
-    this.dialog.showModal();
+    if (this.dialog instanceof HTMLDialogElement) {
+      this.dialog.showModal();
+    }
 
     this.isOpen = true;
 
-    const autofocusElement = this.dialog.querySelector("[autofocus]");
-    if (autofocusElement instanceof HTMLElement) {
-      autofocusElement.focus();
+    if (this.dialog) {
+      const autofocusElement = this.dialog.querySelector("[autofocus]");
+      if (autofocusElement instanceof HTMLElement) {
+        autofocusElement.focus();
+      }
     }
 
     // Unlock pointer if locked
@@ -341,7 +469,9 @@ export class InventoryDialog {
       this.doc.exitPointerLock();
     }
 
-    this.dialog.addEventListener("close", this.handleClose);
+    if (this.dialog instanceof HTMLDialogElement) {
+      this.dialog.addEventListener("close", this.handleClose);
+    }
   }
 
   close() {

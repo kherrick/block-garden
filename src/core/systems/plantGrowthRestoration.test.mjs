@@ -3,7 +3,7 @@
  */
 import { jest } from "@jest/globals";
 import { updateStructure } from "./plantGrowth.mjs";
-import { blockNames } from "../../world/config/blocks.mjs";
+import { blockNames } from "../world/config/blocks.mjs";
 
 describe("Plant Restoration Regression", () => {
   let gameState;

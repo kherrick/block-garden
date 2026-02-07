@@ -1,13 +1,16 @@
 import { effect } from "../../../utils/effect.mjs";
 import { persistValue } from "../../../core/systems/persistence.mjs";
 
+/** @typedef {import('../../../core/systems/game/state.mjs').BlockGardenGlobalThis} BlockGardenGlobalThis */
+
 /**
  * Initializes the touch controls toggle.
  *
  * @param {ShadowRoot} shadow
  */
 export function initTouchToggle(shadow) {
-  const gameConfig = globalThis.blockGarden.config;
+  const gThis = /** @type {BlockGardenGlobalThis} */ (globalThis);
+  const gameConfig = gThis.blockGarden.config;
   const toggleTouchControls = shadow.getElementById("toggleTouchControls");
 
   if (toggleTouchControls) {

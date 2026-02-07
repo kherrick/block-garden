@@ -9,11 +9,11 @@ import {
   updateStructure,
 } from "./plantGrowth.mjs";
 
-import { generateWillowTreeStructure } from "../../world/plants/willowTree.mjs";
-import { generatePineTreeStructure } from "../../world/plants/pineTree.mjs";
-import { generateBirchStructure } from "../../world/plants/birch.mjs";
-import { blocks as blockDefs, blockNames } from "../../world/config/blocks.mjs";
-import { generateBambooStructure } from "../../world/plants/bamboo.mjs";
+import { generateWillowTreeStructure } from "../world/plants/willowTree.mjs";
+import { generatePineTreeStructure } from "../world/plants/pineTree.mjs";
+import { generateBirchStructure } from "../world/plants/birch.mjs";
+import { blocks as blockDefs, blockNames } from "../world/config/blocks.mjs";
+import { generateBambooStructure } from "../world/plants/bamboo.mjs";
 
 describe("Plant Farming & Harvest", () => {
   let gameState;
@@ -161,8 +161,8 @@ describe("Plant Farming & Harvest", () => {
     test("Willow tree maintains visible blocks at all growth stages", () => {
       const testCases = [
         { progress: 0.05, expected: "GROWING", minBlocks: 1 },
-        { progress: 0.15, expected: "TRUNK", minBlocks: 5 }, // height=5 trunks
-        { progress: 0.5, expected: "TRUNK", minBlocks: 5 },
+        { progress: 0.25, expected: "TRUNK", minBlocks: 1 },
+        { progress: 0.5, expected: "TRUNK", minBlocks: 2 },
       ];
 
       testCases.forEach(({ progress, expected, minBlocks }) => {

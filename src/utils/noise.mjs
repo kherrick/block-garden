@@ -4,7 +4,9 @@ import { createNoise3D } from "../../deps/simplex-noise.mjs";
 import alea from "../../deps/alea.mjs";
 
 // Global noise function with seeded generator
+/** @type {((x: number, y: number, z: number) => number) | null} */
 let noise3D = null;
+/** @type {number | null} */
 let currentSeed = null;
 
 // Cache of noise functions by seed to avoid re-initialization overhead
@@ -66,6 +68,10 @@ export function noise(
     initNoise(seed);
   }
 
+  if (!noise3D) {
+    return 0;
+  }
+
   let value = 0;
   let amplitude = 1;
   let frequency = scale;
@@ -107,6 +113,10 @@ export function noise3d(
 ) {
   if (!noise3D || currentSeed !== seed) {
     initNoise(seed);
+  }
+
+  if (!noise3D) {
+    return 0;
   }
 
   let value = 0;

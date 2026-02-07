@@ -53,6 +53,7 @@ export function showToast(shadow, message, config = {}) {
   // Update container bottom position
   container.style.bottom = `${bottomOffset}rem`;
 
+  /** @type {HTMLElement | null} */
   let toast;
 
   if (useSingle) {
@@ -68,12 +69,14 @@ export function showToast(shadow, message, config = {}) {
 
       // Reset auto-remove timer
       if (duration > 0) {
-        /** @type {any} */
-        const toastAny = toast;
-        clearTimeout(toastAny.autoRemoveTimer);
+        clearTimeout(
+          /** @type {any} */
+          (toast).autoRemoveTimer,
+        );
 
-        toastAny.autoRemoveTimer = setTimeout(
-          () => removeToast(toast),
+        /** @type {any} */
+        (toast).autoRemoveTimer = setTimeout(
+          () => toast && removeToast(toast),
           duration,
         );
       }
@@ -85,10 +88,10 @@ export function showToast(shadow, message, config = {}) {
   // Handle non-stacking behavior
   if (!stack && !useSingle) {
     const existingToasts = container.querySelectorAll(".toast");
-    existingToasts.forEach((toast) => {
-      toast.classList.add("toast--fade-out");
+    existingToasts.forEach((t) => {
+      t.classList.add("toast--fade-out");
 
-      setTimeout(() => toast.remove(), 300);
+      setTimeout(() => t.remove(), 300);
     });
   }
 
@@ -118,7 +121,9 @@ export function showToast(shadow, message, config = {}) {
   // Auto-remove after duration
   if (duration > 0) {
     /** @type {any} */
-    const toastAny = toast;
-    toastAny.autoRemoveTimer = setTimeout(() => removeToast(toast), duration);
+    (toast).autoRemoveTimer = setTimeout(
+      () => toast && removeToast(toast),
+      duration,
+    );
   }
 }

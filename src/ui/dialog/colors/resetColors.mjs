@@ -2,10 +2,12 @@ import localForage from "localforage";
 
 import { getCustomProperties } from "../../../utils/colors/getCustomProperties.mjs";
 
+/** @typedef {import('../../../core/systems/game/state.mjs').BlockGardenGlobalThis} BlockGardenGlobalThis */
+
 /**
  * Reset to default colors
  *
- * @param {object} gThis - The global context or window object.
+ * @param {BlockGardenGlobalThis} gThis - The global context or window object.
  * @param {ShadowRoot} shadow - The shadow root whose host's computed styles will be inspected.
  * @param {string} key
  *
@@ -16,7 +18,10 @@ export async function resetColors(gThis, shadow, key) {
     await localForage.removeItem(key);
 
     // Remove inline styles to restore CSS defaults
-    const allProperties = getCustomProperties(gThis, shadow);
+    const allProperties = getCustomProperties(
+      /** @type {BlockGardenGlobalThis} */ (gThis),
+      shadow,
+    );
 
     for (const property of Object.keys(allProperties)) {
       if (shadow.host instanceof HTMLElement) {

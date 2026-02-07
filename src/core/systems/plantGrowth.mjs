@@ -1,6 +1,9 @@
-import { blocks as blockTypes } from "../../world/config/blocks.mjs";
-import { FAST_GROWTH_TIME } from "../../world/config/index.mjs";
-import { generators } from "../../world/plants/index.mjs";
+import { blocks as blockTypes } from "../world/config/blocks.mjs";
+import { FAST_GROWTH_TIME } from "../world/config/index.mjs";
+import { generators } from "../world/plants/index.mjs";
+
+/** @typedef {import("./game/state.mjs").GameState} GameState */
+/** @typedef {import("./game/state.mjs").PlantStructure} PlantStructure */
 
 // Controls for throttling visual updates
 const LOGIC_UPDATE_INTERVAL_MS = 200; // only update visuals every 200ms
@@ -11,7 +14,7 @@ let _lastLogicUpdateMs = 0;
  * Check if a plant structure has been completely harvested (all blocks removed).
  * If so, remove the structure and its timer from the game state.
  *
- * @param {Object} gameState - Game state object with world, plantStructures, growthTimers
+ * @param {GameState} gameState - Game state object with world, plantStructures, growthTimers
  * @param {string} key - The plant key (e.g., "x,y,z")
  *
  * @returns {boolean} True if the plant was removed (completely harvested), false otherwise
@@ -21,6 +24,7 @@ export function checkAndRemoveFarmedPlant(gameState, key) {
     return false;
   }
 
+  /** @type {PlantStructure} */
   const structure = gameState.plantStructures[key];
   if (!structure.blocks || structure.blocks.length === 0) {
     // No blocks to check - consider it farmed if it's empty
@@ -70,7 +74,7 @@ export function checkAndRemoveFarmedPlant(gameState, key) {
 /**
  * Update plant growth logic.
  *
- * @param {Object} gameState
+ * @param {GameState} gameState
  */
 export function updatePlantGrowth(gameState) {
   if (!gameState.growthTimers || !gameState.plantStructures) {
@@ -88,6 +92,7 @@ export function updatePlantGrowth(gameState) {
 
   for (const [key, timeLeft] of Object.entries(gameState.growthTimers)) {
     const newTime = timeLeft - dt;
+    /** @type {PlantStructure} */
     const structure = gameState.plantStructures[key];
 
     if (newTime <= 0) {
@@ -133,6 +138,13 @@ export function updatePlantGrowth(gameState) {
   }
 }
 
+/**
+ * @param {GameState} gameState
+ * @param {string} key
+ * @param {number} progress
+ * @param {string} type
+ * @param {boolean} [force=false]
+ */
 export function updateStructure(gameState, key, progress, type, force = false) {
   const structure = gameState.plantStructures[key];
   if (!structure) {

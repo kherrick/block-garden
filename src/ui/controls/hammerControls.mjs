@@ -1,19 +1,21 @@
+/** @ts-ignore */
 import Hammer from "hammerjs";
 
 import { raycastFromCanvasCoords } from "../../utils/raycastFromCanvasCoords.mjs";
 import { placeBlock } from "../../utils/interaction.mjs";
 
-import { gameConfig } from "../../world/config/index.mjs";
+import { gameConfig } from "../../core/world/config/index.mjs";
 import { startDigHighlight, stopDigHighlight } from "../utils/digHighlight.mjs";
 
 /** @typedef {import('../../core/systems/game/init.mjs').CustomShadowHost} CustomShadowHost */
+/** @typedef {import('../../core/systems/game/state.mjs').GameState} GameState */
 
 /**
  * Initialize HammerJS controls
  *
  * @param {Hammer.Manager} stage
  * @param {ShadowRoot} shadow
- * @param {Object} gameState
+ * @param {GameState} gameState
  */
 export function initHammerControls(stage, shadow, gameState) {
   const pan = stage.get("pan");
@@ -48,6 +50,10 @@ export function initHammerControls(stage, shadow, gameState) {
     { passive: true },
   );
 
+  /**
+   * @param {number} x
+   * @param {number} y
+   */
   const updateCursorPos = (x, y) => {
     if (
       gameState.breakingInput.isHeld &&
@@ -90,28 +96,22 @@ export function initHammerControls(stage, shadow, gameState) {
     }
   };
 
-  shadow.addEventListener(
-    "pointermove",
-    (
-      /** @type {PointerEvent} */
-      e,
-    ) => {
+  shadow.addEventListener("pointermove", (e) => {
+    if (e instanceof PointerEvent) {
       updateCursorPos(e.clientX, e.clientY);
-    },
-  );
+    }
+  });
 
-  shadow.addEventListener(
-    "touchmove",
-    (
-      /** @type {TouchEvent} */
-      e,
-    ) => {
-      if (e.touches && e.touches[0]) {
-        updateCursorPos(e.touches[0].clientX, e.touches[0].clientY);
-      }
-    },
-  );
+  shadow.addEventListener("touchmove", (e) => {
+    if (e instanceof TouchEvent && e.touches && e.touches[0]) {
+      updateCursorPos(e.touches[0].clientX, e.touches[0].clientY);
+    }
+  });
 
+  /**
+   * @param {any} ev
+   * @returns {boolean}
+   */
   const isUIInteraction = (ev) => {
     // Robust check: determine element at the center of the gesture
     // This bypasses event bubbling/shadow DOM target issues
@@ -131,18 +131,16 @@ export function initHammerControls(stage, shadow, gameState) {
         .ui-grid__corner,
         .ui-grid__corner--container
       `) !== null ||
-      (target.closest("block-garden") &&
-        /** @type {any} */
-        (ev).type !== "panstart" &&
-        /** @type {any} */
-        (ev).type !== "panmove")
+      (target.closest("block-garden") !== null &&
+        ev.type !== "panstart" &&
+        ev.type !== "panmove")
     );
   };
 
   let isPanning = false;
 
   // View Looking (Pan)
-  stage.on("panstart", (ev) => {
+  stage.on("panstart", (/** @type {any} */ ev) => {
     if (isUIInteraction(ev)) {
       return;
     }
@@ -157,7 +155,7 @@ export function initHammerControls(stage, shadow, gameState) {
     lastDeltaY = 0;
   });
 
-  stage.on("panmove", (ev) => {
+  stage.on("panmove", (/** @type {any} */ ev) => {
     if (isUIInteraction(ev)) {
       return;
     }
@@ -198,7 +196,7 @@ export function initHammerControls(stage, shadow, gameState) {
   });
 
   // Block Placing (Tap)
-  stage.on("tap", (ev) => {
+  stage.on("tap", (/** @type {any} */ ev) => {
     if (isUIInteraction(ev)) {
       return;
     }
@@ -271,7 +269,7 @@ export function initHammerControls(stage, shadow, gameState) {
     stopDigHighlight(shadow);
   };
 
-  stage.on("press", (ev) => {
+  stage.on("press", (/** @type {any} */ ev) => {
     if (isUIInteraction(ev)) {
       return;
     }

@@ -1,12 +1,14 @@
 import { extractAttachments } from "./extractAttachments.mjs";
 import { extractJsonFromPng } from "./canvasToPngWithState.mjs";
 
+/** @typedef {import('../core/systems/game/state.mjs').BlockGardenGlobalThis} BlockGardenGlobalThis */
+
 /**
  * Processes save data from a Blob or File and returns the state JSON.
  *
  * @param {Blob|File} data - The data to process.
  * @param {string} filename - The name of the file (for extension-based processing).
- * @param {typeof globalThis} gThis - The global context.
+ * @param {BlockGardenGlobalThis} gThis - The global context.
  *
  * @returns {Promise<string>} The state JSON.
  */

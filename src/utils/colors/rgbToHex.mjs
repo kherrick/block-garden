@@ -11,6 +11,10 @@
  * @returns {string} Hexadecimal color string in the format "#rrggbb".
  */
 export function rgbToHex(r, g, b) {
+  /**
+   * @param {number} c
+   * @returns {string}
+   */
   const componentToHex = (c) => {
     const hex = c.toString(16);
 

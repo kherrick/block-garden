@@ -1,5 +1,8 @@
 import { BlockGarden } from "../BlockGarden.mjs";
+
 import { characters } from "../misc/characters.mjs";
+import { sleep } from "../misc/sleep.mjs";
+
 import { showToast } from "../ui/toast.mjs";
 
 export class Messaging extends BlockGarden {
@@ -62,26 +65,33 @@ export class Messaging extends BlockGarden {
         rotate, // rotate: 180 degrees (Right to Left)
       );
 
-      showToast(this.shadow, "The text has been drawn successfully!");
-      setTimeout(
-        () => showToast(this.shadow, "Look up toward the clouds ↑↑↑"),
-        4000,
-      );
-      setTimeout(
-        () => showToast(this.shadow, "Look up toward the clouds ↑↑↑"),
-        8000,
-      );
+      if (this.shadow) {
+        const shadow = this.shadow;
+        showToast(shadow, "The text has been drawn successfully!");
+
+        setTimeout(
+          () => showToast(shadow, "Look up toward the clouds ↑↑↑"),
+          4000,
+        );
+
+        setTimeout(
+          () => showToast(shadow, "Look up toward the clouds ↑↑↑"),
+          8000,
+        );
+      }
 
       console.log(`✓ Text drawn successfully!`);
 
       console.log(
         `  Position: (${boundsOne.x}, ${boundsOne.y}, ${boundsOne.z})`,
       );
+
       console.log(`  Size: ${boundsOne.width}x${boundsOne.height} blocks`);
 
       console.log(
         `  Position: (${boundsTwo.x}, ${boundsTwo.y}, ${boundsTwo.z})`,
       );
+
       console.log(`  Size: ${boundsTwo.width}x${boundsTwo.height} blocks`);
     } catch (error) {
       console.error("Error drawing text:", error);
@@ -90,22 +100,24 @@ export class Messaging extends BlockGarden {
 }
 
 export async function demo() {
+  const api = new Messaging();
+
   // Wait for blockGarden to be available
   let attempts = 0;
-  while (!globalThis.blockGarden && attempts < 100) {
-    await new Promise((resolve) => setTimeout(resolve, 100));
+
+  while (!api.gThis.blockGarden && attempts < 100) {
+    await sleep(100);
+
     attempts++;
   }
 
-  if (!globalThis.blockGarden) {
+  if (!api.gThis.blockGarden) {
     console.error(
       "blockGarden not initialized. Make sure the game has loaded.",
     );
+
     return;
   }
-
-  const api = new Messaging();
-  globalThis.Messaging = api;
 
   // Setup
   if (typeof api.setFullscreen === "function") {

@@ -2,10 +2,14 @@ import { loadSaveState } from "./loadSave.mjs";
 import { deleteSharedSave, retrieveSharedSave } from "./shareTarget.mjs";
 
 /**
+ * @typedef {import('./systems/game/state.mjs').BlockGardenGlobalThis} BlockGardenGlobalThis
+ */
+
+/**
  * Check for and load any pending shared save from a Share Target
  * This function should be called during app initialization
  *
- * @param {typeof globalThis} gThis - Global this or window object with blockGarden property
+ * @param {BlockGardenGlobalThis} gThis - Global this or window object with blockGarden property
  * @param {ShadowRoot} shadow - Shadow root for canvas resizing
  * @returns {Promise<boolean>} - true if a shared save was loaded, false otherwise
  */

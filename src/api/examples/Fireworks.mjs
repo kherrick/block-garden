@@ -1,15 +1,36 @@
 import { getRandomInt } from "../../utils/getRandomInt.mjs";
 import { BlockGarden } from "../BlockGarden.mjs";
 
+/**
+ * @typedef {Object} FireworkConfig
+ *
+ * @property {string[]} [colors] - Block colors for particles
+ * @property {string} [rocketBlock] - Block appearance for rocket
+ * @property {number} [rocketSpeed] - Speed of rocket ascent
+ */
+
+/**
+ * @typedef {Object} Particle
+ *
+ * @property {number} x - X coordinate
+ * @property {number} y - Y coordinate
+ * @property {number} z - Z coordinate
+ * @property {number} vx - X velocity
+ * @property {number} vy - Y velocity
+ * @property {number} vz - Z velocity
+ * @property {number} block - Block ID
+ * @property {number} life - Particle lifetime
+ */
+
 export class Fireworks extends BlockGarden {
   /**
    * Creates a single firework that launches from startY to targetY and then explodes.
    *
-   * @param {number} x
-   * @param {number} startY
-   * @param {number} targetY
-   * @param {number} z
-   * @param {object} config
+   * @param {number} x - X coordinate
+   * @param {number} startY - Starting Y coordinate
+   * @param {number} targetY - Target Y coordinate for explosion
+   * @param {number} z - Z coordinate
+   * @param {FireworkConfig} [config] - Configuration object
    */
   createFirework(x, startY, targetY, z, config = {}) {
     x = Math.floor(x);
@@ -33,7 +54,7 @@ export class Fireworks extends BlockGarden {
 
     // Resolve block IDs once
     const colorIds = colors
-      .map((name) => this.getBlockIdByName(name))
+      .map((/** @type {string} */ name) => this.getBlockIdByName(name))
       .filter((id) => id !== -1);
 
     // Fallback if no colors found
@@ -50,9 +71,11 @@ export class Fireworks extends BlockGarden {
     let tick = 0;
 
     // Explosion particles: Array of {x, y, z, vx, vy, vz, block}
+    /** @type {Array<{x: number, y: number, z: number, vx: number, vy: number, vz: number, block: number, life: number}>} */
     let particles = [];
 
     const animate = () => {
+      /** @type {Array<{x: number, y: number, z: number, block: number}>} */
       const updates = [];
 
       if (phase === "rocket") {
@@ -128,6 +151,15 @@ export class Fireworks extends BlockGarden {
     animate();
   }
 
+  /**
+   * Initialize an explosion at the given position
+   *
+   * @param {number} x - X coordinate
+   * @param {number} y - Y coordinate
+   * @param {number} z - Z coordinate
+   * @param {number[]} colors - Array of color block IDs
+   * @param {Particle[]} particlesArray - Array to populate with particles
+   */
   initExplosion(x, y, z, colors, particlesArray) {
     const particleCount = 50;
     for (let i = 0; i < particleCount; i++) {
@@ -154,6 +186,21 @@ export class Fireworks extends BlockGarden {
     }
   }
 
+  /**
+   * Create a fireworks show with multiple rockets
+   *
+   * @param {Object} [config] - Configuration object
+   * @param {number} [config.count] - Number of fireworks
+   * @param {number} [config.duration] - Duration of show in ms
+   * @param {number} [config.xMin] - Minimum X coordinate
+   * @param {number} [config.xMax] - Maximum X coordinate
+   * @param {number} [config.yStart] - Starting Y coordinate
+   * @param {number} [config.yMinTarget] - Minimum target Y
+   * @param {number} [config.yMaxTarget] - Maximum target Y
+   * @param {number} [config.zMin] - Minimum Z coordinate
+   * @param {number} [config.zMax] - Maximum Z coordinate
+   * @param {number} [config.delay] - Initial delay in ms
+   */
   createFireworksShow(config = {}) {
     const {
       count = 10,

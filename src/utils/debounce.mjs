@@ -15,11 +15,13 @@
  * log('a'); log('b'); // Only 'b' will be logged after 300ms
  */
 export function debounce(func, delay) {
+  /** @type {NodeJS.Timeout | undefined} */
   let timeout;
 
-  return function (...args) {
+  return function (/** @type {any[]} */ ...args) {
     clearTimeout(timeout);
 
+    // @ts-ignore
     timeout = setTimeout(() => func.apply(this, args), delay);
   };
 }

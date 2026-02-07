@@ -4,7 +4,7 @@
 import { jest } from "@jest/globals";
 
 // Mock the blocks module
-jest.unstable_mockModule("../../world/config/blocks.mjs", () => ({
+jest.unstable_mockModule("../world/config/blocks.mjs", () => ({
   getBlockById: jest.fn((type) => {
     if (type === 5) {
       // Sand has gravity

@@ -1,10 +1,13 @@
+import { InventoryDialog } from "../../dialog/inventory.mjs";
 import { selectMaterialBarSlot } from "../../../core/systems/game/state.mjs";
+
+/** @typedef {import('../../../core/systems/game/state.mjs').BlockGardenGlobalThis} BlockGardenGlobalThis */
 
 /**
  * Toggles the visibility of the material bar and manages game state/focus.
  *
  * @param {ShadowRoot} shadow
- * @param {Object} gameState
+ * @param {import('../../../core/systems/game/state.mjs').GameState} gameState
  * @param {HTMLCanvasElement} cnvs
  * @param {boolean} [forceClose=false]
  */
@@ -62,7 +65,7 @@ export function initMaterialBarEventListeners(shadow, cnvs) {
         : null;
 
     if (slot instanceof HTMLElement) {
-      const index = parseInt(slot.dataset.index);
+      const index = parseInt(slot.dataset.index || "0");
 
       e.stopPropagation();
 
@@ -82,12 +85,27 @@ export function initMaterialBarEventListeners(shadow, cnvs) {
       return;
     }
 
+    if (e.key === "e" || e.key === "i") {
+      e.preventDefault();
+
+      const gThis = /** @type {BlockGardenGlobalThis} */ (globalThis);
+      const inventoryDialog = new InventoryDialog(
+        gThis,
+        gThis.document,
+        shadow,
+      );
+
+      inventoryDialog.open();
+
+      return;
+    }
+
     // Handle Enter or Space to select the current slot
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       e.stopPropagation();
 
-      const index = parseInt(slot.dataset.index);
+      const index = parseInt(slot.dataset.index || "0");
       selectMaterialBarSlot(index);
 
       cnvs.focus();

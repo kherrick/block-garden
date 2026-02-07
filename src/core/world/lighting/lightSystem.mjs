@@ -1,10 +1,7 @@
 /**
- * Light Propagation System
- *
- * Implements voxel lighting with light levels 0-15.
- * Light propagates via BFS flood-fill, attenuating by 1 per block.
- *
- * @module lightSystem
+ * @typedef {import('../chunkManager.mjs').ChunkManager} ChunkManager
+ * @typedef {import('../config/blocks.mjs').Blocks} Blocks
+ * @typedef {import('../meshing/chunk.mjs').Chunk} Chunk
  */
 
 import {
@@ -56,8 +53,8 @@ export function lightLevelToBrightness(lightLevel) {
 }
 
 /**
- * LightMap - Stores light levels for a chunk.
- * Uses a flat Uint8Array for memory efficiency.
+ * Stores per-voxel light levels for a single chunk
+ * in a flat Uint8Array for memory efficiency.
  */
 export class LightMap {
   /**
@@ -79,6 +76,7 @@ export class LightMap {
 
   /**
    * Get index into flat array.
+   *
    * @param {number} x
    * @param {number} y
    * @param {number} z
@@ -91,9 +89,11 @@ export class LightMap {
 
   /**
    * Get light level at local coordinates.
+   *
    * @param {number} x
    * @param {number} y
    * @param {number} z
+   *
    * @returns {number}
    */
   get(x, y, z) {
@@ -113,6 +113,7 @@ export class LightMap {
 
   /**
    * Set light level at local coordinates.
+   *
    * @param {number} x
    * @param {number} y
    * @param {number} z
@@ -148,9 +149,9 @@ export class LightMap {
  * Propagate light from emissive blocks using BFS flood-fill.
  * Updates the chunk's lightMap in place.
  *
- * @param {import('../meshing/chunk.mjs').Chunk} chunk - Chunk to calculate light for
- * @param {import('../config/blocks.mjs').Blocks} blockDefs - Block definitions
- * @param {import('../chunkManager.mjs').ChunkManager} [chunkManager=null] - For cross-chunk lookups
+ * @param {Chunk} chunk - Chunk to calculate light for
+ * @param {Blocks} blockDefs - Block definitions
+ * @param {ChunkManager} [chunkManager=null] - For cross-chunk lookups
  */
 export function propagateLight(chunk, blockDefs, chunkManager) {
   // Initialize or clear the light map
@@ -164,18 +165,40 @@ export function propagateLight(chunk, blockDefs, chunkManager) {
   /** @type {Array<{x: number, y: number, z: number, level: number}>} */
   const sources = [];
 
-  for (let y = 0; y < CHUNK_SIZE_Y; y++) {
-    for (let z = 0; z < CHUNK_SIZE_Z; z++) {
-      for (let x = 0; x < CHUNK_SIZE_X; x++) {
-        const blockType = chunk.getBlock(x, y, z);
-        if (blockType === 0) continue;
+  // Verify emissive cache if needed (lazy initialization)
+  if (!chunk.emissivesVerified) {
+    chunk.emissiveBlocks.clear();
 
-        const block = blockDefs.getById(blockType);
-        if (block && (block.emissive ?? 0) > 0) {
-          sources.push({ x, y, z, level: block.emissive ?? 0 });
-          chunk.lightMap.set(x, y, z, block.emissive ?? 0);
+    for (let y = 0; y < CHUNK_SIZE_Y; y++) {
+      for (let z = 0; z < CHUNK_SIZE_Z; z++) {
+        for (let x = 0; x < CHUNK_SIZE_X; x++) {
+          const idx = chunk.index(x, y, z);
+          const blockType = chunk.blocks[idx];
+          if (blockType === 0) {
+            continue;
+          }
+
+          const block = blockDefs.getById(blockType);
+          if (block && (block.emissive ?? 0) > 0) {
+            chunk.emissiveBlocks.add(idx);
+          }
         }
       }
+    }
+
+    chunk.emissivesVerified = true;
+  }
+
+  // Use cached emissives (much faster than scanning 32k blocks)
+  for (const idx of chunk.emissiveBlocks) {
+    const { x, y, z } = chunk.localFromIndex(idx);
+    const blockType = chunk.blocks[idx];
+    const block = blockDefs.getById(blockType);
+
+    if (block && (block.emissive ?? 0) > 0) {
+      sources.push({ x, y, z, level: block.emissive ?? 0 });
+
+      chunk.lightMap.set(x, y, z, block.emissive ?? 0);
     }
   }
 
@@ -192,11 +215,15 @@ export function propagateLight(chunk, blockDefs, chunkManager) {
 
   while (queue.length > 0) {
     const source = queue.shift();
-    if (!source) break;
+    if (!source) {
+      break;
+    }
 
     const { x, y, z, level } = source;
 
-    if (level <= 1) continue; // Light exhausted
+    if (level <= 1) {
+      continue; // Light exhausted
+    }
 
     for (const [dx, dy, dz] of directions) {
       const nx = x + dx;
@@ -242,10 +269,11 @@ export function propagateLight(chunk, blockDefs, chunkManager) {
 /**
  * Get light level at world coordinates.
  *
- * @param {import('../chunkManager.mjs').ChunkManager} chunkManager
+ * @param {ChunkManager} chunkManager
  * @param {number} worldX
  * @param {number} worldY
  * @param {number} worldZ
+ *
  * @returns {number} Light level 0-15
  */
 export function getLightLevel(chunkManager, worldX, worldY, worldZ) {
@@ -262,11 +290,11 @@ export function getLightLevel(chunkManager, worldX, worldY, worldZ) {
 /**
  * Recalculate light for affected chunks when a block changes.
  *
- * @param {import('../chunkManager.mjs').ChunkManager} chunkManager
+ * @param {ChunkManager} chunkManager
  * @param {number} worldX
  * @param {number} worldY
  * @param {number} worldZ
- * @param {import('../config/blocks.mjs').Blocks} blockDefs
+ * @param {Blocks} blockDefs
  */
 export function updateLightOnBlockChange(
   chunkManager,

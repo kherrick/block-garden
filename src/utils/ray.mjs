@@ -95,8 +95,17 @@ export function ray(world, { x, y, z }, { yaw, pitch }) {
     // However, usually we want to ignore the voxel the camera is INSIDE of if it hinders view,
     // but physically we should interact with it if it's there.
     // For standard MC-like behavior, checking the current voxel is correct.
-    const key = `${currentX},${currentY},${currentZ}`;
-    if (world.has(key)) {
+    let hasBlock = false;
+
+    // Direct block check (optimized) or Map/Set check (legacy/test)
+    if (typeof world.hasBlock === "function") {
+      hasBlock = world.hasBlock(currentX, currentY, currentZ);
+    } else {
+      const key = `${currentX},${currentY},${currentZ}`;
+      hasBlock = world.has(key);
+    }
+
+    if (hasBlock) {
       return {
         x: currentX,
         y: currentY,

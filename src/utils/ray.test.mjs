@@ -7,6 +7,9 @@ describe("ray()", () => {
     has(key) {
       return this.blocks.has(key);
     },
+    hasBlock(x, y, z) {
+      return this.blocks.has(`${x},${y},${z}`);
+    },
   };
 
   it("should hit a block directly in front", () => {

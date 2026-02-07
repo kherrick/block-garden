@@ -321,14 +321,16 @@ export class ChunkManager {
         }
 
         // Track emissive blocks
+        const idx = chunk.index(localX, floorY, localZ);
         if (blockDef && (blockDef.emissive ?? 0) > 0) {
-          chunk.emissiveBlocks.add(`${localX},${floorY},${localZ}`);
+          chunk.emissiveBlocks.add(idx);
         } else {
-          chunk.emissiveBlocks.delete(`${localX},${floorY},${localZ}`);
+          chunk.emissiveBlocks.delete(idx);
         }
       } else if (type === 0) {
         // Air block: remove from emissives
-        chunk.emissiveBlocks.delete(`${localX},${floorY},${localZ}`);
+        const idx = chunk.index(localX, floorY, localZ);
+        chunk.emissiveBlocks.delete(idx);
       }
 
       // Update light levels

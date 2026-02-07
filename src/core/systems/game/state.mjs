@@ -314,7 +314,7 @@ export function toInventoryKey(/** @type {string} */ name) {
  * @constant
  */
 export const gameState = {
-  curBlock: new Signal.State(getBlockIdByName("Dirt")),
+  curBlock: new Signal.State(getBlockIdByName("Sunflower")),
   world: new ChunkManager(),
   worldTime: 0.5,
   seed: initialWorldSeed,

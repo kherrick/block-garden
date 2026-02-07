@@ -80,8 +80,11 @@ export class Chunk {
     /** @type {LightMap|null} Baked light data */
     this.lightMap = null;
 
-    /** @type {Set<string>} Track local emissive block positions "x,y,z" */
+    /** @type {Set<number>} Track local emissive block indices */
     this.emissiveBlocks = new Set();
+
+    /** @type {boolean} Whether emissive block cache is verified */
+    this.emissivesVerified = false;
   }
 
   /**
@@ -162,6 +165,23 @@ export class Chunk {
    */
   index(x, y, z) {
     return x + z * CHUNK_SIZE_X + y * CHUNK_SIZE_X * CHUNK_SIZE_Z;
+  }
+
+  /**
+   * Convert array index to local chunk coordinates.
+   *
+   * @param {number} index - Array index
+   *
+   * @returns {{x: number, y: number, z: number}}
+   */
+  localFromIndex(index) {
+    const layerSize = CHUNK_SIZE_X * CHUNK_SIZE_Z;
+    const y = Math.floor(index / layerSize);
+    const remainder = index % layerSize;
+    const z = Math.floor(remainder / CHUNK_SIZE_X);
+    const x = remainder % CHUNK_SIZE_X;
+
+    return { x, y, z };
   }
 
   /**

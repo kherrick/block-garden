@@ -350,7 +350,12 @@ export class InventoryDialog {
     const alphaSort = (a, b) => a.name.localeCompare(b.name);
     categories.natural.blocks.sort(alphaSort);
     categories.system.blocks.sort(alphaSort);
-    categories.lighting.blocks.sort(alphaSort);
+    // Lighting blocks sorted by luminance (emissive value) from least to greatest
+    categories.lighting.blocks.sort((a, b) => {
+      const emissiveA = a.emissive || 0;
+      const emissiveB = b.emissive || 0;
+      return emissiveA - emissiveB;
+    });
 
     // Build HTML
     let html = "";

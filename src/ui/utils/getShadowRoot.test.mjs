@@ -1,3 +1,6 @@
+/**
+ * @jest-environment jsdom
+ */
 const { getShadowRoot } = await import("./getShadowRoot.mjs");
 
 describe("getShadowRoot", () => {

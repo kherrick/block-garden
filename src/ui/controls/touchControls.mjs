@@ -1,4 +1,5 @@
 import { gameState } from "../../core/systems/game/state.mjs";
+import { removeBlock } from "../../utils/interaction.mjs";
 
 /** @typedef {import('../../core/systems/game/init.mjs').CustomShadowHost} CustomShadowHost */
 /** @typedef {import('../../core/systems/game/state.mjs').GameState} GameState */
@@ -51,7 +52,7 @@ export function initTouchControls(shadow) {
         const hit = gameState.hit;
 
         if (hit) {
-          gameState.world.delete(`${hit.x},${hit.y},${hit.z}`, true);
+          removeBlock(gameState);
         }
       }
     }

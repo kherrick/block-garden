@@ -1552,6 +1552,12 @@ export class StorageDialog {
         ).blob();
 
         stateJSON = await decompressedBlob.text();
+
+        // Parse and load save state
+        const saveState = JSON.parse(stateJSON);
+
+        await loadSaveState(this.gThis, this.shadow, saveState);
+
         this.close();
 
         const seedDialog = /** @type {HTMLDialogElement | null} */ (

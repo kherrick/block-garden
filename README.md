@@ -4,7 +4,7 @@
 
 Block Garden - A 3D sandbox exploration and farming game. Explore procedurally generated worlds, dig for resources, and cultivate a variety of plants.
 
-[![Block Garden Screenshot](assets/screenshots/block-garden-screenshot-2266x1440.png)](https://kherrick.github.io/block-garden/)
+[![Block Garden Screenshot](https://kherrick.github.io/block-garden/assets/screenshots/block-garden-screenshot-2266x1440.png)](https://kherrick.github.io/block-garden/)
 
 ## To play locally
 
@@ -35,40 +35,38 @@ npm i && npm start
 - **Open Inventory:** `e / i`
 - **Toggle Hotbar:** `m`
 - **Toggle Flight:** `k`
-- Click game canvas to lock mouse
-  - **Use crosshair to center block placement**
-  - **Left Click (Hold):** Break Block
-  - **Right Click:** Place Block
+- **Touch Hold (Left Click):** Break Block
+- **Touch (Right Click):** Place Block
 
 ### Included Game Saves
 
-Get started by clicking one of the saved games below:
+Get started by opening one of the saved games below:
 
-### [The Garden](https://kherrick.github.io/block-garden/?gameSave=https://kherrick.github.io/block-garden/assets/game-saves/The-Garden.pdf)
+### [The Garden](https://kherrick.github.io/block-garden/?gettingStarted=false&gameSave=https://kherrick.github.io/block-garden/assets/game-saves/The-Garden.pdf)
 
-[![The Garden](assets/screenshots/block-garden-screenshot-the-garden-400x400.png)](https://kherrick.github.io/block-garden/?gameSave=https://kherrick.github.io/block-garden/assets/game-saves/The-Garden.pdf)
+[![The Garden](https://kherrick.github.io/block-garden/assets/screenshots/block-garden-screenshot-the-garden-400x400.png)](https://kherrick.github.io/block-garden/?gettingStarted=false&gameSave=https://kherrick.github.io/block-garden/assets/game-saves/The-Garden.pdf)
 
-### [Caves](https://kherrick.github.io/block-garden/?gameSave=https://kherrick.github.io/block-garden/assets/game-saves/Caves.pdf)
+### [Caves](https://kherrick.github.io/block-garden/?gettingStarted=false&gameSave=https://kherrick.github.io/block-garden/assets/game-saves/Caves.pdf)
 
-[![Caves](assets/screenshots/block-garden-screenshot-caves-400x400.png)](https://kherrick.github.io/block-garden/?gameSave=https://kherrick.github.io/block-garden/assets/game-saves/Caves.pdf)
+[![Caves](https://kherrick.github.io/block-garden/assets/screenshots/block-garden-screenshot-caves-400x400.png)](https://kherrick.github.io/block-garden/?gettingStarted=false&gameSave=https://kherrick.github.io/block-garden/assets/game-saves/Caves.pdf)
 
-### [Flowers](https://kherrick.github.io/block-garden/?gameSave=https://kherrick.github.io/block-garden/assets/game-saves/Flowers.pdf)
+### [Flowers](https://kherrick.github.io/block-garden/?gettingStarted=false&gameSave=https://kherrick.github.io/block-garden/assets/game-saves/Flowers.pdf)
 
-[![Flowers](assets/screenshots/block-garden-screenshot-flowers-400x400.png)](https://kherrick.github.io/block-garden/?gameSave=https://kherrick.github.io/block-garden/assets/game-saves/Flowers.pdf)
+[![Flowers](https://kherrick.github.io/block-garden/assets/screenshots/block-garden-screenshot-flowers-400x400.png)](https://kherrick.github.io/block-garden/?gettingStarted=false&gameSave=https://kherrick.github.io/block-garden/assets/game-saves/Flowers.pdf)
 
-### [Gateway To The Clouds](https://kherrick.github.io/block-garden/?gameSave=https://kherrick.github.io/block-garden/assets/game-saves/Gateway-To-The-Clouds.pdf)
+### [Gateway To The Clouds](https://kherrick.github.io/block-garden/?gettingStarted=false&gameSave=https://kherrick.github.io/block-garden/assets/game-saves/Gateway-To-The-Clouds.pdf)
 
-[![Gateway To The Clouds](assets/screenshots/block-garden-screenshot-gateway-to-the-clouds-400x400.png)](https://kherrick.github.io/block-garden/?gameSave=https://kherrick.github.io/block-garden/assets/game-saves/Gateway-To-The-Clouds.pdf)
+[![Gateway To The Clouds](https://kherrick.github.io/block-garden/assets/screenshots/block-garden-screenshot-gateway-to-the-clouds-400x400.png)](https://kherrick.github.io/block-garden/?gettingStarted=false&gameSave=https://kherrick.github.io/block-garden/assets/game-saves/Gateway-To-The-Clouds.pdf)
 
 ## Demos
 
 ### Fireworks
 
-[![Block Garden Fireworks](assets/block-garden-fireworks.gif)](https://www.youtube.com/watch?v=1aW5C7A9wSk)
+[![Block Garden Fireworks](https://kherrick.github.io/block-garden/assets/block-garden-fireworks.gif)](https://www.youtube.com/watch?v=1aW5C7A9wSk)
 
 ### Random Planting
 
-[![Block Garden Animation](assets/block-garden-animation.gif)](https://www.youtube.com/watch?v=eRDM5INHyKA)
+[![Block Garden Animation](https://kherrick.github.io/block-garden/assets/block-garden-animation.gif)](https://www.youtube.com/watch?v=eRDM5INHyKA)
 
 ### Gateway To The Clouds
 

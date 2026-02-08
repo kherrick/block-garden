@@ -35,4 +35,11 @@ grep -Rl 'fetch(' src/** | while IFS= read -r filename; do
       && bin/file-search-replace.mjs 'fetch\("package.json"\)' "$filename" 'fetch("data:application/json;base64,' "$base64Encoded\")" \
       || exit 1
   fi
+
+  if [[ "$filename" == "src/ui/dialog/gettingStarted.mjs" ]]; then
+    # shellcheck disable=SC2016
+    base64Encoded="$(bin/urlToBase64.mjs http://localhost:8080/README.md)" \
+      && bin/file-search-replace.mjs 'fetch\("README.md"\)' "$filename" 'fetch("data:text/markdown;base64,' "$base64Encoded\")" \
+      || exit 1
+  fi
 done

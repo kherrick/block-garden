@@ -1,4 +1,5 @@
 import { autoSaveGame } from "./dialog/storage.mjs";
+import { showGettingStartedDialog } from "./dialog/gettingStarted.mjs";
 import { colors as gameColors } from "../core/world/config/colors.mjs";
 import { generateColorVars } from "../utils/colors/generateColorVars.mjs";
 import { initGame } from "../core/systems/game/init.mjs";
@@ -1299,6 +1300,7 @@ export class BlockGarden extends HTMLElement {
     );
 
     await initGame(this.gThis, shadow, canvas);
+    await showGettingStartedDialog(this.gThis.document, shadow, this.gThis);
   }
 
   /** @returns {Promise<void>} */

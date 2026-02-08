@@ -92,12 +92,6 @@ export function clearUrlParams(gThis) {
 
     let changed = false;
 
-    if (params.has("gettingStarted")) {
-      params.delete("gettingStarted");
-
-      changed = true;
-    }
-
     if (params.has("seed")) {
       params.delete("seed");
 

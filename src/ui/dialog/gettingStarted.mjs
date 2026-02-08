@@ -3,8 +3,6 @@ import {
   persistValue,
 } from "../../core/systems/persistence.mjs";
 
-import { clearUrlParams } from "../../utils/urlParams.mjs";
-
 /** @typedef {import('../../core/systems/game/state.mjs').BlockGardenGlobalThis} BlockGardenGlobalThis */
 
 export class GettingStartedDialog {
@@ -20,14 +18,47 @@ export class GettingStartedDialog {
     this.dialog = null;
   }
 
+  removeGettingStartedParam() {
+    try {
+      if (!this.gThis || !this.gThis.location) {
+        return;
+      }
+
+      const url = new this.gThis.URL(this.gThis.location.href);
+      const params = new this.gThis.URLSearchParams(url.search);
+
+      if (!params.has("gettingStarted")) {
+        return;
+      }
+
+      params.delete("gettingStarted");
+
+      const newSearch = params.toString();
+      const newUrl =
+        url.origin + url.pathname + (newSearch ? "?" + newSearch : "");
+
+      this.gThis.history.replaceState({}, "", newUrl);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn("Failed to remove gettingStarted param:", err);
+    }
+  }
+
   async init() {
     // Check URL parameter for gettingStarted
     const gettingStartedParam = this.getGettingStartedUrlParam();
+
+    // Remove the param locally
+    if (gettingStartedParam !== null) {
+      this.removeGettingStartedParam();
+    }
+
     if (gettingStartedParam === "false") {
       // Mark as seen and bypass dialog
       await persistValue("config", "gettingStartedSeen", true);
 
-      clearUrlParams(this.gThis);
+      // Ensure we remove the gettingStarted param from the URL locally
+      this.removeGettingStartedParam();
 
       return;
     }
@@ -47,7 +78,7 @@ export class GettingStartedDialog {
     const seen = await getPersistedValue("config", "gettingStartedSeen", false);
     if (seen) {
       if (this.gThis) {
-        clearUrlParams(this.gThis);
+        this.removeGettingStartedParam();
       }
 
       return;
@@ -224,8 +255,8 @@ export class GettingStartedDialog {
       color: var(--bg-color-gray-900);
       font-family: monospace;
       line-height: 1.5;
-      max-height: 95vh;
-      max-width: 40rem;
+      max-height: 85vh;
+      max-width: min(40rem, 85vw);
       overflow-y: auto;
       padding: 1.5rem;
       z-index: 10000;
@@ -253,7 +284,7 @@ export class GettingStartedDialog {
             <li>Different plants grow at different rates.</li>
           </ul>
         </p>
-        <p style="width: 100%; text-align: center; margin: 2rem 0;"><strong><u>Close this dialog to continue or read more below.</u></strong></p>
+        <p style="width: 100%; text-align: center; margin: 2rem 0;"><strong><a style="cursor: pointer; text-decoration: underline;" id="closeMessage">Close this dialog to continue or read more below.</a></strong></p>
         ${content}
       </div>
     `;
@@ -267,6 +298,8 @@ export class GettingStartedDialog {
     // Add styles for the content
     const style = this.doc.createElement("style");
     style.textContent = `
+      dialog::backdrop { background-color: rgba(0, 0, 0, 0.5); backdrop-filter: blur(0.125rem); };
+
       .getting-started-content h3 { margin-top: 1rem; margin-bottom: 0.5rem; border-bottom: 1px solid var(--bg-color-gray-500); padding-bottom: 0.25rem; }
       .getting-started-content h4 { margin-top: 0.75rem; margin-bottom: 0.5rem; border-bottom: 1px solid var(--bg-color-gray-500); padding-top: 0.25rem; }
       .getting-started-content ul { padding-left: 1.5rem; margin: 0.5rem 0; }
@@ -283,9 +316,98 @@ export class GettingStartedDialog {
     this.shadow.append(dialog);
     this.dialog = dialog;
 
+    const closeMessage = dialog.querySelector("#closeMessage");
     const closeBtn = dialog.querySelector("#closeGettingStarted");
-    if (closeBtn) {
+    if (closeBtn && closeMessage) {
       closeBtn.addEventListener("click", () => this.close());
+      closeMessage.addEventListener("click", () => this.close());
+    }
+
+    // Add confirmation for included game save links/images under each h4
+    try {
+      const container = dialog.querySelector(".getting-started-content");
+      if (container) {
+        const headers = Array.from(container.querySelectorAll("h4"));
+
+        headers.forEach((h4) => {
+          const title = (h4.textContent || "").trim();
+
+          // helper to attach confirmation handler to an element which may navigate
+          const attachConfirm = (/** @type {HTMLElement|null} */ el) => {
+            if (!el) {
+              return;
+            }
+
+            // For anchors
+            if (el.tagName === "A") {
+              el.addEventListener("click", (/** @type {Event} */ ev) => {
+                ev.preventDefault();
+                ev.stopPropagation();
+
+                const confirmed = globalThis.confirm(
+                  `Leave your current game and load "${title}"?`,
+                );
+
+                if (confirmed) {
+                  const href = el.getAttribute("href");
+                  if (href) {
+                    globalThis.location.href = href;
+                  }
+                }
+              });
+            }
+
+            // For images (if inside an anchor the anchor handler will run first)
+            if (el.tagName === "IMG") {
+              // If the image is inside a link, the anchor handler will handle navigation.
+              if (el.closest && el.closest("a")) {
+                return;
+              }
+
+              el.style.cursor = "pointer";
+              el.addEventListener("click", (/** @type {Event} */ ev) => {
+                ev.preventDefault();
+                ev.stopPropagation();
+
+                const confirmed = globalThis.confirm(
+                  `Leave your current game and load "${title}"?`,
+                );
+
+                if (confirmed) {
+                  // If image is wrapped in a link, follow that link
+                  const parentA = el.closest("a");
+                  if (parentA) {
+                    const href = parentA.getAttribute("href");
+                    if (href) {
+                      globalThis.location.href = href;
+                    }
+                  }
+                }
+              });
+            }
+          };
+
+          // Attach to any anchors/images inside the header itself
+          h4.querySelectorAll &&
+            Array.from(h4.querySelectorAll("a, img")).forEach((el) =>
+              attachConfirm(/** @type {HTMLElement} */ (el)),
+            );
+
+          // Attach to siblings until the next header (h3/h4)
+          let sib = h4.nextElementSibling;
+          while (sib && sib.tagName !== "H3" && sib.tagName !== "H4") {
+            sib.querySelectorAll &&
+              Array.from(sib.querySelectorAll("a, img")).forEach((el) =>
+                attachConfirm(/** @type {HTMLElement} */ (el)),
+              );
+
+            sib = sib.nextElementSibling;
+          }
+        });
+      }
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn("Failed to attach included-save confirmations:", err);
     }
 
     // Wait for images to load and then scroll to top
@@ -342,7 +464,7 @@ export class GettingStartedDialog {
       persistValue("config", "gettingStartedSeen", true);
 
       if (this.gThis) {
-        clearUrlParams(this.gThis);
+        this.removeGettingStartedParam();
       }
 
       this.dialog.showModal();

@@ -4,12 +4,21 @@
 import { jest } from "@jest/globals";
 
 jest.unstable_mockModule("../core/world/config/blocks.mjs", () => ({
+  blockNames: {
+    AIR: "Air",
+    DIRT: "Dirt",
+    WATER: "Water",
+    STONE: "Stone",
+    CLOUD: "Cloud",
+  },
+  blocks: [],
   getBlockById: jest.fn().mockImplementation((id) => {
     const blocks = {
       0: { name: "Air", solid: false },
       1: { name: "Dirt", solid: true },
       2: { name: "Water", solid: false },
       3: { name: "Stone", solid: true },
+      72: { name: "Cloud", solid: false },
     };
 
     return blocks[id];

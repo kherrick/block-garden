@@ -68,6 +68,7 @@ export function initGameDependencies(cnvs, blockDefs = []) {
     uniform mat4 MVP, M;
     uniform vec3 L;
     uniform float uULG; // Use Per-Face Lighting (1.0 or 0.0)
+    uniform float uUT;  // Use Texture (1.0 or 0.0)
     uniform float uMinLight; // Minimum ambient light floor
 
     out vec4 C;
@@ -83,7 +84,10 @@ export function initGameDependencies(cnvs, blockDefs = []) {
       float d=max(dot(nn,-L),0.);
       // Per-face lighting (directional) + ambient term
       // If uULG is 0, Lg will be 1.0 (flat)
-      Lg = mix(1.0, .2 + d*0.8, uULG);
+      // When textures are enabled (uUT=1), reduce directional strength to smooth block edges
+      float directionalStrength = mix(0.8, 0.4, uUT);
+      float ambientBase = mix(0.2, 0.4, uUT);
+      Lg = mix(1.0, ambientBase + d*directionalStrength, uULG);
       C=c;
       Vuv=uv;
       Vao=ao;
@@ -115,9 +119,9 @@ export function initGameDependencies(cnvs, blockDefs = []) {
 
     void main(){
       vec4 texColor = texture(T, Vuv);
-      // Mix texture with vertex color (tinting)
-      // If uUT is 0, texColor is effectively white
-      vec4 baseColor = mix(vec4(1.0), texColor, uUT) * C;
+      // Use texture directly when enabled, otherwise use vertex color
+      // Tint texture with vertex color when enabled
+      vec4 baseColor = mix(C, C * texColor, uUT);
 
       // Radial AO Calculation using Bilinear Interpolation
       // VcornerAO contains AO for corners in order: (0,0), (1,0), (1,1), (0,1)
@@ -127,13 +131,9 @@ export function initGameDependencies(cnvs, blockDefs = []) {
       float aoRight = mix(VcornerAO.y, VcornerAO.z, VlocalUV.y);  // Right edge: mix (1,0) and (1,1) by y
       float aoBilinear = mix(aoLeft, aoRight, VlocalUV.x);       // Final: mix left and right using x
 
-      // Apply a slight radial curve to make it look "softer"
-      // This emphasizes the corners/edges
-      float radialAO = pow(aoBilinear, 1.2);
-
-      // Apply lighting and Ambient Occlusion
-      // If uUAO is 0, aoBilinear is effectively 1.0
-      float aoVal = mix(1.0, radialAO, uUAO);
+      // AO values includes gamma correction
+      // Apply lighting and Ambient Occlusion (disable AO when uUAO is 0)
+      float aoVal = mix(1.0, aoBilinear, uUAO);
 
       // Final exposure: directional light + AO, blended with emissive light
       // We also apply a minimum ambient floor (uMinLight)
@@ -141,7 +141,10 @@ export function initGameDependencies(cnvs, blockDefs = []) {
 
       // AO Debug mode: if uUAOD is 1.0, show only AO values as grayscale
       vec3 color = mix(baseColor.rgb * lightExposure, vec3(aoVal), uUAOD);
-      o = vec4(color, baseColor.a);
+      // Always use vertex color alpha to maintain water transparency
+      // When textures are enabled (uUT=1), multiply by texture alpha to support transparent overlays (cracks)
+      o = vec4(color, mix(C.a, texColor.a * C.a, uUT));
+      if (o.a < 0.01) discard; // Discard fully transparent fragments
     }
   `;
 
@@ -222,6 +225,8 @@ export function initGameDependencies(cnvs, blockDefs = []) {
     );
 
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
   }
 
   // Dedicated buffers for breaking overlay (to avoid corrupting shared chunk buffers)

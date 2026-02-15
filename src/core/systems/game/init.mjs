@@ -27,26 +27,26 @@ import { COLOR_STORAGE_KEY } from "../../../ui/dialog/colors/index.mjs";
 import { getSavedColors } from "../../../ui/dialog/colors/getSavedColors.mjs";
 import { showToast } from "../../../api/ui/toast.mjs";
 
-import { cancelGameLoop, gameLoop } from "./loop.mjs";
 import { colors as gameColors } from "../../world/config/colors.mjs";
 import { FAST_GROWTH_TIME } from "../../world/config/index.mjs";
+import { TRANSPARENT_BLOCK_ALPHA } from "../../world/config/blocks.mjs";
+
+import { initNewWorld } from "../../world/generation/world.mjs";
+
+import { initGameDependencies } from "../../render/webGLContext.mjs";
 
 import { initCanvasEventListeners } from "../../../ui/controls/eventListeners/canvasListeners.mjs";
 import { initElementEventListeners } from "../../../ui/controls/eventListeners/elementListeners.mjs";
 import { initMaterialBarEventListeners } from "../../../ui/controls/eventListeners/materialBar.mjs";
 
-import { initState } from "./state.mjs";
 import { initEffects, initMaterialBarEffects } from "../../../ui/effects.mjs";
 import { initHammerControls } from "../../../ui/controls/hammerControls.mjs";
 import { initMaterialBar } from "../../../ui/materialBar.mjs";
 import { initTouchControls } from "../../../ui/controls/touchControls.mjs";
 
-import { initGameDependencies } from "../../render/webGLContext.mjs";
-import { initNewWorld } from "../../world/generation/world.mjs";
+import { initState } from "./state.mjs";
 
-/**
- * @typedef {Element & { keys: Record<string, boolean>, touchKeys: Record<string, boolean> }} CustomShadowHost
- */
+import { cancelGameLoop, gameLoop } from "./loop.mjs";
 
 /**
  * @typedef {import('../../world/config/index.mjs').GameConfig} GameConfig
@@ -60,6 +60,23 @@ import { initNewWorld } from "../../world/generation/world.mjs";
  *
  * @property {string} version
  */
+
+/**
+ * @typedef {Element & { keys: Record<string, boolean>, touchKeys: Record<string, boolean> }} CustomShadowHost
+ */
+
+/**
+ * Apply alpha overrides to a block color map for transparent blocks.
+ *
+ * @param {{[k: string]: number[]}} colorMap
+ */
+function applyTransparentBlockAlpha(colorMap) {
+  for (const [name, alpha] of Object.entries(TRANSPARENT_BLOCK_ALPHA)) {
+    if (colorMap[name]) {
+      colorMap[name][3] = alpha;
+    }
+  }
+}
 
 /**
  * Initializes the environment for the game.
@@ -194,6 +211,9 @@ export async function initGame(gThis, shadow, cnvs) {
       normalizeRGBToRGBA(cssColorToRGB(gThis.document, v)),
     ]),
   );
+
+  // Override alpha for transparent blocks (CSS color pipeline strips alpha)
+  applyTransparentBlockAlpha(blockColorMap);
 
   initEffects(shadow, computedSignals.currentBlock);
   initElementEventListeners(shadow, cnvs, gameConfig.currentResolution);
@@ -411,6 +431,9 @@ export async function initGame(gThis, shadow, cnvs) {
         normalizeRGBToRGBA(cssColorToRGB(gThis.document, v)),
       ]),
     );
+
+    // Override alpha for transparent blocks (CSS color pipeline strips alpha)
+    applyTransparentBlockAlpha(bm);
 
     gameLoop(
       shadow,

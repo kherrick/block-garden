@@ -1,88 +1,182 @@
 # [Block Garden](https://kherrick.github.io/block-garden/)
 
-**Type:** 3D Sandbox Exploration and Farming Game
-**Platform:** Web (Playable offline, desktop and mobile)
-**Tech:** Custom Element, JavaScript, HTML Canvas, Service Worker
+**Type:** 3D Voxel Sandbox Exploration & Farming Game
+**Platform:** Web PWA (Offline-first, desktop & mobile)
+**Tech Stack:** Vanilla JavaScript (ES Modules), WebGL, Web Components, Signal-based Reactivity, Service Worker
 **Play Now:** [https://kherrick.github.io/block-garden/](https://kherrick.github.io/block-garden/)
 
 ---
 
-> **Block Garden** is a 3D sandbox exploration and farming game available at [https://kherrick.github.io/block-garden/](https://kherrick.github.io/block-garden/).
-> Players explore procedurally generated worlds, dig for resources, cultivate plants, and shape their environment.
+**Block Garden** is a feature-rich 3D voxel sandbox exploration and farming game built with modern vanilla JavaScript.
+Players explore procedurally generated worlds, dig for resources, cultivate 20+ plant species, and shape their environment.
 
-The game is fully playable without login, and all progress is stored locally or can be exported as downloadable save files.
-Gameplay supports keyboard and mouse controls on desktop, and touch controls on mobile.
-
----
-
-## 🎮 Quick Start
-
-- **Movement:** w / a / s / d
-- **Camera:** Arrow Keys
-- **Descend:** Shift
-- **Jump / Ascend:** Space
-- **Place / Break Block:** Enter
-
-- **Change Block:** ~ / `
-- **Open Inventory:** e / i
-- **Toggle Hotbar:** m
-- **Toggle Flight:** k
-
-- **Click game canvas to lock mouse**
-- **Use crosshair to center block placement**
-
-- **Left Click (Hold):** Break Block
-- **Right Click:** Place Block
+Fully playable offline with privacy-first design—no login, no data collection, all progress stored locally or as shareable save files.
 
 ---
 
-## 🌱 Gameplay Overview
+## 🚀 Development Quick Start
 
-Players begin by exploring their surroundings to gather materials, cultivate plants, and experiment with terrain.
-Worlds are **procedurally generated**, providing a fresh environment every session with varied resources.
+```sh
+npm install
+npm start              # Dev server on http://localhost:3000
+npm test               # Run Jest test suite
+npx rollup -c          # Build production bundle
+npm run build          # Full build pipeline
+```
 
-All progress remains local — no account or online storage is required. Installation and offline play are supported.
-
----
-
-## 🧩 Features
-
-- Procedurally generated worlds
-- Local and downloadable saves
-- Cross-platform (desktop & mobile)
-- Installation and offline play supported
-- Privacy-respecting (no login or data collection)
+**Documentation:**
+- [**AGENTS.MD**](AGENTS.MD) — Comprehensive architecture & development guide for AI agents
+- [**.CLAUDE/CLAUDE.MD**](.claude/CLAUDE.md) — Claude-specific development guide
+- [**.GITHUB/COPILOT-INSTRUCTIONS.MD**](.github/copilot-instructions.md) — GitHub Copilot coding patterns
 
 ---
 
-## 🧠 Modding and API Support
+## 🎮 Gameplay Controls
 
-*Block Garden* is designed for openness and experimentation. Players and developers can extend gameplay through **bookmarklet scripts** or modular JavaScript examples located in:
+**Desktop:**
+- **Movement:** w/a/s/d | **Camera:** Arrow Keys
+- **Jump:** Space | **Descend:** Shift | **Place/Break:** Enter
+- **Block Selection:** ~/` | **Inventory:** e/i | **Hotbar:** m | **Flight:** k
 
-[`/src/api/examples/`](https://kherrick.github.io/block-garden/src/api/examples/)
-
-Below are some example modules demonstrating various extensions:
-
-| Example | Description | Demo Link |
-|----------|--------------|-----------|
-| **Messaging** | Draw text on the map | [Messaging.mjs](https://kherrick.github.io/block-garden/src/api/examples/Messaging.mjs) |
-
----
-
-## 📚 Documentation
-
-- [**Game README**](https://kherrick.github.io/block-garden/README.md) — Detailed overview, features, controls, and gameplay tips
-- [**Privacy Policy**](https://kherrick.github.io/block-garden/privacy/) — Information on data handling and user privacy
-- [**Source Code**](https://github.com/kherrick/block-garden) — Full project source for exploration and custom development
+**Mobile:**
+- **Touch Controls:** Gesture-based movement and block interactions via Hammer.js
+- **Camera:** Touch drag | **Actions:** Tap to place blocks, Tap and hold to break blocks
 
 ---
 
-## 🚀 Try It Out
+## 🧩 Core Features
 
-- **Play Now:** [Block Garden](https://kherrick.github.io/block-garden/) — Main playable version
-- **Offline / Local Save:** Supported
-- **No Login Required:** All data stays on your device
+### World & Environment
+- **Procedural Generation** — Simplex noise terrain with shareable seeds (Web Worker-based)
+- **Day/Night Cycle** — Dynamic time system with celestial rendering (sun, moon, stars)
+- **Ambient Occlusion** — Per-vertex lighting with smooth AO calculations
+- **Biome System** — Multiple biomes with unique characteristics
+- **Block Variety** — 50+ block types with different properties
+
+### Farming System
+- **20+ Plant Species** — Wheat, corn, carrots, pumpkins, roses, sunflowers, bamboo, cacti, trees, mushrooms, water plants, and more
+- **Growth Stages** — Plants progress through realistic growth cycles
+- **Harvesting** — Collect mature crops and seeds
+- **Plant Persistence** — Growth state saved and restored with world
+
+### Storage & Progression
+- **Local Saves** — All progress stored in IndexedDB with compression
+- **Shareable Files** — Export/import worlds as downloadable PDF files
+- **Share Target Protocol** — PWA share integration for save files
+- **Cloud-Free** — Privacy-first design with zero cloud dependencies
+
+### UI & Interaction
+- **Inventory System** — Manage collected blocks and seeds
+- **Material Bar** — Quick-access hotbar for block selection
+- **Color Customization** — Full theming system with custom color properties
+- **Tutorial** — "Getting Started" dialog for new players
+- **Dialogs** — Storage management, inventory, settings, examples, about, privacy
+
+### Cross-Platform Support
+- **Desktop** — Keyboard & mouse controls with lock-on-canvas
+- **Mobile** — Touch and gesture controls via Hammer.js
+- **PWA** — Installation support, offline play, Service Worker caching
+- **Responsive** — Auto-scaling canvas for any screen size
 
 ---
 
-**Tags:** progressive web app, PWA, sandbox game, web game, webgl, voxel art, farming sim, procedural generation, modding, open source, Canvas, JavaScript, HTML5, browser game
+## 🏛️ Architecture Overview
+
+### Core Systems (src/core/)
+- **Game Loop** (systems/game/loop.mjs) — Fixed-timestep update loop
+- **State Management** (systems/game/state.mjs) — Signal-based reactive state with Signal.State and Signal.Computed
+- **World System** (world/chunkManager.mjs) — Chunk loading/unloading, lifecycle, persistence
+- **Physics** (systems/physics.mjs) — AABB collision detection and response
+- **Lighting** (world/lighting/lightSystem.mjs) — Dynamic light propagation with 8-directional updates
+- **Plant Growth** (systems/plantGrowth.mjs) — Age progression, harvesting, restoration
+- **Meshing** (world/meshing/chunkMesher.mjs) — Greedy algorithm for efficient quad generation
+- **Rendering** (render/graphics.mjs) — WebGL pipeline with three render passes (opaque, transparent, water)
+
+### UI System (src/ui/)
+- **BlockGarden Component** (BlockGarden.mjs) — Main Web Component with Shadow DOM
+- **Controls** (controls/) — Event listeners for canvas, keyboard, mouse, touch, Hammer.js gestures
+- **Dialogs** (dialog/) — Modular dialog systems for inventory, storage, settings, tutorials, sharing
+- **Components** (components/) — Custom form elements (select, option)
+- **Material Bar** (materialBar.mjs) — Block selection interface
+
+### Public API (src/api/)
+- **BlockGarden API** (BlockGarden.mjs) — Extensible API for modding and scripting
+- **Player Control** (player/) — Programmatic movement, key events, animations
+- **UI Utilities** (ui/) — Canvas resizing, toast notifications
+- **Examples** (examples/) — Game of Life, Fireworks, TicTacToe, Video Player, Photo Gallery, Link, Messaging, Konami Code
+
+### Utilities (src/utils/)
+- **Colors** (colors/) — CSS color manipulation, theming, custom properties, normalization
+- **Interaction** (interaction.mjs) — Mining, placing, farming logic
+- **Raycasting** (raycastFromCanvasCoords.mjs) — Mouse/touch to world conversion
+- **Math/Ray/Noise** — Math utilities, ray calculations, noise functions
+- **Compression** — Data serialization and gzip compression
+- **Canvas** — PNG export with game state metadata
+
+### Configuration (src/core/world/config/)
+- **Blocks** (blocks.mjs) — 1300+ lines defining all block types and properties
+- **Colors** (colors.mjs) — Color palettes and theming
+- **Biomes** (biomes.mjs) — Biome definitions with characteristics
+- **Block Database** (index.mjs) — Unified block metadata and lookup
+
+### Build & Tooling
+- **Rollup** (rollup.config.mjs) — ES module bundling with tree-shaking
+- **Jest** (jest.config.mjs) — Comprehensive test suite (~3000+ tests)
+- **Service Worker** (service-worker/) — Workbox configuration, share target handler
+- **Build Scripts** (bin/) — HTML building, compression, analysis, serving utilities
+
+---
+
+## 📊 Project Statistics
+
+- ~300 source files across core, UI, systems, utils, and API
+- ~46,900 lines added from initial commit with major architectural improvements
+- 20+ plant species with growth mechanics
+- 50+ block types with unique properties
+- 1700+ line meshing algorithm for optimal geometry rendering
+- Comprehensive test coverage with Jest (unit, integration, reproduction tests)
+
+---
+
+## 🧠 Modding & Extension
+
+Block Garden is designed for openness. Extend gameplay through:
+
+- **Bookmarklet Scripts** — Run custom scripts in the browser console
+- **API Examples** — Modular JavaScript examples in the examples gallery
+- **Public API** — Access to player control, canvas utilities, and game state
+- **Web Components** — Build custom UI components using Shadow DOM
+
+**Resources:**
+- [**API Examples Gallery**](https://kherrick.github.io/block-garden/src/api/examples/) — Live examples
+- [**Public API Docs**](src/api/BlockGarden.mjs) — Full API reference
+- [**AGENTS.MD**](AGENTS.MD) — For AI agents building on Block Garden
+
+---
+
+## 🛠️ Technology Stack
+
+- **Rendering:** WebGL with vertex lighting and custom shader compilation
+- **Reactivity:** signal-polyfill (Signal.State, Signal.Computed) for fine-grained state management
+- **UI:** Web Components with Shadow DOM encapsulation, CSS custom properties (variables)
+- **Architecture:** Vanilla JavaScript ES Modules (.mjs), no frameworks
+- **Testing:** Jest with ES module support
+- **Bundling:** Rollup with tree-shaking optimization
+- **Procedural Gen:** Simplex noise in Web Worker for non-blocking terrain generation
+- **Storage:** localforage (IndexedDB) with gzip compression
+- **Input Handling:** Keyboard, mouse, touch (Hammer.js), accessibility features
+- **PWA:** Service Worker (Workbox), manifest, add-to-home-screen support
+- **Data Format:** Custom compressed save format, PDF embedding for sharing
+
+---
+
+## 📋 Testing
+
+- **Test Framework:** Jest
+- **Coverage:** Comprehensive unit, integration, and reproduction tests
+- **Run Tests:** npm test or npm test -- --watch for watch mode
+- **Test Files:** Collocated with sources as .test.mjs files
+
+---
+
+**Tags:** progressive web app, PWA, sandbox game, voxel game, WebGL, 3D graphics, farming sim, procedural generation, plant growth, modding, extensible API, open source, vanilla JavaScript, ES modules, Web Components, offline-first, privacy-first, mobile-friendly, touch controls, canvas, HTML5, browser game, procedural terrain, lighting system, ambient occlusion, day-night cycle

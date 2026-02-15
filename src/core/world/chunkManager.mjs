@@ -114,6 +114,15 @@ export class ChunkManager {
       }
 
       chunk.dirty = true;
+
+      // Mark neighbors as dirty to ensure boundary faces are updated
+      this.markNeighborsDirty(chunkX, chunkZ, 0, 0); // Touches -X, -Z
+      this.markNeighborsDirty(
+        chunkX,
+        chunkZ,
+        CHUNK_SIZE_X - 1,
+        CHUNK_SIZE_Z - 1,
+      ); // Touches +X, +Z
     }
   }
 

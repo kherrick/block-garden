@@ -440,6 +440,10 @@ export function gameLoop(
   const MESHES_PER_FRAME = 10;
   let meshedThisFrame = 0;
 
+  // Opaque Pass: No blending, depth writing ON
+  gl.disable(gl.BLEND);
+  gl.depthMask(true);
+
   for (const chunk of visibleChunks) {
     // Rebuild mesh if dirty (budget limited)
     if (chunk.dirty && meshedThisFrame < MESHES_PER_FRAME) {
@@ -450,11 +454,57 @@ export function gameLoop(
       meshedThisFrame++;
     }
 
-    // Draw the chunk mesh (even if not yet meshed this frame)
-    if (chunk.mesh && chunk.mesh.vertexCount > 0) {
-      drawChunkMesh(gl, chunk, VP, uMVP, uM);
+    // Draw opaque part
+    if (chunk.mesh && chunk.mesh.opaque && chunk.mesh.opaque.vertexCount > 0) {
+      drawChunkMesh(gl, chunk.mesh.opaque, VP, uMVP, uM);
     }
   }
+
+  // Transparent Pass: Blending ON, depth writing OFF
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  gl.depthMask(false);
+  gl.depthFunc(gl.LEQUAL);
+
+  // Render back-to-front for correct alpha blending across chunks
+  const reversedChunks = [...visibleChunks].reverse();
+
+  // Water Pass: Render water first with depth writing ON for proper layering
+  gl.uniform1f(uUT, gameConfig.useTexturedWater.get() ? 1.0 : 0.0);
+  gl.depthMask(true); // Water writes to depth buffer
+  gl.depthFunc(gl.LESS); // Standard depth test for water
+
+  for (const chunk of reversedChunks) {
+    // Draw water part
+    const water = chunk.mesh?.water;
+    if (water && water.vertexCount > 0) {
+      drawChunkMesh(gl, water, VP, uMVP, uM);
+    }
+  }
+
+  // Transparent Pass: Render transparent blocks after water with depth writing OFF
+  gl.uniform1f(uUT, gameConfig.useTextureAtlas.get() ? 1.0 : 0.0);
+  gl.depthMask(false); // Transparent blocks don't write depth
+  gl.depthFunc(gl.LEQUAL); // Allow rendering at same depth as water
+
+  for (const chunk of reversedChunks) {
+    // Draw transparent part
+    if (
+      chunk.mesh &&
+      chunk.mesh.transparent &&
+      chunk.mesh.transparent.vertexCount > 0
+    ) {
+      drawChunkMesh(gl, chunk.mesh.transparent, VP, uMVP, uM);
+    }
+  }
+
+  // Restore states
+  gl.depthMask(true);
+  gl.depthFunc(gl.LESS);
+  gl.disable(gl.BLEND);
+
+  // Ensure world shader program is active for overlays
+  gl.useProgram(worldProgram);
 
   // Draw crosshairs overlay only if split controls are enabled
   if (gameConfig.useSplitControls.get()) {
@@ -488,6 +538,7 @@ export function gameLoop(
       VP,
       uMVP,
       uM,
+      uUT,
       pbuf,
       nbuf,
       breakCbuf,

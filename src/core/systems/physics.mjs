@@ -16,6 +16,7 @@
 import { isSolid } from "../../utils/isSolid.mjs";
 import { isKeyPressed } from "../../utils/isKeyPressed.mjs";
 import { gameConfig } from "../world/config/index.mjs";
+import { blockNames, getBlockById } from "../world/config/blocks.mjs";
 
 /**
  * Checks if two AABBs intersect.
@@ -131,9 +132,38 @@ export function updatePhysics(shadow, ui, state, dt) {
   if (!state.isCanvasActionDisabled) {
     // INPUT HANDLING
     const space = isKeyPressed(shadow, " ");
+    const shift = isKeyPressed(shadow, "shift");
     const now = performance.now();
 
+    // Detect if player is submerged in water
+    const feetBlockType = state.world.getBlock(
+      Math.floor(x),
+      Math.floor(y - playerHeight / 2),
+      Math.floor(z),
+    );
+
+    const headBlockType = state.world.getBlock(
+      Math.floor(x),
+      Math.floor(y + playerHeight / 2 - 0.1),
+      Math.floor(z),
+    );
+
+    const feetDef = feetBlockType ? getBlockById(feetBlockType) : null;
+    const headDef = headBlockType ? getBlockById(headBlockType) : null;
+    const inWater =
+      (feetDef && feetDef.name === blockNames.WATER) ||
+      (headDef && headDef.name === blockNames.WATER);
+
+    state.isSubmerged = !!inWater;
+
     isFlying = flying.get();
+
+    // Disable flight when submerged in water
+    if (inWater && isFlying) {
+      flying.set(false);
+
+      isFlying = false;
+    }
 
     // RISING EDGE: SPACE
     if (space && !state.spacePressed) {
@@ -157,13 +187,25 @@ export function updatePhysics(shadow, ui, state, dt) {
 
     // FLIGHT MOVEMENT
     if (isFlying) {
-      if (isKeyPressed(shadow, "shift")) {
+      if (shift) {
         dy = -flySpeed; // Descend
       } else if (space) {
         dy = flySpeed; // Ascend
       } else {
         dy = 0; // Hover
       }
+    } else if (inWater) {
+      // Swimming: reduced gravity + buoyancy
+      dy -= 12 * dt;
+      if (space) {
+        dy = 6; // Swim up
+      }
+
+      if (shift) {
+        dy = -6; // Dive down
+      }
+
+      dy *= 0.95; // Water drag
     } else {
       // Normal gravity
       dy -= 45 * dt;

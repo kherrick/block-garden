@@ -105,6 +105,7 @@ import { getRandomSeed } from "../../../utils/getRandomSeed.mjs";
  * @property {{isHeld: boolean, mode: string, cursorX: number, cursorY: number}} placingInput
  * @property {{x: number, y: number, z: number}|null} cursorTarget - Block under cursor for immediate highlighting
  * @property {boolean} panStartedOnCanvas - Whether the current pan gesture started on the canvas
+ * @property {boolean} isSubmerged - Whether the player is currently submerged in water
  */
 
 /**
@@ -397,6 +398,7 @@ export const gameState = {
   },
   cursorTarget: null,
   panStartedOnCanvas: false,
+  isSubmerged: false,
 };
 
 /**

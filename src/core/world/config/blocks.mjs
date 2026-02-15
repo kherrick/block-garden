@@ -189,6 +189,25 @@ export const blockNames = {
 };
 
 /**
+ * Alpha overrides for transparent blocks.
+ *
+ * CSS color resolution strips alpha, so these must be applied post-resolution.
+ *
+ * @type {Record<string, number>}
+ */
+export const TRANSPARENT_BLOCK_ALPHA = {
+  [blockNames.CLOUD]: 0.7,
+  [blockNames.TREE_LEAVES]: 0.85,
+  [blockNames.WATER]: 0.6,
+  [blockNames.BIRCH_LEAVES]: 0.85,
+  [blockNames.PINE_NEEDLES]: 0.85,
+  [blockNames.WILLOW_LEAVES]: 0.85,
+  [blockNames.BAMBOO_LEAVES]: 0.85,
+  [blockNames.BERRY_BUSH_LEAVES]: 0.85,
+  [blockNames.ICE]: 0.7,
+};
+
+/**
  * Array of block definitions.
  *
  * @type {BlockDefinition[]}
@@ -267,7 +286,7 @@ const blockDefinitionsArray = [
     id: 54,
     breakTime: 0.5,
     drops: blockNames.BAMBOO,
-    solid: true,
+    solid: false,
   },
   {
     name: blockNames.BAMBOO_STALK,
@@ -320,7 +339,7 @@ const blockDefinitionsArray = [
     id: 50,
     breakTime: 0.5,
     drops: blockNames.BERRY_BUSH,
-    solid: true,
+    solid: false,
   },
   {
     name: blockNames.BERRY_BUSH,
@@ -366,7 +385,7 @@ const blockDefinitionsArray = [
     id: 119,
     breakTime: 0.5,
     drops: [blockNames.BIRCH, blockNames.WOOD],
-    solid: true,
+    solid: false,
   },
   {
     name: blockNames.BIRCH_TRUNK,
@@ -753,7 +772,7 @@ const blockDefinitionsArray = [
     id: 64,
     breakTime: 0.5,
     drops: [blockNames.PINE_TREE, blockNames.WOOD],
-    solid: true,
+    solid: false,
   },
   {
     name: blockNames.PINE_TREE_GROWING,
@@ -959,7 +978,7 @@ const blockDefinitionsArray = [
     id: 11,
     breakTime: 0.5,
     drops: [blockNames.TREE_LEAVES, blockNames.WOOD],
-    solid: true,
+    solid: false,
     crop: true,
   },
   {
@@ -1021,7 +1040,7 @@ const blockDefinitionsArray = [
     id: 4,
     breakTime: 0.5,
     drops: blockNames.WATER,
-    solid: true,
+    solid: false,
     gravity: true,
   },
   {
@@ -1068,7 +1087,7 @@ const blockDefinitionsArray = [
     id: 68,
     breakTime: 0.5,
     drops: [blockNames.WILLOW_TREE, blockNames.WOOD],
-    solid: true,
+    solid: false,
   },
   {
     name: blockNames.WILLOW_TREE_GROWING,

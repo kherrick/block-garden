@@ -112,14 +112,22 @@ function isTransparent(colorMap, blockType, blockDefs) {
     return true;
   }
 
+  if (blockType === -1) {
+    // Unloaded = opaque (prevent seeing through world boundary)
+    return false;
+  }
+
   const block = blockDefs.getById(blockType);
 
   if (!block) {
-    // Unknown = transparent
+    // Unknown = transparent (so we don't render faces against it)
     return true;
   }
 
-  return Number(colorMap[block.name][3]) < 1.0; // Alpha < 1 = transparent
+  const color = colorMap[block.name];
+  if (!color) return true;
+
+  return Number(color[3]) < 1.0; // Alpha < 1 = transparent
 }
 
 /**
@@ -178,24 +186,108 @@ function getNeighborBlock(
   if (localX < 0) {
     if (neighbors.nx)
       return neighbors.nx.getBlock(localX + CHUNK_SIZE_X, y, localZ);
+    return -1; // Unloaded
   } else if (localX >= CHUNK_SIZE_X) {
     if (neighbors.px)
       return neighbors.px.getBlock(localX - CHUNK_SIZE_X, y, localZ);
+    return -1; // Unloaded
   }
 
   if (localZ < 0) {
     if (neighbors.nz)
       return neighbors.nz.getBlock(localX, y, localZ + CHUNK_SIZE_Z);
+    return -1; // Unloaded
   } else if (localZ >= CHUNK_SIZE_Z) {
     if (neighbors.pz)
       return neighbors.pz.getBlock(localX, y, localZ - CHUNK_SIZE_Z);
+    return -1; // Unloaded
   }
 
   // Fallback to slow lookup if neighbor not in cache (corners or beyond 1 chunk)
   const worldX = chunk.worldX + localX;
   const worldZ = chunk.worldZ + localZ;
 
-  return chunkManager.getBlock(worldX, y, worldZ);
+  const chunkX = Math.floor(worldX / CHUNK_SIZE_X);
+  const chunkZ = Math.floor(worldZ / CHUNK_SIZE_Z);
+  const neighborChunk = chunkManager.getChunk(chunkX, chunkZ);
+
+  if (!neighborChunk) return -1;
+
+  const lx = ((worldX % CHUNK_SIZE_X) + CHUNK_SIZE_X) % CHUNK_SIZE_X;
+  const lz = ((worldZ % CHUNK_SIZE_Z) + CHUNK_SIZE_Z) % CHUNK_SIZE_Z;
+
+  return neighborChunk.getBlock(lx, y, lz);
+}
+
+/**
+ * Get light level at coordinates, handling cross-chunk lookups with cached neighbors.
+ *
+ * @param {Chunk} chunk - Current chunk
+ * @param {ChunkManager} chunkManager - Chunk manager for neighbor lookups
+ * @param {number} localX - Local X (may be out of bounds)
+ * @param {number} y - Y coordinate
+ * @param {number} localZ - Local Z (may be out of bounds)
+ * @param {{nx?: Chunk, px?: Chunk, nz?: Chunk, pz?: Chunk}} neighbors - Cached neighbors
+ *
+ * @returns {number} Light level 0.0-1.0
+ */
+function getNeighborLight(
+  chunk,
+  chunkManager,
+  localX,
+  y,
+  localZ,
+  neighbors = {},
+) {
+  // Handle Y bounds
+  if (y < 0 || y >= CHUNK_SIZE_Y) {
+    return 1.0; // Fully lit above/below world
+  }
+
+  // Within this chunk
+  if (
+    localX >= 0 &&
+    localX < CHUNK_SIZE_X &&
+    localZ >= 0 &&
+    localZ < CHUNK_SIZE_Z
+  ) {
+    return (chunk.lightMap?.get(localX, y, localZ) ?? 0) / 15;
+  }
+
+  // Handle neighbors using cache if available
+  let neighborChunk;
+  if (localX < 0) {
+    neighborChunk = neighbors.nx;
+    localX += CHUNK_SIZE_X;
+  } else if (localX >= CHUNK_SIZE_X) {
+    neighborChunk = neighbors.px;
+    localX -= CHUNK_SIZE_X;
+  } else if (localZ < 0) {
+    neighborChunk = neighbors.nz;
+    localZ += CHUNK_SIZE_Z;
+  } else if (localZ >= CHUNK_SIZE_Z) {
+    neighborChunk = neighbors.pz;
+    localZ -= CHUNK_SIZE_Z;
+  }
+
+  if (neighborChunk && neighborChunk.lightMap) {
+    return neighborChunk.lightMap.get(localX, y, localZ) / 15;
+  }
+
+  // Fallback to slow lookup for corners or uncached
+  const worldX = chunk.worldX + localX;
+  const worldZ = chunk.worldZ + localZ;
+
+  const chunkX = Math.floor(worldX / CHUNK_SIZE_X);
+  const chunkZ = Math.floor(worldZ / CHUNK_SIZE_Z);
+  const targetChunk = chunkManager.getChunk(chunkX, chunkZ);
+
+  if (!targetChunk || !targetChunk.lightMap) return 0;
+
+  const lx = ((worldX % CHUNK_SIZE_X) + CHUNK_SIZE_X) % CHUNK_SIZE_X;
+  const lz = ((worldZ % CHUNK_SIZE_Z) + CHUNK_SIZE_Z) % CHUNK_SIZE_Z;
+
+  return targetChunk.lightMap.get(lx, y, lz) / 15;
 }
 
 /**
@@ -211,10 +303,12 @@ function getNeighborBlock(
  */
 /**
  * Vertex corner offsets for AO calculation for each face.
+ * Uses 8-neighbor approach with all neighbors checked for each corner.
+ * Neighbors are ordered: 4 edges + 3 faces + 1 corner (8 total)
  */
 const FACE_CORNERS = [
   {
-    // +X
+    // +X: neighbors for each corner in the face's local space
     uvs: [
       [0, 0],
       [1, 0],
@@ -223,37 +317,73 @@ const FACE_CORNERS = [
       [1, 1],
       [0, 1],
     ],
+    // Each corner has 8 neighbor offsets: 4 edges, 3 faces, 1 corner
     aoOffsets: [
+      // Corner at (0,0) - corresponds to UV (0,0)
+      [
+        [0, -1, 0], // edge 1: -y
+        [0, 0, -1], // edge 2: -z
+        [0, 1, 0], // face 1: +y
+        [0, 0, 1], // face 2: +z
+        [0, -1, -1], // face 3: -y-z
+        [0, -1, 1], // corner-adjacent 1: -y+z
+        [0, 1, -1], // corner-adjacent 2: +y-z
+        [0, 1, 1], // corner 1: +y+z
+      ],
+      // Corner at (1,0) - corresponds to UV (1,0)
       [
         [0, -1, 0],
         [0, 0, -1],
+        [0, 1, 0],
+        [0, 0, 1],
         [0, -1, -1],
-      ], // 1,0,0
-      [
-        [0, 1, 0],
-        [0, 0, -1],
-        [0, 1, -1],
-      ], // 1,1,0
-      [
-        [0, 1, 0],
-        [0, 0, 1],
-        [0, 1, 1],
-      ], // 1,1,1
-      [
-        [0, -1, 0],
-        [0, 0, -1],
-        [0, -1, -1],
-      ], // 1,0,0
-      [
-        [0, 1, 0],
-        [0, 0, 1],
-        [0, 1, 1],
-      ], // 1,1,1
-      [
-        [0, -1, 0],
-        [0, 0, 1],
         [0, -1, 1],
-      ], // 1,0,1
+        [0, 1, -1],
+        [0, 1, 1],
+      ],
+      // Corner at (1,1) - corresponds to UV (1,1)
+      [
+        [0, 1, 0],
+        [0, 0, 1],
+        [0, -1, 0],
+        [0, 0, -1],
+        [0, 1, 1],
+        [0, 1, -1],
+        [0, -1, 1],
+        [0, -1, -1],
+      ],
+      // Repeat for 2nd triangle
+      [
+        [0, -1, 0],
+        [0, 0, -1],
+        [0, 1, 0],
+        [0, 0, 1],
+        [0, -1, -1],
+        [0, -1, 1],
+        [0, 1, -1],
+        [0, 1, 1],
+      ],
+      [
+        [0, 1, 0],
+        [0, 0, 1],
+        [0, -1, 0],
+        [0, 0, -1],
+        [0, 1, 1],
+        [0, 1, -1],
+        [0, -1, 1],
+        [0, -1, -1],
+      ],
+      // Corner at (0,1) - corresponds to UV (0,1)
+      [
+        [0, 1, 0],
+        [0, 0, 1],
+        [0, -1, 0],
+        [0, 0, -1],
+        [0, 1, 1],
+        [0, 1, -1],
+        [0, -1, 1],
+        [0, -1, -1],
+      ],
     ],
   },
   {
@@ -270,33 +400,63 @@ const FACE_CORNERS = [
       [
         [0, -1, 0],
         [0, 0, 1],
+        [0, 1, 0],
+        [0, 0, -1],
         [0, -1, 1],
-      ], // 0,0,1
-      [
-        [0, 1, 0],
-        [0, 0, 1],
-        [0, 1, 1],
-      ], // 0,1,1
-      [
-        [0, 1, 0],
-        [0, 0, -1],
-        [0, 1, -1],
-      ], // 0,1,0
-      [
-        [0, -1, 0],
-        [0, 0, 1],
-        [0, -1, 1],
-      ], // 0,0,1
-      [
-        [0, 1, 0],
-        [0, 0, -1],
-        [0, 1, -1],
-      ], // 0,1,0
-      [
-        [0, -1, 0],
-        [0, 0, -1],
         [0, -1, -1],
-      ], // 0,0,0
+        [0, 1, 1],
+        [0, 1, -1],
+      ],
+      [
+        [0, 1, 0],
+        [0, 0, 1],
+        [0, -1, 0],
+        [0, 0, -1],
+        [0, 1, 1],
+        [0, 1, -1],
+        [0, -1, 1],
+        [0, -1, -1],
+      ],
+      [
+        [0, 1, 0],
+        [0, 0, -1],
+        [0, -1, 0],
+        [0, 0, 1],
+        [0, 1, -1],
+        [0, 1, 1],
+        [0, -1, -1],
+        [0, -1, 1],
+      ],
+      [
+        [0, -1, 0],
+        [0, 0, 1],
+        [0, 1, 0],
+        [0, 0, -1],
+        [0, -1, 1],
+        [0, -1, -1],
+        [0, 1, 1],
+        [0, 1, -1],
+      ],
+      [
+        [0, 1, 0],
+        [0, 0, -1],
+        [0, -1, 0],
+        [0, 0, 1],
+        [0, 1, -1],
+        [0, 1, 1],
+        [0, -1, -1],
+        [0, -1, 1],
+      ],
+      [
+        [0, -1, 0],
+        [0, 0, -1],
+        [0, 1, 0],
+        [0, 0, 1],
+        [0, -1, -1],
+        [0, -1, 1],
+        [0, 1, -1],
+        [0, 1, 1],
+      ],
     ],
   },
   {
@@ -313,33 +473,63 @@ const FACE_CORNERS = [
       [
         [-1, 0, 0],
         [0, 0, -1],
-        [-1, 0, -1],
-      ], // 0,1,0
-      [
-        [-1, 0, 0],
+        [1, 0, 0],
         [0, 0, 1],
+        [-1, 0, -1],
         [-1, 0, 1],
-      ], // 0,1,1
+        [1, 0, -1],
+        [1, 0, 1],
+      ],
+      [
+        [-1, 0, 0],
+        [0, 0, 1],
+        [1, 0, 0],
+        [0, 0, -1],
+        [-1, 0, 1],
+        [-1, 0, -1],
+        [1, 0, 1],
+        [1, 0, -1],
+      ],
       [
         [1, 0, 0],
         [0, 0, 1],
+        [-1, 0, 0],
+        [0, 0, -1],
         [1, 0, 1],
-      ], // 1,1,1
+        [1, 0, -1],
+        [-1, 0, 1],
+        [-1, 0, -1],
+      ],
       [
         [-1, 0, 0],
         [0, 0, -1],
+        [1, 0, 0],
+        [0, 0, 1],
         [-1, 0, -1],
-      ], // 0,1,0
+        [-1, 0, 1],
+        [1, 0, -1],
+        [1, 0, 1],
+      ],
       [
         [1, 0, 0],
         [0, 0, 1],
+        [-1, 0, 0],
+        [0, 0, -1],
         [1, 0, 1],
-      ], // 1,1,1
+        [1, 0, -1],
+        [-1, 0, 1],
+        [-1, 0, -1],
+      ],
       [
         [1, 0, 0],
         [0, 0, -1],
+        [-1, 0, 0],
+        [0, 0, 1],
         [1, 0, -1],
-      ], // 1,1,0
+        [1, 0, 1],
+        [-1, 0, -1],
+        [-1, 0, 1],
+      ],
     ],
   },
   {
@@ -356,33 +546,63 @@ const FACE_CORNERS = [
       [
         [-1, 0, 0],
         [0, 0, 1],
-        [-1, 0, 1],
-      ], // 0,0,1
-      [
-        [-1, 0, 0],
+        [1, 0, 0],
         [0, 0, -1],
+        [-1, 0, 1],
         [-1, 0, -1],
-      ], // 0,0,0
+        [1, 0, 1],
+        [1, 0, -1],
+      ],
+      [
+        [-1, 0, 0],
+        [0, 0, -1],
+        [1, 0, 0],
+        [0, 0, 1],
+        [-1, 0, -1],
+        [-1, 0, 1],
+        [1, 0, -1],
+        [1, 0, 1],
+      ],
       [
         [1, 0, 0],
         [0, 0, -1],
+        [-1, 0, 0],
+        [0, 0, 1],
         [1, 0, -1],
-      ], // 1,0,0
+        [1, 0, 1],
+        [-1, 0, -1],
+        [-1, 0, 1],
+      ],
       [
         [-1, 0, 0],
         [0, 0, 1],
+        [1, 0, 0],
+        [0, 0, -1],
         [-1, 0, 1],
-      ], // 0,0,1
+        [-1, 0, -1],
+        [1, 0, 1],
+        [1, 0, -1],
+      ],
       [
         [1, 0, 0],
         [0, 0, -1],
+        [-1, 0, 0],
+        [0, 0, 1],
         [1, 0, -1],
-      ], // 1,0,0
+        [1, 0, 1],
+        [-1, 0, -1],
+        [-1, 0, 1],
+      ],
       [
         [1, 0, 0],
         [0, 0, 1],
+        [-1, 0, 0],
+        [0, 0, -1],
         [1, 0, 1],
-      ], // 1,0,1
+        [1, 0, -1],
+        [-1, 0, 1],
+        [-1, 0, -1],
+      ],
     ],
   },
   {
@@ -399,33 +619,63 @@ const FACE_CORNERS = [
       [
         [-1, 0, 0],
         [0, -1, 0],
-        [-1, -1, 0],
-      ], // 0,0,1
-      [
-        [-1, 0, 0],
+        [1, 0, 0],
         [0, 1, 0],
+        [-1, -1, 0],
         [-1, 1, 0],
-      ], // 0,1,1
+        [1, -1, 0],
+        [1, 1, 0],
+      ],
+      [
+        [-1, 0, 0],
+        [0, 1, 0],
+        [1, 0, 0],
+        [0, -1, 0],
+        [-1, 1, 0],
+        [-1, -1, 0],
+        [1, 1, 0],
+        [1, -1, 0],
+      ],
       [
         [1, 0, 0],
         [0, 1, 0],
+        [-1, 0, 0],
+        [0, -1, 0],
         [1, 1, 0],
-      ], // 1,1,1
+        [1, -1, 0],
+        [-1, 1, 0],
+        [-1, -1, 0],
+      ],
       [
         [-1, 0, 0],
         [0, -1, 0],
+        [1, 0, 0],
+        [0, 1, 0],
         [-1, -1, 0],
-      ], // 0,0,1
+        [-1, 1, 0],
+        [1, -1, 0],
+        [1, 1, 0],
+      ],
       [
         [1, 0, 0],
         [0, 1, 0],
+        [-1, 0, 0],
+        [0, -1, 0],
         [1, 1, 0],
-      ], // 1,1,1
+        [1, -1, 0],
+        [-1, 1, 0],
+        [-1, -1, 0],
+      ],
       [
         [1, 0, 0],
         [0, -1, 0],
+        [-1, 0, 0],
+        [0, 1, 0],
         [1, -1, 0],
-      ], // 1,0,1
+        [1, 1, 0],
+        [-1, -1, 0],
+        [-1, 1, 0],
+      ],
     ],
   },
   {
@@ -442,90 +692,124 @@ const FACE_CORNERS = [
       [
         [1, 0, 0],
         [0, -1, 0],
-        [1, -1, 0],
-      ], // 1,0,0
-      [
-        [1, 0, 0],
+        [-1, 0, 0],
         [0, 1, 0],
+        [1, -1, 0],
         [1, 1, 0],
-      ], // 1,1,0
+        [-1, -1, 0],
+        [-1, 1, 0],
+      ],
+      [
+        [1, 0, 0],
+        [0, 1, 0],
+        [-1, 0, 0],
+        [0, -1, 0],
+        [1, 1, 0],
+        [1, -1, 0],
+        [-1, 1, 0],
+        [-1, -1, 0],
+      ],
       [
         [-1, 0, 0],
         [0, 1, 0],
+        [1, 0, 0],
+        [0, -1, 0],
         [-1, 1, 0],
-      ], // 0,1,0
+        [-1, -1, 0],
+        [1, 1, 0],
+        [1, -1, 0],
+      ],
       [
         [1, 0, 0],
         [0, -1, 0],
+        [-1, 0, 0],
+        [0, 1, 0],
         [1, -1, 0],
-      ], // 1,0,0
+        [1, 1, 0],
+        [-1, -1, 0],
+        [-1, 1, 0],
+      ],
       [
         [-1, 0, 0],
         [0, 1, 0],
+        [1, 0, 0],
+        [0, -1, 0],
         [-1, 1, 0],
-      ], // 0,1,0
+        [-1, -1, 0],
+        [1, 1, 0],
+        [1, -1, 0],
+      ],
       [
         [-1, 0, 0],
         [0, -1, 0],
+        [1, 0, 0],
+        [0, 1, 0],
         [-1, -1, 0],
-      ], // 0,0,0
+        [-1, 1, 0],
+        [1, -1, 0],
+        [1, 1, 0],
+      ],
     ],
   },
 ];
 
 /**
+ * Ambient Occlusion gamma correction table.
+ * Maps occlusion count to AO multipliers with gamma correction.
+ * Default gamma = 1.8.
+ */
+const AO_GAMMA = 1.8;
+const AO_LIGHT_AMOUNTS = [
+  Math.pow(0.75, 1.0 / AO_GAMMA), // 5 occluders: 0.75^(1/1.8)
+  Math.pow(0.5, 1.0 / AO_GAMMA), // 6 occluders: 0.5^(1/1.8)
+  Math.pow(0.25, 1.0 / AO_GAMMA), // 7+ occluders: 0.25^(1/1.8)
+];
+
+/**
  * Calculate Ambient Occlusion for a vertex.
+ * Checks up to 8 neighbors around a corner and applies darkening only when
+ * 5 or more neighbors are solid (occluding).
  *
  * @param {Chunk} chunk - Current chunk
  * @param {ChunkManager} chunkManager - Chunk manager for neighbor lookups
  * @param {number} x - X coordinate
  * @param {number} y - Y coordinate
  * @param {number} z - Z coordinate
- * @param {Array<Array<number>>} offsets - Offset deltas for AO calculation
+ * @param {Array<Array<number>>} offsets - 8 neighbor offsets for AO calculation
  * @param {Blocks} blockDefs - Block definitions
  * @param {{nx?: Chunk, px?: Chunk, nz?: Chunk, pz?: Chunk}} neighbors - Cached neighbor chunks
  *
- * @returns {number} AO value
+ * @returns {number} AO value (1.0 = no occlusion, < 1.0 = darkened)
  */
 function getAO(chunk, chunkManager, x, y, z, offsets, blockDefs, neighbors) {
-  let occlusion = 0;
+  let occluders = 0;
 
-  const side1 = getNeighborBlock(
-    chunk,
-    chunkManager,
-    x + offsets[0][0],
-    y + offsets[0][1],
-    z + offsets[0][2],
-    neighbors,
-  );
-  const side2 = getNeighborBlock(
-    chunk,
-    chunkManager,
-    x + offsets[1][0],
-    y + offsets[1][1],
-    z + offsets[1][2],
-    neighbors,
-  );
-  const corner = getNeighborBlock(
-    chunk,
-    chunkManager,
-    x + offsets[2][0],
-    y + offsets[2][1],
-    z + offsets[2][2],
-    neighbors,
-  );
+  // Count how many of the 8 neighbors are solid (opaque) blocks
+  for (let i = 0; i < 8; i++) {
+    const blockId = getNeighborBlock(
+      chunk,
+      chunkManager,
+      x + offsets[i][0],
+      y + offsets[i][1],
+      z + offsets[i][2],
+      neighbors,
+    );
 
-  const s1 = side1 !== 0 && blockDefs.getById(side1)?.solid ? 1 : 0;
-  const s2 = side2 !== 0 && blockDefs.getById(side2)?.solid ? 1 : 0;
-  const c = corner !== 0 && blockDefs.getById(corner)?.solid ? 1 : 0;
-
-  if (s1 === 1 && s2 === 1) {
-    occlusion = 3;
-  } else {
-    occlusion = s1 + s2 + c;
+    // Count this neighbor as an occluder if it's a solid block
+    if (blockId !== 0 && blockDefs.getById(blockId)?.solid) {
+      occluders++;
+    }
   }
 
-  return [1.0, 0.7, 0.5, 0.3][occlusion];
+  // Only apply darkening if 5 or more neighbors are occluding
+  if (occluders <= 4) {
+    return 1.0; // No occlusion
+  }
+
+  // Apply gamma-corrected darkening based on occlusion count
+  // occluders ranges from 5-8, so we subtract 5 to index into our table
+  const aoIndex = Math.min(occluders - 5, 2); // Clamp to [0, 2] for our 3-entry table
+  return AO_LIGHT_AMOUNTS[aoIndex];
 }
 
 /**
@@ -540,14 +824,42 @@ function getAO(chunk, chunkManager, x, y, z, offsets, blockDefs, neighbors) {
  * @returns {ChunkMesh}
  */
 export function meshChunk(colorMap, chunk, chunkManager, blockDefs) {
-  const positions = [];
-  const normals = [];
-  const colors = [];
-  const uvs = [];
-  const ao = [];
-  const localUVs = [];
-  const cornerAO = [];
-  const lightLevels = [];
+  // Output buffers
+  const opaque = {
+    positions: /** @type {number[]} */ ([]),
+    normals: /** @type {number[]} */ ([]),
+    colors: /** @type {number[]} */ ([]),
+    uvs: /** @type {number[]} */ ([]),
+    ao: /** @type {number[]} */ ([]),
+    lightLevels: /** @type {number[]} */ ([]),
+    localUVs: /** @type {number[]} */ ([]),
+    cornerAO: /** @type {number[]} */ ([]),
+    vertexCount: 0,
+  };
+
+  const transparent = {
+    positions: /** @type {number[]} */ ([]),
+    normals: /** @type {number[]} */ ([]),
+    colors: /** @type {number[]} */ ([]),
+    uvs: /** @type {number[]} */ ([]),
+    ao: /** @type {number[]} */ ([]),
+    lightLevels: /** @type {number[]} */ ([]),
+    localUVs: /** @type {number[]} */ ([]),
+    cornerAO: /** @type {number[]} */ ([]),
+    vertexCount: 0,
+  };
+
+  const water = {
+    positions: /** @type {number[]} */ ([]),
+    normals: /** @type {number[]} */ ([]),
+    colors: /** @type {number[]} */ ([]),
+    uvs: /** @type {number[]} */ ([]),
+    ao: /** @type {number[]} */ ([]),
+    lightLevels: /** @type {number[]} */ ([]),
+    localUVs: /** @type {number[]} */ ([]),
+    cornerAO: /** @type {number[]} */ ([]),
+    vertexCount: 0,
+  };
 
   const baseX = chunk.worldX;
   const baseZ = chunk.worldZ;
@@ -561,9 +873,16 @@ export function meshChunk(colorMap, chunk, chunkManager, blockDefs) {
   };
 
   const tileSize = 1 / 16;
+  // Add padding to prevent texture bleeding at tile edges
+  // With 1-pixel padding on each side of a 16-pixel tile:
+  // - Usable portion: 14 pixels
+  // - Offset: 1 pixel / 16 = 0.0625
+  // - Scale: 14 pixels / 16 = 0.875
+  const uvPaddingOffset = 1 / 16;
+  const uvPaddingScale = 14 / 16;
 
   // Iterate all blocks in chunk
-  for (let y = 1; y < CHUNK_SIZE_Y; y++) {
+  for (let y = 0; y < CHUNK_SIZE_Y; y++) {
     for (let z = 0; z < CHUNK_SIZE_Z; z++) {
       for (let x = 0; x < CHUNK_SIZE_X; x++) {
         const type = chunk.getBlock(x, y, z);
@@ -605,6 +924,7 @@ export function meshChunk(colorMap, chunk, chunkManager, blockDefs) {
 
           // Face is visible if neighbor is air or transparent and different
           const neighborIsAir = neighborType === 0;
+          const neighborUnloaded = neighborType === -1;
           const neighborTransparent = isTransparent(
             colorMap,
             neighborType,
@@ -614,9 +934,17 @@ export function meshChunk(colorMap, chunk, chunkManager, blockDefs) {
           let shouldRender = false;
           if (neighborIsAir) {
             shouldRender = true;
+          } else if (neighborUnloaded) {
+            // Cull transparent block faces against unloaded chunks to prevent internal walls
+            shouldRender = !isThisTransparent;
           } else if (!isThisTransparent && neighborTransparent) {
             shouldRender = true;
-          } else if (isThisTransparent && neighborType !== type) {
+          } else if (
+            isThisTransparent &&
+            neighborTransparent &&
+            neighborType !== type
+          ) {
+            // Transparent block renders if neighbor is transparent but different (e.g. water vs leaves)
             shouldRender = true;
           }
 
@@ -642,38 +970,50 @@ export function meshChunk(colorMap, chunk, chunkManager, blockDefs) {
               }
             }
 
+            // Water blocks get their own mesh for independent texture control
+            let target;
+            if (block.name === "Water") {
+              target = water;
+            } else {
+              target = isThisTransparent ? transparent : opaque;
+            }
+
             // Add 6 vertices for this face
             for (let v = 0; v < 6; v++) {
               const corner = face.corners[v];
-              positions.push(
+              target.positions.push(
                 worldX + corner[0],
                 y + corner[1],
                 worldZ + corner[2],
               );
 
-              normals.push(dx, dy, dz);
-              colors.push(r, g, b, a_val);
+              target.normals.push(dx, dy, dz);
+              target.colors.push(r, g, b, a_val);
 
               // Light level: Get light at the face position
               const lightVal = chunk.lightMap
                 ? chunk.lightMap.get(x + dx, y + dy, z + dz)
                 : 0;
               // Convert 0-15 to 0.0-1.0 (linear for now, let shader handle curve if needed)
-              lightLevels.push(lightVal / 15);
+              target.lightLevels.push(lightVal / 15);
 
               const uvCoord = faceExtra.uvs[v];
-              uvs.push(
-                uBase + uvCoord[0] * tileSize,
-                vBase + uvCoord[1] * tileSize,
+              target.uvs.push(
+                uBase +
+                  uvPaddingOffset * tileSize +
+                  uvCoord[0] * uvPaddingScale * tileSize,
+                vBase +
+                  uvPaddingOffset * tileSize +
+                  uvCoord[1] * uvPaddingScale * tileSize,
               );
 
               // Local coords and 4-corner AO for Radial AO
-              localUVs.push(uvCoord[0], uvCoord[1]);
-              cornerAO.push(...ao4);
+              target.localUVs.push(uvCoord[0], uvCoord[1]);
+              target.cornerAO.push(...ao4);
 
               // AO calculation (only for solid blocks)
               if (block.solid) {
-                ao.push(
+                target.ao.push(
                   getAO(
                     chunk,
                     chunkManager,
@@ -686,9 +1026,10 @@ export function meshChunk(colorMap, chunk, chunkManager, blockDefs) {
                   ),
                 );
               } else {
-                ao.push(1.0);
+                target.ao.push(1.0);
               }
             }
+            target.vertexCount += 6;
           }
         }
       }
@@ -696,23 +1037,41 @@ export function meshChunk(colorMap, chunk, chunkManager, blockDefs) {
   }
 
   return {
-    positions: new Float32Array(positions),
-    normals: new Float32Array(normals),
-    colors: new Float32Array(colors),
-    uvs: new Float32Array(uvs),
-    ao: new Float32Array(ao),
-    localUVs: new Float32Array(localUVs),
-    cornerAO: new Float32Array(cornerAO),
-    lightLevels: new Float32Array(lightLevels),
-    vertexCount: positions.length / 3,
-    positionBuffer: null,
-    normalBuffer: null,
-    colorBuffer: null,
-    uvBuffer: null,
-    aoBuffer: null,
-    lightBuffer: null,
-    localUVBuffer: null,
-    cornerAOBuffer: null,
+    opaque: {
+      positions: new Float32Array(opaque.positions),
+      normals: new Float32Array(opaque.normals),
+      colors: new Float32Array(opaque.colors),
+      uvs: new Float32Array(opaque.uvs),
+      ao: new Float32Array(opaque.ao),
+      localUVs: new Float32Array(opaque.localUVs),
+      cornerAO: new Float32Array(opaque.cornerAO),
+      lightLevels: new Float32Array(opaque.lightLevels),
+      vertexCount: opaque.vertexCount,
+    },
+    transparent: {
+      positions: new Float32Array(transparent.positions),
+      normals: new Float32Array(transparent.normals),
+      colors: new Float32Array(transparent.colors),
+      uvs: new Float32Array(transparent.uvs),
+      ao: new Float32Array(transparent.ao),
+      localUVs: new Float32Array(transparent.localUVs),
+      cornerAO: new Float32Array(transparent.cornerAO),
+      lightLevels: new Float32Array(transparent.lightLevels),
+      vertexCount: transparent.vertexCount,
+    },
+    water: {
+      positions: new Float32Array(water.positions),
+      normals: new Float32Array(water.normals),
+      colors: new Float32Array(water.colors),
+      uvs: new Float32Array(water.uvs),
+      ao: new Float32Array(water.ao),
+      localUVs: new Float32Array(water.localUVs),
+      cornerAO: new Float32Array(water.cornerAO),
+      lightLevels: new Float32Array(water.lightLevels),
+      vertexCount: water.vertexCount,
+    },
+    vertexCount:
+      opaque.vertexCount + transparent.vertexCount + water.vertexCount,
   };
 }
 
@@ -761,22 +1120,56 @@ const AXIS_SIZES = [CHUNK_SIZE_X, CHUNK_SIZE_Y, CHUNK_SIZE_Z];
  * @returns {ChunkMesh}
  */
 export function greedyMeshChunk(colorMap, chunk, chunkManager, blockDefs) {
-  const positions = [];
-  const normals = [];
-  const colors = [];
-  const uvs = [];
-  const ao = [];
-  const localUVs = [];
-  const cornerAO = [];
-  const lightLevels = [];
-  const indices = [];
+  // Output buffers
+  const opaque = {
+    positions: /** @type {number[]} */ ([]),
+    normals: /** @type {number[]} */ ([]),
+    colors: /** @type {number[]} */ ([]),
+    uvs: /** @type {number[]} */ ([]),
+    ao: /** @type {number[]} */ ([]),
+    lightLevels: /** @type {number[]} */ ([]),
+    localUVs: /** @type {number[]} */ ([]),
+    cornerAO: /** @type {number[]} */ ([]),
+    indices: /** @type {number[]} */ ([]),
+    vertexCount: 0,
+    indexCount: 0,
+  };
 
-  let vertexIndex = 0;
+  const transparent = {
+    positions: /** @type {number[]} */ ([]),
+    normals: /** @type {number[]} */ ([]),
+    colors: /** @type {number[]} */ ([]),
+    uvs: /** @type {number[]} */ ([]),
+    ao: /** @type {number[]} */ ([]),
+    lightLevels: /** @type {number[]} */ ([]),
+    localUVs: /** @type {number[]} */ ([]),
+    cornerAO: /** @type {number[]} */ ([]),
+    indices: /** @type {number[]} */ ([]),
+    vertexCount: 0,
+    indexCount: 0,
+  };
+
+  const water = {
+    positions: /** @type {number[]} */ ([]),
+    normals: /** @type {number[]} */ ([]),
+    colors: /** @type {number[]} */ ([]),
+    uvs: /** @type {number[]} */ ([]),
+    ao: /** @type {number[]} */ ([]),
+    lightLevels: /** @type {number[]} */ ([]),
+    localUVs: /** @type {number[]} */ ([]),
+    cornerAO: /** @type {number[]} */ ([]),
+    indices: /** @type {number[]} */ ([]),
+    vertexCount: 0,
+    indexCount: 0,
+  };
 
   const baseX = chunk.worldX;
   const baseZ = chunk.worldZ;
 
   const tileSize = 1 / 16;
+  // Add padding to prevent texture bleeding at tile edges (same as meshChunk)
+  const uvPaddingOffset = 1 / 16;
+  const uvPaddingScale = 14 / 16;
 
   // Cache neighbor chunks
   const neighbors = {
@@ -816,44 +1209,43 @@ export function greedyMeshChunk(colorMap, chunk, chunkManager, blockDefs) {
             continue;
           }
 
-          // Check neighbor in the face direction
-          const neighborCoords = [x, y, z];
-          neighborCoords[axis] += dir;
+          const block = blockDefs.getById(type);
+          if (!block) continue;
+          const [r, g, b, a_val] = colorMap[block.name] || [1, 1, 1, 1];
+          const isThisTransparent = Number(a_val) < 1.0;
 
           const neighborType = getNeighborBlock(
             chunk,
             chunkManager,
-            neighborCoords[0],
-            neighborCoords[1],
-            neighborCoords[2],
+            x + (axis === 0 ? dir : 0),
+            y + (axis === 1 ? dir : 0),
+            z + (axis === 2 ? dir : 0),
             neighbors,
           );
 
-          const block = blockDefs.getById(type);
-          if (!block) {
-            continue;
-          }
-
-          const [r, g, b, a] = colorMap[block.name] || [1, 1, 1, 1];
-          const isThisTransparent = Number(a) < 1.0;
+          // Face is visible if neighbor is air or transparent and different
+          const neighborIsAir = neighborType === 0;
+          const neighborUnloaded = neighborType === -1;
           const neighborTransparent = isTransparent(
             colorMap,
             neighborType,
             blockDefs,
           );
 
-          // For greedy meshing, light levels must match
-          // We'll bake this into the mask by XORing or similar, but for now
-          // let's just use the current logic and fetch light later.
-          // Note: if lighting changes, we'd ideally want to split quads.
-          // For now, quads will have consistent light based on their origin.
-
           let shouldRender = false;
-          if (neighborType === 0) {
+          if (neighborIsAir) {
             shouldRender = true;
+          } else if (neighborUnloaded) {
+            // Cull transparent block faces against unloaded chunks
+            shouldRender = !isThisTransparent;
           } else if (!isThisTransparent && neighborTransparent) {
             shouldRender = true;
-          } else if (isThisTransparent && neighborType !== type) {
+          } else if (
+            isThisTransparent &&
+            neighborTransparent &&
+            neighborType !== type
+          ) {
+            // Transparent block renders if neighbor is transparent but different (e.g. water vs leaves)
             shouldRender = true;
           }
 
@@ -863,202 +1255,238 @@ export function greedyMeshChunk(colorMap, chunk, chunkManager, blockDefs) {
         }
       }
 
-      // Greedy merge for this slice
+      // Generate quads from mask
       for (let vPos = 0; vPos < vSize; vPos++) {
-        for (let uPos = 0; uPos < uSize; ) {
+        for (let uPos = 0; uPos < uSize; uPos++) {
           const type = mask[uPos + vPos * uSize];
-          if (type === 0) {
-            uPos++;
+          if (type !== 0) {
+            // Find quad width
+            let width = 1;
+            while (
+              uPos + width < uSize &&
+              mask[uPos + width + vPos * uSize] === type
+            ) {
+              width++;
+            }
 
-            continue;
-          }
+            // Find quad height
+            let height = 1;
+            let canExpand = true;
+            while (vPos + height < vSize) {
+              for (let x = 0; x < width; x++) {
+                if (mask[uPos + x + (vPos + height) * uSize] !== type) {
+                  canExpand = false;
+                  break;
+                }
+              }
+              if (!canExpand) break;
+              height++;
+            }
 
-          // Find width
-          let width = 1;
-          while (
-            uPos + width < uSize &&
-            mask[uPos + width + vPos * uSize] === type
-          ) {
-            width++;
-          }
+            // Add quad to mesh
+            const block = blockDefs.getById(type);
+            if (!block) continue;
+            const [r, g, b, a_val] = colorMap[block.name] || [1, 1, 1, 1];
+            const isThisTransparent = Number(a_val) < 1.0;
 
-          // Find height
-          let height = 1;
-          let canExtend = true;
-          while (vPos + height < vSize && canExtend) {
-            for (let w = 0; w < width; w++) {
-              if (mask[uPos + w + (vPos + height) * uSize] !== type) {
-                canExtend = false;
+            // Water blocks get their own mesh for independent texture control
+            let target;
+            if (block.name === "Water") {
+              target = water;
+            } else {
+              target = isThisTransparent ? transparent : opaque;
+            }
 
-                break;
+            // Compute quad corners
+            const v0 = [0, 0, 0];
+            const v1 = [0, 0, 0];
+            const v2 = [0, 0, 0];
+            const v3 = [0, 0, 0];
+
+            v0[axis] = d + (dir > 0 ? 1 : 0);
+            v0[u] = uPos;
+            v0[v] = vPos;
+
+            v1[axis] = v0[axis];
+            v1[u] = uPos + width;
+            v1[v] = vPos;
+
+            v2[axis] = v0[axis];
+            v2[u] = uPos + width;
+            v2[v] = vPos + height;
+
+            v3[axis] = v0[axis];
+            v3[u] = uPos;
+            v3[v] = vPos + height;
+
+            // Geometry data
+            const quadPositions = [
+              v0[0] + baseX,
+              v0[1],
+              v0[2] + baseZ,
+              v1[0] + baseX,
+              v1[1],
+              v1[2] + baseZ,
+              v2[0] + baseX,
+              v2[1],
+              v2[2] + baseZ,
+              v3[0] + baseX,
+              v3[1],
+              v3[2] + baseZ,
+            ];
+
+            const dx = axis === 0 ? dir : 0;
+            const dy = axis === 1 ? dir : 0;
+            const dz = axis === 2 ? dir : 0;
+
+            const baseIndex = target.vertexCount;
+
+            // Compute AO for the 4 quad corners
+            const ao4 = [1.0, 1.0, 1.0, 1.0];
+            if (block.solid) {
+              // Sample AO at the first block's face position
+              const faceCoords = [0, 0, 0];
+              faceCoords[axis] = d + (dir > 0 ? 1 : 0);
+              faceCoords[u] = uPos;
+              faceCoords[v] = vPos;
+              const fx = faceCoords[0];
+              const fy = faceCoords[1];
+              const fz = faceCoords[2];
+
+              // Map the 4 vertices to face-data corner indices
+              // FACE_CORNERS indices for canonical corners: 0=(0,0), 1=(1,0), 2=(1,1), 5=(0,1)
+              const faceIndex = dir > 0 ? axis * 2 : axis * 2 + 1;
+              const faceExtra = FACE_CORNERS[faceIndex];
+              const cornersToFetch = [0, 1, 2, 5];
+              for (let c = 0; c < 4; c++) {
+                ao4[c] = getAO(
+                  chunk,
+                  chunkManager,
+                  fx,
+                  fy,
+                  fz,
+                  faceExtra.aoOffsets[cornersToFetch[c]],
+                  blockDefs,
+                  neighbors,
+                );
               }
             }
 
-            if (canExtend) height++;
-          }
+            // Add vertices
+            target.positions.push(...quadPositions);
+            for (let j = 0; j < 4; j++) {
+              target.normals.push(dx, dy, dz);
+              target.colors.push(r, g, b, a_val);
+              target.ao.push(ao4[j]);
+              target.localUVs.push(j === 1 || j === 2 ? 1 : 0, j >= 2 ? 1 : 0);
+              target.cornerAO.push(...ao4);
 
-          const block = blockDefs.getById(type);
-          const blockName = block?.name ?? "unknown";
-          const [r, g, b, a_val] = colorMap[blockName] || [1, 1, 1, 1];
-          const uBase = (type % 16) * tileSize;
-          const vBase = Math.floor(type / 16) * tileSize;
-
-          // Calculate AO values for the 4 canonical quad corners once
-          const ao4 = [1.0, 1.0, 1.0, 1.0];
-          if (block && block.solid) {
-            const faceExtra = FACE_CORNERS[i];
-            const cornersToFetch = [0, 1, 2, 5];
-            const cornerQuadPositions = [
-              [0, 0],
-              [width, 0],
-              [width, height],
-              [0, height],
-            ];
-            for (let c = 0; c < 4; c++) {
-              const qc = cornerQuadPositions[c];
-              const aoPos = [0, 0, 0];
-              aoPos[axis] = d + dir;
-              aoPos[u] = uPos + qc[0];
-              aoPos[v] = vPos + qc[1];
-
-              ao4[c] = getAO(
+              // Light level: sample from the face position (outside the block being rendered)
+              const lv = getNeighborLight(
                 chunk,
                 chunkManager,
-                aoPos[0],
-                aoPos[1],
-                aoPos[2],
-                faceExtra.aoOffsets[cornersToFetch[c]],
-                blockDefs,
+                v0[0] + dx,
+                v0[1] + dy,
+                v0[2] + dz,
                 neighbors,
               );
+              target.lightLevels.push(lv);
+            }
+
+            // UVs - map each vertex to the same atlas tile (not tiled across width/height)
+            const uBase = (type % 16) * tileSize;
+            const vBase = Math.floor(type / 16) * tileSize;
+            for (let j = 0; j < 4; j++) {
+              const lu = j === 1 || j === 2 ? 1 : 0;
+              const lv = j >= 2 ? 1 : 0;
+              target.uvs.push(
+                uBase +
+                  uvPaddingOffset * tileSize +
+                  lu * uvPaddingScale * tileSize,
+                vBase +
+                  uvPaddingOffset * tileSize +
+                  lv * uvPaddingScale * tileSize,
+              );
+            }
+
+            // Indices
+            if (dir > 0) {
+              target.indices.push(
+                baseIndex,
+                baseIndex + 1,
+                baseIndex + 2,
+                baseIndex,
+                baseIndex + 2,
+                baseIndex + 3,
+              );
+            } else {
+              target.indices.push(
+                baseIndex,
+                baseIndex + 2,
+                baseIndex + 1,
+                baseIndex,
+                baseIndex + 3,
+                baseIndex + 2,
+              );
+            }
+
+            target.vertexCount += 4;
+            target.indexCount += 6;
+
+            // Clear mask
+            for (let vh = 0; vh < height; vh++) {
+              for (let uw = 0; uw < width; uw++) {
+                mask[uPos + uw + (vPos + vh) * uSize] = 0;
+              }
             }
           }
-
-          // Generate 4 vertices for this quad
-          const quadVerts = generateQuadVertices(
-            axis,
-            dir,
-            u,
-            v,
-            baseX,
-            baseZ,
-            d,
-            uPos,
-            vPos,
-            width,
-            height,
-          );
-
-          // Push all attributes for each vertex, once
-          for (let j = 0; j < 4; j++) {
-            const vert = quadVerts[j];
-            positions.push(vert.x, vert.y, vert.z);
-
-            const norm = [0, 0, 0];
-            norm[axis] = dir;
-            normals.push(...norm);
-            colors.push(r, g, b, a_val);
-
-            // Use world coordinates or simplified axis lookup.
-            const lightCoords = [0, 0, 0];
-            lightCoords[axis] = d + dir;
-            lightCoords[u] = uPos;
-            lightCoords[v] = vPos;
-
-            const lVal = chunk.lightMap
-              ? chunk.lightMap.get(
-                  lightCoords[0],
-                  lightCoords[1],
-                  lightCoords[2],
-                )
-              : 0;
-
-            lightLevels.push(lVal / 15);
-
-            // UVs: map quad corners to atlas tile corners
-            // Corner order: 0=(0,0), 1=(w,0), 2=(w,h), 3=(0,h) in UV space
-            const uvCoords = [
-              [0, 0],
-              [width, 0],
-              [width, height],
-              [0, height],
-            ][j];
-
-            uvs.push(
-              uBase + (uvCoords[0] / width) * tileSize,
-              vBase + (uvCoords[1] / height) * tileSize,
-            );
-
-            // Local coordinates for Radial AO interpolation (0,0 to 1,1)
-            const lu = j === 1 || j === 2 ? 1 : 0;
-            const lv = j === 2 || j === 3 ? 1 : 0;
-            localUVs.push(lu, lv);
-
-            // Pack 4 AO values (corner AO for bilinear interpolation)
-            cornerAO.push(...ao4);
-
-            // Legacy AO (single value per vertex)
-            ao.push(ao4[j]);
-          }
-
-          // CCW winding: 0-1-2, 0-2-3
-          // Adjust winding based on face direction
-          if (dir > 0) {
-            indices.push(
-              vertexIndex,
-              vertexIndex + 1,
-              vertexIndex + 2,
-              vertexIndex,
-              vertexIndex + 2,
-              vertexIndex + 3,
-            );
-          } else {
-            indices.push(
-              vertexIndex,
-              vertexIndex + 2,
-              vertexIndex + 1,
-              vertexIndex,
-              vertexIndex + 3,
-              vertexIndex + 2,
-            );
-          }
-
-          vertexIndex += 4;
-
-          // Clear mask for merged region
-          for (let h = 0; h < height; h++) {
-            for (let w = 0; w < width; w++) {
-              mask[uPos + w + (vPos + h) * uSize] = 0;
-            }
-          }
-
-          uPos += width;
         }
       }
     }
   }
 
   return {
-    positions: new Float32Array(positions),
-    normals: new Float32Array(normals),
-    colors: new Float32Array(colors),
-    uvs: new Float32Array(uvs),
-    ao: new Float32Array(ao),
-    localUVs: new Float32Array(localUVs),
-    cornerAO: new Float32Array(cornerAO),
-    lightLevels: new Float32Array(lightLevels),
-    indices: new Uint16Array(indices),
-    vertexCount: positions.length / 3,
-    indexCount: indices.length,
-    positionBuffer: null,
-    normalBuffer: null,
-    colorBuffer: null,
-    uvBuffer: null,
-    aoBuffer: null,
-    lightBuffer: null,
-    localUVBuffer: null,
-    cornerAOBuffer: null,
-    indexBuffer: null,
+    opaque: {
+      positions: new Float32Array(opaque.positions),
+      normals: new Float32Array(opaque.normals),
+      colors: new Float32Array(opaque.colors),
+      uvs: new Float32Array(opaque.uvs),
+      ao: new Float32Array(opaque.ao),
+      localUVs: new Float32Array(opaque.localUVs),
+      cornerAO: new Float32Array(opaque.cornerAO),
+      lightLevels: new Float32Array(opaque.lightLevels),
+      indices: new Uint16Array(opaque.indices),
+      vertexCount: opaque.vertexCount,
+      indexCount: opaque.indexCount,
+    },
+    transparent: {
+      positions: new Float32Array(transparent.positions),
+      normals: new Float32Array(transparent.normals),
+      colors: new Float32Array(transparent.colors),
+      uvs: new Float32Array(transparent.uvs),
+      ao: new Float32Array(transparent.ao),
+      localUVs: new Float32Array(transparent.localUVs),
+      cornerAO: new Float32Array(transparent.cornerAO),
+      lightLevels: new Float32Array(transparent.lightLevels),
+      indices: new Uint16Array(transparent.indices),
+      vertexCount: transparent.vertexCount,
+      indexCount: transparent.indexCount,
+    },
+    water: {
+      positions: new Float32Array(water.positions),
+      normals: new Float32Array(water.normals),
+      colors: new Float32Array(water.colors),
+      uvs: new Float32Array(water.uvs),
+      ao: new Float32Array(water.ao),
+      localUVs: new Float32Array(water.localUVs),
+      cornerAO: new Float32Array(water.cornerAO),
+      lightLevels: new Float32Array(water.lightLevels),
+      indices: new Uint16Array(water.indices),
+      vertexCount: water.vertexCount,
+      indexCount: water.indexCount,
+    },
+    vertexCount:
+      opaque.vertexCount + transparent.vertexCount + water.vertexCount,
   };
 }
 
@@ -1146,87 +1574,144 @@ export function uploadChunkMesh(gl, chunk) {
     return;
   }
 
-  // Position buffer
-  if (!mesh.positionBuffer) {
-    mesh.positionBuffer = gl.createBuffer();
-  }
-
-  gl.bindBuffer(gl.ARRAY_BUFFER, mesh.positionBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, mesh.positions, gl.STATIC_DRAW);
-
-  // Normal buffer
-  if (!mesh.normalBuffer) {
-    mesh.normalBuffer = gl.createBuffer();
-  }
-
-  gl.bindBuffer(gl.ARRAY_BUFFER, mesh.normalBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, mesh.normals, gl.STATIC_DRAW);
-
-  // Color buffer
-  if (!mesh.colorBuffer) {
-    mesh.colorBuffer = gl.createBuffer();
-  }
-
-  gl.bindBuffer(gl.ARRAY_BUFFER, mesh.colorBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, mesh.colors, gl.STATIC_DRAW);
-
-  // UV buffer
-  if (mesh.uvs) {
-    if (!mesh.uvBuffer) {
-      mesh.uvBuffer = gl.createBuffer();
+  /**
+   * @param {WebGLBuffer | null | undefined} target
+   * @param {ArrayBufferLike | ArrayBufferView | null | undefined} data
+   * @returns {WebGLBuffer | null}
+   */
+  const uploadBuffer = (target, data) => {
+    if (!data) return null;
+    let buffer = target;
+    if (!buffer) {
+      buffer = gl.createBuffer();
     }
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+    return buffer;
+  };
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, mesh.uvBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, mesh.uvs, gl.STATIC_DRAW);
+  /**
+   * @param {WebGLBuffer | null | undefined} target
+   * @param {ArrayBufferLike | ArrayBufferView | null | undefined} data
+   * @returns {WebGLBuffer | null}
+   */
+  const uploadIndexBuffer = (target, data) => {
+    if (!data || data.byteLength === 0) return null;
+    let buffer = target;
+    if (!buffer) {
+      buffer = gl.createBuffer();
+    }
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, data, gl.STATIC_DRAW);
+    return buffer;
+  };
+
+  // Upload opaque geometry
+  if (mesh.opaque) {
+    mesh.opaque.positionBuffer = uploadBuffer(
+      mesh.opaque.positionBuffer,
+      mesh.opaque.positions,
+    );
+    mesh.opaque.normalBuffer = uploadBuffer(
+      mesh.opaque.normalBuffer,
+      mesh.opaque.normals,
+    );
+    mesh.opaque.colorBuffer = uploadBuffer(
+      mesh.opaque.colorBuffer,
+      mesh.opaque.colors,
+    );
+    mesh.opaque.uvBuffer = uploadBuffer(mesh.opaque.uvBuffer, mesh.opaque.uvs);
+    mesh.opaque.aoBuffer = uploadBuffer(mesh.opaque.aoBuffer, mesh.opaque.ao);
+    mesh.opaque.lightBuffer = uploadBuffer(
+      mesh.opaque.lightBuffer,
+      mesh.opaque.lightLevels,
+    );
+    mesh.opaque.localUVBuffer = uploadBuffer(
+      mesh.opaque.localUVBuffer,
+      mesh.opaque.localUVs,
+    );
+    mesh.opaque.cornerAOBuffer = uploadBuffer(
+      mesh.opaque.cornerAOBuffer,
+      mesh.opaque.cornerAO,
+    );
+    mesh.opaque.indexBuffer = uploadIndexBuffer(
+      mesh.opaque.indexBuffer,
+      mesh.opaque.indices,
+    );
   }
 
-  // AO buffer
-  if (mesh.ao) {
-    if (!mesh.aoBuffer) {
-      mesh.aoBuffer = gl.createBuffer();
-    }
-    gl.bindBuffer(gl.ARRAY_BUFFER, mesh.aoBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, mesh.ao, gl.STATIC_DRAW);
+  // Upload transparent geometry
+  if (mesh.transparent) {
+    mesh.transparent.positionBuffer = uploadBuffer(
+      mesh.transparent.positionBuffer,
+      mesh.transparent.positions,
+    );
+    mesh.transparent.normalBuffer = uploadBuffer(
+      mesh.transparent.normalBuffer,
+      mesh.transparent.normals,
+    );
+    mesh.transparent.colorBuffer = uploadBuffer(
+      mesh.transparent.colorBuffer,
+      mesh.transparent.colors,
+    );
+    mesh.transparent.uvBuffer = uploadBuffer(
+      mesh.transparent.uvBuffer,
+      mesh.transparent.uvs,
+    );
+    mesh.transparent.aoBuffer = uploadBuffer(
+      mesh.transparent.aoBuffer,
+      mesh.transparent.ao,
+    );
+    mesh.transparent.lightBuffer = uploadBuffer(
+      mesh.transparent.lightBuffer,
+      mesh.transparent.lightLevels,
+    );
+    mesh.transparent.localUVBuffer = uploadBuffer(
+      mesh.transparent.localUVBuffer,
+      mesh.transparent.localUVs,
+    );
+    mesh.transparent.cornerAOBuffer = uploadBuffer(
+      mesh.transparent.cornerAOBuffer,
+      mesh.transparent.cornerAO,
+    );
+    mesh.transparent.indexBuffer = uploadIndexBuffer(
+      mesh.transparent.indexBuffer,
+      mesh.transparent.indices,
+    );
   }
 
-  // Local UV buffer (Radial AO)
-  if (mesh.localUVs) {
-    if (!mesh.localUVBuffer) {
-      mesh.localUVBuffer = gl.createBuffer();
-    }
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, mesh.localUVBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, mesh.localUVs, gl.STATIC_DRAW);
-  }
-
-  // Corner AO buffer (Radial AO)
-  if (mesh.cornerAO) {
-    if (!mesh.cornerAOBuffer) {
-      mesh.cornerAOBuffer = gl.createBuffer();
-    }
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, mesh.cornerAOBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, mesh.cornerAO, gl.STATIC_DRAW);
-  }
-
-  // Light buffer
-  if (mesh.lightLevels) {
-    if (!mesh.lightBuffer) {
-      mesh.lightBuffer = gl.createBuffer();
-    }
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, mesh.lightBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, mesh.lightLevels, gl.STATIC_DRAW);
-  }
-
-  // Index buffer (for indexed geometry)
-  if (mesh.indices && mesh.indices.length > 0) {
-    if (!mesh.indexBuffer) {
-      mesh.indexBuffer = gl.createBuffer();
-    }
-
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, mesh.indexBuffer);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, mesh.indices, gl.STATIC_DRAW);
+  // Upload water geometry
+  if (mesh.water) {
+    mesh.water.positionBuffer = uploadBuffer(
+      mesh.water.positionBuffer,
+      mesh.water.positions,
+    );
+    mesh.water.normalBuffer = uploadBuffer(
+      mesh.water.normalBuffer,
+      mesh.water.normals,
+    );
+    mesh.water.colorBuffer = uploadBuffer(
+      mesh.water.colorBuffer,
+      mesh.water.colors,
+    );
+    mesh.water.uvBuffer = uploadBuffer(mesh.water.uvBuffer, mesh.water.uvs);
+    mesh.water.aoBuffer = uploadBuffer(mesh.water.aoBuffer, mesh.water.ao);
+    mesh.water.lightBuffer = uploadBuffer(
+      mesh.water.lightBuffer,
+      mesh.water.lightLevels,
+    );
+    mesh.water.localUVBuffer = uploadBuffer(
+      mesh.water.localUVBuffer,
+      mesh.water.localUVs,
+    );
+    mesh.water.cornerAOBuffer = uploadBuffer(
+      mesh.water.cornerAOBuffer,
+      mesh.water.cornerAO,
+    );
+    mesh.water.indexBuffer = uploadIndexBuffer(
+      mesh.water.indexBuffer,
+      mesh.water.indices,
+    );
   }
 }
 
@@ -1242,57 +1727,23 @@ export function deleteChunkMesh(gl, chunk) {
     return;
   }
 
-  if (mesh.positionBuffer) {
-    gl.deleteBuffer(mesh.positionBuffer);
+  /** @param {import("./chunk.mjs").GeometryBuffers | undefined} buffers */
+  const deleteBuffers = (buffers) => {
+    if (!buffers) return;
+    if (buffers.positionBuffer) gl.deleteBuffer(buffers.positionBuffer);
+    if (buffers.normalBuffer) gl.deleteBuffer(buffers.normalBuffer);
+    if (buffers.colorBuffer) gl.deleteBuffer(buffers.colorBuffer);
+    if (buffers.uvBuffer) gl.deleteBuffer(buffers.uvBuffer);
+    if (buffers.aoBuffer) gl.deleteBuffer(buffers.aoBuffer);
+    if (buffers.localUVBuffer) gl.deleteBuffer(buffers.localUVBuffer);
+    if (buffers.cornerAOBuffer) gl.deleteBuffer(buffers.cornerAOBuffer);
+    if (buffers.lightBuffer) gl.deleteBuffer(buffers.lightBuffer);
+    if (buffers.indexBuffer) gl.deleteBuffer(buffers.indexBuffer);
+  };
 
-    mesh.positionBuffer = null;
-  }
+  deleteBuffers(mesh.opaque);
+  deleteBuffers(mesh.transparent);
+  deleteBuffers(mesh.water);
 
-  if (mesh.normalBuffer) {
-    gl.deleteBuffer(mesh.normalBuffer);
-
-    mesh.normalBuffer = null;
-  }
-
-  if (mesh.colorBuffer) {
-    gl.deleteBuffer(mesh.colorBuffer);
-
-    mesh.colorBuffer = null;
-  }
-
-  if (mesh.uvBuffer) {
-    gl.deleteBuffer(mesh.uvBuffer);
-
-    mesh.uvBuffer = null;
-  }
-
-  if (mesh.aoBuffer) {
-    gl.deleteBuffer(mesh.aoBuffer);
-
-    mesh.aoBuffer = null;
-  }
-
-  if (mesh.localUVBuffer) {
-    gl.deleteBuffer(mesh.localUVBuffer);
-
-    mesh.localUVBuffer = null;
-  }
-
-  if (mesh.cornerAOBuffer) {
-    gl.deleteBuffer(mesh.cornerAOBuffer);
-
-    mesh.cornerAOBuffer = null;
-  }
-
-  if (mesh.lightBuffer) {
-    gl.deleteBuffer(mesh.lightBuffer);
-
-    mesh.lightBuffer = null;
-  }
-
-  if (mesh.indexBuffer) {
-    gl.deleteBuffer(mesh.indexBuffer);
-
-    mesh.indexBuffer = null;
-  }
+  chunk.mesh = null;
 }

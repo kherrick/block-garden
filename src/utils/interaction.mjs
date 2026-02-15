@@ -230,6 +230,12 @@ export function removeBlock(gameState, targetHit) {
     return false;
   }
 
+  // Prevent breaking/collecting non-removable blocks (e.g. Water)
+  const hitBlock = blocks.getById(blockId);
+  if (hitBlock && hitBlock.name === "Water") {
+    return false;
+  }
+
   // Check if this block is part of any plant structure
   let associatedStructureKey = null;
   let associatedStructure = null;
@@ -606,6 +612,14 @@ export function startBreaking(gameState, targetHit) {
   const blockId = gameState.world.get(blockKey);
 
   if (blockId === undefined || blockId === 0) {
+    stopBreaking(gameState);
+
+    return;
+  }
+
+  // Prevent breaking non-removable blocks (e.g. Water)
+  const blockDef = blocks.getById(blockId);
+  if (blockDef && blockDef.name === "Water") {
     stopBreaking(gameState);
 
     return;

@@ -1075,6 +1075,8 @@ export class BlockGarden extends HTMLElement {
                     <button id="gameSaveLinkingButton" hidden="hidden">Enable Game Save Linking</button>
                     <button id="fastGrowthButton" hidden="hidden">Enable Fast Growth</button>
                     <button id="randomPlantButton" hidden="hidden">Plant randomly</button>
+                    <button id="toggleSolidClouds" hidden="hidden">Disable Solid Clouds</button>
+                    <button id="toggleFastMovement" hidden="hidden">Enable Fast Movement</button>
                     <button id="configureLinkBlock">🔗 Configure Link Block</button>
                     <button id="configureTextBlock">📝 Configure Text Block</button>
                     <button
@@ -1097,6 +1099,7 @@ export class BlockGarden extends HTMLElement {
                     <button id="toggleBlockHighlight">Disable Block Highlight</button>
                     <button id="toggleDamageAnimation">Disable Damage Animation</button>
                     <button id="toggleTextures">Disable Textures</button>
+                    <button id="toggleTexturedWater">Disable Textured Water</button>
                     <button id="toggleAO">Disable Ambient Occlusion</button>
                     <button id="toggleAODebug" hidden="hidden">Enable AO Debug</button>
                     <button id="togglePerFaceLighting">Disable Per-Face Lighting</button>

@@ -26,18 +26,17 @@ export function generateTextureAtlas(blockDefs) {
     throw new Error("Failed to get 2D canvas context");
   }
 
-  // Helper to get hex color from block name
-  /** @param {string} blockName */
-  const getColor = (blockName) => {
-    const key = blockName.toLowerCase().replace(/ /g, "-");
-    const colorVar = colors.block[key];
+  // Seeded pseudo-random function for deterministic grain
+  const seededRandom =
+    /** @type {function(number): number} */
+    (seed) => {
+      const x = Math.sin(seed) * 10000;
 
-    if (colorVar && colorVar.startsWith("var(--bg-color-")) {
-      const colorKey = colorVar.replace("var(--bg-color-", "").replace(")", "");
+      return x - Math.floor(x);
+    };
 
-      return colors.color[colorKey] || "#ffffff";
-    }
-
+  /** @param {string} _blockName */
+  const getColor = (_blockName) => {
     return "#ffffff";
   };
 
@@ -57,22 +56,27 @@ export function generateTextureAtlas(blockDefs) {
     ctx.fillStyle = baseColor;
     ctx.fillRect(x, y, tileSize, tileSize);
 
-    // Add simple procedural pattern (border/noise)
-    ctx.fillStyle = "rgba(0,0,0,0.1)";
+    // Add slight highlights and shadows for depth without darkening
+    // Use lighter colors for highlights, darker accents for depth
+    ctx.fillStyle = "rgba(255,255,255,0.08)";
+    ctx.fillRect(x + tileSize - 2, y, 2, tileSize);
+    ctx.fillRect(x, y + tileSize - 2, tileSize, 2);
+
+    // Subtle dark accents for contrast
+    ctx.fillStyle = "rgba(0,0,0,0.05)";
     ctx.fillRect(x, y, tileSize, 1);
     ctx.fillRect(x, y, 1, tileSize);
 
-    ctx.fillStyle = "rgba(255,255,255,0.1)";
-    ctx.fillRect(x + tileSize - 1, y, 1, tileSize);
-    ctx.fillRect(x, y + tileSize - 1, tileSize, 1);
+    // Add grain for visual interest using block ID as seed for consistency
+    for (let i = 0; i < 8; i++) {
+      const seed = id * 73 + i * 41;
+      const gx = Math.floor(seededRandom(seed) * tileSize);
+      const gy = Math.floor(seededRandom(seed + 1) * tileSize);
+      const isDark = seededRandom(seed + 2) < 0.5;
 
-    // Add some "grain"
-    for (let i = 0; i < 4; i++) {
-      const gx = Math.floor(Math.random() * tileSize);
-      const gy = Math.floor(Math.random() * tileSize);
-
-      ctx.fillStyle =
-        i % 2 === 0 ? "rgba(0,0,0,0.05)" : "rgba(255,255,255,0.05)";
+      ctx.fillStyle = isDark
+        ? `rgba(0,0,0,${0.04 + seededRandom(seed + 3) * 0.04})`
+        : `rgba(255,255,255,${0.04 + seededRandom(seed + 4) * 0.04})`;
 
       ctx.fillRect(x + gx, y + gy, 2, 2);
     }

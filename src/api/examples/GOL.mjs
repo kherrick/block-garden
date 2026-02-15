@@ -255,6 +255,7 @@ export class GOL extends BlockGarden {
       }
 
       grid = newGrid;
+
       renderGrid();
     };
 

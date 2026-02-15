@@ -10,11 +10,11 @@ export const CHUNK_VOLUME = CHUNK_SIZE_X * CHUNK_SIZE_Y * CHUNK_SIZE_Z;
  */
 
 /**
- * @typedef {Object} ChunkMesh
+ * @typedef {Object} GeometryBuffers
  *
- * @property {Float32Array} positions - Vertex positions
- * @property {Float32Array} normals - Vertex normals
- * @property {Float32Array} colors - Vertex colors (RGBA)
+ * @property {Float32Array} [positions] - Vertex positions
+ * @property {Float32Array} [normals] - Vertex normals
+ * @property {Float32Array} [colors] - Vertex colors (RGBA)
  * @property {Float32Array} [uvs] - UV coordinates
  * @property {Float32Array} [ao] - Ambient occlusion values
  * @property {Float32Array} [localUVs] - Local quad coordinates for Radial AO
@@ -23,9 +23,9 @@ export const CHUNK_VOLUME = CHUNK_SIZE_X * CHUNK_SIZE_Y * CHUNK_SIZE_Z;
  * @property {Uint16Array} [indices] - Vertex indices for indexed geometry
  * @property {number} vertexCount - Number of vertices
  * @property {number} [indexCount] - Number of indices (for indexed geometry)
- * @property {WebGLBuffer|null} positionBuffer - GPU buffer for positions
- * @property {WebGLBuffer|null} normalBuffer - GPU buffer for normals
- * @property {WebGLBuffer|null} colorBuffer - GPU buffer for colors
+ * @property {WebGLBuffer|null} [positionBuffer] - GPU buffer for positions
+ * @property {WebGLBuffer|null} [normalBuffer] - GPU buffer for normals
+ * @property {WebGLBuffer|null} [colorBuffer] - GPU buffer for colors
  * @property {WebGLBuffer|null} [uvBuffer] - GPU buffer for UVs
  * @property {WebGLBuffer|null} [aoBuffer] - GPU buffer for AO
  * @property {WebGLBuffer|null} [localUVBuffer] - GPU buffer for local UVs
@@ -33,6 +33,15 @@ export const CHUNK_VOLUME = CHUNK_SIZE_X * CHUNK_SIZE_Y * CHUNK_SIZE_Z;
  * @property {WebGLBuffer|null} [cornerAOBuffer] - GPU buffer for corner AO
  * @property {WebGLBuffer|null} [lightBuffer] - GPU buffer for light levels
  * @property {WebGLBuffer|null} [indexBuffer] - GPU buffer for indices
+ */
+
+/**
+ * @typedef {Object} ChunkMesh
+ *
+ * @property {GeometryBuffers} opaque - Opaque geometry
+ * @property {GeometryBuffers} transparent - Transparent geometry
+ * @property {GeometryBuffers} water - Water geometry
+ * @property {number} vertexCount - Total vertex count (legacy)
  */
 
 /**

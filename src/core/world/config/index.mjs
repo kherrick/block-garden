@@ -41,28 +41,31 @@ export const FAST_GROWTH_TIME = 15;
  * @property {Signal.State<number>} worldRadius
  * @property {Signal.State<number>} dayLength - Full day/night cycle duration in seconds (default 1200)
  * @property {Signal.State<number>} timeScale - Multiplier for time progression (default 1.0)
+ * @property {Signal.State<boolean>} useFastMovement - Enable fast flying
  * @property {Signal.State<boolean>} useTimeCycle - Enable day/night cycle (default true)
  * @property {Signal.State<number>} manualTimeOfDay - Manual sun position override when cycle disabled (0-1, default 0.5 = noon)
  * @property {Signal.State<boolean>} useCelestialBodies - Enable visible sun/moon in sky (default true)
  * @property {Signal.State<boolean>} useMoonlight - Enable moonlight at night (default true)
  * @property {Signal.State<boolean>} showFullCatalog - Show all items in inventory even if 0 (default true)
+ * @property {Signal.State<boolean>} useSolidClouds - Whether clouds are solid/walkable (default true)
+ * @property {Signal.State<boolean>} useTexturedWater - Whether water blocks use texture (default false)
  */
 
 export const CONFIG_DEFAULTS = {
   CACHE_RADIUS: 4,
-  CAVE_THRESHOLD: 80,
+  CAVE_THRESHOLD: 50,
   CLOUD_DENSITY: 20,
   CURRENT_RESOLUTION: "600",
   DAY_LENGTH: 1200,
   DECORATION_DENSITY: 40,
   LINK_GAME_SAVE: false,
   MANUAL_TIME_OF_DAY: 0.5,
-  MOUNTAIN_SCALE: 25,
+  MOUNTAIN_SCALE: 75,
   RENDER_RADIUS: 4,
   SHOW_FULL_CATALOG: false,
   TERRAIN_OCTAVES: 2,
   TIME_SCALE: 1.0,
-  USE_AMBIENT_OCCLUSION: false,
+  USE_AMBIENT_OCCLUSION: true,
   USE_AO_DEBUG: false,
   USE_AUTO_JUMP: true,
   USE_BLOCK_HIGHLIGHT: true,
@@ -72,9 +75,12 @@ export const CONFIG_DEFAULTS = {
   USE_DAMAGE_ANIMATION: true,
   USE_DYNAMIC_LIGHTING: true,
   USE_MOONLIGHT: true,
+  USE_FAST_MOVEMENT: false,
   USE_PER_FACE_LIGHTING: true,
   USE_SPLIT_CONTROLS: false,
-  USE_TEXTURE_ATLAS: false,
+  USE_SOLID_CLOUDS: true,
+  USE_TEXTURE_ATLAS: true,
+  USE_TEXTURED_WATER: true,
   USE_TIME_CYCLE: false,
   USE_TOUCH_CONTROLS: true,
   VERSION: "1",
@@ -113,10 +119,13 @@ export const gameConfig = {
   useCreativeMode: new Signal.State(CONFIG_DEFAULTS.USE_CREATIVE_MODE),
   useDamageAnimation: new Signal.State(CONFIG_DEFAULTS.USE_DAMAGE_ANIMATION),
   useDynamicLighting: new Signal.State(CONFIG_DEFAULTS.USE_DYNAMIC_LIGHTING),
+  useFastMovement: new Signal.State(CONFIG_DEFAULTS.USE_FAST_MOVEMENT),
   useMoonlight: new Signal.State(CONFIG_DEFAULTS.USE_MOONLIGHT),
   usePerFaceLighting: new Signal.State(CONFIG_DEFAULTS.USE_PER_FACE_LIGHTING),
   useSplitControls: new Signal.State(CONFIG_DEFAULTS.USE_SPLIT_CONTROLS),
+  useSolidClouds: new Signal.State(CONFIG_DEFAULTS.USE_SOLID_CLOUDS),
   useTextureAtlas: new Signal.State(CONFIG_DEFAULTS.USE_TEXTURE_ATLAS),
+  useTexturedWater: new Signal.State(CONFIG_DEFAULTS.USE_TEXTURED_WATER),
   useTimeCycle: new Signal.State(CONFIG_DEFAULTS.USE_TIME_CYCLE),
   useTouchControls: new Signal.State(CONFIG_DEFAULTS.USE_TOUCH_CONTROLS),
   version: new Signal.State(CONFIG_DEFAULTS.VERSION),

@@ -1,38 +1,43 @@
 import { I } from "../../../utils/math.mjs";
 
-/** @typedef {import("../../world/meshing/chunk.mjs").Chunk} Chunk */
+/** @typedef {import("../../world/meshing/chunk.mjs").GeometryBuffers} GeometryBuffers */
 
 /**
- * Draw a chunk mesh.
+ * Draw geometry buffers.
  *
  * @param {WebGL2RenderingContext} gl
- * @param {Chunk} chunk
+ * @param {GeometryBuffers} mesh - Geometry buffers to draw
  * @param {Float32Array} VP - View-projection matrix
  * @param {WebGLUniformLocation | null} uMVP
  * @param {WebGLUniformLocation | null} uM
  *
  * @returns {void}
  */
-export function drawChunkMesh(gl, chunk, VP, uMVP, uM) {
-  const mesh = chunk.mesh;
+export function drawChunkMesh(gl, mesh, VP, uMVP, uM) {
   if (!mesh || mesh.vertexCount === 0) {
     return;
   }
 
   // Bind position buffer
-  gl.bindBuffer(gl.ARRAY_BUFFER, mesh.positionBuffer);
-  gl.enableVertexAttribArray(0);
-  gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
+  if (mesh.positionBuffer) {
+    gl.bindBuffer(gl.ARRAY_BUFFER, mesh.positionBuffer);
+    gl.enableVertexAttribArray(0);
+    gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
+  }
 
   // Bind normal buffer
-  gl.bindBuffer(gl.ARRAY_BUFFER, mesh.normalBuffer);
-  gl.enableVertexAttribArray(1);
-  gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 0, 0);
+  if (mesh.normalBuffer) {
+    gl.bindBuffer(gl.ARRAY_BUFFER, mesh.normalBuffer);
+    gl.enableVertexAttribArray(1);
+    gl.vertexAttribPointer(1, 3, gl.FLOAT, false, 0, 0);
+  }
 
   // Bind color buffer
-  gl.bindBuffer(gl.ARRAY_BUFFER, mesh.colorBuffer);
-  gl.enableVertexAttribArray(2);
-  gl.vertexAttribPointer(2, 4, gl.FLOAT, false, 0, 0);
+  if (mesh.colorBuffer) {
+    gl.bindBuffer(gl.ARRAY_BUFFER, mesh.colorBuffer);
+    gl.enableVertexAttribArray(2);
+    gl.vertexAttribPointer(2, 4, gl.FLOAT, false, 0, 0);
+  }
 
   // Bind UV buffer
   if (mesh.uvBuffer) {

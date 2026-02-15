@@ -134,7 +134,7 @@ export class GettingStartedDialog {
     let inSection = false;
     let currentListType = null; // 'ul' or null
 
-    const targetSections = ["Quick Start"];
+    const targetSections = ["Quick Start", "Game Modes", "Included Game Saves"];
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();

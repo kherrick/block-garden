@@ -2,6 +2,7 @@
 /** @typedef {import('../core/world/config/blocks.mjs').BlockDefinition} BlockDefinition */
 
 import { getBlockById } from "../core/world/config/blocks.mjs";
+import { gameConfig } from "../core/world/config/index.mjs";
 
 /**
  * Tests whether a block at a given world position is solid.
@@ -39,6 +40,11 @@ export function isSolid(world, x, y, z) {
   // Unknown block type = treat as non-solid to be safe
   if (!blockDef) {
     return false;
+  }
+
+  // Clouds: respect the solid clouds toggle
+  if (blockDef.name === "Cloud") {
+    return gameConfig.useSolidClouds.get();
   }
 
   return blockDef.solid || false;

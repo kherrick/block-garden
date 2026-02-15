@@ -98,6 +98,8 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
     shadow.getElementById("gameSaveLinkingButton")?.removeAttribute("hidden");
     shadow.getElementById("randomPlantButton")?.removeAttribute("hidden");
     shadow.getElementById("toggleAODebug")?.removeAttribute("hidden");
+    shadow.getElementById("toggleSolidClouds")?.removeAttribute("hidden");
+    shadow.getElementById("toggleFastMovement")?.removeAttribute("hidden");
 
     shadow
       .getElementById("customizeColorsBtnContainer")
@@ -376,6 +378,13 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
   );
 
   setupToggle(
+    "toggleTexturedWater",
+    config.useTexturedWater,
+    "Textured Water",
+    "useTexturedWater",
+  );
+
+  setupToggle(
     "toggleAO",
     config.useAmbientOcclusion,
     "Ambient Occlusion",
@@ -474,6 +483,20 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
     config.showFullCatalog,
     "Full Material Inventory Catalog",
     "showFullCatalog",
+  );
+
+  setupToggle(
+    "toggleSolidClouds",
+    config.useSolidClouds,
+    "Solid Clouds",
+    "useSolidClouds",
+  );
+
+  setupToggle(
+    "toggleFastMovement",
+    config.useFastMovement,
+    "Fast Movement",
+    "useFastMovement",
   );
 
   // Random Plant Again Button

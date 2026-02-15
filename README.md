@@ -6,23 +6,19 @@ Block Garden - A 3D sandbox exploration and farming game. Explore procedurally g
 
 [![Block Garden Screenshot](https://kherrick.github.io/block-garden/assets/screenshots/block-garden-screenshot-2266x1440.png)](https://kherrick.github.io/block-garden/)
 
-## To play locally
-
-```sh
-npm i && npm start
-```
-
 ## 🧩 Features include:
 
-- Procedural World Generation - Each world is unique, generated from a shareable seed
-- Building - Use collected materials to place blocks and shape the world
-- Clouds - Continue building and farming while in the sky
-- Planting System - Plant different seed types with realistic growth cycles
-- Resource Management - Dig for resources like stone, dirt, and sand.
-- Save & Load - Your progress can be saved on device or as a file to share
-- Privacy-respecting (no login or data collection)
-- Installation and offline play supported
-- Cross-platform (desktop & mobile)
+- **Procedural World Generation** - Each world is unique, generated from a shareable seed.
+- **Building & Harvesting** - Use collected materials to place blocks and shape the world.
+- **Dynamic Day/Night Cycle** - Experience a living world with changing sky colors and lighting.
+- **Inventory System** - Manage your resources with a non-creative mode style inventory.
+- **Expanded Flora** - Cultivate and harvest a wide variety of plants, from Agave to Willow Trees.
+- **Advanced Storage** - Save your progress on-device, or share your world as a PDF or PNG.
+- **Lighting System** - Use torches, lanterns, and lightstones to illuminate the darkness.
+- **Clouds** - Continue building and farming while in the sky.
+- **Resource Management** - Dig for resources like stone, dirt, and sand.
+- **Privacy-respecting** - No login or data collection required.
+- **Cross-platform** - Full support for both desktop and mobile play.
 
 ## 🎮 Quick Start
 
@@ -30,15 +26,26 @@ npm i && npm start
 - **Camera:** `Arrow Keys`
 - **Descend:** `Shift`
 - **Jump / Ascend:** `Space`
-- **Place / Break Block:** `Enter`
+- **Place Block:** `Enter` or `Right Click`
+- **Break Block:** Hold `Enter` or `Left Click` and hold
 - **Change Block:** `~` / `` ` ``
-- **Open Inventory:** `e / i`
+- **Hotbar Slots:** `1` - `9`
+- **Open Inventory / Materials:** `e` / `i`
 - **Toggle Hotbar:** `m`
-- **Toggle Flight:** `k`
-- **Touch Hold (Left Click):** Break Block
-- **Touch (Right Click):** Place Block
+- **Toggle Flight:** `k` (Creative Mode only)
+- **World Generation Menu:** `Ctrl` + `s`
+- **Touch Hold:** Break Block
+- **Touch:** Place Block
+- **Pause/Menu:** `Escape`
 
-### Included Game Saves
+## 🕹️ Game Modes
+
+Block Garden features two primary ways to play:
+
+- **Non-Creative Mode (Default):** Resources are limited. You must dig for stone, dirt, and sand, and harvest plants to gather seeds and materials.
+- **Creative Mode:** Unlimited resources and flight are enabled. Perfect for building large structures and massive gardens without resource constraints. Enable this in the Settings menu.
+
+## 💾 Included Game Saves
 
 Get started by opening one of the saved games below:
 
@@ -71,3 +78,20 @@ Get started by opening one of the saved games below:
 ### Gateway To The Clouds
 
 [![Gateway To The Clouds](https://img.youtube.com/vi/OIdKx0u8REA/0.jpg)](https://www.youtube.com/watch?v=OIdKx0u8REA)
+
+## To play locally
+
+```sh
+npm i && npm start
+```
+
+## Development
+
+See [AGENTS.MD](AGENTS.MD) for detailed architecture, build, test, and development workflow instructions.
+
+Quick reference:
+
+- **Build:** `npx rollup -c`
+- **Test:** `npm test`
+- **Dev Server:** `npm start` (runs on http://localhost:3000)
+- **Alt Dev Server:** `npm run start:dev` (runs on http://localhost:8080)

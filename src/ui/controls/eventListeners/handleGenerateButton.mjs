@@ -1,6 +1,7 @@
 import isNumber from "lodash.isnumber";
 
 import { showToast } from "../../../api/ui/toast.mjs";
+import { generateWorld } from "../../../core/world/generation/world.mjs";
 
 /** @typedef {import('../../../core/systems/game/state.mjs').BlockGardenGlobalThis} BlockGardenGlobalThis */
 
@@ -34,7 +35,7 @@ export function handleGenerateButton(shadow) {
   }
 
   const gThis = /** @type {BlockGardenGlobalThis} */ (globalThis);
-  gThis.blockGarden.generateWorld(seedValue, gThis.blockGarden.state);
+  generateWorld(seedValue, gThis.blockGarden.state);
 
   console.log(`Generated new world with seed: ${seedValue}`);
 

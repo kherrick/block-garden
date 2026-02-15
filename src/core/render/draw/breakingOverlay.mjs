@@ -14,6 +14,7 @@ import { I, mul } from "../../../utils/math.mjs";
  * @param {Float32Array} VP
  * @param {WebGLUniformLocation | null} uMVP
  * @param {WebGLUniformLocation | null} uM
+ * @param {WebGLUniformLocation | null} uUT
  * @param {WebGLBuffer} pbuf
  * @param {WebGLBuffer} nbuf
  * @param {WebGLBuffer} breakCbuf
@@ -29,6 +30,7 @@ export function drawBreakingOverlay(
   VP,
   uMVP,
   uM,
+  uUT,
   pbuf,
   nbuf,
   breakCbuf,
@@ -64,23 +66,10 @@ export function drawBreakingOverlay(
   // Check if textures are enabled
   const useTextures = gameConfig.useTextureAtlas.get();
 
-  // Setup colors based on texture mode
+  // Textured mode: white color to show crack texture from atlas
+  // Non-textured mode: white color (no darkening)
   const crackColors = new Float32Array(vertexCount * 4);
-
-  if (useTextures) {
-    // Textured mode: white color to show crack texture
-    crackColors.fill(1.0);
-  } else {
-    // Non-textured mode: darken based on break percentage
-    // darkness factor: 1.0 (no darkening) -> 0.4 (60% darker)
-    const darkness = 1.0 - breakPercentage * 0.6;
-    for (let i = 0; i < vertexCount; i++) {
-      crackColors[i * 4] = darkness; // R
-      crackColors[i * 4 + 1] = darkness; // G
-      crackColors[i * 4 + 2] = darkness; // B
-      crackColors[i * 4 + 3] = 1.0; // A
-    }
-  }
+  crackColors.fill(1.0);
 
   // Bind attribute buffers
   gl.bindBuffer(gl.ARRAY_BUFFER, pbuf);
@@ -127,16 +116,14 @@ export function drawBreakingOverlay(
   gl.uniformMatrix4fv(uM, false, M);
   gl.uniformMatrix4fv(uMVP, false, mul(I(), VP, M));
 
+  // Enable texture sampling for the crack overlay
+  gl.uniform1f(uUT, 1.0);
+
   // Enable blending
   gl.enable(gl.BLEND);
 
-  if (useTextures) {
-    // Textured mode: alpha blending for transparent crack overlay
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-  } else {
-    // Non-textured mode: multiplicative blending to darken the block
-    gl.blendFunc(gl.DST_COLOR, gl.ZERO);
-  }
+  // Use alpha blending to overlay the transparent crack textures
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
   // Disable depth writing to avoid artifacts, but keep depth testing
   gl.depthMask(false);
@@ -145,4 +132,7 @@ export function drawBreakingOverlay(
 
   gl.depthMask(true);
   gl.disable(gl.BLEND);
+
+  // Restore texture setting
+  gl.uniform1f(uUT, gameConfig.useTextureAtlas.get() ? 1.0 : 0.0);
 }

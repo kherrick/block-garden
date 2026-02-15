@@ -1,6 +1,6 @@
 import { isKeyPressed } from "../../utils/isKeyPressed.mjs";
 import { placeBlock } from "../../utils/interaction.mjs";
-import { canControlCanvas } from "../../ui/utils/canControlCanvas.mjs";
+import { gameConfig } from "../world/config/index.mjs";
 
 /** @typedef {import('../../core/systems/game/init.mjs').CustomShadowHost} CustomShadowHost */
 /** @typedef {import('../../core/systems/game/state.mjs').GameState} GameState */
@@ -18,8 +18,9 @@ export function updatePlayer(shadow, state, dt) {
   }
 
   const { yaw, flying } = state;
+  const movementMultiplier = gameConfig.useFastMovement.get() ? 3 : 1;
   const isFlying = flying.get();
-  const speed = isFlying ? 12 : 8; // Faster when flying
+  const speed = (isFlying ? 12 : 8) * movementMultiplier; // Faster when flying
 
   const fx = Math.sin(yaw);
   const fz = Math.cos(yaw);
@@ -143,8 +144,14 @@ export function updatePlayer(shadow, state, dt) {
   state.dx += (targetDx - state.dx) * (isFlying ? 15 : 10) * dt;
   state.dz += (targetDz - state.dz) * (isFlying ? 15 : 10) * dt;
 
-  // Friction (less in air/flying)
-  const friction = isFlying ? 0.95 : 0.92;
+  // Friction (less in air/flying, more in water)
+  const friction = isFlying ? 0.95 : state.isSubmerged ? 0.85 : 0.92;
   state.dx *= friction;
   state.dz *= friction;
+
+  // Reduce horizontal speed when submerged
+  if (state.isSubmerged && !isFlying) {
+    state.dx *= 0.6;
+    state.dz *= 0.6;
+  }
 }

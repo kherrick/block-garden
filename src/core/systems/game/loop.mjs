@@ -460,41 +460,34 @@ export function gameLoop(
     }
   }
 
-  // Transparent Pass: Blending ON, depth writing OFF
+  // Combined Pass: Render water and transparent blocks together
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-  gl.depthMask(false);
+  gl.depthMask(false); // Disable depth writing for both to allow mutual visibility
   gl.depthFunc(gl.LEQUAL);
 
   // Render back-to-front for correct alpha blending across chunks
   const reversedChunks = [...visibleChunks].reverse();
 
-  // Water Pass: Render water first with depth writing ON for proper layering
-  gl.uniform1f(uUT, gameConfig.useTexturedWater.get() ? 1.0 : 0.0);
-  gl.depthMask(true); // Water writes to depth buffer
-  gl.depthFunc(gl.LESS); // Standard depth test for water
-
   for (const chunk of reversedChunks) {
+    if (!chunk.mesh) {
+      continue;
+    }
+
     // Draw water part
-    const water = chunk.mesh?.water;
+    const water = chunk.mesh.water;
     if (water && water.vertexCount > 0) {
+      gl.uniform1f(uUT, gameConfig.useTexturedWater.get() ? 1.0 : 0.0);
+
       drawChunkMesh(gl, water, VP, uMVP, uM);
     }
-  }
 
-  // Transparent Pass: Render transparent blocks after water with depth writing OFF
-  gl.uniform1f(uUT, gameConfig.useTextureAtlas.get() ? 1.0 : 0.0);
-  gl.depthMask(false); // Transparent blocks don't write depth
-  gl.depthFunc(gl.LEQUAL); // Allow rendering at same depth as water
-
-  for (const chunk of reversedChunks) {
     // Draw transparent part
-    if (
-      chunk.mesh &&
-      chunk.mesh.transparent &&
-      chunk.mesh.transparent.vertexCount > 0
-    ) {
-      drawChunkMesh(gl, chunk.mesh.transparent, VP, uMVP, uM);
+    const transparent = chunk.mesh.transparent;
+    if (transparent && transparent.vertexCount > 0) {
+      gl.uniform1f(uUT, gameConfig.useTextureAtlas.get() ? 1.0 : 0.0);
+
+      drawChunkMesh(gl, transparent, VP, uMVP, uM);
     }
   }
 

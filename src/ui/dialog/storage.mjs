@@ -46,6 +46,8 @@ const STORAGE_KEY_PREFIX = "block-garden-save-";
  * @property {string} name
  * @property {number} timestamp
  * @property {string} data
+ * @property {string} [id]
+ * @property {boolean} [isLegacy]
  * @property {boolean} [isAutoSave]
  */
 
@@ -65,6 +67,8 @@ const STORAGE_KEY_PREFIX = "block-garden-save-";
  * @property {string} name
  * @property {number} timestamp
  * @property {string} data
+ * @property {string} [id]
+ * @property {boolean} [isLegacy]
  * @property {boolean} [isAutoSave]
  */
 
@@ -911,6 +915,8 @@ export class StorageDialog {
             name: gameData.name,
             timestamp: gameData.timestamp,
             data: gameData.data,
+            id: gameData.id || key,
+            isLegacy: !gameData.id, // Track if it's a legacy save
             isAutoSave: gameData.isAutoSave || false,
           });
         }
@@ -989,7 +995,7 @@ export class StorageDialog {
     listContainer.querySelectorAll(".saved-game-item").forEach((item) => {
       item.addEventListener(
         "keydown",
-        /** @param {Event} evt */ (evt) => {
+        /** @param {Event} evt */(evt) => {
           if (!(evt instanceof KeyboardEvent)) {
             return;
           }
@@ -1043,6 +1049,30 @@ export class StorageDialog {
       loadBtn.disabled = !isSelected;
       loadBtn.style.opacity = isSelected ? "1" : "0.5";
       loadBtn.style.cursor = isSelected ? "pointer" : "not-allowed";
+    }
+
+    if (isSelected) {
+      const gameIndex = parseInt(selected.value);
+      const game = this.savedGames[gameIndex];
+
+      if (game) {
+        const worldNameInput = this.dialog.querySelector("#worldNameInput");
+        if (worldNameInput instanceof HTMLInputElement) {
+          worldNameInput.value = game.name;
+        }
+      }
+    }
+
+    if (isSelected) {
+      const gameIndex = parseInt(selected.value);
+      const game = this.savedGames[gameIndex];
+
+      if (game) {
+        const worldNameInput = this.dialog.querySelector("#worldNameInput");
+        if (worldNameInput instanceof HTMLInputElement) {
+          worldNameInput.value = game.name;
+        }
+      }
     }
 
     const deleteBtn = this.dialog.querySelector("#deleteSelectedBtn");
@@ -1407,7 +1437,7 @@ export class StorageDialog {
       // Parse and load save state
       const saveState = JSON.parse(stateJSON);
       await loadSaveState(
-        /** @type {BlockGardenGlobalThis} */ (globalThis),
+        /** @type {BlockGardenGlobalThis} */(globalThis),
         this.shadow,
         saveState,
       );
@@ -1430,6 +1460,7 @@ export class StorageDialog {
         const fileInput = /** @type {HTMLInputElement | null} */ (
           this.dialog.querySelector("#fileInput")
         );
+
         if (fileInput instanceof HTMLInputElement) {
           fileInput.value = "";
         }
@@ -1464,6 +1495,57 @@ export class StorageDialog {
       return;
     }
 
+    const selected = /** @type {HTMLInputElement | null} */ (
+      this.dialog.querySelector('input[name="selectedGame"]:checked')
+    );
+
+    let selectedGame = null;
+    if (selected) {
+      const gameIndex = parseInt(selected.value);
+
+      selectedGame = this.savedGames[gameIndex];
+    }
+
+    // Check for existing games with the same name (excluding auto-save)
+    const legacyGamesWithSameName = this.savedGames.filter(
+      (g) => !g.isAutoSave && g.name === worldName && g.isLegacy,
+    );
+
+    let targetKey = null;
+    let targetId = null;
+
+    if (selectedGame && selectedGame.name === worldName) {
+      // Prompt for Overwrite vs. Save as New
+      const message =
+        `Would you like to overwrite "${worldName}", or create a new save with the same name?\n\n` +
+        `Click 'OK' to overwrite existing,\n` +
+        `Click 'Cancel' to create a new additional save.`;
+
+      const confirmOverwrite = confirm(message);
+
+      if (confirmOverwrite) {
+        // Use existing IDs for overwrite
+        targetKey = selectedGame.key;
+        targetId = selectedGame.id;
+      }
+      // If user clicks Cancel, we proceed with targetKey/targetId null,
+      // which will trigger creation of a new ID later.
+    } else if (legacyGamesWithSameName.length > 0) {
+      // Name collision with legacy game(s)
+      const message =
+        `A game named "${worldName}" already exists in legacy storage. Would you like to overwrite it, or save as a new game with the same name?\n\n` +
+        `Click 'OK' to overwrite,\n` +
+        `Click 'Cancel' to save as a new game.`;
+
+      const confirmOverwrite = confirm(message);
+
+      if (confirmOverwrite) {
+        // Overwrite the legacy one
+        targetKey = legacyGamesWithSameName[0].key;
+        targetId = legacyGamesWithSameName[0].id;
+      }
+    }
+
     try {
       const saveState = createSaveState(
         this.gThis.blockGarden.state.world,
@@ -1481,18 +1563,24 @@ export class StorageDialog {
       const arrayBuffer = await compressedBlob.arrayBuffer();
       const base64Data = arrayBufferToBase64(this.gThis, arrayBuffer);
 
+      // Generate a new ID if we're not overwriting
+      const id = targetId || self.crypto.randomUUID();
+
       // Create storage entry
       const gameData = {
         name: worldName,
         timestamp: Date.now(),
         data: base64Data,
+        id: id,
       };
 
       // Save to localForage
-      const key = `${STORAGE_KEY_PREFIX}${Date.now()}-${worldName.replace(/[^a-zA-Z0-9]/g, "_")}`;
+      const key =
+        targetKey ||
+        `${STORAGE_KEY_PREFIX}${id}-${worldName.replace(/[^a-zA-Z0-9]/g, "_")}`;
       await localForage.setItem(key, gameData);
 
-      console.log("Game saved to storage:", worldName);
+      console.log("Game saved to storage:", worldName, "ID:", id);
 
       // Clear input and refresh list
       if (worldNameInput instanceof HTMLInputElement) {

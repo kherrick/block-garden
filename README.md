@@ -36,7 +36,6 @@ Block Garden - A 3D sandbox exploration and farming game. Explore procedurally g
 - **World Generation Menu:** `Ctrl` + `s`
 - **Touch Hold:** Break Block
 - **Touch:** Place Block
-- **Pause/Menu:** `Escape`
 
 ## 🕹️ Game Modes
 
@@ -87,7 +86,7 @@ npm i && npm start
 
 ## Development
 
-See [AGENTS.MD](AGENTS.MD) for detailed architecture, build, test, and development workflow instructions.
+See [AGENTS.md](AGENTS.md) for detailed architecture, build, test, and development workflow instructions.
 
 Quick reference:
 

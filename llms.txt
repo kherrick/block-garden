@@ -26,7 +26,6 @@ npm run build          # Full build pipeline
 
 **Documentation:**
 - [**AGENTS.MD**](AGENTS.MD) — Comprehensive architecture & development guide for AI agents
-- [**.CLAUDE/CLAUDE.MD**](.claude/CLAUDE.md) — Claude-specific development guide
 - [**.GITHUB/COPILOT-INSTRUCTIONS.MD**](.github/copilot-instructions.md) — GitHub Copilot coding patterns
 
 ---

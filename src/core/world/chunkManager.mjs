@@ -256,8 +256,8 @@ export class ChunkManager {
    * @returns {number} Block type (0 = air)
    */
   getBlock(x, y, z) {
-    if (y <= 0) {
-      return 1; // Bottom
+    if (y < 0) {
+      return 0; // Air below world bottom
     }
 
     if (y >= CHUNK_SIZE_Y) {
@@ -300,7 +300,7 @@ export class ChunkManager {
     metadata = null,
     skipLighting = false,
   ) {
-    if (y <= 0 || y >= CHUNK_SIZE_Y) {
+    if (y < 0 || y >= CHUNK_SIZE_Y) {
       return false;
     }
 

@@ -14,6 +14,7 @@
  * @property {number} [growthTime] - Time in seconds for plant to grow
  * @property {number} [friction=0] - Friction value when player moves through block (0-1). 0=no friction, 1=full stop. Future use for water, lava, leaves, etc.
  * @property {number} [emissive=0] - Light emission level (0-15). 0=none, 14=torch, 15=max/sun. Light propagates to nearby blocks.
+ * @property {boolean} [ore=false] - Whether this block is an ore
  */
 
 /**
@@ -98,6 +99,7 @@ export const blockNames = {
   CLAY: "Clay",
   CLOUD: "Cloud",
   COAL: "Coal",
+  COPPER: "Copper",
   CORN_EAR: "Corn Ear",
   CORN_GROWING: "Corn Growing",
   CORN_LEAVES: "Corn Leaves",
@@ -105,6 +107,7 @@ export const blockNames = {
   CORN_STALK: "Corn Stalk",
   CORN: "Corn",
   DIRT: "Dirt",
+  DIAMOND: "Diamond",
   FERN_FROND: "Fern Frond",
   FERN_GROWING: "Fern Growing",
   FERN_STEM: "Fern Stem",
@@ -154,6 +157,7 @@ export const blockNames = {
   ROSE_THORNS: "Rose Thorns",
   ROSE: "Rose",
   SAND: "Sand",
+  SILVER: "Silver",
   SNOW: "Snow",
   STONE: "Stone",
   SUNFLOWER_CENTER: "Sunflower Center",
@@ -308,7 +312,7 @@ const blockDefinitionsArray = [
   {
     name: blockNames.BEDROCK,
     id: 19,
-    breakTime: 0.5,
+    breakTime: null,
     drops: null,
     solid: true,
   },
@@ -488,6 +492,15 @@ const blockDefinitionsArray = [
     breakTime: 0.5,
     drops: blockNames.COAL,
     solid: true,
+    ore: true,
+  },
+  {
+    name: blockNames.COPPER,
+    id: 135,
+    breakTime: 0.5,
+    drops: blockNames.COPPER,
+    solid: true,
+    ore: true,
   },
   {
     name: blockNames.CORN_EAR,
@@ -543,6 +556,14 @@ const blockDefinitionsArray = [
     solid: true,
   },
   {
+    name: blockNames.DIAMOND,
+    id: 137,
+    breakTime: 0.5,
+    drops: blockNames.DIAMOND,
+    solid: true,
+    ore: true,
+  },
+  {
     name: blockNames.FERN_FROND,
     id: 70,
     breakTime: 0.5,
@@ -580,6 +601,7 @@ const blockDefinitionsArray = [
     breakTime: 0.5,
     drops: blockNames.GOLD,
     solid: true,
+    ore: true,
   },
   {
     name: blockNames.GRASS,
@@ -601,6 +623,7 @@ const blockDefinitionsArray = [
     breakTime: 0.5,
     drops: blockNames.IRON,
     solid: true,
+    ore: true,
   },
   {
     name: blockNames.KELP_BLADE,
@@ -798,6 +821,14 @@ const blockDefinitionsArray = [
     breakTime: 0.5,
     drops: [blockNames.PINE_TREE, blockNames.WOOD],
     solid: true,
+  },
+  {
+    name: blockNames.SILVER,
+    id: 136,
+    breakTime: 0.5,
+    drops: blockNames.SILVER,
+    solid: true,
+    ore: true,
   },
   {
     name: blockNames.PUMICE,

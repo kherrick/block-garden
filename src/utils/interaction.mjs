@@ -230,9 +230,9 @@ export function removeBlock(gameState, targetHit) {
     return false;
   }
 
-  // Prevent breaking/collecting non-removable blocks (e.g. Water)
+  // Prevent breaking/collecting non-removable blocks (e.g. Water) or unbreakable blocks (e.g. Bedrock)
   const hitBlock = blocks.getById(blockId);
-  if (hitBlock && hitBlock.name === "Water") {
+  if (hitBlock && (hitBlock.name === "Water" || hitBlock.breakTime === null)) {
     return false;
   }
 
@@ -617,9 +617,9 @@ export function startBreaking(gameState, targetHit) {
     return;
   }
 
-  // Prevent breaking non-removable blocks (e.g. Water)
+  // Prevent breaking non-removable blocks (e.g. Water) or unbreakable blocks (e.g. Bedrock)
   const blockDef = blocks.getById(blockId);
-  if (blockDef && blockDef.name === "Water") {
+  if (blockDef && (blockDef.name === "Water" || blockDef.breakTime === null)) {
     stopBreaking(gameState);
 
     return;

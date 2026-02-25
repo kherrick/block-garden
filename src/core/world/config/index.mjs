@@ -49,6 +49,8 @@ export const FAST_GROWTH_TIME = 15;
  * @property {Signal.State<boolean>} showFullCatalog - Show all items in inventory even if 0 (default true)
  * @property {Signal.State<boolean>} useSolidClouds - Whether clouds are solid/walkable (default true)
  * @property {Signal.State<boolean>} useTexturedWater - Whether water blocks use texture (default false)
+ * @property {Signal.State<boolean>} useOreLocator - Ore locator feature toggle (default false)
+ * @property {Signal.State<number>} oreLocatorRadius - Ore scan radius in blocks (default 32)
  */
 
 export const CONFIG_DEFAULTS = {
@@ -83,6 +85,8 @@ export const CONFIG_DEFAULTS = {
   USE_TEXTURED_WATER: true,
   USE_TIME_CYCLE: false,
   USE_TOUCH_CONTROLS: true,
+  USE_ORE_LOCATOR: false,
+  ORE_LOCATOR_RADIUS: 32,
   VERSION: "1",
   VIEW_RADIUS: 128,
   WORLD_RADIUS: 384,
@@ -128,6 +132,8 @@ export const gameConfig = {
   useTexturedWater: new Signal.State(CONFIG_DEFAULTS.USE_TEXTURED_WATER),
   useTimeCycle: new Signal.State(CONFIG_DEFAULTS.USE_TIME_CYCLE),
   useTouchControls: new Signal.State(CONFIG_DEFAULTS.USE_TOUCH_CONTROLS),
+  useOreLocator: new Signal.State(CONFIG_DEFAULTS.USE_ORE_LOCATOR),
+  oreLocatorRadius: new Signal.State(CONFIG_DEFAULTS.ORE_LOCATOR_RADIUS),
   version: new Signal.State(CONFIG_DEFAULTS.VERSION),
   viewRadius: new Signal.State(CONFIG_DEFAULTS.VIEW_RADIUS),
   worldRadius: new Signal.State(CONFIG_DEFAULTS.WORLD_RADIUS),

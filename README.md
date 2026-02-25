@@ -16,7 +16,7 @@ Block Garden - A 3D sandbox exploration and farming game. Explore procedurally g
 - **Advanced Storage** - Save your progress on-device, or share your world as a PDF or PNG.
 - **Lighting System** - Use torches, lanterns, and lightstones to illuminate the darkness.
 - **Clouds** - Continue building and farming while in the sky.
-- **Resource Management** - Dig for resources like stone, dirt, and sand.
+- **Resource Management** - Dig for resources like stone, dirt, and sand, and mine ores including coal, iron, gold, copper, silver, and diamond.
 - **Privacy-respecting** - No login or data collection required.
 - **Cross-platform** - Full support for both desktop and mobile play.
 

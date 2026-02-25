@@ -1077,6 +1077,7 @@ export class BlockGarden extends HTMLElement {
                     <button id="randomPlantButton" hidden="hidden">Plant randomly</button>
                     <button id="toggleSolidClouds" hidden="hidden">Disable Solid Clouds</button>
                     <button id="toggleFastMovement" hidden="hidden">Enable Fast Movement</button>
+                    <button id="oreLocatorBtn" hidden="hidden">🧭 Scan for Nearby Ores</button>
                     <button id="configureLinkBlock">🔗 Configure Link Block</button>
                     <button id="configureTextBlock">📝 Configure Text Block</button>
                     <button

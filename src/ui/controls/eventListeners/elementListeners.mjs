@@ -20,6 +20,10 @@ import { effect } from "../../../utils/effect.mjs";
 import { extractAttachments } from "../../../utils/extractAttachments.mjs";
 import { placeBlock } from "../../../utils/interaction.mjs";
 import { raycastFromCanvasCoords } from "../../../utils/raycastFromCanvasCoords.mjs";
+import {
+  scanForOres,
+  formatOreScanResult,
+} from "../../../utils/oreLocator.mjs";
 import { processSaveData } from "../../../utils/saveData.mjs";
 
 import { getNewBlockId } from "../../../core/world/config/blocks.mjs";
@@ -100,6 +104,7 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
     shadow.getElementById("toggleAODebug")?.removeAttribute("hidden");
     shadow.getElementById("toggleSolidClouds")?.removeAttribute("hidden");
     shadow.getElementById("toggleFastMovement")?.removeAttribute("hidden");
+    shadow.getElementById("oreLocatorBtn")?.removeAttribute("hidden");
 
     shadow
       .getElementById("customizeColorsBtnContainer")
@@ -505,6 +510,24 @@ export function initElementEventListeners(shadow, cnvs, currentResolution) {
     randomPlantButton.addEventListener("click", () => {
       randomPlantSeeds(shadow);
       showToast(shadow, "Random planting complete!");
+    });
+  }
+
+  // Ore Locator Button
+  const oreLocatorBtn = shadow.getElementById("oreLocatorBtn");
+  if (oreLocatorBtn) {
+    oreLocatorBtn.addEventListener("click", () => {
+      const radius = config.oreLocatorRadius.get();
+      const oreCounts = scanForOres(
+        gameState.world,
+        gameState.x,
+        gameState.y,
+        gameState.z,
+        radius,
+      );
+      const message = formatOreScanResult(oreCounts, radius);
+
+      showToast(shadow, message, { duration: 5000 });
     });
   }
 

@@ -200,9 +200,9 @@ describe("ChunkManager", () => {
   });
 
   describe("getBlock", () => {
-    test("returns 1 (solid) for y <= 0 (bottom boundary)", () => {
-      expect(manager.getBlock(0, 0, 0)).toBe(1);
-      expect(manager.getBlock(5, -1, 5)).toBe(1);
+    test("returns 0 (air) for y < 0 (below bottom boundary)", () => {
+      expect(manager.getBlock(0, -1, 0)).toBe(0);
+      expect(manager.getBlock(5, -10, 5)).toBe(0);
     });
 
     test("returns 0 (air) for y >= CHUNK_SIZE_Y", () => {
@@ -228,8 +228,7 @@ describe("ChunkManager", () => {
   });
 
   describe("setBlock", () => {
-    test("returns false for y <= 0", () => {
-      expect(manager.setBlock(0, 0, 0, 1)).toBe(false);
+    test("returns false for y < 0", () => {
       expect(manager.setBlock(0, -1, 0, 1)).toBe(false);
     });
 
@@ -243,6 +242,13 @@ describe("ChunkManager", () => {
       expect(result).toBe(true);
       expect(manager.chunks.size).toBe(1);
       expect(manager.getBlock(5, 10, 5)).toBe(2);
+    });
+
+    test("allows setting block at y = 0", () => {
+      const result = manager.setBlock(0, 0, 0, 1);
+
+      expect(result).toBe(true);
+      expect(manager.getBlock(0, 0, 0)).toBe(1);
     });
 
     test("floors floating point coordinates", () => {
@@ -307,8 +313,8 @@ describe("ChunkManager", () => {
       expect(manager.hasBlock(5, 50, 5)).toBe(true);
     });
 
-    test("returns true for bottom boundary", () => {
-      expect(manager.hasBlock(0, 0, 0)).toBe(true);
+    test("returns false for y < 0", () => {
+      expect(manager.hasBlock(0, -1, 0)).toBe(false);
     });
   });
 

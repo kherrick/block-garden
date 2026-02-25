@@ -995,7 +995,7 @@ export class StorageDialog {
     listContainer.querySelectorAll(".saved-game-item").forEach((item) => {
       item.addEventListener(
         "keydown",
-        /** @param {Event} evt */(evt) => {
+        /** @param {Event} evt */ (evt) => {
           if (!(evt instanceof KeyboardEvent)) {
             return;
           }
@@ -1437,7 +1437,7 @@ export class StorageDialog {
       // Parse and load save state
       const saveState = JSON.parse(stateJSON);
       await loadSaveState(
-        /** @type {BlockGardenGlobalThis} */(globalThis),
+        /** @type {BlockGardenGlobalThis} */ (globalThis),
         this.shadow,
         saveState,
       );
